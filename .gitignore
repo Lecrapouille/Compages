@@ -1,5 +1,14 @@
+#
+build
+doc/coverage
+external/*/
 *~
 *.DS_Store
+.cache/
+examples/external/assets/
+
+# apitrace traces (opengl)
+*.trace
 
 # Prerequisites
 *.d
@@ -33,24 +42,3 @@
 *.exe
 *.out
 *.app
-
-# Project
-build
-tests/build
-doc/coverage
-doc/html
-examples/build
-examples/imgui.ini
-examples/external
-external/SOIL
-external/imgui
-external/units
-external/glm
-external/bullet3
-external/json
-external/backward-cpp
-external/OpenGLCppWrapper-data
-tests/result.txt
-
-# apitrace traces (opengl)
-*.trace

@@ -1,0 +1,10 @@
+{
+    "sonarlint.rules": {
+        "cpp:S107": "off",
+        "cpp:S1066": "off",
+        "cpp:S1065": "off"
+    },
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}/compile_commands.json",
+    "sonarlint.disableTelemetry": true,
+    "sonarlint.output.showVerboseLogs": true
+}
