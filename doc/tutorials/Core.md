@@ -4,9 +4,9 @@
 
 This section will treat on how to use this API. This is a small tutorial explaining the template for your projects. Indeed, the pseudo-C++ code shown in this tutorial will be the same for many of your 3D applications that you will make. As proof, I made numerous [examples](../../examples/README.md) included with the code source of this library, which follow the pseudo-code of this tutorial. My examples are greatly inspired by several OpenGL tutorials found on the internet (see their README for credits). You can compare the length of the code.
 
-In this document, I consider that the reader has basic knowledge of modern OpenGL (which is my case). There is nothing particularly difficult with this tutorial because everything is already largely explained in the first chapters of any OpenGL tutorials foundable on the internet.
+In this document, I consider that the reader has basic knowledge of modern OpenGL (which is my case). There is nothing particularly difficult with this tutorial because everything is already largely explained in the first chapters of any OpenGL tutorials foundable on the internet [here](https://learnopengl.com/) or [here](http://www.opengl-tutorial.org/) or [youtube](https://www.youtube.com/playlist?list=PLRIWtICgwaX0u7Rf9zkZhLoLuZVfUksDP).
 
-Before showing the C++ pseudo-code using OpenGLCppWrapper, we have, first, to write a basic fragment and vertex shader named `my_fragment_shader.glsl` and `my_vertex_shader.glsl`. The geometry shader is not used here but you can add one. OpenGLCppWrapper has been conceived to develop OpenGL applications by starting from shader code and finish by filling VBOs and setting path of desired textures. This is the opposite way of thinking compared to the way tutorials make you learn OpenGL.
+Before showing the C++ pseudo-code using OpenGLCppWrapper, we have, first, to write a basic fragment and vertex shader named `my_fragment_shader.glsl` and `my_vertex_shader.glsl`. The geometry shader is not used here but you can add one. OpenGLCppWrapper has been conceived to develop OpenGL applications by starting from shader code and finish by filling VBOs and setting path of desired textures. This is the opposite way of thinking compared to the way tutorials make you learn OpenGL (see the one I cited in the previous paragraph).
 
 ##### my_fragment_shader.glsl:
 

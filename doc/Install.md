@@ -9,52 +9,14 @@ cores. Please adapt this number to your case.
 
 ## Prerequisite
 
-This project depends on:
-* [MyMakefile](https://github.com/Lecrapouille/MyMakefile) my GitHub Makefile
-  project used for compiling all my GitHub projects. It's automatically cloned
-  as a git submodule. You have nothing to do except not to forget to add the
-  option `--recurse-submodules` when you git clone the project.
-* [OpenGLCppWrapper-data](https://github.com/Lecrapouille/OpenGLCppWrapper-data)
-  this repo contains all textures needed for examples. This repo is
-  automatically downloaded the Makefile. You have nothing to do.
-* [SOIL](https://github.com/kbranigan/Simple-OpenGL-Image-Library.git) this
-  library is used for loading picture files (jpeg, png ...). This library is
-  downloaded by the Makefile rule `download-external-libs`.
-* [Dear IMgui](https://github.com/ocornut/imgui) this library is used for adding
-  widgets to your applications. This library is downloaded by the Makefile rule
-  `download-external-libs`.
-* [backward-cpp](https://github.com/bombela/backward-cpp), this library is used
-  for displaying the stack when a crash occured. It is used on debug mode. This
-  library is downloaded by the Makefile rule `download-external-libs`.
-* glfw glew libraries for OpenGL.
-
-##### Ubuntu, Debian:
-
-```sh
-sudo apt-get update && apt-get install libglew-dev libglfw3-dev libbz2-dev
-```
-
-##### Mac OS X:
-```sh
-brew install glfw glew
-```
-
-##### Optional:
-
-Optionally, if you want to help developing, want to write/launch unit tests,
-install [googletest](https://github.com/google/googletest)
-
-```sh
-wget https://github.com/google/googletest/archive/release-1.11.0.tar.gz
-tar xf release-1.11.0.tar.gz
-cd googletest-release-1.11.0
-cmake .
-sudo make install -j8
-```
+You need to install the following libs on your operating system: glfw glew.
+- Ubuntu, Debian: `sudo apt-get update && apt-get install libglew-dev libglfw3-dev libbz2-dev`
+- Mac OS X: `brew install glfw glew`
 
 ## Compilation of the API
 
 To download the project, its external libraries and compile the API with its examples:
+
 ```sh
 git clone --recurse-submodules https://github.com/Lecrapouille/OpenGLCppWrapper.git --depth=1
 cd OpenGLCppWrapper
@@ -63,14 +25,16 @@ make compile-external-libs
 make -j8
 ```
 
-If you are a developper `make download-external-libs` and `make
-compile-external-libs` has to be called once or when you want to upgrade the
-libraries (they follow the master branch). These commands play the same role
-than a recursive git clone: they will download, compile (but not install) GitHub
-libraries: Backward, SOIL and Dear IMgui. You have to do it once (or for
-updating). Why? I hate git submodules: it always make things painful. `repo`
+The `--recurse-submodules` is important to get my Makefile routines for compiling the project.
+
+If you are a developper `make download-external-libs` and `make compile-external-libs`
+has to be called once or when you want to upgrade the libraries: they follow the
+master branch and they remove the previously downloaded third-parts.
+
+The `make download-external-libs` command plays the same role than a recursive git clone because
+I hate git submodules: it always make things painful and `repo`
 with its manifests is a bit overkill, so I prefer Makefile rules or script
-shell and this gave me good result with Travis-CI.
+shell and this gave me good result even with continuous integration.
 
 After `make` a `build/` folder shall have been created containing the compiled
 and runnable files. Two libraries (one static the second dynamic) shall also be
@@ -124,7 +88,7 @@ ls -la libOpenGLCppWrapper*
 ```
 Or better:
 ```
-pkg-config openglcppwrapper --libs
+echo `pkg-config `openglcppwrapper --libs``
 ```
 
 ## Developpers
@@ -170,6 +134,20 @@ It can be localy generated as `doc/html/index.html` by typing `make doc`.
 
 ### Unit tests
 
+If you want to help developing and write/launch unit tests. You have to
+download, compile and install [googletest](https://github.com/google/googletest)
+manually:
+
+```sh
+wget https://github.com/google/googletest/archive/release-1.11.0.tar.gz
+tar xf release-1.11.0.tar.gz
+cd googletest-release-1.11.0
+cmake .
+sudo make install -j8
+```
+
+To compile and run tests and get code coverage report, call:
+
 ```sh
 cd OpenGLCppWrapper/tests
 make coverage
@@ -177,3 +155,37 @@ make coverage
 
 If all tests passed, a coverage report is created inside `doc/coverage/` and the
 `index.html` is opened automatically.
+
+### Third-parts
+
+This project depends on third-parts that are automatically downloaded with
+`make download-external-libs`. They are compiled as static libraries with
+`make compile-external-libs` but they are not installed on your operating
+system. It's onnly when the `sudo make install` is called that their header
+files are copied within the OpenGLCppWrapper header files.
+
+Here the list of third-parts:
+* [MyMakefile](https://github.com/Lecrapouille/MyMakefile) my GitHub Makefile
+  project used for compiling all my GitHub projects. It's automatically cloned
+  as a git submodule. You have nothing to do except not to forget to add the
+  option `--recurse-submodules` when you git clone the project.
+* [OpenGLCppWrapper-data](https://github.com/Lecrapouille/OpenGLCppWrapper-data)
+  this repo contains all textures needed for examples. This repo is
+  automatically downloaded the Makefile. You have nothing to do.
+* [SOIL](https://github.com/kbranigan/Simple-OpenGL-Image-Library.git) this
+  library is used for loading picture files (jpeg, png ...). This library is
+  downloaded by the Makefile rule `download-external-libs`.
+* [Dear IMgui](https://github.com/ocornut/imgui) this library is used for adding
+  widgets to your applications. This library is downloaded by the Makefile rule
+  `download-external-libs`.
+* [bullet3](https://github.com/bulletphysics/bullet3) this library is used for
+  Physic engine. This library is downloaded by the Makefile rule
+  `download-external-libs`.
+* [units](https://github.com/nholthaus/units) this library is used for SI units.
+  This library is downloaded by the Makefile rule `download-external-libs`.
+* [json](https://github.com/nlohmann/json) this library is used for reading JSON.
+  This library is downloaded by the Makefile rule `download-external-libs`.
+* [backward-cpp](https://github.com/bombela/backward-cpp), this library is used
+  for displaying the stack when a crash occured. It is used on debug mode. This
+  library is downloaded by the Makefile rule `download-external-libs`.
+* glfw glew libraries for OpenGL.

@@ -31,30 +31,23 @@
 #  include "Math/Matrix.hpp"
 
 // *****************************************************************************
-
 //! \brief Represent an uniform variable used in a GLSL shader program (refered
 //! by \c uniform keyword). Example:
-
 //! \code
 //!   uniform mat4 projection;
 //!   uniform vec4 color;
 //! \endcode
-
 //!
-
 //! Uniforms are used as links between shader variables and your C++ variable
 //! and therefore are entry points to the shader pipeline by allowing you to
 //! upload CPU data to the GPU. Uniforms are used for modifying the value
 //! dynamically but shall not be used directly by the user but internaly private
 //! instances by GLProgram.  and therefore shall be acceeded through the
 //! GLProgram API (GLProgram::uniform<T>(name))
-
-
 //!
 //! \tparam T float or int for scalars or VectorXf or VectorXi for vector or
 //! MatrixXXf with X = [2 .. 4] for matrices or GLSamplerXD with X = [1 .. 3]
 //! (and GLSamplerCube) for textures.
-
 // *****************************************************************************
 template<class T>
 class GLUniform: public GLLocation

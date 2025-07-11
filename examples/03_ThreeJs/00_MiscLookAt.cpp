@@ -138,7 +138,7 @@ bool MiscLookAt::onSetup()
     MySphere& sphere = m_scene.root->attach<MySphere>("Sphere", 1.0f);
 
     // Create box (TODO cones)
-    for (size_t i = 0u; i < 1000u; ++i)
+    for (size_t i = 0u; i < 1000u; ++i) // FIXME pas la bonne facon de faire: ca creer plein de GLProgram inutillement: il faudrait que le m_prog soit partage.
     {
         MyBox& box = m_scene.root->attach<MyBox>("Cone" + std::to_string(i),
                                                  Vector3f(1.0f, 1.0f, 1.0f));
