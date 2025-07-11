@@ -281,7 +281,7 @@ public:
         if (unlikely(nth >= m_container.size()))
         {
             throw_if_cannot_expand();
-            m_container.capacity();
+            // m_container.capacity();
             m_container.resize(nth + 1u);
             // FIXME not optimized concerning m_pending_start
             setPending(0u, m_container.size());

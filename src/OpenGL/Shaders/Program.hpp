@@ -113,7 +113,7 @@ public:
     //! Two cases:
     //!   - If it's the first time that the VAO is bound to the GLProgram then
     //!     the VAO has its internal list of VBOs and textures populated. They
-    //!     are refered by the variable name used in the GLSL code. VBOs are
+    //!     are referred by the variable name used in the GLSL code. VBOs are
     //!     pre-allocated with the number of elements (either set from the by
     //!     GLProgram constructor or by the method bind()) but no data are
     //!     filled, this is the job of the developper to do it explicitly.
@@ -139,14 +139,14 @@ public:
     bool bind(GLVAO& vao);
 
     //--------------------------------------------------------------------------
-    //! \brief Return all error messages (concated by '\\n' char) produced
+    //! \brief Return all error messages (concatenated by '\\n' char) produced
     //! either during the shader compilation or by an other event.
     //!
     //! \note Once this method as been called the error message is
     //! automatically cleared.
     //!
     //! \return the error message (the message is empty if no error have
-    //! occured).
+    //! occurred).
     //--------------------------------------------------------------------------
     std::string strerror();
 
@@ -231,11 +231,10 @@ public:
     //--------------------------------------------------------------------------
     bool hasAttribute(const char* name) const
     {
-        auto it = m_attributes.find(name);
+        auto const it = m_attributes.find(name);
         if (it == m_attributes.end())
             return false;
-        GLAttribute* attribute = dynamic_cast<GLAttribute*>(it->second.get());
-        return (attribute != nullptr);
+        return dynamic_cast<GLAttribute const*>(it->second.get()) != nullptr;
     }
 
     //--------------------------------------------------------------------------
@@ -251,11 +250,10 @@ public:
     //--------------------------------------------------------------------------
     bool hasSampler(const char* name) const
     {
-        auto it = m_samplers.find(name);
+        auto const it = m_samplers.find(name);
         if (it == m_samplers.end())
             return false;
-        GLSampler* sampler = dynamic_cast<GLSampler*>(it->second.get());
-        return (sampler != nullptr);
+        return dynamic_cast<GLSampler const*>(it->second.get()) != nullptr;
     }
 
     //--------------------------------------------------------------------------
@@ -274,16 +272,15 @@ public:
     template <class T>
     bool hasUniform(const char* name) const
     {
-        auto it = m_uniforms.find(name);
+        auto const it = m_uniforms.find(name);
         if (it == m_uniforms.end())
             return false;
-        GLUniform<T>* uniform = dynamic_cast<GLUniform<T>*>(it->second.get());
-        return (uniform != nullptr);
+        return dynamic_cast<GLUniform<T> const*>(it->second.get()) != nullptr;
     }
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 4x4 matrix. This
-    //! method wraps the \a uniform() method hidding the misery of the template.
+    //! method wraps the \a uniform() method hiding the misery of the template.
     //--------------------------------------------------------------------------
     inline Matrix44f& matrix44f(const char* name)
     {
@@ -292,7 +289,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 3x3 matrix. This
-    //! method wraps the \a uniform() method hidding the misery of the template.
+    //! method wraps the \a uniform() method hiding the misery of the template.
     //--------------------------------------------------------------------------
     inline Matrix33f& matrix33f(const char* name)
     {
@@ -301,7 +298,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 2x2 matrix.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Matrix22f& matrix22f(const char* name)
@@ -311,7 +308,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 4D vector.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector4f& vector4f(const char* name)
@@ -321,7 +318,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 3D vector.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector3f& vector3f(const char* name)
@@ -331,7 +328,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float 2D vector.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector2f& vector2f(const char* name)
@@ -341,7 +338,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform float scalar.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline float& scalarf(const char* name)
@@ -351,7 +348,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform integer 4D vector.
-    //!  \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector4i& vector4i(const char* name)
@@ -361,7 +358,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform integer 3D vector.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector3i& vector3i(const char* name)
@@ -371,7 +368,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform integer 2D vector.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline Vector2i& vector2i(const char* name)
@@ -381,7 +378,7 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Locate and return the shader uniform integer scalar.
-    //! This method wraps the \a uniform() method hidding the misery of
+    //! This method wraps the \a uniform() method hiding the misery of
     //! the template.
     //--------------------------------------------------------------------------
     inline int& scalar(const char* name)
@@ -402,13 +399,14 @@ private:
     {
         if (compiled())
         {
-            auto it = m_uniforms.find(name);
-            if (it != m_uniforms.end())
+            if (auto it = m_uniforms.find(name); it != m_uniforms.end())
             {
-                GLUniform<T>* uniform =
-                    dynamic_cast<GLUniform<T>*>(it->second.get());
-                if (uniform != nullptr)
+                if (auto uniform =
+                        dynamic_cast<GLUniform<T>*>(it->second.get());
+                    uniform != nullptr)
+                {
                     return *uniform;
+                }
 
                 throw GL::Exception("GLUniform " + std::string(name) +
                                     " exists but has wrong template type");
@@ -421,10 +419,11 @@ private:
             // The API allows the user to define uniforms before compiling the
             // GLProgram.
             if (m_uniforms.find(name) == m_uniforms.end())
+            {
                 createUniform<T>(name);
+            }
 
-            GLUniform<T>* uniform =
-                dynamic_cast<GLUniform<T>*>(m_uniforms[name].get());
+            auto uniform = dynamic_cast<GLUniform<T>*>(m_uniforms[name].get());
             return *uniform;
         }
     }

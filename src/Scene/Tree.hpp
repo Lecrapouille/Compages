@@ -58,14 +58,14 @@ public:
 
 public:
 
-    Tree<T>() = default;
-    Tree<T>(const Tree<T>&) = delete;
-    Tree<T>& operator=(const Tree<T>&) = delete;
+    Tree() = default;
+    Tree(const Tree&) = delete;
+    Tree& operator=(const Tree&) = delete;
 
     //--------------------------------------------------------------------------
     //! \brief Release this node and its child nodes.
     //--------------------------------------------------------------------------
-    virtual ~Tree<T>()
+    virtual ~Tree()
     {
         // std::cout << "Bye " << static_cast<T*>(this)->name() << std::endl;
         //  Avoid using implicit recursive deletion due to usage of smart

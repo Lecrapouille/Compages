@@ -80,18 +80,18 @@ inline static Quatf cast_quaternion(btQuaternion const& q)
 //------------------------------------------------------------------------------
 PhysicsManager::PhysicsManager(Vector3f const& gravity)
 {
-    m_collisionConfiguration =
+    m_collision_configuration =
         std::make_unique<btDefaultCollisionConfiguration>();
-    m_dispatcher =
-        std::make_unique<btCollisionDispatcher>(m_collisionConfiguration.get());
-    m_broadphase = std::make_unique<btDbvtBroadphase>();
+    m_dispatcher = std::make_unique<btCollisionDispatcher>(
+        m_collision_configuration.get());
+    m_broad_phase = std::make_unique<btDbvtBroadphase>();
     m_solver = std::make_unique<btSequentialImpulseConstraintSolver>();
-    m_dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(
+    m_dynamics_world = std::make_unique<btDiscreteDynamicsWorld>(
         m_dispatcher.get(),
-        m_broadphase.get(),
+        m_broad_phase.get(),
         m_solver.get(),
-        m_collisionConfiguration.get());
-    m_dynamicsWorld->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
+        m_collision_configuration.get());
+    m_dynamics_world->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
 }
 
 // void PhysicsManager::debugDraw(int debugFlags)
@@ -104,17 +104,17 @@ PhysicsManager::PhysicsManager(Vector3f const& gravity)
 //------------------------------------------------------------------------------
 void PhysicsManager::attach(RigidBody& obj)
 {
-    assert(m_dynamicsWorld != nullptr);
-    m_dynamicsWorld->addRigidBody(&obj.rigidBody());
+    assert(m_dynamics_world != nullptr);
+    m_dynamics_world->addRigidBody(&obj.rigidBody());
     m_objects.push_front(&obj);
-    m_initialTransformSaved = false;
+    m_initial_transform_saved = false;
 }
 
 //------------------------------------------------------------------------------
 void PhysicsManager::detach(RigidBody& obj)
 {
-    assert(m_dynamicsWorld != nullptr);
-    m_dynamicsWorld->removeRigidBody(&obj.rigidBody());
+    assert(m_dynamics_world != nullptr);
+    m_dynamics_world->removeRigidBody(&obj.rigidBody());
     m_objects.push_front(&obj);
 }
 
@@ -125,19 +125,19 @@ void PhysicsManager::memorizeStates()
     {
         it->setInitialTransform(it->m_transform, true);
     }
-    m_initialTransformSaved = true;
+    m_initial_transform_saved = true;
 }
 
 //------------------------------------------------------------------------------
 void PhysicsManager::update(float dt)
 {
-    assert(m_dynamicsWorld != nullptr);
-    if (m_initialTransformSaved == false)
+    assert(m_dynamics_world != nullptr);
+    if (m_initial_transform_saved == false)
     {
         memorizeStates();
     }
 
-    m_dynamicsWorld->stepSimulation(dt);
+    m_dynamics_world->stepSimulation(dt);
 
     for (auto it : m_objects)
     {

@@ -35,6 +35,9 @@
 #pragma GCC diagnostic ignored "-Wfloat-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #define BT_THREADSAFE 0
 #include "bullet/btBulletDynamicsCommon.h"
 #pragma GCC diagnostic pop
@@ -42,6 +45,7 @@
 #include "Math/Transformable.hpp"
 #include "Math/Vector.hpp"
 #include <forward_list>
+#include <memory>
 
 class RigidBody;
 
@@ -66,14 +70,16 @@ public:
     //! the right direction, the Y shows the up direction and the Z-axis is
     //! facing the player.
     //--------------------------------------------------------------------------
-    PhysicsManager(Vector3f const& gravity = Vector3f(0.0f, -9.8f, 0.0f));
+    explicit PhysicsManager(Vector3f const& gravity = Vector3f(0.0f,
+                                                               -9.8f,
+                                                               0.0f));
 
     //--------------------------------------------------------------------------
     //! \brief Getter. Return the DiscreteDynamicsWorld used.
     //--------------------------------------------------------------------------
     btDiscreteDynamicsWorld& world()
     {
-        return *m_dynamicsWorld;
+        return *m_dynamics_world;
     }
 
     //--------------------------------------------------------------------------
@@ -123,13 +129,13 @@ public:
 
 private:
 
-    std::unique_ptr<btDefaultCollisionConfiguration> m_collisionConfiguration;
+    std::unique_ptr<btDefaultCollisionConfiguration> m_collision_configuration;
     std::unique_ptr<btCollisionDispatcher> m_dispatcher;
-    std::unique_ptr<btDbvtBroadphase> m_broadphase;
+    std::unique_ptr<btDbvtBroadphase> m_broad_phase;
     std::unique_ptr<btSequentialImpulseConstraintSolver> m_solver;
-    std::unique_ptr<btDiscreteDynamicsWorld> m_dynamicsWorld;
+    std::unique_ptr<btDiscreteDynamicsWorld> m_dynamics_world;
     std::forward_list<RigidBody*> m_objects;
-    bool m_initialTransformSaved = false;
+    bool m_initial_transform_saved = false;
 };
 
 // *****************************************************************************
@@ -194,7 +200,7 @@ public:
     //! \brief Update callback.
     //! This function is called automatically by PhysicsManager::update() for
     //! each registered object. It update position and attitude of graphical
-    //! object from its physhical state.
+    //! object from its physical state.
     //--------------------------------------------------------------------------
     void update();
 

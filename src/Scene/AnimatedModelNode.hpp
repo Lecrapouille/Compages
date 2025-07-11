@@ -451,7 +451,7 @@ public:
         m_rootJoint->setName(root["name"]);
         for (nlohmann::json const& child : root["children"])
         {
-            m_rootJoint->addChild(std::move(LoadJoint(child)));
+            m_rootJoint->addChild(LoadJoint(child));
         }
     }
 
@@ -546,7 +546,7 @@ private:
 
         for (nlohmann::json child : joint["children"])
         {
-            j->addChild(std::move(LoadJoint(child)));
+            j->addChild(LoadJoint(child));
         }
 
         return j;

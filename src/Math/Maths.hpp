@@ -280,7 +280,7 @@ static inline int sign(T const val)
 template <typename T>
 static inline T toRadian(T const degrees)
 {
-    return static_cast<T>(degrees * 0.01745329251994329576923690768489);
+    return static_cast<T>(degrees * T(0.01745329251994329576923690768489));
 }
 
 //------------------------------------------------------------------------------
@@ -289,7 +289,7 @@ static inline T toRadian(T const degrees)
 template <typename T>
 static inline T toDegree(T const radians)
 {
-    return static_cast<T>(radians * 57.295779513082320876798154814105);
+    return static_cast<T>(radians * T(57.295779513082320876798154814105));
 }
 
 //------------------------------------------------------------------------------

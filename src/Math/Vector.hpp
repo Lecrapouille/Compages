@@ -33,8 +33,6 @@
 
 #include "Math/Maths.hpp"
 #include <algorithm>
-#include <fstream>
-#include <initializer_list>
 
 // *****************************************************************************
 //! \brief Macro for building constructors of any dimension (N).
@@ -52,8 +50,7 @@ public:                                                                    \
     /*! \brief Constructor with initialization list */                     \
     Vector(std::initializer_list<T> initList)                              \
     {                                                                      \
-        const size_t m = std::min(static_cast<size_t>(N),                  \
-                                  initList.size()); /* FIXME cast */       \
+        const size_t m = std::min(size_t(N), initList.size());             \
         auto iter = initList.begin();                                      \
         for (size_t i = 0u; i < m; ++i)                                    \
         {                                                                  \
@@ -82,8 +79,7 @@ public:                                                                    \
     template <typename U, size_t nOther>                                   \
     explicit Vector(Vector<U, nOther> const& other)                        \
     {                                                                      \
-        const size_t m =                                                   \
-            std::min(static_cast<size_t>(N), nOther); /* FIXME cast */     \
+        const size_t m = std::min(size_t(N), nOther);                      \
         size_t i = m;                                                      \
         while (i--)                                                        \
         {                                                                  \
@@ -255,12 +251,8 @@ public:
 
 public:
 
-    /* Static array holdind values. Be careful to not produce a stack*/ /* overflow
-                                                                           with
-                                                                           a
-                                                                           huge
-                                                                           size.
-                                                                         */
+    // FIXME: Static array holding values. Be careful to not produce a stack.
+    // overflow with a huge size.
     T m_data[n];
 };
 
@@ -268,7 +260,7 @@ public:
 //! \brief Specialization for vector of dimension 2
 // *****************************************************************************
 template <typename T>
-class Vector<T, 2u>
+class Vector<T, size_t(2)>
 {
     //--------------------------------------------------------------------------
     // Generic methods
@@ -308,11 +300,11 @@ public:
 public:
 
     //--------------------------------------------------------------------------
-    //! \brief static array holdind values.
+    //! \brief static array holding values.
     //--------------------------------------------------------------------------
     union
     {
-        //! \brief static array holdind values.
+        //! \brief static array holding values.
         T m_data[2u];
 
 #pragma GCC diagnostic push
@@ -348,7 +340,7 @@ public:
     const static Vector<T, 2u> NEGATIVE_UNIT_Y;
 };
 
-// Predifined vectors
+// Predefined vectors
 template <typename T>
 const Vector<T, 2u> Vector<T, 2u>::DUMMY(T(NAN));
 template <typename T>
@@ -439,7 +431,7 @@ public:
 public:
 
     //--------------------------------------------------------------------------
-    //! \brief static array holdind values.
+    //! \brief static array holding values.
     //--------------------------------------------------------------------------
     union
     {
@@ -639,7 +631,7 @@ public:
 public:
 
     //--------------------------------------------------------------------------
-    //! \brief static array holdind values.
+    //! \brief static array holding values.
     //--------------------------------------------------------------------------
     union
     {
@@ -750,25 +742,25 @@ const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_W(maths::zero<T>(),
 // *****************************************************************************
 // Typedefs for the most common types and dimensions
 // *****************************************************************************
-typedef Vector<bool, 2u> Vector2b;
-typedef Vector<bool, 3u> Vector3b;
-typedef Vector<bool, 4u> Vector4b;
+using Vector2b = Vector<bool, 2u>;
+using Vector3b = Vector<bool, 3u>;
+using Vector4b = Vector<bool, 4u>;
 
-typedef Vector<int, 2u> Vector2i;
-typedef Vector<int, 3u> Vector3i;
-typedef Vector<int, 4u> Vector4i;
+using Vector2i = Vector<int, 2u>;
+using Vector3i = Vector<int, 3u>;
+using Vector4i = Vector<int, 4u>;
 
-typedef Vector<unsigned int, 2u> Vector2u;
-typedef Vector<unsigned int, 3u> Vector3u;
-typedef Vector<unsigned int, 4u> Vector4u;
+using Vector2u = Vector<unsigned int, 2u>;
+using Vector3u = Vector<unsigned int, 3u>;
+using Vector4u = Vector<unsigned int, 4u>;
 
-typedef Vector<float, 2u> Vector2f;
-typedef Vector<float, 3u> Vector3f;
-typedef Vector<float, 4u> Vector4f;
+using Vector2f = Vector<float, 2u>;
+using Vector3f = Vector<float, 3u>;
+using Vector4f = Vector<float, 4u>;
 
-typedef Vector<double, 2u> Vector2g;
-typedef Vector<double, 3u> Vector3g;
-typedef Vector<double, 4u> Vector4g;
+using Vector2g = Vector<double, 2u>;
+using Vector3g = Vector<double, 3u>;
+using Vector4g = Vector<double, 4u>;
 
 // *****************************************************************************
 // Overloaded math unary operators
@@ -1111,7 +1103,7 @@ Vector<T, n> lerp(Vector<T, n> const& a, Vector<T, n> const& b, float t)
 }
 
 // *************************************************************************
-//! \brief Get the coeficient of collinearity (k) of two vectors (u and v).
+//! \brief Get the coefficient of collinearity (k) of two vectors (u and v).
 //!
 //! Two non-null vectors are collinear if and only it exists a
 //! scalar k != 0, where: u = k v (note: if u is a null vector, any
@@ -1151,7 +1143,7 @@ bool areCollinear(Vector<T, n> const& u, Vector<T, n> const& v)
 }
 
 // *************************************************************************
-//! \brief Check if two vectors are mathematicaly equivalent: same
+//! \brief Check if two vectors are mathematically equivalent: same
 //! norm (magnitude), same direction (parallel) and same sign.
 //! \note Use this function for T a real but not for integers.
 // *************************************************************************

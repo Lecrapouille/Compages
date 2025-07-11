@@ -104,10 +104,10 @@ VPATH += $(THIRD_PARTIES_DIR)
 ###################################################
 # Compiled objects files
 #
-#LIB_FILES += $(call rwildcard,$(P)/src/Common,*.cpp)
-#LIB_FILES += $(call rwildcard,$(P)/src/Components,*.cpp)
-#LIB_FILES += $(call rwildcard,$(P)/src/Loaders,*.cpp)
-#LIB_FILES += $(call rwildcard,$(P)/src/Math,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/Common,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/Components,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/Loaders,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/Math,*.cpp)
 LIB_FILES += $(call rwildcard,$(P)/src/OpenGL,*.cpp)
-#LIB_FILES += $(call rwildcard,$(P)/src/Scene,*.cpp)
-#LIB_FILES += $(call rwildcard,$(P)/src/UI,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/Scene,*.cpp)
+LIB_FILES += $(call rwildcard,$(P)/src/UI,*.cpp)

@@ -40,13 +40,6 @@
 #include <limits>
 #include <type_traits>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#include "units/units.hpp"
-#pragma GCC diagnostic pop
-
 // *****************************************************************************
 //! \class Quat
 //! \brief Template representation of a quaternion q = (a, (b,c,d)) in the axis
@@ -80,7 +73,7 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Construct a quaterion a + bi + cj + dk (aka w + xi + yj + zk)
+    //! \brief Construct a quaternion a + bi + cj + dk (aka w + xi + yj + zk)
     //! \param[in] a (aka w) T parameter
     //! \param[in] b (aka x) Complex parameters complex i-axis
     //! \param[in] c (aka y) Complex parameters complex j-axis
@@ -95,7 +88,7 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Construct a quaterion a + bi + cj + dk (aka w + xi + yj + zk)
+    //! \brief Construct a quaternion a + bi + cj + dk (aka w + xi + yj + zk)
     //! \param[in] a (aka w) T parameter
     //! \param[in] bcd (aka xyz) Complex parameters (i, j, k)
     //! \note do not confuse with angleAxis() which builds a quaternion from a
@@ -110,7 +103,7 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Construct an unit quaterion a + bi + cj + dk where the T
+    //! \brief Construct an unit quaternion a + bi + cj + dk where the T
     //! component \c a is not given but rebuild. Used for reading md5mesh files.
     //! \param[in] b (aka x)  Complex parameters complex i-axis
     //! \param[in] c (aka y)  Complex parameters complex j-axis
@@ -338,7 +331,7 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Integrate a rotation quaterion using Euler integration.
+    //! \brief Integrate a rotation quaternion using Euler integration.
     //! \param[in] q0 Angular velocity (body frame), stored in 3 complex terms.
     //! \param[in] dt Time interval in seconds.
     //! \param[in] normalize If True, quaternion is normalized after
@@ -356,7 +349,7 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Create a rotation quaterion
+    //! \brief Create a rotation quaternion
     //! \param[in] theta Angle of rotation (unit: radian).
     //! \param[in] x X component of rotation vector.
     //! \param[in] y Y component of rotation vector.
@@ -575,7 +568,7 @@ Quat<T> operator/(Quat<T> const& q, T const s)
 //! \brief Right-multiply a quaternion by a T
 //! \param[in] a Quaternion
 //! \param[in] s T
-//! \return Scaled quaterion
+//! \return Scaled quaternion
 //------------------------------------------------------------------------------
 template <typename T>
 Quat<T> operator*(Quat<T> const& q, T const s)
@@ -587,7 +580,7 @@ Quat<T> operator*(Quat<T> const& q, T const s)
 //! \brief Left-multiply a quaternion by a T
 //! \param[in] q Quaternion
 //! \param[in] s T
-//! \return Scaled quaterion
+//! \return Scaled quaternion
 //------------------------------------------------------------------------------
 template <typename T>
 Quat<T> operator*(T const s, Quat<T> const& q)
@@ -636,7 +629,7 @@ Quat<T> operator+(Quat<T> const& q1, Quat<T> const& q2)
 }
 
 //------------------------------------------------------------------------------
-//! \brief Add-in place quaterion
+//! \brief Add-in place quaternion
 //! \param[in] q1 First quaternion, is modified
 //! \param[in] q2 Second quaternion
 //! \return q1
