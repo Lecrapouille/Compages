@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_BLINKER_NODE_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_BLINKER_NODE_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_BLINKER_NODE_HPP
 
-#  include "Scene/SwitchNode.hpp"
-#  include <chrono>
+#include "Scene/SwitchNode.hpp"
+#include <chrono>
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -38,7 +38,7 @@ using namespace std::chrono;
 //! \fixme: Can we define a generic Blinker with template function and then
 //! define a Blinker = IBlinker<ShitftChild>
 // *****************************************************************************
-class BlinkerNode : public SwitchNode
+class BlinkerNode: public SwitchNode
 {
     using Clock = steady_clock;
     using Time = Clock::time_point;
@@ -54,9 +54,9 @@ public:
     //! to the next child).
     //--------------------------------------------------------------------------
     BlinkerNode(std::string const& name, milliseconds const duration)
-        : SwitchNode(name),
-          m_duration(duration)
-    {}
+        : SwitchNode(name), m_duration(duration)
+    {
+    }
 
     //! \brief Check if animation has been started at least once.
     inline bool isStarted() const
@@ -75,7 +75,7 @@ public:
     void start(milliseconds const duration)
     {
         if (m_started)
-            return ;
+            return;
 
         m_started = true;
         m_duration = std::min(1ms, duration);
@@ -117,12 +117,13 @@ private:
     virtual void onUpdate(float const /*dt*/) override
     {
         if (unlikely(!m_started))
-            return ;
+            return;
 
         if (likely(m_running))
         {
             Time currentTime = Clock::now();
-            milliseconds dt = duration_cast<milliseconds>(currentTime - m_startedTime);
+            milliseconds dt =
+                duration_cast<milliseconds>(currentTime - m_startedTime);
             if (dt > m_duration)
             {
                 m_startedTime = currentTime;
@@ -134,7 +135,7 @@ private:
             if (unlikely(0ms == m_duration))
             {
                 std::cerr << "duration has not been set" << std::endl;
-                return ;
+                return;
             }
 
             m_running = true;

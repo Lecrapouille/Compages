@@ -36,9 +36,8 @@ static bool loadTexture(GLTexture2D& texture, std::string const& path)
     return true;
 }
 
-
 //------------------------------------------------------------------------------
-Editor::Editor(uint32_t const width, uint32_t const height, const char *title)
+Editor::Editor(uint32_t const width, uint32_t const height, const char* title)
     : GLWindow(width, height, title), m_texture("texture")
 {
     std::cout << "Hello Editor" << std::endl;
@@ -86,9 +85,11 @@ bool Editor::GUI::onImGuiRender()
     static bool opt_padding = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // because it would be confusing to have two docking targets within each others.
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent
+    // window not dockable into, because it would be confusing to have two
+    // docking targets within each others.
+    ImGuiWindowFlags window_flags =
+        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     if (opt_fullscreen)
     {
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -97,24 +98,30 @@ bool Editor::GUI::onImGuiRender()
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        window_flags |= ImGuiWindowFlags_NoTitleBar |
+                        ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus |
+                        ImGuiWindowFlags_NoNavFocus;
     }
     else
     {
         dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
     }
 
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // and handle the pass-thru hole, so we ask Begin() to not render a background.
+    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will
+    // render our background and handle the pass-thru hole, so we ask Begin() to
+    // not render a background.
     if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
         window_flags |= ImGuiWindowFlags_NoBackground;
 
-    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // all active windows docked into it will lose their parent and become undocked.
-    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+    // Important: note that we proceed even if Begin() returns false (aka window
+    // is collapsed). This is because we want to keep our DockSpace() active. If
+    // a DockSpace() is inactive, all active windows docked into it will lose
+    // their parent and become undocked. We cannot preserve the docking
+    // relationship between an active window and an inactive docking, otherwise
+    // any change of dockspace/settings would lead to windows being stuck in
+    // limbo and never being visible.
     if (!opt_padding)
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("DockSpace Demo", &dockspace_open, window_flags);
@@ -141,24 +148,21 @@ bool Editor::GUI::onImGuiRender()
             ImGui::EndMenu();
         }
 
-
         ImGui::EndMenuBar();
     }
 
     // QQ
     ImGui::Begin("Hello, world!");
-    ImGui::TextColored(ImVec4(win.color[0],
-                              win.color[1],
-                              win.color[2],
-                              win.color[3]),
-                       "%s", "Change the background color");
+    ImGui::TextColored(
+        ImVec4(win.color[0], win.color[1], win.color[2], win.color[3]),
+        "%s",
+        "Change the background color");
     ImGui::ColorEdit3("color", win.color);
 
     // https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples
 
     ImGui::Image((void*)win.m_texture.handle(), ImVec2(128, 128));
     ImGui::End();
-
 
     ImGui::End();
 

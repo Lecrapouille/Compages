@@ -25,15 +25,15 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_TEXTURE1D_HPP
-#  define OPENGLCPPWRAPPER_TEXTURE1D_HPP
+#define OPENGLCPPWRAPPER_TEXTURE1D_HPP
 
 // *****************************************************************************
 //! \file GLTexture1D.hpp file implements:
 //!   - GLTexture1D:
 // *****************************************************************************
 
-#  include "OpenGL/Textures/Texture.hpp"
-#  include <iostream>
+#include "OpenGL/Textures/Texture.hpp"
+#include <iostream>
 
 // *****************************************************************************
 //! \brief A 1D Texture.
@@ -45,9 +45,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    GLTexture1D(std::string const& name)
-        : GLTexture(1u, name, GL_TEXTURE_1D)
-    {}
+    GLTexture1D(std::string const& name) : GLTexture(1u, name, GL_TEXTURE_1D) {}
 
 private:
 
@@ -59,12 +57,12 @@ private:
         if (unlikely(!loaded()))
         {
             std::cerr << "Cannot setup texture '" << name()
-                      << "'. Reason 'Data not yet loaded'"
-                      << std::endl;
+                      << "'. Reason 'Data not yet loaded'" << std::endl;
             return true;
         }
 
-        glCheck(glTexImage1D(m_target, 0,
+        glCheck(glTexImage1D(m_target,
+                             0,
                              static_cast<GLint>(m_gpuPixelFormat),
                              static_cast<GLsizei>(m_width),
                              0,
@@ -90,7 +88,10 @@ private:
         const GLint x = 0U;
         const GLsizei width = static_cast<GLsizei>(m_width);
 
-        glCheck(glTexSubImage1D(m_target, 0, x, width,
+        glCheck(glTexSubImage1D(m_target,
+                                0,
+                                x,
+                                width,
                                 static_cast<GLenum>(m_cpuPixelFormat),
                                 static_cast<GLenum>(m_cpuPixelType),
                                 m_buffer.to_array()));

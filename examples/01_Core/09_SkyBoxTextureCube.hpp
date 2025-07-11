@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_09_SKYBOX_TEXTURECUBE_HPP
-#  define EXAMPLE_09_SKYBOX_TEXTURECUBE_HPP
+#define EXAMPLE_09_SKYBOX_TEXTURECUBE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief this example renders a skybox. A skybox is cubic texture simuling a
@@ -35,7 +35,9 @@ class SkyBoxTextureCube: public GLWindow
 {
 public:
 
-    SkyBoxTextureCube(uint32_t const width, uint32_t const height, const char *title);
+    SkyBoxTextureCube(uint32_t const width,
+                      uint32_t const height,
+                      const char* title);
     ~SkyBoxTextureCube();
 
     static std::string info()
@@ -55,10 +57,10 @@ private:
 
 private:
 
-    GLVertexShader     vs1;
-    GLFragmentShader   fs1;
-    GLVAO              m_skybox;
-    GLProgram          m_prog;
+    GLVertexShader vs1;
+    GLFragmentShader fs1;
+    GLVAO m_skybox;
+    GLProgram m_prog;
 };
 
 #endif // EXAMPLE_09_SKYBOX_TEXTURECUBE_HPP

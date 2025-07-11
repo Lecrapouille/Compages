@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLTEXTURE_HPP
-#  define OPENGLCPPWRAPPER_GLTEXTURE_HPP
+#define OPENGLCPPWRAPPER_GLTEXTURE_HPP
 
 // *****************************************************************************
 //! \file GLTextures.hpp file implements:
@@ -36,8 +36,8 @@
 //!   - GLTextureCube: A 3D Texture specialized for rendering skybox.
 // *****************************************************************************
 
-#  include "OpenGL/GLObject.hpp"
-#  include "OpenGL/Buffers/PendingContainer.hpp"
+#include "OpenGL/Buffers/PendingContainer.hpp"
+#include "OpenGL/GLObject.hpp"
 
 // *****************************************************************************
 //! \brief Helper converter CPU to GPU pixel format.
@@ -98,7 +98,8 @@ public:
         /* 0x1907 */ RGB = GL_RGB,
         /* 0x1908 */ RGBA = GL_RGBA,
         /* 0x1909 */ LUMINANCE = GL_LUMINANCE, // Greyscale
-        /* 0x190A */ LUMINANCE_ALPHA = GL_LUMINANCE_ALPHA, // Luminance with alpha
+        /* 0x190A */ LUMINANCE_ALPHA =
+            GL_LUMINANCE_ALPHA, // Luminance with alpha
         /* 0x84F9 */ DEPTH_STENCIL = GL_DEPTH_STENCIL,
     };
 
@@ -127,9 +128,12 @@ public:
     //! \param name the name of this instance used by GLProgram and GLVAO.
     //! \param target the texture type (GL_TEXTURE_1D .. GL_TEXTURE_3D ...)
     //--------------------------------------------------------------------------
-    GLTexture(const uint8_t dimension, std::string const& name, const GLenum target)
+    GLTexture(const uint8_t dimension,
+              std::string const& name,
+              const GLenum target)
         : GLObject(name, target), m_dimension(dimension)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Destructor. Release elements in CPU and GPU memories.
@@ -163,8 +167,8 @@ public:
     //--------------------------------------------------------------------------
     virtual inline bool loaded() const
     {
-        // Do not check m_width and m_height because FrameBuffer allows to have 0
-        // sizes.
+        // Do not check m_width and m_height because FrameBuffer allows to have
+        // 0 sizes.
         return 0 != m_buffer.size();
     }
 
@@ -275,20 +279,23 @@ protected:
     //--------------------------------------------------------------------------
     void applyTextureParam()
     {
-        glCheck(glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER,
+        glCheck(glTexParameteri(m_target,
+                                GL_TEXTURE_MIN_FILTER,
                                 static_cast<GLint>(m_options.minFilter)));
-        glCheck(glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER,
+        glCheck(glTexParameteri(m_target,
+                                GL_TEXTURE_MAG_FILTER,
                                 static_cast<GLint>(m_options.magFilter)));
-        glCheck(glTexParameteri(m_target, GL_TEXTURE_WRAP_S,
-                                static_cast<GLint>(m_options.wrapS)));
-        glCheck(glTexParameteri(m_target, GL_TEXTURE_WRAP_T,
-                                static_cast<GLint>(m_options.wrapT)));
-        glCheck(glTexParameteri(m_target, GL_TEXTURE_WRAP_R,
-                                static_cast<GLint>(m_options.wrapR)));
+        glCheck(glTexParameteri(
+            m_target, GL_TEXTURE_WRAP_S, static_cast<GLint>(m_options.wrapS)));
+        glCheck(glTexParameteri(
+            m_target, GL_TEXTURE_WRAP_T, static_cast<GLint>(m_options.wrapT)));
+        glCheck(glTexParameteri(
+            m_target, GL_TEXTURE_WRAP_R, static_cast<GLint>(m_options.wrapR)));
 
-        //TODO
-        //GLfloat borderColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f};
-        //glCheck(glTexParameterfv(m_target, GL_TEXTURE_BORDER_COLOR, borderColor));
+        // TODO
+        // GLfloat borderColor[4] = { 1.0f, 0.0f, 0.0f, 1.0f};
+        // glCheck(glTexParameterfv(m_target, GL_TEXTURE_BORDER_COLOR,
+        // borderColor));
     }
 
 private:
@@ -342,29 +349,29 @@ private:
 protected:
 
     //! \brief Options to pass to OpenGL
-    Options      m_options;
+    Options m_options;
     //! \brief Hold the texture (CPU side)
-    Buffer       m_buffer;
+    Buffer m_buffer;
     //! \brief For Texture1D, Texture2D, Texture3D, TextureCube
-    size_t       m_width = 0u;
+    size_t m_width = 0u;
     //! \brief For Texture2D, Texture3D, TextureCube
-    size_t       m_height = 0u;
+    size_t m_height = 0u;
     //! \brief For Texture3D, TextureCube
-    size_t       m_depth = 0u;
+    size_t m_depth = 0u;
     //! \brief Desired format of texture once loaded from the picture file (CPU
-    //! side).  \note Beware all format are not supported by loaders: ie SOIL only
-    //! manages RGB, RGBA, luminance greyscale and luminance with alpha.
-    PixelFormat  m_cpuPixelFormat = PixelFormat::RGBA;
-    size_t       m_cpuPixelCount = 4u;
+    //! side).  \note Beware all format are not supported by loaders: ie SOIL
+    //! only manages RGB, RGBA, luminance greyscale and luminance with alpha.
+    PixelFormat m_cpuPixelFormat = PixelFormat::RGBA;
+    size_t m_cpuPixelCount = 4u;
     //! \brief Specify the data type of the GPU pixel data
-    GLenum       m_cpuPixelType = GL_UNSIGNED_BYTE;
+    GLenum m_cpuPixelType = GL_UNSIGNED_BYTE;
     //! \brief Desired format of texture once loaded into the GPU.
-    GLint        m_gpuPixelFormat = GL_RGBA;
+    GLint m_gpuPixelFormat = GL_RGBA;
 
 private:
 
     //! \brief Texture1D, Texture2D, Texture3D, TextureCube
-    const uint8_t  m_dimension;
+    const uint8_t m_dimension;
 };
 
 #endif // OPENGLCPPWRAPPER_GLTEXTURE_HPP

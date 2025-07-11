@@ -25,15 +25,15 @@
 //=====================================================================
 
 #ifndef IVAO_HPP
-#  define IVAO_HPP
+#define IVAO_HPP
 
-#  include "OpenGL/Buffers/VAO.hpp"
-#  include "OpenGL/Buffers/EBO.hpp"
+#include "OpenGL/Buffers/EBO.hpp"
+#include "OpenGL/Buffers/VAO.hpp"
 
 // *****************************************************************************
 //! \brief Indexed VAO.
 // *****************************************************************************
-template<class T>
+template <class T>
 class GLVAOi: public GLVAO
 {
     //! \brief GLProgram directly modifies GLVAO states.
@@ -41,11 +41,12 @@ class GLVAOi: public GLVAO
 
 public:
 
-    GLVAOi(std::string const& name, BufferUsage const usage = BufferUsage::DYNAMIC_DRAW,
+    GLVAOi(std::string const& name,
+           BufferUsage const usage = BufferUsage::DYNAMIC_DRAW,
            size_t const reserve = 3u)
-        : GLVAO(name, usage, reserve),
-          m_index("index", usage)
-    {}
+        : GLVAO(name, usage, reserve), m_index("index", usage)
+    {
+    }
 
     inline GLElementBuffer<T>& index()
     {
@@ -62,10 +63,10 @@ public:
         if (likely(m_program != nullptr))
         {
             m_program->begin(); // m_program->begin();
-            begin(); // Optim: glBindVertexArray(m_vao->handle());
-            m_index.begin(); // FIXME should be stored inside the VAO
+            begin();            // Optim: glBindVertexArray(m_vao->handle());
+            m_index.begin();    // FIXME should be stored inside the VAO
 
-            for (auto const& it: m_program->samplers())
+            for (auto const& it : m_program->samplers())
             {
                 it.second->begin();
                 m_textures[it.first]->begin();
@@ -73,7 +74,8 @@ public:
 
             glCheck(glDrawElements(static_cast<GLenum>(mode),
                                    static_cast<GLsizei>(m_index.size()),
-                                   m_index.gltype(), 0));
+                                   m_index.gltype(),
+                                   0));
             return true; // FIXME not always the case
         }
         else

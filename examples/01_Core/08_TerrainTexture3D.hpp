@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_08_TERRAIN_TEXTURE3D_HPP
-#  define EXAMPLE_08_TERRAIN_TEXTURE3D_HPP
+#define EXAMPLE_08_TERRAIN_TEXTURE3D_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \file this example paints a 3d lanscape from a 3d texture.
@@ -36,7 +36,9 @@ class TerrainTexture3D: public GLWindow
 {
 public:
 
-    TerrainTexture3D(uint32_t const width, uint32_t const height, const char *title);
+    TerrainTexture3D(uint32_t const width,
+                     uint32_t const height,
+                     const char* title);
     ~TerrainTexture3D();
 
     static std::string info()
@@ -58,12 +60,12 @@ private:
 
 private:
 
-    GLVertexShader      m_vertex_shader;
-    GLFragmentShader    m_fragment_shader;
-    GLVAO               m_vao;
-    GLProgram           m_prog;
-    std::vector<float>  m_altitudes;
-    uint32_t            m_nbVertices = 0;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLVAO m_vao;
+    GLProgram m_prog;
+    std::vector<float> m_altitudes;
+    uint32_t m_nbVertices = 0;
 };
 
 #endif // EXAMPLE_08_TERRAIN_TEXTURE3D_HPP

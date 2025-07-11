@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLSAMPLERS_HPP
-#  define OPENGLCPPWRAPPER_GLSAMPLERS_HPP
+#define OPENGLCPPWRAPPER_GLSAMPLERS_HPP
 
 // *****************************************************************************
 //! \file Sampler.hpp file implements:
@@ -36,7 +36,7 @@
 //!   - GLSamplerCube:
 // *****************************************************************************
 
-#  include "OpenGL/Variables/Sampler.hpp"
+#include "OpenGL/Variables/Sampler.hpp"
 
 // *****************************************************************************
 //! \brief Sampler for 1D texture.
@@ -48,9 +48,10 @@ public:
     //----------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
     //----------------------------------------------------------------------------
-    GLSampler1D(const char *name, const GLenum texture_id, const GLuint prog)
+    GLSampler1D(const char* name, const GLenum texture_id, const GLuint prog)
         : GLSampler(name, GL_SAMPLER_1D, texture_id, prog)
-    {}
+    {
+    }
 };
 
 // *****************************************************************************
@@ -63,9 +64,10 @@ public:
     //----------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
     //----------------------------------------------------------------------------
-    GLSampler2D(const char *name, const GLenum texture_id, const GLuint prog)
+    GLSampler2D(const char* name, const GLenum texture_id, const GLuint prog)
         : GLSampler(name, GL_SAMPLER_2D, texture_id, prog)
-    {}
+    {
+    }
 };
 
 // *****************************************************************************
@@ -78,9 +80,10 @@ public:
     //----------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
     //----------------------------------------------------------------------------
-    GLSampler3D(const char *name, const GLenum texture_id, const GLuint prog)
+    GLSampler3D(const char* name, const GLenum texture_id, const GLuint prog)
         : GLSampler(name, GL_SAMPLER_3D, texture_id, prog)
-    {}
+    {
+    }
 };
 
 // *****************************************************************************
@@ -93,9 +96,10 @@ public:
     //----------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
     //----------------------------------------------------------------------------
-    GLSamplerCube(const char *name, const GLenum texture_id, const GLuint prog)
+    GLSamplerCube(const char* name, const GLenum texture_id, const GLuint prog)
         : GLSampler(name, GL_SAMPLER_CUBE, texture_id, prog)
-    {}
+    {
+    }
 };
 
 #endif // OPENGLCPPWRAPPER_GLSAMPLERS_HPP

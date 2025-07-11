@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OBJ_LOADER__HPP
-#  define OBJ_LOADER__HPP
+#define OBJ_LOADER__HPP
 
-#  include "Loaders/3DLoader.hpp"
+#include "Loaders/3DLoader.hpp"
 
 class OBJFileLoader: public ShapeLoader
 {

@@ -19,13 +19,13 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_COLOR_HPP
-#  define OPENGLCPPWRAPPER_COLOR_HPP
+#define OPENGLCPPWRAPPER_COLOR_HPP
 
-#  include "Math/Vector.hpp"
-#  include "Math/Random.hpp"
-#  include <cstdint>
-#  include <utility>
-#  include <ostream>
+#include "Math/Random.hpp"
+#include "Math/Vector.hpp"
+#include <cstdint>
+#include <ostream>
+#include <utility>
 
 // *****************************************************************************
 //! \brief
@@ -36,7 +36,8 @@ public:
 
     inline friend std::ostream& operator<<(std::ostream& os, Color const& c)
     {
-        os << "Color(" << c.r << ", " << c.g << ", " << c.b << ", " << c.a << ")";
+        os << "Color(" << c.r << ", " << c.g << ", " << c.b << ", " << c.a
+           << ")";
         return os;
     }
 
@@ -51,31 +52,35 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    template<typename T>
-    explicit Color(Vector<T,4> const& v)
-        : Color(v[0], v[1], v[2], v[3])
-    {}
+    template <typename T>
+    explicit Color(Vector<T, 4> const& v) : Color(v[0], v[1], v[2], v[3])
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    template<typename T>
-    explicit Color(Vector<T,3> const& v)
+    template <typename T>
+    explicit Color(Vector<T, 3> const& v)
         : Color(v[0], v[1], v[2], maths::one<T>())
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    Color(Color const& other)
-        : r(other.r), g(other.g), b(other.b), a(other.a)
-    {}
+    Color(Color const& other) : r(other.r), g(other.g), b(other.b), a(other.a)
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief
     //! \note value ranges shall be [0 .. 1]. They are clamped.
     //--------------------------------------------------------------------------
-    explicit Color(float const red, float const green, float const blue, float const alpha = 1.0f)
+    explicit Color(float const red,
+                   float const green,
+                   float const blue,
+                   float const alpha = 1.0f)
     {
         r = maths::clamp(red, 0.0f, 1.0f);
         g = maths::clamp(green, 0.0f, 1.0f);
@@ -87,7 +92,10 @@ public:
     //! \brief
     //! \note value ranges ared [0 .. 255]. They are normalized to [0 .. 1].
     //--------------------------------------------------------------------------
-    explicit Color(uint32_t const red, uint32_t const green, uint32_t const blue, uint32_t const alpha = 255U)
+    explicit Color(uint32_t const red,
+                   uint32_t const green,
+                   uint32_t const blue,
+                   uint32_t const alpha = 255U)
     {
         r = static_cast<float>(maths::clamp(red, 0u, 255u)) / 255.0f;
         g = static_cast<float>(maths::clamp(green, 0u, 255u)) / 255.0f;
@@ -232,8 +240,8 @@ public:
     {
         a = static_cast<float>((hex >> 24) & 255) / 255.0f;
         r = static_cast<float>((hex >> 16) & 255) / 255.0f;
-        g = static_cast<float>((hex >>  8) & 255) / 255.0f;
-        b = static_cast<float>((hex >>  0) & 255) / 255.0f;
+        g = static_cast<float>((hex >> 8) & 255) / 255.0f;
+        b = static_cast<float>((hex >> 0) & 255) / 255.0f;
     }
 
     //--------------------------------------------------------------------------
@@ -269,8 +277,8 @@ public:
     {
         a = static_cast<float>((hex >> 24) & 255) / 255.0f;
         b = static_cast<float>((hex >> 16) & 255) / 255.0f;
-        g = static_cast<float>((hex >>  8) & 255) / 255.0f;
-        r = static_cast<float>((hex >>  0) & 255) / 255.0f;
+        g = static_cast<float>((hex >> 8) & 255) / 255.0f;
+        r = static_cast<float>((hex >> 0) & 255) / 255.0f;
     }
 
     //--------------------------------------------------------------------------
@@ -303,8 +311,8 @@ public:
     {
         r = static_cast<float>((hex >> 24) & 255) / 255.0f;
         g = static_cast<float>((hex >> 16) & 255) / 255.0f;
-        b = static_cast<float>((hex >>  8) & 255) / 255.0f;
-        a = static_cast<float>((hex >>  0) & 255) / 255.0f;
+        b = static_cast<float>((hex >> 8) & 255) / 255.0f;
+        a = static_cast<float>((hex >> 0) & 255) / 255.0f;
     }
 
     static Color const Black;
@@ -322,7 +330,10 @@ public:
         float rgba[4];
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-        struct { float r, g, b, a; };
+        struct
+        {
+            float r, g, b, a;
+        };
 #pragma GCC diagnostic pop
     };
 };

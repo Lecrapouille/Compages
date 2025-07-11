@@ -22,11 +22,19 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-Orthographic::Orthographic(float const left, float const right,
-                           float const bottom, float const top,
-                           float const near, float const far)
-    : m_left(left), m_right(right), m_bottom(bottom),
-      m_top(top), m_near(near), m_far(far), m_aspect(1.0f),
+Orthographic::Orthographic(float const left,
+                           float const right,
+                           float const bottom,
+                           float const top,
+                           float const near,
+                           float const far)
+    : m_left(left),
+      m_right(right),
+      m_bottom(bottom),
+      m_top(top),
+      m_near(near),
+      m_far(far),
+      m_aspect(1.0f),
       m_frustum_size(1.0f)
 {
     m_dirty = true;
@@ -50,9 +58,12 @@ Matrix44f const& Orthographic::matrix()
 }
 
 //------------------------------------------------------------------------------
-void Orthographic::setPlanes(float const left, float const right,
-                             float const bottom, float const top,
-                             float const near, float const far)
+void Orthographic::setPlanes(float const left,
+                             float const right,
+                             float const bottom,
+                             float const top,
+                             float const near,
+                             float const far)
 {
     m_left = left;
     m_right = right;

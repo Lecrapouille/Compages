@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_00_COLORFUL_TRIANGLE_HPP
-#  define EXAMPLE_00_COLORFUL_TRIANGLE_HPP
+#define EXAMPLE_00_COLORFUL_TRIANGLE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief This example shows how to create a simple colorful triangle and how
@@ -33,7 +33,9 @@ class ColorfulTriangle: public GLWindow
 {
 public:
 
-    ColorfulTriangle(uint32_t const width, uint32_t const height, const char *title);
+    ColorfulTriangle(uint32_t const width,
+                     uint32_t const height,
+                     const char* title);
     ~ColorfulTriangle();
 
     static std::string info()
@@ -51,14 +53,15 @@ private:
 
 private:
 
-    //! \brief A GL*x*Shader holds the GLSL code source and compile it (in future
-    //! it will may offer macro processing features).
+    //! \brief A GL*x*Shader holds the GLSL code source and compile it (in
+    //! future it will may offer macro processing features).
     GLVertexShader m_vertex_shader;
     GLFragmentShader m_fragment_shader;
 
-    //! \brief A GLProgram holds at least two GLxShaders (vertex and fragment) and
-    //! links them. Once compiled, a GLProgram holds internally and in privacy
-    //! locations of shader uniforms, shader attributes and texture samplers.
+    //! \brief A GLProgram holds at least two GLxShaders (vertex and fragment)
+    //! and links them. Once compiled, a GLProgram holds internally and in
+    //! privacy locations of shader uniforms, shader attributes and texture
+    //! samplers.
     GLProgram m_prog;
 
     //! \brief A GLVAO can be considered as the OpenGL handler to your 3D model:

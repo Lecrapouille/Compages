@@ -31,24 +31,28 @@ bool Axes::generate(GLVAO32& vao, const bool clear)
 
     auto& position = vao.vector3f(shaders::name::position);
 
-    if (clear) { position.clear(); }
-    position =
+    if (clear)
     {
-        Vector3f(0.0f, 0.0f, 0.0f),  Vector3f(config.size, 0.0f, 0.0f),
-        Vector3f(0.0f, 0.0f, 0.0f),  Vector3f(0.0f, config.size, 0.0f),
-        Vector3f(0.0f, 0.0f, 0.0f),  Vector3f(0.0f, 0.0f, config.size)
+        position.clear();
+    }
+    position = {
+        Vector3f(0.0f, 0.0f, 0.0f), Vector3f(config.size, 0.0f, 0.0f),
+        Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, config.size, 0.0f),
+        Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 0.0f, config.size)
     };
 
     if (vao.hasVBO<Vector4f>("colors"))
     {
         auto& color = vao.vector4f("colors");
 
-        if (clear) { color.clear(); }
-        color =
+        if (clear)
         {
-            Vector4f(1.0f, 0.0f, 0.0f, 1.0f),  Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
-            Vector4f(0.0f, 1.0f, 0.0f, 1.0f),  Vector4f(0.0f, 1.0f, 0.0f, 1.0f),
-            Vector4f(0.0f, 0.0f, 1.0f, 1.0f),  Vector4f(0.0f, 0.0f, 1.0f, 1.0f)
+            color.clear();
+        }
+        color = {
+            Vector4f(1.0f, 0.0f, 0.0f, 1.0f), Vector4f(1.0f, 0.0f, 0.0f, 1.0f),
+            Vector4f(0.0f, 1.0f, 0.0f, 1.0f), Vector4f(0.0f, 1.0f, 0.0f, 1.0f),
+            Vector4f(0.0f, 0.0f, 1.0f, 1.0f), Vector4f(0.0f, 0.0f, 1.0f, 1.0f)
         };
     }
 

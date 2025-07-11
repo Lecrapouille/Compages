@@ -21,8 +21,8 @@
 #ifndef EXAMPLE_11_COMPLEX_SHADER_HPP
 #define EXAMPLE_11_COMPLEX_SHADER_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief A complex shader that I found on https://shaderfrog.com/ and wanted
@@ -32,7 +32,9 @@ class ComplexShader: public GLWindow
 {
 public:
 
-    ComplexShader(uint32_t const width, uint32_t const height, const char *title);
+    ComplexShader(uint32_t const width,
+                  uint32_t const height,
+                  const char* title);
     ~ComplexShader();
 
     static std::string info()
@@ -51,10 +53,10 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLVAO32            m_quad;
-    GLProgram          m_prog;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLVAO32 m_quad;
+    GLProgram m_prog;
 };
 
 #endif

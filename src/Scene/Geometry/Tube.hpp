@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GEOMETRY_TUBE_HPP
-#  define OPENGLCPPWRAPPER_GEOMETRY_TUBE_HPP
+#define OPENGLCPPWRAPPER_GEOMETRY_TUBE_HPP
 
-#  include "Scene/Geometry/Geometry.hpp"
+#include "Scene/Geometry/Geometry.hpp"
 
 // *****************************************************************************
 //! \brief Create a tube shape. Tube is a generic shape that can create Cylinder

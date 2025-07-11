@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_05_ROTATING_BOX_HPP
-#  define EXAMPLE_05_ROTATING_BOX_HPP
+#define EXAMPLE_05_ROTATING_BOX_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to create a simple textured triangle.
@@ -31,7 +31,9 @@ class RotatingQuad: public GLWindow
 {
 public:
 
-    RotatingQuad(uint32_t const width, uint32_t const height, const char *title);
+    RotatingQuad(uint32_t const width,
+                 uint32_t const height,
+                 const char* title);
     ~RotatingQuad();
 
     static std::string info()
@@ -51,23 +53,21 @@ private:
 
     struct Box
     {
-        Box()
-            : vao("vao")
-        {}
+        Box() : vao("vao") {}
 
         GLVAO32 vao;
 
-        //! \brief Allow to specify and combine several transformation (translation,
-        //! scaling, rotation) and get the transformation matrix 4x4 to apply to the
-        //! shader.
+        //! \brief Allow to specify and combine several transformation
+        //! (translation, scaling, rotation) and get the transformation matrix
+        //! 4x4 to apply to the shader.
         //! \note you can use the alias Transformable3D
         Transformable<float, 3U> transform;
     };
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLProgram          m_prog;
-    Box                m_box;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLProgram m_prog;
+    Box m_box;
 };
 
 #endif // EXAMPLE_05_ROTATING_BOX_HPP

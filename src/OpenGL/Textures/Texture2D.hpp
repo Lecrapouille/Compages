@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLTEXTURE2D_HPP
-#  define OPENGLCPPWRAPPER_GLTEXTURE2D_HPP
+#define OPENGLCPPWRAPPER_GLTEXTURE2D_HPP
 
 // *****************************************************************************
 //! \file GLTexture2D.hpp file implements:
@@ -33,9 +33,9 @@
 //!   - GLTextureDepth2D:
 // *****************************************************************************
 
-#  include "OpenGL/Textures/Texture.hpp"
-#  include "Loaders/TextureLoader.hpp"
-#  include <iostream>
+#include "Loaders/TextureLoader.hpp"
+#include "OpenGL/Textures/Texture.hpp"
+#include <iostream>
 
 // *****************************************************************************
 //! \brief A 2D Texture.
@@ -58,9 +58,7 @@ public:
     //!
     //! \param name the name of this instance used by GLProgram and GLVAO.
     //--------------------------------------------------------------------------
-    GLTexture2D(std::string const& name)
-        : GLTexture(2u, name, GL_TEXTURE_2D)
-    {}
+    GLTexture2D(std::string const& name) : GLTexture(2u, name, GL_TEXTURE_2D) {}
 
     //--------------------------------------------------------------------------
     //! \brief Constructor. Should be used if you will load texture from
@@ -74,7 +72,9 @@ public:
     //! \param width Buffer width (pixels). Shall be > 0.
     //! \param height Buffer height (pixel). Shall be > 0.
     //--------------------------------------------------------------------------
-    GLTexture2D(std::string const& name, const uint32_t width, const uint32_t height)
+    GLTexture2D(std::string const& name,
+                const uint32_t width,
+                const uint32_t height)
         : GLTexture(2u, name, GL_TEXTURE_2D)
     {
         // Note: Allow texture with no size for FrameBuffers
@@ -97,9 +97,9 @@ public:
     virtual inline bool loaded() const override
     {
         return // Texture loaded from a file (jpeg ...)
-               GLTexture::loaded() ||
-               // Dummy textures accepted by FrameBuffer
-               ((0 != m_width) && (0 != m_height));
+            GLTexture::loaded() ||
+            // Dummy textures accepted by FrameBuffer
+            ((0 != m_width) && (0 != m_height));
     }
 
     //--------------------------------------------------------------------------
@@ -113,8 +113,9 @@ public:
     //!
     //! \return true if texture data have been loaded.
     //--------------------------------------------------------------------------
-    template<class L>
-    inline bool load(std::string const& filename) // TODO hold the filename. name == filename
+    template <class L>
+    inline bool load(
+        std::string const& filename) // TODO hold the filename. name == filename
     {
         static_assert(std::is_base_of<TextureLoader, L>::value,
                       "Template L is not derived class from TextureLoader");
@@ -133,8 +134,9 @@ public:
     //!
     //! \return true if texture data have been loaded.
     //--------------------------------------------------------------------------
-    template<class L>
-    inline bool load(const char *const filename) // TODO hold the filename. name == filename
+    template <class L>
+    inline bool
+    load(const char* const filename) // TODO hold the filename. name == filename
     {
         static_assert(std::is_base_of<TextureLoader, L>::value,
                       "Template L is not derived class from TextureLoader");
@@ -143,15 +145,15 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Save the texture into a picture file depending on the file extension
-    //! on filename.
+    //! \brief Save the texture into a picture file depending on the file
+    //! extension on filename.
     //! \note Beware loaders may not manage all picture format. For example
     //! SOIL only manages BMP, TGA and DDS.
     //! \tparam L: class deriving from TextureLoader (ie SOIL).
     //!
     //! \return true if texture data have been writen in the file, else false.
     //--------------------------------------------------------------------------
-    template<class L>
+    template <class L>
     inline bool save(std::string const& filename)
     {
         static_assert(std::is_base_of<TextureLoader, L>::value,
@@ -161,16 +163,16 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Save the texture into a picture file depending on the file extension
-    //! on filename.
+    //! \brief Save the texture into a picture file depending on the file
+    //! extension on filename.
     //! \note Beware loaders may not manage all picture format. For example
     //! SOIL only manages BMP, TGA and DDS.
     //! \tparam L: class deriving from TextureLoader (ie SOIL).
     //!
     //! \return true if texture data have been writen in the file, else false.
     //--------------------------------------------------------------------------
-    template<class L>
-    bool save(const char *const filename)
+    template <class L>
+    bool save(const char* const filename)
     {
         static_assert(std::is_base_of<TextureLoader, L>::value,
                       "Template L is not derived class from TextureLoader");
@@ -183,11 +185,11 @@ public:
     //--------------------------------------------------------------------------
     inline unsigned char& set(std::size_t const nth)
     {
-        //TBD ?
-        //if (nth > m_width * m_height)
-        //  {
-        //    reserve(nth);
-        //  }
+        // TBD ?
+        // if (nth > m_width * m_height)
+        //   {
+        //     reserve(nth);
+        //   }
         return m_buffer.set(nth);
     }
 
@@ -204,13 +206,15 @@ public:
     //--------------------------------------------------------------------------
     inline unsigned char& set(const size_t u, const size_t v, const size_t off)
     {
-        return GLTexture2D::set((u * m_width + v) * 4 + off); //TODO 4 because RGBA
+        return GLTexture2D::set((u * m_width + v) * 4 +
+                                off); // TODO 4 because RGBA
     }
 
     //--------------------------------------------------------------------------
     //! \brief Get to the nth byte of the texture (read only access.
     //--------------------------------------------------------------------------
-    inline const unsigned char& get(const size_t u, const size_t v, const size_t off) const
+    inline const unsigned char&
+    get(const size_t u, const size_t v, const size_t off) const
     {
         return GLTexture2D::get((u * m_width + v) * 4 + off);
     }
@@ -227,14 +231,15 @@ private:
     //!
     //! \return true if texture data have been loaded.
     //--------------------------------------------------------------------------
-    bool doload(TextureLoader& loader, const char *const filename)
+    bool doload(TextureLoader& loader, const char* const filename)
     {
         if (!loader.setPixelFormat(m_cpuPixelFormat))
             return false;
 
         m_cpuPixelCount = loader.getPixelCount();
         m_cpuPixelType = loader.getPixelType();
-        m_gpuPixelFormat = CPU2GPUFormat(GLenum(m_cpuPixelFormat), GLenum(m_cpuPixelType));
+        m_gpuPixelFormat =
+            CPU2GPUFormat(GLenum(m_cpuPixelFormat), GLenum(m_cpuPixelType));
         if (m_gpuPixelFormat < 0)
             return false;
 
@@ -244,14 +249,14 @@ private:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Save the texture into a picture file depending on the file extension
-    //! on filename.
+    //! \brief Save the texture into a picture file depending on the file
+    //! extension on filename.
     //! \note Beware loaders may not manage all picture format. For example
     //! SOIL only manages BMP, TGA and DDS.
     //!
     //! \return true if texture data have been writen in the file, else false.
     //--------------------------------------------------------------------------
-    bool dosave(TextureLoader& loader, const char *const filename)
+    bool dosave(TextureLoader& loader, const char* const filename)
     {
         if (loader.setPixelFormat(m_cpuPixelFormat))
             return loader.save(filename, m_buffer, m_width, m_height);
@@ -266,7 +271,8 @@ private:
         // Note: is allowed this case:
         // m_width != 0 and m_height != 0 and buffer == nullptr
         // This will reserve the buffer size.
-        glCheck(glTexImage2D(m_target, 0,
+        glCheck(glTexImage2D(m_target,
+                             0,
                              static_cast<GLint>(m_gpuPixelFormat),
                              static_cast<GLsizei>(m_width),
                              static_cast<GLsizei>(m_height),
@@ -285,8 +291,7 @@ private:
         if (unlikely(!loaded()))
         {
             std::cerr << "Cannot setup texture '" << name()
-                      << "'. Reason 'Data not yet loaded'"
-                      << std::endl;
+                      << "'. Reason 'Data not yet loaded'" << std::endl;
             return true;
         }
 
@@ -300,10 +305,10 @@ private:
     //--------------------------------------------------------------------------
     virtual bool onUpdate() override
     {
-        //TODO
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wconversion"
+        // TODO
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
 
         size_t start, stop;
         m_buffer.getPending(start, stop);
@@ -316,14 +321,19 @@ private:
         const GLsizei height = (stop % m_width) - y;
 
         // FIXME: not working if width and height are not the texture size
-        glCheck(glTexSubImage2D(m_target, 0, x, y, width, height,
+        glCheck(glTexSubImage2D(m_target,
+                                0,
+                                x,
+                                y,
+                                width,
+                                height,
                                 static_cast<GLenum>(m_cpuPixelFormat),
                                 static_cast<GLenum>(m_cpuPixelType),
                                 m_buffer.to_array()));
 
         m_buffer.clearPending();
         return false;
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
     };
 };
 
@@ -342,8 +352,7 @@ public:
     //!
     //! \param name the name of this instance used by GLProgram and GLVAO.
     //--------------------------------------------------------------------------
-    GLTextureFloat2D(std::string const& name)
-        : GLTexture2D(name)
+    GLTextureFloat2D(std::string const& name) : GLTexture2D(name)
     {
         m_cpuPixelFormat = PixelFormat::RGBA;
         m_cpuPixelType = GL_FLOAT;
@@ -366,8 +375,7 @@ public:
     //!
     //! \param name the name of this instance used by GLProgram and GLVAO.
     //--------------------------------------------------------------------------
-    GLTextureDepth2D(std::string const& name)
-        : GLTexture2D(name)
+    GLTextureDepth2D(std::string const& name) : GLTexture2D(name)
     {
         m_cpuPixelFormat = PixelFormat::DEPTH_COMPONENT;
         m_cpuPixelType = GL_UNSIGNED_SHORT;

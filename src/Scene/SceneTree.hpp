@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_SCENE_TREE_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_SCENE_TREE_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_SCENE_TREE_HPP
 
-#  include "Math/Transformable.hpp"
-#  include "Scene/Tree.hpp"
-#  include "Scene/GameObject.hpp"
+#include "Math/Transformable.hpp"
+#include "Scene/GameObject.hpp"
+#include "Scene/Tree.hpp"
 
 class Camera;
 
@@ -55,10 +55,10 @@ public:
     ~SceneTree();
 
     //--------------------------------------------------------------------------
-    //! \brief Extend the Tree node class by adding data (transform matrices ...)
-    //! while keep knowing the parent node and child nodes.
+    //! \brief Extend the Tree node class by adding data (transform matrices
+    //! ...) while keep knowing the parent node and child nodes.
     //--------------------------------------------------------------------------
-    class Node : public GameObject, public Tree<Node>
+    class Node: public GameObject, public Tree<Node>
     {
         friend class SceneTree;
 
@@ -73,10 +73,10 @@ public:
             os << "Node id " << node.id() << ": " << node.name() << std::endl
                << " transform: " << node.transform.matrix() << std::endl
                << " enabled: " << node.enabled() << std::endl
-               << " has " << node.children.size()
-               << " children:" << std::endl << " ";
-            for (auto const& it: node.children)
-                os << "  " <<  it->name();
+               << " has " << node.children.size() << " children:" << std::endl
+               << " ";
+            for (auto const& it : node.children)
+                os << "  " << it->name();
             if (node.children.size() != 0u)
                 os << std::endl;
             return os;
@@ -88,9 +88,9 @@ public:
         //! be checked. The transform matrix maked the node be placed at the
         //! origin of the world.
         //----------------------------------------------------------------------
-        Node(std::string const& name /* TODO: components*/)
-            : GameObject(name)
-        {}
+        Node(std::string const& name /* TODO: components*/) : GameObject(name)
+        {
+        }
 
         //----------------------------------------------------------------------
         //! \brief Create a Node with a name and a tag. Name are supposed to be
@@ -101,7 +101,8 @@ public:
         //----------------------------------------------------------------------
         Node(std::string const& name, std::string const& tag_)
             : GameObject(name, tag_)
-        {}
+        {
+        }
 
         //----------------------------------------------------------------------
         //! \brief Return the const reference of the world transformation
@@ -122,7 +123,7 @@ public:
 
         //! \brief The matrix transform to apply on the child. Transformations
         //! are relative to the parent node.
-        Matrix44f m_world_transform{matrix::Identity};
+        Matrix44f m_world_transform{ matrix::Identity };
     };
 
     //--------------------------------------------------------------------------
@@ -147,7 +148,9 @@ public:
     //! \param[in] clear if true \c found id clear first.
     //! \return the number of elements found.
     //--------------------------------------------------------------------------
-    size_t getByTag(std::string const& tag, std::vector<Node*> found, bool clear = true);
+    size_t getByTag(std::string const& tag,
+                    std::vector<Node*> found,
+                    bool clear = true);
 
     //--------------------------------------------------------------------------
     //! \brief Traverse the scene and print information on each node to the

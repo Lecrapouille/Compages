@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef DEBUG_HPP
-#  define DEBUG_HPP
+#define DEBUG_HPP
 
-#  include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
+#include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
 
 //------------------------------------------------------------------------------
 //! \brief Make the instropection of VAO and program shader.

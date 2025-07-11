@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef GEOMETRY_HPP
-#  define GEOMETRY_HPP
+#define GEOMETRY_HPP
 
-#  include "OpenGL/Buffers/iVAO.hpp"
-#  include "Scene/Material/ShaderLib.hpp"
+#include "OpenGL/Buffers/iVAO.hpp"
+#include "Scene/Material/ShaderLib.hpp"
 
 // *****************************************************************************
 //! \brief Base class for generating vertex positions, normals, texture

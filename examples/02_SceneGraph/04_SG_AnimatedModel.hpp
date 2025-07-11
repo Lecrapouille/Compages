@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_04_SG_ANIMATED_MODEL_HPP
-#  define EXAMPLE_04_SG_ANIMATED_MODEL_HPP
+#define EXAMPLE_04_SG_ANIMATED_MODEL_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to apply the depth material to a 3D shape.
@@ -31,7 +31,9 @@ class SGAnimatedModel: public GLWindow
 {
 public:
 
-    SGAnimatedModel(uint32_t const width, uint32_t const height, const char *title);
+    SGAnimatedModel(uint32_t const width,
+                    uint32_t const height,
+                    const char* title);
     ~SGAnimatedModel();
 
     static std::string info()

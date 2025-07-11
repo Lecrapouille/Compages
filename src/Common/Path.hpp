@@ -19,12 +19,12 @@
 //=====================================================================
 
 #ifndef MYLOGGER_PATH_HPP
-#  define MYLOGGER_PATH_HPP
+#define MYLOGGER_PATH_HPP
 
-#  include <list>
-#  include <string>
-#  include <vector>
-#  include <fstream>
+#include <fstream>
+#include <list>
+#include <string>
+#include <vector>
 
 // *****************************************************************************
 //! \brief Class manipulating a set of paths for searching files in the same
@@ -53,14 +53,15 @@ public:
     ~Path() = default;
 
     //--------------------------------------------------------------------------
-    //! \brief Append a new path. Directories are separated by the delimiter char
-    //! (by default ':'). Example: add("/foo/bar:/usr/lib/").
+    //! \brief Append a new path. Directories are separated by the delimiter
+    //! char (by default ':'). Example: add("/foo/bar:/usr/lib/").
     //--------------------------------------------------------------------------
     void add(std::string const& path);
 
     //--------------------------------------------------------------------------
     //! \brief Replace the path state by a new one. Directories are separated by
-    //! the delimiter char (by default ':'). Example: reset("/foo/bar:/usr/lib/").
+    //! the delimiter char (by default ':'). Example:
+    //! reset("/foo/bar:/usr/lib/").
     //--------------------------------------------------------------------------
     void reset(std::string const& path);
 
@@ -97,12 +98,17 @@ public:
     //--------------------------------------------------------------------------
     std::string const& toString();
 
-    bool open(std::string& filename, std::ifstream& ifs,
+    bool open(std::string& filename,
+              std::ifstream& ifs,
               std::ios_base::openmode mode = std::ios_base::in) const;
-    bool open(std::string& filename, std::ofstream& ifs,
+    bool open(std::string& filename,
+              std::ofstream& ifs,
               std::ios_base::openmode mode = std::ios_base::out) const;
-    bool open(std::string& filename, std::fstream& ifs,
-              std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out) const;
+    bool open(std::string& filename,
+              std::fstream& ifs,
+              std::ios_base::openmode mode = std::ios_base::in |
+                                             std::ios_base::out) const;
+
 protected:
 
     //--------------------------------------------------------------------------

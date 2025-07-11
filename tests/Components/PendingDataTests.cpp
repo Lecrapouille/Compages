@@ -28,7 +28,7 @@
 static constexpr size_t npos = static_cast<size_t>(-1); // FIXME Pending::npos
 
 //--------------------------------------------------------------------------
-TEST(TestPending,TestEmptyConstructor)
+TEST(TestPending, TestEmptyConstructor)
 {
     Pending pd;
 
@@ -63,7 +63,7 @@ TEST(TestPending,TestEmptyConstructor)
 }
 
 //--------------------------------------------------------------------------
-TEST(TestPending,TestConstructor)
+TEST(TestPending, TestConstructor)
 {
     Pending pd(10u);
 
@@ -96,7 +96,7 @@ TEST(TestPending,TestConstructor)
 }
 
 //--------------------------------------------------------------------------
-TEST(TestPending,TestPending)
+TEST(TestPending, TestPending)
 {
     Pending pd;
 

@@ -27,7 +27,7 @@ void showUnloadedTextures(GLVAO const& vao)
     std::vector<std::string> list;
     size_t count = vao.getUnloadedTextures(list);
     std::cerr << "Failed loading " << count << " textures:" << std::endl;
-    for (auto& it: list)
+    for (auto& it : list)
     {
         std::cerr << " " << it;
     }
@@ -37,11 +37,9 @@ void showUnloadedTextures(GLVAO const& vao)
 //------------------------------------------------------------------------------
 void debug(GLVertexShader const& vertex, GLFragmentShader const& fragment)
 {
-    std::cout << "Shader program " << vertex.name()
-              << ":" << std::endl;
+    std::cout << "Shader program " << vertex.name() << ":" << std::endl;
     std::cout << vertex << std::endl << std::endl;
-    std::cout << "Fragment program " << fragment.name()
-              << ":" << std::endl;
+    std::cout << "Fragment program " << fragment.name() << ":" << std::endl;
     std::cout << fragment << std::endl << std::endl;
 }
 
@@ -55,7 +53,7 @@ void debug(GLProgram const& prog)
         std::vector<std::string> names;
         size_t count = prog.getFailedShaders(names);
         std::cout << "  Has " << count << " failed shaders: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -66,7 +64,7 @@ void debug(GLProgram const& prog)
         std::vector<std::string> names;
         size_t count = prog.getUniformNames(names);
         std::cout << "  Has " << count << " uniforms: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -77,7 +75,7 @@ void debug(GLProgram const& prog)
         std::vector<std::string> names;
         size_t count = prog.getAttributeNames(names);
         std::cout << "  Has " << count << " attributes: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -88,7 +86,7 @@ void debug(GLProgram const& prog)
         std::vector<std::string> names;
         size_t count = prog.getSamplerNames(names);
         std::cout << "  Has " << count << " samplers: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -105,7 +103,7 @@ void debug(GLVAO const& vao)
         std::vector<std::string> names;
         size_t count = vao.getVBONames(names);
         std::cout << "  Has " << count << " VBO: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -116,7 +114,7 @@ void debug(GLVAO const& vao)
         std::vector<std::string> names;
         size_t count = vao.getTexturesNames(names);
         std::cout << "  Has " << count << " textures: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }
@@ -127,7 +125,7 @@ void debug(GLVAO const& vao)
         std::vector<std::string> names;
         size_t count = vao.getUnloadedTextures(names);
         std::cout << "  Has " << count << " unloaded textures: " << std::endl;
-        for (auto& it: names)
+        for (auto& it : names)
         {
             std::cout << "    '" << it << "'" << std::endl;
         }

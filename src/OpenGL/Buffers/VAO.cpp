@@ -42,18 +42,17 @@ bool GLVAO::checkVBOSizes()
 
     bool consistent_vbo_sizes = true;
     m_count = m_vbos.begin()->second->size();
-    for (auto& it: m_vbos)
+    for (auto& it : m_vbos)
     {
         if (m_count != it.second->size())
         {
             std::cerr << "VAO " << name()
                       << " does not have all of its VBOs with the same size:"
                       << std::endl;
-            for (auto& itt: m_vbos)
+            for (auto& itt : m_vbos)
             {
-                std::cerr << "VBO " << itt.first
-                          << " size is " << itt.second->size()
-                          << std::endl;
+                std::cerr << "VBO " << itt.first << " size is "
+                          << itt.second->size() << std::endl;
             }
             consistent_vbo_sizes = false;
         }
@@ -66,9 +65,9 @@ bool GLVAO::checkVBOSizes()
 // TODO: manage integers
 void GLVAO::createVBOsFromAttribs(GLProgram::Attributes const& attributes)
 {
-    for (auto const& it: attributes)
+    for (auto const& it : attributes)
     {
-        const char *name = it.first.c_str();
+        const char* name = it.first.c_str();
         const GLint size = it.second->size(); // FIXME shall be unsigned
         const GLenum gltype = it.second->target();
         std::cout << name << std::endl;
@@ -77,63 +76,66 @@ void GLVAO::createVBOsFromAttribs(GLProgram::Attributes const& attributes)
         {
             switch (size)
             {
-            case 1u:
-                createVBO<float>(name);
-                break;
-            case 2u:
-                createVBO<Vector2f>(name);
-                break;
-            case 3u:
-                createVBO<Vector3f>(name);
-                break;
-            case 4u:
-                createVBO<Vector4f>(name);
-                break;
-            default:
-                throw GL::Exception("Attribute with dimension > 4 is not managed");
-                break;
+                case 1u:
+                    createVBO<float>(name);
+                    break;
+                case 2u:
+                    createVBO<Vector2f>(name);
+                    break;
+                case 3u:
+                    createVBO<Vector3f>(name);
+                    break;
+                case 4u:
+                    createVBO<Vector4f>(name);
+                    break;
+                default:
+                    throw GL::Exception(
+                        "Attribute with dimension > 4 is not managed");
+                    break;
             }
         }
         else if (gltype == GL_INT)
         {
             switch (size)
             {
-            case 1u:
-                createVBO<int>(name);
-                break;
-            case 2u:
-                createVBO<Vector2i>(name);
-                break;
-            case 3u:
-                createVBO<Vector3i>(name);
-                break;
-            case 4u:
-                createVBO<Vector4i>(name);
-                break;
-            default:
-                throw GL::Exception("Attribute with dimension > 4 is not managed");
-                break;
+                case 1u:
+                    createVBO<int>(name);
+                    break;
+                case 2u:
+                    createVBO<Vector2i>(name);
+                    break;
+                case 3u:
+                    createVBO<Vector3i>(name);
+                    break;
+                case 4u:
+                    createVBO<Vector4i>(name);
+                    break;
+                default:
+                    throw GL::Exception(
+                        "Attribute with dimension > 4 is not managed");
+                    break;
             }
         }
         else if (gltype == GL_UNSIGNED_INT)
         {
             switch (size)
             {
-            case 1u:
-                createVBO<unsigned int>(name);
-                break;
-            case 2u:
-                createVBO<Vector2u>(name);
-                break;
-            case 3u:
-                createVBO<Vector3u>(name);
-                break;
-            case 4u:
-                createVBO<Vector4u>(name);
-                break;
-            default:
-                throw GL::Exception("Attribute with dimension > 4 is not managed");
-                break;
+                case 1u:
+                    createVBO<unsigned int>(name);
+                    break;
+                case 2u:
+                    createVBO<Vector2u>(name);
+                    break;
+                case 3u:
+                    createVBO<Vector3u>(name);
+                    break;
+                case 4u:
+                    createVBO<Vector4u>(name);
+                    break;
+                default:
+                    throw GL::Exception(
+                        "Attribute with dimension > 4 is not managed");
+                    break;
             }
         }
         else
@@ -146,29 +148,29 @@ void GLVAO::createVBOsFromAttribs(GLProgram::Attributes const& attributes)
 //--------------------------------------------------------------------------
 void GLVAO::createTexturesFromSamplers(GLProgram::Samplers const& samplers)
 {
-    for (auto const& it: samplers)
+    for (auto const& it : samplers)
     {
-        const char *name = it.first.c_str();
+        const char* name = it.first.c_str();
         const GLenum gltype = it.second->target();
         std::cout << name << std::endl;
 
         switch (gltype)
         {
-        case GL_SAMPLER_1D:
-            createTexture<GLTexture1D>(name);
-            break;
-        case GL_SAMPLER_2D: // TODO GLTextureDepth2D
-            createTexture<GLTexture2D>(name);
-            break;
-        case GL_SAMPLER_3D:
-            createTexture<GLTexture3D>(name);
-            break;
-        case GL_SAMPLER_CUBE:
-            createTexture<GLTextureCube>(name);
-            break;
-        default:
-            throw GL::Exception("This kind of sampler is not managed: "
-                                + std::to_string(gltype));
+            case GL_SAMPLER_1D:
+                createTexture<GLTexture1D>(name);
+                break;
+            case GL_SAMPLER_2D: // TODO GLTextureDepth2D
+                createTexture<GLTexture2D>(name);
+                break;
+            case GL_SAMPLER_3D:
+                createTexture<GLTexture3D>(name);
+                break;
+            case GL_SAMPLER_CUBE:
+                createTexture<GLTextureCube>(name);
+                break;
+            default:
+                throw GL::Exception("This kind of sampler is not managed: " +
+                                    std::to_string(gltype));
         }
     }
 }
@@ -178,11 +180,11 @@ bool GLVAO::draw(Mode const mode, size_t const first, size_t const count)
 {
     if (likely(m_program != nullptr))
     {
-        m_program->begin();   //glCheck(glUseProgram(m_program->handle()));
-        begin(); // Optim: glBindVertexArray(m_vao->handle());
+        m_program->begin(); // glCheck(glUseProgram(m_program->handle()));
+        begin();            // Optim: glBindVertexArray(m_vao->handle());
 
         // Activate textures
-        for (auto& it: m_program->m_samplers)
+        for (auto& it : m_program->m_samplers)
         {
             it.second->begin();
             m_textures[it.first]->begin();
@@ -211,28 +213,32 @@ bool GLVAO::onUpdate()
     //    if (!m_vao->checkLoadTextures())
     //    return true;
 
-    //std::cout << "GLVAO::onUpdate()" << std::endl;
-    //m_vao->begin();
+    // std::cout << "GLVAO::onUpdate()" << std::endl;
+    // m_vao->begin();
 
     // if
 
-    for (auto& it: m_program->m_attributes)
+    for (auto& it : m_program->m_attributes)
     {
         m_vbos[it.first]->begin();
         it.second->begin();
     }
 
-    //m_vao->end();
+    // m_vao->end();
 
     return false;
 }
 
 //--------------------------------------------------------------------------
-size_t GLVAO::getVBONames(std::vector<std::string> &list, bool const clear) const
+size_t GLVAO::getVBONames(std::vector<std::string>& list,
+                          bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_vbos.size());
-    for (auto& it: m_vbos)
+    for (auto& it : m_vbos)
     {
         list.push_back(it.second->name());
     }
@@ -240,11 +246,15 @@ size_t GLVAO::getVBONames(std::vector<std::string> &list, bool const clear) cons
 }
 
 //--------------------------------------------------------------------------
-size_t GLVAO::getTexturesNames(std::vector<std::string>& list, bool const clear) const
+size_t GLVAO::getTexturesNames(std::vector<std::string>& list,
+                               bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_textures.size());
-    for (auto& it: m_textures)
+    for (auto& it : m_textures)
     {
         list.push_back(it.second->name()); // FIXME filename
     }
@@ -252,11 +262,15 @@ size_t GLVAO::getTexturesNames(std::vector<std::string>& list, bool const clear)
 }
 
 //--------------------------------------------------------------------------
-size_t GLVAO::getUnloadedTextures(std::vector<std::string>& list, bool const clear) const
+size_t GLVAO::getUnloadedTextures(std::vector<std::string>& list,
+                                  bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_textures.size());
-    for (auto& it: m_textures)
+    for (auto& it : m_textures)
     {
         if (!it.second->loaded())
         {

@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_INCLUDE_OPENGLCPPWRAPPER_HPP
-#  define OPENGLCPPWRAPPER_INCLUDE_OPENGLCPPWRAPPER_HPP
+#define OPENGLCPPWRAPPER_INCLUDE_OPENGLCPPWRAPPER_HPP
 
-#  include "OpenGLCppWrapper/OpenGL.hpp"
-#  include "OpenGLCppWrapper/UI.hpp"
-#  include "OpenGLCppWrapper/Scene.hpp"
-#  include "OpenGLCppWrapper/Components.hpp"
+#include "OpenGLCppWrapper/Components.hpp"
+#include "OpenGLCppWrapper/OpenGL.hpp"
+#include "OpenGLCppWrapper/Scene.hpp"
+#include "OpenGLCppWrapper/UI.hpp"
 
 #endif // OPENGLCPPWRAPPER_INCLUDE_OPENGLCPPWRAPPER_HPP

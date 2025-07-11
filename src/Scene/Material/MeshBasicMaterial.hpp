@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef BASIC_MATERIAL_HPP
-#  define BASIC_MATERIAL_HPP
+#define BASIC_MATERIAL_HPP
 
-#  include "Scene/Material/Material.hpp"
-#  include "Scene/Material/Color.hpp"
-#  include "OpenGL/Textures/Textures.hpp"
+#include "OpenGL/Textures/Textures.hpp"
+#include "Scene/Material/Color.hpp"
+#include "Scene/Material/Material.hpp"
 
 class BasicMaterial: public Material
 {
@@ -31,12 +31,22 @@ public:
 
     struct Config
     {
-        enum class Fog { None, Linear, Exponential };
-        enum class Light { None, Phong, Lambert };
+        enum class Fog
+        {
+            None,
+            Linear,
+            Exponential
+        };
+        enum class Light
+        {
+            None,
+            Phong,
+            Lambert
+        };
         Config() {}
 
-        //! \brief If true then allow to drop fragment colors if lower than a given
-        //! threshold.
+        //! \brief If true then allow to drop fragment colors if lower than a
+        //! given threshold.
         bool useAlphaTest = false;
         //! \brief If true then taken into account gamma correction.
         bool useGammaInput = false;
@@ -51,13 +61,14 @@ public:
         bool useMap = false;
         //! \brief If true then apply a bump mapping texture to the object.
         bool useBumpMap = false;
-        //! \brief If true then simulate the bright spot of a light that appears on
-        //! shiny objects. Specular highlights are often more inclined to the color
-        //! of the light than the color of the object.
+        //! \brief If true then simulate the bright spot of a light that appears
+        //! on shiny objects. Specular highlights are often more inclined to the
+        //! color of the light than the color of the object.
         bool useSpecularMap = false;
         //! \brief If true then apply a color to the object.
         bool useColor = true;
-        //! \brief If true then apply a linear fog. Disabled if useExpFog is set to true.
+        //! \brief If true then apply a linear fog. Disabled if useExpFog is set
+        //! to true.
         Fog useFog = Fog::None;
         bool useSkinning = false;
         bool useBoneTexture = false;
@@ -67,10 +78,11 @@ public:
 
 public:
 
-    BasicMaterial(GLVAO& vao, BasicMaterial::Config const& conf = BasicMaterial::Config())
-        : Material("BasicMaterial", vao),
-          config(conf)
-    {}
+    BasicMaterial(GLVAO& vao,
+                  BasicMaterial::Config const& conf = BasicMaterial::Config())
+        : Material("BasicMaterial", vao), config(conf)
+    {
+    }
 
     inline Vector3f& diffuse()
     {

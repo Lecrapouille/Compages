@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_07_INDEXED_SPHERE_HPP
-#  define EXAMPLE_07_INDEXED_SPHERE_HPP
+#define EXAMPLE_07_INDEXED_SPHERE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \file this example paints a sphere made of points. For drawing the VAO we
@@ -35,7 +35,9 @@ class IndexedSphere: public GLWindow
 {
 public:
 
-    IndexedSphere(uint32_t const width, uint32_t const height, const char *title);
+    IndexedSphere(uint32_t const width,
+                  uint32_t const height,
+                  const char* title);
     ~IndexedSphere();
 
     static std::string info()
@@ -54,10 +56,10 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLVAO32            m_sphere;
-    GLProgram          m_prog;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLVAO32 m_sphere;
+    GLProgram m_prog;
     Transformable<float, 3U> m_transformable;
 };
 

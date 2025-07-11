@@ -23,9 +23,9 @@
 // *****************************************************************************
 
 #ifndef RIG_CAMERA_CONTROLLER_HPP
-#  define RIG_CAMERA_CONTROLLER_HPP
+#define RIG_CAMERA_CONTROLLER_HPP
 
-#  include "Scene/Camera/CameraNode.hpp"
+#include "Scene/Camera/CameraNode.hpp"
 
 // *****************************************************************************
 //! \brief Camera rig reactive to keyboard IO for strategy games

@@ -22,10 +22,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-ComplexShader::ComplexShader(uint32_t const width, uint32_t const height, const char *title)
-    : GLWindow(width, height, title),
-      m_quad("VAO_quad"),
-      m_prog("Prog")
+ComplexShader::ComplexShader(uint32_t const width,
+                             uint32_t const height,
+                             const char* title)
+    : GLWindow(width, height, title), m_quad("VAO_quad"), m_prog("Prog")
 {
     std::cout << "Hello ComplexShader:" << info() << std::endl;
 }
@@ -62,28 +62,25 @@ bool ComplexShader::onSetup()
     // Create a quad.
     if (!m_prog.bind(m_quad))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
     // Fill VBOs of the VAO: init quad vertex positions.
-    m_quad.vector3f("position") =
-    {
-        Vector3f(1.0f, 1.0f), Vector3f(1.0f, -1.0f),
-        Vector3f(-1.0f, -1.0f), Vector3f(-1.0f, 1.0f)
-    };
+    m_quad.vector3f("position") = { Vector3f(1.0f, 1.0f),
+                                    Vector3f(1.0f, -1.0f),
+                                    Vector3f(-1.0f, -1.0f),
+                                    Vector3f(-1.0f, 1.0f) };
 
     // Fill VBOs of the VAO: init texture positions.
-    m_quad.vector2f("uv") =
-    {
-        Vector2f(1.0f, 1.0f), Vector2f(1.0f, 0.0f),
-        Vector2f(0.0f, 0.0f), Vector2f(0.0f, 1.0f)
-    };
+    m_quad.vector2f("uv") = { Vector2f(1.0f, 1.0f),
+                              Vector2f(1.0f, 0.0f),
+                              Vector2f(0.0f, 0.0f),
+                              Vector2f(0.0f, 1.0f) };
 
     // Vertices index of the quad
-    m_quad.index() =
-    {
+    m_quad.index() = {
         0u, 1u, 3u, // first triangle
         1u, 2u, 3u  // second triangle
     };

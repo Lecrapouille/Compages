@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_07_MULTIPLE_MOVING_OBJECTS_HPP
-#  define EXAMPLE_07_MULTIPLE_MOVING_OBJECTS_HPP
+#define EXAMPLE_07_MULTIPLE_MOVING_OBJECTS_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief This example show differences between drawing multiple VAOs versus
@@ -35,9 +35,7 @@ public:
 
     struct Shape
     {
-        Shape(std::string const& name)
-            : vao(name)
-        {}
+        Shape(std::string const& name) : vao(name) {}
 
         GLVAO vao;
 
@@ -50,7 +48,9 @@ public:
 
 public:
 
-    MultipleObjects(uint32_t const width, uint32_t const height, const char *title);
+    MultipleObjects(uint32_t const width,
+                    uint32_t const height,
+                    const char* title);
     ~MultipleObjects();
 
     static std::string info()
@@ -70,12 +70,12 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    Shape              m_cube1;
-    Shape              m_cube2;
-    Shape              m_floor;
-    GLProgram          m_prog;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    Shape m_cube1;
+    Shape m_cube2;
+    Shape m_floor;
+    GLProgram m_prog;
 };
 
 #endif // EXAMPLE_07_MULTIPLE_MOVING_OBJECTS_HPP

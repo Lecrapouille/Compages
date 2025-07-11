@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_RANDOM_HPP
-#  define OPENGLCPPWRAPPER_RANDOM_HPP
+#define OPENGLCPPWRAPPER_RANDOM_HPP
 
-#  include "Math/Maths.hpp"
-#  include <random>
+#include "Math/Maths.hpp"
+#include <random>
 
 using namespace maths;
 
@@ -39,8 +39,8 @@ static std::mt19937& engine()
 //! \brief Produce random T-typed values, uniformly distributed on the interval
 //! [low, high[. If no parameters is given then produce uniformly T-typed
 //! values distributed on the interval [0, 1[.
-template<typename T>
-inline typename std::enable_if<std::is_floating_point<T>::value,T>::type
+template <typename T>
+inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
 real(T const low = zero<T>(), T const high = one<T>())
 {
     std::uniform_real_distribution<T> dist(std::min(low, high),
@@ -50,16 +50,16 @@ real(T const low = zero<T>(), T const high = one<T>())
 
 //! \brief Random integer-typed values, uniformly distributed on the
 //! interval [low, high].
-template<typename T>
+template <typename T>
 inline typename std::enable_if<std::is_integral<T>::value &&
-                               std::is_unsigned<T>::value &&
-                               !std::is_floating_point<T>::value, T>::type
+                                   std::is_unsigned<T>::value &&
+                                   !std::is_floating_point<T>::value,
+                               T>::type
 integer(T const low = zero<T>(), T const high = one<T>())
 {
     return low + static_cast<T>(
-        std::floor(dist::real<float>()
-                   * static_cast<float>(high - low + one<T>()))
-    );
+                     std::floor(dist::real<float>() *
+                                static_cast<float>(high - low + one<T>())));
 }
 
 //! \brief Return a Random bool value, either 'true' or 'false'

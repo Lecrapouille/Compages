@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_EDITOR_HPP
-#  define OPENGLCPPWRAPPER_EDITOR_HPP
+#define OPENGLCPPWRAPPER_EDITOR_HPP
 
-#  include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
+#include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
 
 //------------------------------------------------------------------------------
 //! \brief This example shows how to add and use Dear ImGui widgets.
@@ -31,7 +31,7 @@ class Editor: public GLWindow
 {
 public:
 
-    Editor(uint32_t const width, uint32_t const height, const char *title);
+    Editor(uint32_t const width, uint32_t const height, const char* title);
     ~Editor();
 
 private:
@@ -52,8 +52,7 @@ private:
     {
     public:
 
-        GUI(Editor& window) : DearImGuiLayer(window, "GUI")
-        {}
+        GUI(Editor& window) : DearImGuiLayer(window, "GUI") {}
 
     private:
 

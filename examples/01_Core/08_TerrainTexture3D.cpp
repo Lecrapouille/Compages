@@ -23,11 +23,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-TerrainTexture3D::TerrainTexture3D(uint32_t const width, uint32_t const height,
-                                   const char *title)
-    : GLWindow(width, height, title),
-      m_vao("VAO_terrain"),
-      m_prog("prog")
+TerrainTexture3D::TerrainTexture3D(uint32_t const width,
+                                   uint32_t const height,
+                                   const char* title)
+    : GLWindow(width, height, title), m_vao("VAO_terrain"), m_prog("prog")
 {
     std::cout << "Hello TerrainTexture3D: " << info() << std::endl;
 }
@@ -43,11 +42,8 @@ void TerrainTexture3D::onWindowResized()
 {
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    m_prog.matrix44f("projection") =
-            matrix::perspective(60.0_deg,
-                                width<float>() / height<float>(),
-                                0.1f,
-                                10.0f);
+    m_prog.matrix44f("projection") = matrix::perspective(
+        60.0_deg, width<float>() / height<float>(), 0.1f, 10.0f);
 }
 
 //------------------------------------------------------------------------------
@@ -69,10 +65,9 @@ bool TerrainTexture3D::onSetup()
     // Init Model-View matrices (shader uniforms). Note that projection matrix
     // is init inside onWindowResized() which is called just after this method.
     m_prog.matrix44f("model") = Matrix44f(matrix::Identity);
-    m_prog.matrix44f("view") =
-            matrix::lookAt(Vector3f(0.75, -0.75, 0.75),
-                           Vector3f(0.0, 0.0, 0.0),
-                           Vector3f(0.0, 0.0, 1.0));
+    m_prog.matrix44f("view") = matrix::lookAt(Vector3f(0.75, -0.75, 0.75),
+                                              Vector3f(0.0, 0.0, 0.0),
+                                              Vector3f(0.0, 0.0, 1.0));
 
     // Create the terrain
     return createTerrain();
@@ -100,15 +95,14 @@ bool TerrainTexture3D::createTerrain()
 
     if (!m_prog.bind(m_vao))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
     // Load all 2D textures into a single big 3D texture
     m_vao.texture3D("tex3d").wrap(GLTexture::Wrap::CLAMP_TO_BORDER);
-    if (!m_vao.texture3D("tex3d").load<SOIL>(
-        {
+    if (!m_vao.texture3D("tex3d").load<SOIL>({
             "external/assets/deep_water.png",
             "external/assets/shallow_water.png",
             "external/assets/shore.png",
@@ -159,7 +153,7 @@ void TerrainTexture3D::generateAltitudes(const uint32_t dim)
                     uint32_t counter = 0;
                     for (uint32_t s = 0; s <= 2; ++s)
                     {
-                        for(uint32_t r = 0; r <= 2; ++r)
+                        for (uint32_t r = 0; r <= 2; ++r)
                         {
                             a += m_altitudes[(x + s - 1) * dim + (y + r - 1)];
                             ++counter;
@@ -167,14 +161,16 @@ void TerrainTexture3D::generateAltitudes(const uint32_t dim)
                     }
                     float val = a / float(counter);
                     smoothTerrain[x * dim + y] = val;
-                    if (val > maxVal) maxVal = val;
-                    if (val < minVal) minVal = val;
+                    if (val > maxVal)
+                        maxVal = val;
+                    if (val < minVal)
+                        minVal = val;
                 }
             }
         }
         for (uint32_t r = 0; r < dim * dim; ++r)
         {
-            m_altitudes[r] = (smoothTerrain[r] - minVal) / (maxVal-minVal);
+            m_altitudes[r] = (smoothTerrain[r] - minVal) / (maxVal - minVal);
         }
     }
 }
@@ -202,9 +198,10 @@ void TerrainTexture3D::loadTerrain(const uint32_t dim)
         for (unsigned y = 1; y < dim; ++y)
         {
             // Texture3D
-            uv.append(Vector3f(float(x - 1) / float(dim),
-                               float(y - 1) / float(dim),
-                               m_altitudes[(x - 1) * dim + (y - 1)] * texHeight));
+            uv.append(
+                Vector3f(float(x - 1) / float(dim),
+                         float(y - 1) / float(dim),
+                         m_altitudes[(x - 1) * dim + (y - 1)] * texHeight));
             uv.append(Vector3f(float(x) / float(dim),
                                float(y - 1) / float(dim),
                                m_altitudes[x * dim + (y - 1)] * texHeight));
@@ -216,19 +213,19 @@ void TerrainTexture3D::loadTerrain(const uint32_t dim)
                                m_altitudes[x * dim + y] * texHeight));
 
             // Meshes
-            pos.append(Vector3f(float(x - 1) / float(dim) -0.5f,
-                                float(y - 1) / float(dim) -0.5f,
-                                m_altitudes[(x - 1) * dim + (y - 1)] * maxHeight));
-            pos.append(Vector3f(float(x) / float(dim) -0.5f,
-                                float(y - 1) / float(dim) -0.5f,
+            pos.append(
+                Vector3f(float(x - 1) / float(dim) - 0.5f,
+                         float(y - 1) / float(dim) - 0.5f,
+                         m_altitudes[(x - 1) * dim + (y - 1)] * maxHeight));
+            pos.append(Vector3f(float(x) / float(dim) - 0.5f,
+                                float(y - 1) / float(dim) - 0.5f,
                                 m_altitudes[x * dim + (y - 1)] * maxHeight));
-            pos.append(Vector3f(float(x - 1) / float(dim) -0.5f,
-                                float(y) / float(dim) -0.5f,
+            pos.append(Vector3f(float(x - 1) / float(dim) - 0.5f,
+                                float(y) / float(dim) - 0.5f,
                                 m_altitudes[(x - 1) * dim + y] * maxHeight));
-            pos.append(Vector3f(float(x) / float(dim) -0.5f,
-                                float(y) / float(dim) -0.5f,
+            pos.append(Vector3f(float(x) / float(dim) - 0.5f,
+                                float(y) / float(dim) - 0.5f,
                                 m_altitudes[x * dim + y] * maxHeight));
-
         }
     }
 }

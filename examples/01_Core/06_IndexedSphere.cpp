@@ -22,11 +22,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-IndexedSphere::IndexedSphere(uint32_t const width, uint32_t const height,
-                             const char *title)
-    : GLWindow(width, height, title),
-      m_sphere("sphere"),
-      m_prog("prog")
+IndexedSphere::IndexedSphere(uint32_t const width,
+                             uint32_t const height,
+                             const char* title)
+    : GLWindow(width, height, title), m_sphere("sphere"), m_prog("prog")
 {
     std::cout << "Hello IndexedSphere: " << info() << std::endl;
 }
@@ -43,7 +42,7 @@ void IndexedSphere::onWindowResized()
     float ratio = width<float>() / height<float>();
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
     m_prog.matrix44f("projection") =
-            matrix::perspective(60.0_deg, ratio, 0.1f, 10.0f);
+        matrix::perspective(60.0_deg, ratio, 0.1f, 10.0f);
 }
 
 //------------------------------------------------------------------------------
@@ -56,7 +55,8 @@ bool IndexedSphere::createSphere()
     constexpr uint32_t NbPointsLat = 100u;
     constexpr float stepLon = 360.0f / static_cast<float>(NbPointsLon);
     constexpr float stepLat = 180.0f / static_cast<float>(NbPointsLat);
-    constexpr float PI = 3.141592653589793238462643383279502884197169399375105820f;
+    constexpr float PI =
+        3.141592653589793238462643383279502884197169399375105820f;
     float latitude = -90.0f;
     float longitude = -180.0f;
 
@@ -65,8 +65,8 @@ bool IndexedSphere::createSphere()
     // is not a faster method.
     if (!m_prog.bind(m_sphere))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
     auto& positions = m_sphere.vector3f("position");
@@ -121,7 +121,7 @@ bool IndexedSphere::onSetup()
 
     m_prog.matrix44f("model") = m_transformable.matrix();
     m_prog.matrix44f("view") =
-            matrix::lookAt(Vector3f(3,3,3), Vector3f(1,1,1), Vector3f(0,1,0));
+        matrix::lookAt(Vector3f(3, 3, 3), Vector3f(1, 1, 1), Vector3f(0, 1, 0));
 
     if (!createSphere())
         return false;

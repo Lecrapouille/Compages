@@ -1,13 +1,15 @@
-// Original code source https://stackoverflow.com/questions/44105058/how-does-unitys-getcomponent-work
-// Quote: "I'm wondering how the GetComponent() method that Unity implements works."
+// Original code source
+// https://stackoverflow.com/questions/44105058/how-does-unitys-getcomponent-work
+// Quote: "I'm wondering how the GetComponent() method that Unity implements
+// works."
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_COMPONENTS_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_COMPONENTS_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_COMPONENTS_HPP
 
-#  include "Common/NonCppStd.hpp"
-#  include <algorithm> // find_if
-#  include <stdexcept> // std::out_of_range
-#  include <vector>
+#include "Common/NonCppStd.hpp"
+#include <algorithm> // find_if
+#include <stdexcept> // std::out_of_range
+#include <vector>
 
 // *****************************************************************************
 //! \brief Base class for Component
@@ -47,7 +49,7 @@ public:
     //! \param params list of param for creating the component.
     //! \return the reference of the newly created component.
     // -------------------------------------------------------------------------
-    template<class ComponentType, typename... Args>
+    template <class ComponentType, typename... Args>
     ComponentType& addComponent(Args&&... params)
     {
         m_components.emplace_back(
@@ -62,16 +64,16 @@ public:
     //! \throw std::out_of_range if no component has been found.
     //! \return the reference of the component.
     // -------------------------------------------------------------------------
-    template<class ComponentType>
+    template <class ComponentType>
     ComponentType& getComponent()
     {
-        for (auto && component: m_components)
+        for (auto&& component : m_components)
         {
             if (component->isClassType(ComponentType::Type))
                 return *static_cast<ComponentType*>(component.get());
         }
 
-        //return *std::unique_ptr<ComponentType>(nullptr);
+        // return *std::unique_ptr<ComponentType>(nullptr);
         throw std::out_of_range("No component found");
     }
 
@@ -80,19 +82,17 @@ public:
     //! the given type).
     //! \return true if one component has been found, else return false.
     // -------------------------------------------------------------------------
-    template<class ComponentType>
+    template <class ComponentType>
     bool removeComponent()
     {
         if (m_components.empty())
             return false;
 
-        auto index =
-                std::find_if(m_components.begin(),
-                             m_components.end(),
-                             [](std::unique_ptr<Component> & component)
-                             {
-                                 return component->isClassType(ComponentType::Type);
-                             });
+        auto index = std::find_if(
+            m_components.begin(),
+            m_components.end(),
+            [](std::unique_ptr<Component>& component)
+            { return component->isClassType(ComponentType::Type); });
 
         bool success = index != m_components.end();
         if (success)
@@ -106,15 +106,16 @@ public:
     //! ancestor are of the given type).
     //! \return the std::vector of components (may be empty).
     // -------------------------------------------------------------------------
-    template<class ComponentType>
+    template <class ComponentType>
     std::vector<ComponentType*> getComponents()
     {
         std::vector<ComponentType*> componentsOfType;
 
-        for (auto && component : m_components)
+        for (auto&& component : m_components)
         {
             if (component->isClassType(ComponentType::Type))
-                componentsOfType.emplace_back(static_cast<ComponentType*>(component.get()));
+                componentsOfType.emplace_back(
+                    static_cast<ComponentType*>(component.get()));
         }
 
         return componentsOfType;
@@ -130,7 +131,7 @@ public:
     //!
     //! \return the number of components removed.
     // -------------------------------------------------------------------------
-    template<class ComponentType>
+    template <class ComponentType>
     size_t removeComponents()
     {
         bool success = false;
@@ -141,13 +142,11 @@ public:
 
         do
         {
-            auto index =
-                    std::find_if(m_components.begin(),
-                                 m_components.end(),
-                                 [](std::unique_ptr<Component> & component)
-                                 {
-                                     return component->isClassType(ComponentType::Type);
-                                 });
+            auto index = std::find_if(
+                m_components.begin(),
+                m_components.end(),
+                [](std::unique_ptr<Component>& component)
+                { return component->isClassType(ComponentType::Type); });
 
             success = (index != m_components.end());
             if (success)
@@ -155,8 +154,7 @@ public:
                 m_components.erase(index);
                 ++numRemoved;
             }
-        }
-        while (success);
+        } while (success);
 
         return numRemoved;
     }

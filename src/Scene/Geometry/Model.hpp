@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef GEOMETRY_MODEL_HPP
-#  define GEOMETRY_MODEL_HPP
+#define GEOMETRY_MODEL_HPP
 
-#  include "Scene/Geometry/Geometry.hpp"
-#  include <string>
+#include "Scene/Geometry/Geometry.hpp"
+#include <string>
 
 // *****************************************************************************
 //! \brief Generate the geometry from a file

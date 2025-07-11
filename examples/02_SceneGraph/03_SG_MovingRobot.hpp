@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef EXAMPLE_04_SCENEGRAPH_HPP
-#  define EXAMPLE_04_SCENEGRAPH_HPP
+#define EXAMPLE_04_SCENEGRAPH_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 using namespace glwrap;
 
@@ -33,32 +33,31 @@ class GUI: public DearImGui
 {
 public:
 
-  GUI()
-  {}
+    GUI() {}
 
-  //------------------------------------------------------------------
-  //! \brief Attach a scene graph for its monotoring
-  //------------------------------------------------------------------
-  inline void observeGraph(Node3D_SP const& scene)
-  {
-    m_scene = scene;
-  }
+    //------------------------------------------------------------------
+    //! \brief Attach a scene graph for its monotoring
+    //------------------------------------------------------------------
+    inline void observeGraph(Node3D_SP const& scene)
+    {
+        m_scene = scene;
+    }
 
 protected:
 
-  //------------------------------------------------------------------
-  //! \brief override DearImGui method: debug the scenegraph
-  //------------------------------------------------------------------
-  virtual bool render() override;
+    //------------------------------------------------------------------
+    //! \brief override DearImGui method: debug the scenegraph
+    //------------------------------------------------------------------
+    virtual bool render() override;
 
-  //------------------------------------------------------------------
-  //! \brief Iterate on scene nodes for their display.
-  //------------------------------------------------------------------
-  void observeNode(Node3D const& node);// const;
+    //------------------------------------------------------------------
+    //! \brief Iterate on scene nodes for their display.
+    //------------------------------------------------------------------
+    void observeNode(Node3D const& node); // const;
 
 private:
 
-  Node3D_SP m_scene = nullptr;
+    Node3D_SP m_scene = nullptr;
 };
 
 // *****************************************************************************
@@ -68,23 +67,23 @@ class MyCube: public Node3D
 {
 public:
 
-  MyCube(const char *name);
+    MyCube(const char* name);
 
-  //! \brief Create a home-made cube
-  static std::shared_ptr<MyCube> create(const char* name)
-  {
-    return std::make_shared<MyCube>(name);
-  }
+    //! \brief Create a home-made cube
+    static std::shared_ptr<MyCube> create(const char* name)
+    {
+        return std::make_shared<MyCube>(name);
+    }
 
-  //! \brief Render the cube
-  virtual void draw(Matrix44f const& modelMatrix) override;
+    //! \brief Render the cube
+    virtual void draw(Matrix44f const& modelMatrix) override;
 
 private:
 
-  GLProgram         m_prog;
-  GLVertexShader    m_vertex_shader;
-  GLFragmentShader  m_fragment_shader;
-  GLVAO             m_vao;
+    GLProgram m_prog;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLVAO m_vao;
 };
 
 DECLARE_CLASS(CubicRobot);
@@ -100,28 +99,28 @@ class CubicRobot: public Node3D
 {
 public:
 
-  CubicRobot(const char *name);
-  ~CubicRobot();
+    CubicRobot(const char* name);
+    ~CubicRobot();
 
-  //! \brief Create a new Robot
-  static CubicRobot_SP create(const char *name)
-  {
-    return std::make_shared<CubicRobot>(name);
-  }
+    //! \brief Create a new Robot
+    static CubicRobot_SP create(const char* name)
+    {
+        return std::make_shared<CubicRobot>(name);
+    }
 
-  //! \brief Animation of the robot
-  virtual void doUpdate(float const dt) override;
+    //! \brief Animation of the robot
+    virtual void doUpdate(float const dt) override;
 
 private:
 
-  Node3D_SP m_cube;
-  Node3D_SP m_body;
-  Node3D_SP m_head;
-  Node3D_SP m_leftArm;
-  Node3D_SP m_rightArm;
-  Node3D_SP m_leftLeg;
-  Node3D_SP m_rightLeg;
-  float radiansRotated = 0.0f;
+    Node3D_SP m_cube;
+    Node3D_SP m_body;
+    Node3D_SP m_head;
+    Node3D_SP m_leftArm;
+    Node3D_SP m_rightArm;
+    Node3D_SP m_leftLeg;
+    Node3D_SP m_rightLeg;
+    float radiansRotated = 0.0f;
 };
 
 // *****************************************************************************
@@ -129,29 +128,25 @@ private:
 //! are nodes of the scere graph. Each element of robots is also a
 //! part of the scene graph.
 // *****************************************************************************
-class RobotsSceneGraph
-  : public IGLWindow
+class RobotsSceneGraph: public IGLWindow
 {
 public:
 
-  RobotsSceneGraph()
-    : m_camera(Camera3D::Type::PERSPECTIVE)
-  {}
+    RobotsSceneGraph() : m_camera(Camera3D::Type::PERSPECTIVE) {}
 
-  ~RobotsSceneGraph()
-  {}
+    ~RobotsSceneGraph() {}
 
 private:
 
-  virtual void onWindowSizeChanged() override;
-  virtual bool setup() override;
-  virtual bool draw() override;
+    virtual void onWindowSizeChanged() override;
+    virtual bool setup() override;
+    virtual bool draw() override;
 
 private:
 
-  CameraController m_camera;
-  Node3D_SP        m_scene;
-  GUI          m_imgui;
+    CameraController m_camera;
+    Node3D_SP m_scene;
+    GUI m_imgui;
 };
 
 #endif // EXAMPLE_04_SCENEGRAPH_HPP

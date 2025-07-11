@@ -19,12 +19,13 @@
 //=====================================================================
 
 #include "12_BasicLighting.hpp"
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
 // -----------------------------------------------------------------------------
-BasicLighting::BasicLighting(uint32_t const width, uint32_t const height,
-                             const char *title)
+BasicLighting::BasicLighting(uint32_t const width,
+                             uint32_t const height,
+                             const char* title)
     : GLWindow(width, height, title),
       m_cube("VAO_cube"),
       m_lamp("VAO_lamp"),
@@ -45,17 +46,16 @@ void BasicLighting::onWindowResized()
 {
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    Matrix44f const& proj =
-            matrix::perspective(60.0_deg,
-                                width<float>() / height<float>(),
-                                0.1f, 100.0f);
+    Matrix44f const& proj = matrix::perspective(
+        60.0_deg, width<float>() / height<float>(), 0.1f, 100.0f);
     m_prog_cube.matrix44f("projection") = proj;
     m_prog_lamp.matrix44f("projection") = proj;
 }
 
 static Vector3f lightPos = Vector3f(1.2f, 1.0f, 2.0f);
-static Vector3f lookat = Vector3f(1,1,1);
-static Matrix44f view = matrix::lookAt(Vector3f(5,5,5), lookat, Vector3f(0,1,0));
+static Vector3f lookat = Vector3f(1, 1, 1);
+static Matrix44f view =
+    matrix::lookAt(Vector3f(5, 5, 5), lookat, Vector3f(0, 1, 0));
 
 //------------------------------------------------------------------------------
 //! \brief Create a cube for the lamp.
@@ -75,19 +75,18 @@ bool BasicLighting::createLamp()
     // Draw a cube on the light position
     if (!m_prog_lamp.bind(m_lamp))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog_lamp.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog_lamp.strerror()
+                  << "'" << std::endl;
         return false;
     }
-    m_lamp.vector3f("position") =
-    {
-       #include "geometry/cube_position.txt"
+    m_lamp.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
 
     Transformable<float, 3U> transform;
     transform.reset();
     transform.position(lightPos);
-    //transform.scale(Vector3f(0.05f)); // a smaller cube
+    // transform.scale(Vector3f(0.05f)); // a smaller cube
     m_prog_lamp.matrix44f("model") = transform.matrix();
     m_prog_lamp.matrix44f("view") = view;
 
@@ -114,17 +113,15 @@ bool BasicLighting::createCube()
     // Create a cube.
     if (!m_prog_cube.bind(m_cube))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog_cube.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog_cube.strerror()
+                  << "'" << std::endl;
         return false;
     }
-    m_cube.vector3f("position") =
-    {
-       #include "geometry/cube_position.txt"
+    m_cube.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
-    m_cube.vector3f("normal") =
-    {
-       #include "geometry/cube_normals.txt"
+    m_cube.vector3f("normal") = {
+#include "geometry/cube_normals.txt"
     };
 
     Transformable<float, 3U> transform;
@@ -134,7 +131,8 @@ bool BasicLighting::createCube()
     m_prog_cube.vector3f("viewPos") = lightPos;
 
     // Material properties
-    // Note: specular lighting doesn't have full effect on this object's material
+    // Note: specular lighting doesn't have full effect on this object's
+    // material
     m_prog_cube.vector3f("material.ambient") = Vector3f(1.0f, 0.5f, 0.31f);
     m_prog_cube.vector3f("material.diffuse") = Vector3f(1.0f, 0.5f, 0.31f);
     m_prog_cube.vector3f("material.specular") = Vector3f(0.5f, 0.5f, 0.5f);
@@ -153,8 +151,10 @@ void BasicLighting::changeLightProperties(float const random)
     lightColor.y = std::sin(random * 0.7f);
     lightColor.z = std::sin(random * 1.3f);
 
-    Vector3f diffuseColor = vector::componentProduct(lightColor, Vector3f(0.5f)); // decrease the influence
-    Vector3f ambientColor = vector::componentProduct(diffuseColor, Vector3f(0.2f)); // low influence
+    Vector3f diffuseColor = vector::componentProduct(
+        lightColor, Vector3f(0.5f)); // decrease the influence
+    Vector3f ambientColor =
+        vector::componentProduct(diffuseColor, Vector3f(0.2f)); // low influence
     m_prog_cube.vector3f("light.ambient") = ambientColor;
     m_prog_cube.vector3f("light.diffuse") = diffuseColor;
     m_prog_cube.vector3f("light.specular") = Vector3f(1.0f, 1.0f, 1.0f);

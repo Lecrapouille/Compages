@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_PENDING_DATA_HPP
-#  define OPENGLCPPWRAPPER_PENDING_DATA_HPP
+#define OPENGLCPPWRAPPER_PENDING_DATA_HPP
 
-#  include <algorithm>
+#include <algorithm>
 
 // *****************************************************************************
 //! \brief Class tracking the smallest block of contiguous elements that have

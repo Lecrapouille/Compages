@@ -21,12 +21,13 @@
 #include "Scene/Geometry/Sphere.hpp"
 
 //------------------------------------------------------------------------------
-static void repeat(std::vector<float> const& input, size_t const N,
+static void repeat(std::vector<float> const& input,
+                   size_t const N,
                    std::vector<float>& output)
 {
     output.clear();
     output.reserve(N * input.size());
-    for (auto const it: input)
+    for (auto const it : input)
     {
         for (uint32_t i = 0u; i < N; ++i)
         {
@@ -36,14 +37,15 @@ static void repeat(std::vector<float> const& input, size_t const N,
 }
 
 //------------------------------------------------------------------------------
-static void tile(std::vector<float> const& input, size_t const N,
+static void tile(std::vector<float> const& input,
+                 size_t const N,
                  std::vector<float>& output)
 {
     output.clear();
     output.reserve(N * input.size());
     for (uint32_t i = 0u; i < N; ++i)
     {
-        for (auto const it: input)
+        for (auto const it : input)
         {
             output.push_back(it);
         }
@@ -66,10 +68,10 @@ bool Sphere::generate(GLVertexBuffer<Vector3f>& vertices,
     vertices.resize(config.slices * config.stacks);
     for (size_t i = 0u; i < vertices.size(); ++i)
     {
-        vertices[i] = Vector3f(
-            std::sin(theta1[i]) * std::sin(theta2[i]) * config.radius,
-            std::sin(theta1[i]) * std::cos(theta2[i]) * config.radius,
-            std::cos(theta1[i]) * config.radius);
+        vertices[i] =
+            Vector3f(std::sin(theta1[i]) * std::sin(theta2[i]) * config.radius,
+                     std::sin(theta1[i]) * std::cos(theta2[i]) * config.radius,
+                     std::cos(theta1[i]) * config.radius);
     }
 
     // Normals
@@ -117,11 +119,11 @@ bool Sphere::generate(GLVAO32& vao, const bool clear)
 
     auto& positions = vao.vector3f(shaders::name::position);
     auto& normals = vao.hasVBO<Vector3f>(shaders::name::normal)
-                    ? vao.vector3f(shaders::name::normal)
-                    : tmp_normals;
+                        ? vao.vector3f(shaders::name::normal)
+                        : tmp_normals;
     auto& UVs = vao.hasVBO<Vector2f>(shaders::name::uv)
-                ? vao.vector2f(shaders::name::uv)
-                : tmp_uv;
+                    ? vao.vector2f(shaders::name::uv)
+                    : tmp_uv;
 
     if (clear)
     {

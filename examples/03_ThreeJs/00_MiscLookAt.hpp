@@ -19,20 +19,20 @@
 //=====================================================================
 
 #ifndef EXAMPLE_00_MISCLOOKAT_HPP
-#  define EXAMPLE_00_MISCLOOKAT_HPP
+#define EXAMPLE_00_MISCLOOKAT_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief
 // *****************************************************************************
-class MiscLookAt : public GLWindow
+class MiscLookAt: public GLWindow
 {
     friend class GUI;
 
 public:
 
-    MiscLookAt(uint32_t const width, uint32_t const height, const char *title);
+    MiscLookAt(uint32_t const width, uint32_t const height, const char* title);
     ~MiscLookAt();
 
     static std::string info()
@@ -51,9 +51,9 @@ private:
 
 private:
 
-    Camera    m_camera;
+    Camera m_camera;
     SceneTree m_scene;
-    Vector3f  m_mouse_position;
+    Vector3f m_mouse_position;
 };
 
 #endif // EXAMPLE_00_MISCLOOKAT_HPP

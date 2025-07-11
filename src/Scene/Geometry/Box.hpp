@@ -19,16 +19,21 @@
 //=====================================================================
 
 #ifndef BOX_HPP
-#  define BOX_HPP
+#define BOX_HPP
 
-#  include "Scene/Geometry/Geometry.hpp"
+#include "Scene/Geometry/Geometry.hpp"
 
 // *****************************************************************************
 //! \brief Generate the geometry of a axis.
 // *****************************************************************************
 class Box: public Geometry
 {
-    enum Side { X = 0, Y = 1, Z = 2 };
+    enum Side
+    {
+        X = 0,
+        Y = 1,
+        Z = 2
+    };
 
 public:
 
@@ -55,9 +60,16 @@ protected:
                   GLVertexBuffer<Vector2f>& uv,
                   GLIndex32& index);
 
-    void buildPlane(Side u, Side v, Side w, float udir, float vdir,
-                    float width, float height, float depth,
-                    uint32_t gridX, uint32_t gridY,
+    void buildPlane(Side u,
+                    Side v,
+                    Side w,
+                    float udir,
+                    float vdir,
+                    float width,
+                    float height,
+                    float depth,
+                    uint32_t gridX,
+                    uint32_t gridY,
                     GLVertexBuffer<Vector3f>& vertices,
                     GLVertexBuffer<Vector3f>& normals,
                     GLVertexBuffer<Vector2f>& uv,

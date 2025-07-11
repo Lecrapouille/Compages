@@ -23,11 +23,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-TexturedTriangle::TexturedTriangle(uint32_t const width, uint32_t const height,
-                                   const char *title)
-    : GLWindow(width, height, title),
-      m_prog("Prog"),
-      m_triangle("triangle")
+TexturedTriangle::TexturedTriangle(uint32_t const width,
+                                   uint32_t const height,
+                                   const char* title)
+    : GLWindow(width, height, title), m_prog("Prog"), m_triangle("triangle")
 {
     std::cout << "Hello TexturedTriangle: " << info() << std::endl;
 }
@@ -81,26 +80,20 @@ bool TexturedTriangle::onSetup()
     // Create VBOs of the VAO.
     if (!m_prog.bind(m_triangle))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
     // Fill VBOs of the VAO: init triangle vertex positions.
-    m_triangle.vector3f("position") =
-    {
-        Vector3f(-1.0f, -1.0f, 0.0f),
-        Vector3f(1.0f, -1.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, 0.0f)
-    };
+    m_triangle.vector3f("position") = { Vector3f(-1.0f, -1.0f, 0.0f),
+                                        Vector3f(1.0f, -1.0f, 0.0f),
+                                        Vector3f(0.0f, 1.0f, 0.0f) };
 
     // Fill VBOs of the VAO: init triangle texture positions.
-    m_triangle.vector2f("UV") =
-    {
-        Vector2f(0.0f, 0.0f),
-        Vector2f(1.0f, 0.0f),
-        Vector2f(0.5f, 1.0f)
-    };
+    m_triangle.vector2f("UV") = { Vector2f(0.0f, 0.0f),
+                                  Vector2f(1.0f, 0.0f),
+                                  Vector2f(0.5f, 1.0f) };
 
     // Repeat the texture motif (if wanted)
     m_triangle.vector2f("UV") *= 4.0f;

@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_10_POSTPROD_FRAMEBUFFER_HPP
-#  define EXAMPLE_10_POSTPROD_FRAMEBUFFER_HPP
+#define EXAMPLE_10_POSTPROD_FRAMEBUFFER_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \file This examples show a simple cube draw in a framebuffer.
@@ -31,7 +31,9 @@ class PostProdFrameBuffer: public GLWindow
 {
 public:
 
-    PostProdFrameBuffer(uint32_t const width, uint32_t const height, const char *title);
+    PostProdFrameBuffer(uint32_t const width,
+                        uint32_t const height,
+                        const char* title);
     ~PostProdFrameBuffer();
 
     static std::string info()
@@ -52,22 +54,22 @@ private:
 
 private:
 
-    GLFrameBuffer       m_fbo;
+    GLFrameBuffer m_fbo;
 
     // First program (scene)
 
-    GLVertexShader      m_vs_scene;
-    GLFragmentShader    m_fs_scene;
-    GLProgram           m_prog_scene;
-    GLVAO               m_cube;
-    GLVAO               m_floor;
+    GLVertexShader m_vs_scene;
+    GLFragmentShader m_fs_scene;
+    GLProgram m_prog_scene;
+    GLVAO m_cube;
+    GLVAO m_floor;
 
     // Second program (screen)
 
-    GLVertexShader      m_vs_screen;
-    GLFragmentShader    m_fs_screen;
-    GLProgram           m_prog_screen;
-    GLVAO               m_screen;
+    GLVertexShader m_vs_screen;
+    GLFragmentShader m_fs_screen;
+    GLProgram m_prog_screen;
+    GLVAO m_screen;
 };
 
 #endif // EXAMPLE_13_POSTPROD_FRAMEBUFFER_HPP

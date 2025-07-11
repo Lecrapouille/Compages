@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_01_DYNAMIC_TRIANGLE_HPP
-#  define EXAMPLE_01_DYNAMIC_TRIANGLE_HPP
+#define EXAMPLE_01_DYNAMIC_TRIANGLE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief This example shows how to create a simple triangle and how we can
@@ -33,7 +33,9 @@ class DynamicTriangle: public GLWindow
 {
 public:
 
-    DynamicTriangle(uint32_t const width, uint32_t const height, const char *title);
+    DynamicTriangle(uint32_t const width,
+                    uint32_t const height,
+                    const char* title);
     ~DynamicTriangle();
 
     static std::string info()
@@ -53,10 +55,10 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLProgram          m_prog;
-    GLVAO              m_triangle;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLProgram m_prog;
+    GLVAO m_triangle;
 };
 
 #endif // EXAMPLE_01_DYNAMIC_TRIANGLE_HPP

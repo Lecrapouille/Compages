@@ -48,9 +48,8 @@ static bool generateTube(GLVertexBuffer<Vector3f>& vertices,
     vertices.resize(nb_points);
     normals.resize(nb_points);
     uv.resize(nb_points);
-    nb_points = 6u * (slices + 1u)
-                + (base_caps ? 3u * slices : 0u)
-                + (top_caps ? 3u * slices : 0u);
+    nb_points = 6u * (slices + 1u) + (base_caps ? 3u * slices : 0u) +
+                (top_caps ? 3u * slices : 0u);
     index.reserve(nb_points);
 
     // Constants
@@ -77,13 +76,18 @@ static bool generateTube(GLVertexBuffer<Vector3f>& vertices,
         uv[i0 + i] = Vector2f(texture[i], 0.0f);
 
         // Bottom of the tube
-        vertices[i1 + i] = Vector3f(abs_base_radius * c, abs_base_radius * s, -h2);
+        vertices[i1 + i] =
+            Vector3f(abs_base_radius * c, abs_base_radius * s, -h2);
         normals[i1 + i] = Vector3f(hh * c, hh * s, rh);
         uv[i1 + i] = Vector2f(texture[i], 1.0f);
 
         // Indices for the tube
-        index.append(i0 + i); index.append(i0 + i + 1u); index.append(i1 + i);
-        index.append(i1 + i); index.append(i1 + i + 1u); index.append(i0 + i + 1u);
+        index.append(i0 + i);
+        index.append(i0 + i + 1u);
+        index.append(i1 + i);
+        index.append(i1 + i);
+        index.append(i1 + i + 1u);
+        index.append(i0 + i + 1u);
     }
 
     if (top_caps)
@@ -122,7 +126,8 @@ static bool generateTube(GLVertexBuffer<Vector3f>& vertices,
 }
 
 //------------------------------------------------------------------------------
-static bool generateTube(GLVAO32& vao, const bool clear,
+static bool generateTube(GLVAO32& vao,
+                         const bool clear,
                          float const top_radius,
                          float const base_radius,
                          float const height,
@@ -140,11 +145,11 @@ static bool generateTube(GLVAO32& vao, const bool clear,
 
     auto& positions = vao.vector3f(shaders::name::position);
     auto& normals = vao.hasVBO<Vector3f>(shaders::name::normal)
-                    ? vao.vector3f(shaders::name::normal)
-                    : tmp_normals;
+                        ? vao.vector3f(shaders::name::normal)
+                        : tmp_normals;
     auto& UVs = vao.hasVBO<Vector2f>(shaders::name::uv)
-                ? vao.vector2f(shaders::name::uv)
-                : tmp_uv;
+                    ? vao.vector2f(shaders::name::uv)
+                    : tmp_uv;
 
     if (clear)
     {
@@ -154,14 +159,21 @@ static bool generateTube(GLVAO32& vao, const bool clear,
         vao.index().clear();
     }
 
-    return generateTube(positions, normals, UVs, vao.index(),
-                        top_radius, base_radius, height, slices);
+    return generateTube(positions,
+                        normals,
+                        UVs,
+                        vao.index(),
+                        top_radius,
+                        base_radius,
+                        height,
+                        slices);
 }
 
 //------------------------------------------------------------------------------
 bool Tube::generate(GLVAO32& vao, const bool clear)
 {
-    return generateTube(vao, clear,
+    return generateTube(vao,
+                        clear,
                         config.top_radius,
                         config.base_radius,
                         config.height,
@@ -171,28 +183,18 @@ bool Tube::generate(GLVAO32& vao, const bool clear)
 //------------------------------------------------------------------------------
 bool Cylinder::generate(GLVAO32& vao, const bool clear)
 {
-    return generateTube(vao, clear,
-                        config.radius,
-                        config.radius,
-                        config.height,
-                        config.slices);
+    return generateTube(
+        vao, clear, config.radius, config.radius, config.height, config.slices);
 }
 
 //------------------------------------------------------------------------------
 bool Cone::generate(GLVAO32& vao, const bool clear)
 {
-    return generateTube(vao, clear,
-                        0.0f,
-                        config.radius,
-                        config.height,
-                        config.slices);
+    return generateTube(
+        vao, clear, 0.0f, config.radius, config.height, config.slices);
 }
 //------------------------------------------------------------------------------
 bool Pyramid::generate(GLVAO32& vao, const bool clear)
 {
-    return generateTube(vao, clear,
-                        0.0f,
-                        config.radius,
-                        config.height,
-                        4u);
+    return generateTube(vao, clear, 0.0f, config.radius, config.height, 4u);
 }

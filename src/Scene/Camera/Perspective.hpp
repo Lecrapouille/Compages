@@ -19,17 +19,17 @@
 //=====================================================================
 
 #ifndef SCENE_CAMERA_PERSPECTIVE_HPP
-#  define SCENE_CAMERA_PERSPECTIVE_HPP
+#define SCENE_CAMERA_PERSPECTIVE_HPP
 
-#  include "Components/Components.hpp"
-#  include "Math/Transformable.hpp"
+#include "Components/Components.hpp"
+#include "Math/Transformable.hpp"
 
 using namespace units::literals;
 
 // *****************************************************************************
 //! \brief Define perspective computation needed for the Camera
 // *****************************************************************************
-class Perspective : public Component
+class Perspective: public Component
 {
 public:
 

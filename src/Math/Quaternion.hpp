@@ -3,20 +3,23 @@
  *
  *  Copyright (c) 2014 G. Cross and C. Qu. MIT License
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  *
  *        Created on: 12/13/2013
  *  Contributors: G. Cross gcross [dot] code [at] icloud.com
@@ -25,23 +28,24 @@
 
 // *****************************************************************************
 // Modified code by Quentin Quadrat <lecrapouille@gmail.com>.
-// See original code https://github.com/gareth-cross/quat/blob/master/include/quaternion.hpp */
+// See original code
+// https://github.com/gareth-cross/quat/blob/master/include/quaternion.hpp */
 // *****************************************************************************
 
 #ifndef QUATERNION_HPP
-#  define QUATERNION_HPP
+#define QUATERNION_HPP
 
-#  include "Matrix.hpp"
-#  include <cmath>
-#  include <limits>
-#  include <type_traits>
+#include "Matrix.hpp"
+#include <cmath>
+#include <limits>
+#include <type_traits>
 
-#  pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wold-style-cast"
-#    pragma GCC diagnostic ignored "-Wfloat-equal"
-#    pragma GCC diagnostic ignored "-Wsign-conversion"
-#      include "units/units.hpp"
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include "units/units.hpp"
+#pragma GCC diagnostic pop
 
 // *****************************************************************************
 //! \class Quat
@@ -57,10 +61,11 @@
 //!
 //! Supports multiplication, addition, scaling and integration.
 // *****************************************************************************
-template <typename T> class Quat
+template <typename T>
+class Quat
 {
     static_assert(std::is_fundamental<T>::value &&
-                  !std::numeric_limits<T>::is_integer,
+                      !std::numeric_limits<T>::is_integer,
                   "T must be a floating point type");
 
 public:
@@ -155,11 +160,14 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Creates a rotation which rotates angle degrees around axis.
     //--------------------------------------------------------------------------
-    static Quat<T> fromAngleAxis(units::angle::radian_t const angle, Vector<T, 3u> const& v)
+    static Quat<T> fromAngleAxis(units::angle::radian_t const angle,
+                                 Vector<T, 3u> const& v)
     {
         T const s = std::sin(angle.to<T>() * static_cast<T>(0.5));
         Quat<T> q(std::cos(angle.to<T>() * static_cast<T>(0.5)),
-                       v.x * s, v.y * s, v.z * s);
+                  v.x * s,
+                  v.y * s,
+                  v.z * s);
         q.normalize();
         return q;
     }
@@ -195,7 +203,7 @@ public:
     Vector<T, 3u> axis()
     {
         T tmp1 = static_cast<T>(1) - a * a;
-        if(tmp1 <= static_cast<T>(0))
+        if (tmp1 <= static_cast<T>(0))
             return Vector<T, 3u>(0, 0, 1);
         T tmp2 = static_cast<T>(1) / std::sqrt(tmp1);
         return Vector<T, 3u>(b * tmp2, c * tmp2, d * tmp2);
@@ -238,9 +246,9 @@ public:
     //! \brief Rotate a vector using this quaternion.
     //! \param[in] v Vector stored in the three complex terms
     //--------------------------------------------------------------------------
-    Quat transform(const Quat &v) const
+    Quat transform(const Quat& v) const
     {
-        const Quat &q = *this;
+        const Quat& q = *this;
         return q * v * q.conjugate();
     }
 
@@ -264,17 +272,17 @@ public:
         T qwy(a * c);
         T qwz(a * d);
 
-        Result[0][0] = T(1) - T(2) * (qyy +  qzz);
+        Result[0][0] = T(1) - T(2) * (qyy + qzz);
         Result[0][1] = T(2) * (qxy + qwz);
         Result[0][2] = T(2) * (qxz - qwy);
 
         Result[1][0] = T(2) * (qxy - qwz);
-        Result[1][1] = T(1) - T(2) * (qxx +  qzz);
+        Result[1][1] = T(1) - T(2) * (qxx + qzz);
         Result[1][2] = T(2) * (qyz + qwx);
 
         Result[2][0] = T(2) * (qxz + qwy);
         Result[2][1] = T(2) * (qyz - qwx);
-        Result[2][2] = T(1) - T(2) * (qxx +  qyy);
+        Result[2][2] = T(1) - T(2) * (qxx + qyy);
 
         return Result;
 
@@ -306,14 +314,15 @@ public:
     //! \brief Integrate a rotation quaternion using 4th order Runge Kutta.
     //! \param[in] q0 Angular velocity (body frame), stored in 3 complex terms.
     //! \param[in] dt Time interval in seconds.
-    //! \param[in] normalize If true, quaternion is normalized after integration.
+    //! \param[in] normalize If true, quaternion is normalized after
+    //! integration.
     //--------------------------------------------------------------------------
-    void integrateRungeKutta4(const Quat &q0, T dt, bool normalize = true)
+    void integrateRungeKutta4(const Quat& q0, T dt, bool normalize = true)
     {
         const static T half = static_cast<T>(0.5);
         const static T two = static_cast<T>(2);
 
-        Quat &q = *this;
+        Quat& q = *this;
         Quat qw = q * q0 * half;
 
         Quat k2 = (q + qw * dt * half) * q0 * half;
@@ -332,11 +341,12 @@ public:
     //! \brief Integrate a rotation quaterion using Euler integration.
     //! \param[in] q0 Angular velocity (body frame), stored in 3 complex terms.
     //! \param[in] dt Time interval in seconds.
-    //! \param[in] normalize If True, quaternion is normalized after integration.
+    //! \param[in] normalize If True, quaternion is normalized after
+    //! integration.
     //--------------------------------------------------------------------------
-    void integrateEuler(const Quat &q0, T dt, bool normalize = true)
+    void integrateEuler(const Quat& q0, T dt, bool normalize = true)
     {
-        Quat &q = *this;
+        Quat& q = *this;
         q += (q * q0 * static_cast<T>(0.5)) * dt;
 
         if (normalize)
@@ -362,7 +372,8 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Create a rotation quaternion from rotation vector [x,y,z].
-    //! \note If x/y/z have 0 norm, this function returns the identity transform.
+    //! \note If x/y/z have 0 norm, this function returns the identity
+    //! transform.
     //--------------------------------------------------------------------------
     static Quat rotation(T x, T y, T z)
     {
@@ -379,9 +390,11 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Create quaternion from matrix.
     //! \param[in] m Rotation matrix, should be a member of SO[3].
-    //! \param[in] Matrix Any matrix-like type which supports the (i,j) operator.
+    //! \param[in] Matrix Any matrix-like type which supports the (i,j)
+    //! operator.
     //! \note All singularities are handled, provided \c m belongs to SO[3].
-    //! \see http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+    //! \see
+    //! http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
     //--------------------------------------------------------------------------
     static Quat fromMatrix(Matrix<T, 4u, 4u> const& m)
     {
@@ -432,16 +445,30 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Pointer accessor for direct copying
     //-------------------------------------------------------------------------
-    inline T* ptr() { return data; }
-    inline T const* ptr() const { return data; }
+    inline T* ptr()
+    {
+        return data;
+    }
+    inline T const* ptr() const
+    {
+        return data;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief operator () Element-wise accessor.
     //! \param[in] i Index into quaternion, must be less than 4 (not checked).
     //! \return Element i of the quaternion.
     //--------------------------------------------------------------------------
-    T &operator[](size_t const i) { assert(i < 4u); return data[i]; }
-    T const &operator[](size_t const i) const { assert(i < 4u); return data[i]; }
+    T& operator[](size_t const i)
+    {
+        assert(i < 4u);
+        return data[i];
+    }
+    T const& operator[](size_t const i) const
+    {
+        assert(i < 4u);
+        return data[i];
+    }
 
 public:
 
@@ -450,12 +477,38 @@ public:
     //--------------------------------------------------------------------------
     union
     {
-         T data[4u];
+        T data[4u];
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-        struct { T a; union { struct { T b; T c; T d; }; Vector<T, 3u> bcd; }; };
-        struct { T w; union { struct { T x; T y; T z; }; Vector<T, 3u> xyz; }; };
+        struct
+        {
+            T a;
+            union
+            {
+                struct
+                {
+                    T b;
+                    T c;
+                    T d;
+                };
+                Vector<T, 3u> bcd;
+            };
+        };
+        struct
+        {
+            T w;
+            union
+            {
+                struct
+                {
+                    T x;
+                    T y;
+                    T z;
+                };
+                Vector<T, 3u> xyz;
+            };
+        };
 #pragma GCC diagnostic pop
     };
 };
@@ -549,9 +602,12 @@ Quat<T> operator*(T const s, Quat<T> const& q)
 //! \return a
 //------------------------------------------------------------------------------
 template <typename T>
-Quat<T> &operator*=(Quat<T> &q, T const s)
+Quat<T>& operator*=(Quat<T>& q, T const s)
 {
-    q.a *= s; q.b *= s; q.c *= s; q.d *= s;
+    q.a *= s;
+    q.b *= s;
+    q.c *= s;
+    q.d *= s;
     return q;
 }
 
@@ -562,7 +618,7 @@ Quat<T> &operator*=(Quat<T> &q, T const s)
 //! \return a
 //------------------------------------------------------------------------------
 template <typename T>
-Quat<T> &operator/=(Quat<T> &q, T const s)
+Quat<T>& operator/=(Quat<T>& q, T const s)
 {
     return operator*=(q, T(1) / s);
 }
@@ -586,9 +642,12 @@ Quat<T> operator+(Quat<T> const& q1, Quat<T> const& q2)
 //! \return q1
 //------------------------------------------------------------------------------
 template <typename T>
-Quat<T> &operator+=(Quat<T> &q1, Quat<T> const& q2)
+Quat<T>& operator+=(Quat<T>& q1, Quat<T> const& q2)
 {
-    q1.a += q2.a; q1.b += q2.b; q1.c += q2.c; q1.d += q2.d;
+    q1.a += q2.a;
+    q1.b += q2.b;
+    q1.c += q2.c;
+    q1.d += q2.d;
     return q1;
 }
 
@@ -611,9 +670,12 @@ Quat<T> operator-(Quat<T> const& q1, Quat<T> const& q2)
 //! \return q1
 //------------------------------------------------------------------------------
 template <typename T>
-Quat<T> &operator-=(Quat<T> &q1, Quat<T> const& q2)
+Quat<T>& operator-=(Quat<T>& q1, Quat<T> const& q2)
 {
-    q1.a -= q2.a; q1.b -= q2.b; q1.c -= q2.c; q1.d -= q2.d;
+    q1.a -= q2.a;
+    q1.b -= q2.b;
+    q1.c -= q2.c;
+    q1.d -= q2.d;
     return q1;
 }
 

@@ -19,13 +19,13 @@
 //=====================================================================
 
 #ifndef AXESHELPER_HPP
-#  define AXESHELPER_HPP
+#define AXESHELPER_HPP
 
-#  include "Scene/ShapeNode.hpp"
-#  include "Scene/Geometry/Axes.hpp"
-#  include "Scene/Material/LineBasicMaterial.hpp"
+#include "Scene/Geometry/Axes.hpp"
+#include "Scene/Material/LineBasicMaterial.hpp"
+#include "Scene/ShapeNode.hpp"
 
-class AxesHelper : public Shape<Axes, LineBasicMaterial>
+class AxesHelper: public Shape<Axes, LineBasicMaterial>
 {
 public:
 

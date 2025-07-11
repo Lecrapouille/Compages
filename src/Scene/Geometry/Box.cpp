@@ -35,11 +35,11 @@ bool Box::generate(GLVAO32& vao, const bool clear)
 
     auto& positions = vao.vector3f(shaders::name::position);
     auto& normals = vao.hasVBO<Vector3f>(shaders::name::normal)
-                    ? vao.vector3f(shaders::name::normal)
-                    : tmp_normals;
+                        ? vao.vector3f(shaders::name::normal)
+                        : tmp_normals;
     auto& UVs = vao.hasVBO<Vector2f>(shaders::name::uv)
-                ? vao.vector2f(shaders::name::uv)
-                : tmp_uv;
+                    ? vao.vector2f(shaders::name::uv)
+                    : tmp_uv;
 
     if (clear)
     {
@@ -60,40 +60,100 @@ bool Box::generate(GLVertexBuffer<Vector3f>& vertices,
 {
     uint32_t numberOfVertices = 0;
 
-    buildPlane(Z, Y, X, -1.0f, -1.0f,
-               config.depth, config.height, config.width,
-               config.depthSegments, config.heightSegments,
-               vertices, normals, uv, index,
+    buildPlane(Z,
+               Y,
+               X,
+               -1.0f,
+               -1.0f,
+               config.depth,
+               config.height,
+               config.width,
+               config.depthSegments,
+               config.heightSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // px
 
-    buildPlane(Z, Y, X,  1.0f, -1.0f,
-               config.depth, config.height, -config.width,
-               config.depthSegments, config.heightSegments,
-               vertices, normals, uv, index,
+    buildPlane(Z,
+               Y,
+               X,
+               1.0f,
+               -1.0f,
+               config.depth,
+               config.height,
+               -config.width,
+               config.depthSegments,
+               config.heightSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // nx
 
-    buildPlane(X, Z, Y,  1.0f,  1.0f,
-               config.width, config.depth, config.height,
-               config.widthSegments, config.depthSegments,
-               vertices, normals, uv, index,
+    buildPlane(X,
+               Z,
+               Y,
+               1.0f,
+               1.0f,
+               config.width,
+               config.depth,
+               config.height,
+               config.widthSegments,
+               config.depthSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // py
 
-    buildPlane(X, Z, Y,  1.0f, -1.0f,
-               config.width, config.depth, -config.height,
-               config.widthSegments, config.depthSegments,
-               vertices, normals, uv, index,
+    buildPlane(X,
+               Z,
+               Y,
+               1.0f,
+               -1.0f,
+               config.width,
+               config.depth,
+               -config.height,
+               config.widthSegments,
+               config.depthSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // ny
 
-    buildPlane(X, Y, Z,  1.0f, -1.0f,
-               config.width, config.height, config.depth,
-               config.widthSegments, config.heightSegments,
-               vertices, normals, uv, index,
+    buildPlane(X,
+               Y,
+               Z,
+               1.0f,
+               -1.0f,
+               config.width,
+               config.height,
+               config.depth,
+               config.widthSegments,
+               config.heightSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // pz
 
-    buildPlane(X, Y, Z, -1.0f, -1.0f,
-               config.width, config.height, -config.depth,
-               config.widthSegments, config.heightSegments,
-               vertices, normals, uv, index,
+    buildPlane(X,
+               Y,
+               Z,
+               -1.0f,
+               -1.0f,
+               config.width,
+               config.height,
+               -config.depth,
+               config.widthSegments,
+               config.heightSegments,
+               vertices,
+               normals,
+               uv,
+               index,
                numberOfVertices); // nz
 
     return true;
@@ -103,9 +163,16 @@ bool Box::generate(GLVertexBuffer<Vector3f>& vertices,
 // Original code https://github.com/mrdoob/three.js/
 // three.js/src/geometries/BoxBufferGeometry.js
 //------------------------------------------------------------------------------
-void Box::buildPlane(Side u, Side v, Side w, float udir, float vdir,
-                     float width, float height, float depth,
-                     uint32_t gridX, uint32_t gridY,
+void Box::buildPlane(Side u,
+                     Side v,
+                     Side w,
+                     float udir,
+                     float vdir,
+                     float width,
+                     float height,
+                     float depth,
+                     uint32_t gridX,
+                     uint32_t gridY,
                      GLVertexBuffer<Vector3f>& vertices,
                      GLVertexBuffer<Vector3f>& normals,
                      GLVertexBuffer<Vector2f>& uv,
@@ -153,7 +220,7 @@ void Box::buildPlane(Side u, Side v, Side w, float udir, float vdir,
     }
 
     // Indices
-    //const uint32_t numberOfVertices = uint32_t(vertices.size());
+    // const uint32_t numberOfVertices = uint32_t(vertices.size());
     for (uint32_t iy = 0u; iy < gridY; ++iy)
     {
         for (uint32_t ix = 0u; ix < gridX; ++ix)

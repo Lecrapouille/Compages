@@ -27,13 +27,14 @@
 #include "OpenGL/Shaders/Shader.hpp"
 #include "Common/File.hpp"
 #include <iostream>
-#include <regex>
 #include <list>
+#include <regex>
 
 //--------------------------------------------------------------------------
 GLShader::GLShader(std::string const& name, const GLenum target)
     : GLObject(name, target), m_file_name(name)
-{}
+{
+}
 
 //--------------------------------------------------------------------------
 GLShader::~GLShader()
@@ -76,21 +77,24 @@ bool GLShader::read(std::string const& file, std::string& code)
             // Read the shader content
             if (!infile.read(&code[p], static_cast<std::streamsize>(pos)))
             {
-                msg = "Failed reading file '" + file + "'. Reason was '" + ::strerror(errno) + "'";
+                msg = "Failed reading file '" + file + "'. Reason was '" +
+                      ::strerror(errno) + "'";
                 concatError(msg);
                 return false;
             }
         }
         else
         {
-            msg = "Failed reading file '" + file + "'. Reason was 'cannot get the file size'";
+            msg = "Failed reading file '" + file +
+                  "'. Reason was 'cannot get the file size'";
             concatError(msg);
             return false;
         }
     }
     else
     {
-        msg = "Failed opening file '" + file + "'. Reason was '" + ::strerror(errno) + "'";
+        msg = "Failed opening file '" + file + "'. Reason was '" +
+              ::strerror(errno) + "'";
         concatError(msg);
         return false;
     }
@@ -111,7 +115,8 @@ bool GLShader::solveIncludes()
     bool changed;
 
     opened_files.push_back(File::fileName(path.expand(m_file_name)));
-    do {
+    do
+    {
         new_code = "";
         changed = false;
         while (std::getline(code, line))
@@ -128,8 +133,9 @@ bool GLShader::solveIncludes()
                 // to the code
                 std::string full_path = path.expand(matches.str(1));
                 m_file_name = File::fileName(full_path);
-                if (opened_files.end() !=
-                    std::find(opened_files.begin(), opened_files.end(), m_file_name))
+                if (opened_files.end() != std::find(opened_files.begin(),
+                                                    opened_files.end(),
+                                                    m_file_name))
                 {
                     std::cout << full_path << " already included" << std::endl;
                     continue;
@@ -141,7 +147,8 @@ bool GLShader::solveIncludes()
                 }
                 // By security add the character on the same line
                 // after "include foo" for example "include foo uniform bar;"
-                std::string eol = line.substr(size_t(matches.position(0)) + matches.str(0).size());
+                std::string eol = line.substr(size_t(matches.position(0)) +
+                                              matches.str(0).size());
                 if (!eol.empty())
                 {
                     new_code += '\n';
@@ -190,8 +197,7 @@ bool GLShader::onCreate()
 }
 
 //--------------------------------------------------------------------------
-void GLShader::onActivate()
-{}
+void GLShader::onActivate() {}
 
 //--------------------------------------------------------------------------
 bool GLShader::onSetup()
@@ -202,7 +208,7 @@ bool GLShader::onSetup()
     if (loaded())
     {
         solveIncludes();
-        char const *source = m_code.c_str();
+        char const* source = m_code.c_str();
         GLint length = static_cast<GLint>(m_code.size());
         glCheck(glShaderSource(m_handle, 1, &source, &length));
         glCheck(glCompileShader(m_handle));
@@ -210,9 +216,8 @@ bool GLShader::onSetup()
     }
     else
     {
-        std::string msg =
-                "Failed compiling shader " + name() +
-                ". Reason was 'no shader code was loaded'";
+        std::string msg = "Failed compiling shader " + name() +
+                          ". Reason was 'no shader code was loaded'";
         concatError(msg);
     }
 
@@ -226,8 +231,7 @@ bool GLShader::onUpdate()
 }
 
 //--------------------------------------------------------------------------
-void GLShader::onDeactivate()
-{}
+void GLShader::onDeactivate() {}
 
 //--------------------------------------------------------------------------
 void GLShader::onRelease()
@@ -249,9 +253,9 @@ bool GLShader::checkCompilationStatus(GLuint obj)
         glCheck(glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &length));
         std::vector<char> log(static_cast<size_t>(length + 1));
         glCheck(glGetShaderInfoLog(obj, length, &length, &log[0U]));
-        
-        std::string msg = "Failed compiling shader " + name() +
-                          ". Reason was: ";
+
+        std::string msg =
+            "Failed compiling shader " + name() + ". Reason was: ";
         concatError(msg);
         concatError(&log[0U]);
     }

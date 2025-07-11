@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_UI_LAYER_HPP
-#  define OPENGLCPPWRAPPER_UI_LAYER_HPP
+#define OPENGLCPPWRAPPER_UI_LAYER_HPP
 
-#  include "UI/Window.hpp"
-#  include <string>
+#include "UI/Window.hpp"
+#include <string>
 
 // ***************************************************************************
 //! \brief A layer allows to render
@@ -38,7 +38,7 @@ public:
     //! this instance of layer.
     //! \param[in] name: the layer name.
     //--------------------------------------------------------------------------
-    Layer(GLWindow &window, std::string const& name);
+    Layer(GLWindow& window, std::string const& name);
 
     //--------------------------------------------------------------------------
     //! \brief Needed because of virtual methods.
@@ -57,7 +57,7 @@ public:
     //! \brief Return the parent window (the window owning this instance of
     //! layer).
     //--------------------------------------------------------------------------
-    template<class W>
+    template <class W>
     inline W& owner()
     {
         return reinterpret_cast<W&>(m_window);

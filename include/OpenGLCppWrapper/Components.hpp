@@ -19,8 +19,8 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_INCLUDE_COMPONENTS_HPP
-#  define OPENGLCPPWRAPPER_INCLUDE_COMPONENTS_HPP
+#define OPENGLCPPWRAPPER_INCLUDE_COMPONENTS_HPP
 
-#  include "Components/Physics/BulletWrapper.hpp"
+#include "Components/Physics/BulletWrapper.hpp"
 
 #endif // OPENGLCPPWRAPPER_INCLUDE_COMPONENTS_HPP

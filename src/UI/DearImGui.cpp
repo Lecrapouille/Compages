@@ -28,9 +28,11 @@
 void DearImGuiLayer::setFont()
 {
     ImGuiIO& io = ImGui::GetIO();
-    float fontSize = 18.0f;// *2.0f;
-    io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
-    io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
+    float fontSize = 18.0f; // *2.0f;
+    io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf",
+                                 fontSize);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(
+        "assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
 }
 
 void DearImGuiLayer::theme(Theme const style)
@@ -49,12 +51,15 @@ void DearImGuiLayer::reactTo(GLWindow::Event const events)
 {
     ImGuiIO& io = ImGui::GetIO();
     if ((events & GLWindow::Event::Keyboard) == GLWindow::Event::Keyboard)
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+        io.ConfigFlags |=
+            ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport
+                                                        // / Platform Windows
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable
+    // Gamepad Controls io.ConfigFlags |=
+    // ImGuiConfigFlags_ViewportsNoTaskBarIcons; io.ConfigFlags |=
+    // ImGuiConfigFlags_ViewportsNoMerge;
 }
 
 // setup
@@ -84,7 +89,7 @@ void DearImGuiLayer::begin()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    //ImGuizmo::BeginFrame();
+    // ImGuizmo::BeginFrame();
 }
 
 void DearImGuiLayer::end()
@@ -92,8 +97,7 @@ void DearImGuiLayer::end()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(m_window.width<float>(),
-                            m_window.height<float>());
+    io.DisplaySize = ImVec2(m_window.width<float>(), m_window.height<float>());
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();

@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef TEXTURES_LOADER_HPP
-#  define TEXTURES_LOADER_HPP
+#define TEXTURES_LOADER_HPP
 
-#  include "OpenGL/Textures/Texture.hpp"
+#include "OpenGL/Textures/Texture.hpp"
 
 // ***************************************************************************
 //! \brief Interface class for loading and saving 2D texture from picture file
@@ -75,8 +75,10 @@ public:
     //! \return true if the textures has been loaded with success, esle return
     //! false and the error message can be get through the method error().
     //--------------------------------------------------------------------------
-    virtual bool load(std::string const& filename, GLTexture::Buffer& buffer,
-                      size_t& width, size_t& height) = 0;
+    virtual bool load(std::string const& filename,
+                      GLTexture::Buffer& buffer,
+                      size_t& width,
+                      size_t& height) = 0;
 
     //--------------------------------------------------------------------------
     //! \brief Save the OpenGL texture into a picture file (jpeg, bmp, png ...)
@@ -89,8 +91,10 @@ public:
     //! \return true if the textures has been saved with success, esle return
     //! false and the error message can be get through the method error().
     //--------------------------------------------------------------------------
-    virtual bool save(std::string const& filename, GLTexture::Buffer const& buffer,
-                      size_t const width, size_t const height) = 0;
+    virtual bool save(std::string const& filename,
+                      GLTexture::Buffer const& buffer,
+                      size_t const width,
+                      size_t const height) = 0;
 
     //--------------------------------------------------------------------------
     //! \brief Return the last errorr (if occured).

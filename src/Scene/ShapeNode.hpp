@@ -19,14 +19,14 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_SHAPE_NODE_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_SHAPE_NODE_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_SHAPE_NODE_HPP
 
-#  include "OpenGL/Buffers/iVAO.hpp"
-#  include "Scene/Geometry/Geometry.hpp"
-#  include "Scene/Material/Material.hpp"
-#  include "Scene/SceneTree.hpp"
-#  include "Scene/Material/ShaderLib.hpp"
-#  include "Scene/Camera/CameraNode.hpp"
+#include "OpenGL/Buffers/iVAO.hpp"
+#include "Scene/Camera/CameraNode.hpp"
+#include "Scene/Geometry/Geometry.hpp"
+#include "Scene/Material/Material.hpp"
+#include "Scene/Material/ShaderLib.hpp"
+#include "Scene/SceneTree.hpp"
 
 // *****************************************************************************
 //! \brief Base class for Shape<Geometry,Material> since sometines we need to
@@ -49,26 +49,26 @@ public:
 // *****************************************************************************
 //! \brief
 // *****************************************************************************
-template<class Geometry, class Material>
+template <class Geometry, class Material>
 class Shape: public BaseShape, public SceneObject
 {
 public:
 
-    using Ptr = std::unique_ptr<Shape<Geometry,Material>>;
+    using Ptr = std::unique_ptr<Shape<Geometry, Material>>;
 
     Shape(std::string const& name, Mode const mode = Mode::TRIANGLES)
         : SceneObject(name),
           m_vao("VAO_" + name),
           material(m_vao), // will use the material default config
           m_drawMode(mode)
-    {}
+    {
+    }
 
     bool compile()
     {
         if (!material.compile())
         {
-            std::cerr << "Shape " << name()
-                      << ": Failed creating its material"
+            std::cerr << "Shape " << name() << ": Failed creating its material"
                       << std::endl;
 
             return false;
@@ -76,16 +76,14 @@ public:
 
         if (!material.program.bind(m_vao))
         {
-            std::cerr << "Shape " << name()
-                      << ": Failed binding its VAO "
+            std::cerr << "Shape " << name() << ": Failed binding its VAO "
                       << std::endl;
             return false;
         }
 
         if (!geometry.generate(m_vao, true))
         {
-            std::cerr << "Shape " << name()
-                      << ": Failed creating its geometry"
+            std::cerr << "Shape " << name() << ": Failed creating its geometry"
                       << std::endl;
             return false;
         }
@@ -100,7 +98,8 @@ public:
         projectionMatrix() = camera.projection();
     }
 
-    virtual bool onDraw(Matrix44f const& model_matrix = Matrix44f(matrix::Identity)) override
+    virtual bool
+    onDraw(Matrix44f const& model_matrix = Matrix44f(matrix::Identity)) override
     {
         modelMatrix() = model_matrix;
         return m_vao.draw(m_drawMode);

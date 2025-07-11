@@ -37,6 +37,7 @@ public:
             throw GL::Exception("Failed create renderable");
         }
     }
+
 public:
 
     rigidbody::Sphere body;
@@ -50,8 +51,10 @@ public:
         : Shape<Box, BasicMaterial>(name),
           body(transform, dimensions, units::mass::kilogram_t(0.01))
     {
-        Shape<Box, BasicMaterial>::material.color() = Color(0.5f, 0.0f, 0.0f).toVector3f();
-        Shape<Box, BasicMaterial>::material.diffuse() = Color(0.4f, 0.0f, 0.0f).toVector3f();
+        Shape<Box, BasicMaterial>::material.color() =
+            Color(0.5f, 0.0f, 0.0f).toVector3f();
+        Shape<Box, BasicMaterial>::material.diffuse() =
+            Color(0.4f, 0.0f, 0.0f).toVector3f();
         Shape<Box, BasicMaterial>::material.opacity() = 1.0f;
 
         geometry.config.width = dimensions[0];
@@ -62,13 +65,16 @@ public:
             throw GL::Exception("Failed create renderable");
         }
     }
+
 public:
 
     rigidbody::Box body;
 };
 
 //------------------------------------------------------------------------------
-MiscLookAt::MiscLookAt(uint32_t const width, uint32_t const height, const char *title)
+MiscLookAt::MiscLookAt(uint32_t const width,
+                       uint32_t const height,
+                       const char* title)
     : GLWindow(width, height, title),
       m_camera("camera", Camera::Type::PERSPECTIVE)
 {
@@ -92,7 +98,7 @@ void MiscLookAt::onWindowResized()
     // Make sure the viewport matches the new window dimensionm_shape.
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    for (auto& it: m_scene.root->children)
+    for (auto& it : m_scene.root->children)
     {
         BaseShape* shape = dynamic_cast<BaseShape*>(it.get());
         shape->projectionMatrix() = m_camera.projection();
@@ -105,8 +111,10 @@ void MiscLookAt::onWindowResized()
 // --------------------------------------------------------------
 void MiscLookAt::onMouseMoved()
 {
-    float const dx = static_cast<float>(GLWindow::mouse().position.x) - m_camera.transform.position().x;
-    float const dy = static_cast<float>(GLWindow::mouse().position.y) - m_camera.transform.position().y;
+    float const dx = static_cast<float>(GLWindow::mouse().position.x) -
+                     m_camera.transform.position().x;
+    float const dy = static_cast<float>(GLWindow::mouse().position.y) -
+                     m_camera.transform.position().y;
 
     m_mouse_position = Vector3f(dx * 0.05f, dy * 0.05f, 0.0f);
 }
@@ -138,11 +146,14 @@ bool MiscLookAt::onSetup()
     MySphere& sphere = m_scene.root->attach<MySphere>("Sphere", 1.0f);
 
     // Create box (TODO cones)
-    for (size_t i = 0u; i < 1000u; ++i) // FIXME pas la bonne facon de faire: ca creer plein de GLProgram inutillement: il faudrait que le m_prog soit partage.
+    for (size_t i = 0u; i < 1000u;
+         ++i) // FIXME pas la bonne facon de faire: ca creer plein de GLProgram
+              // inutillement: il faudrait que le m_prog soit partage.
     {
         MyBox& box = m_scene.root->attach<MyBox>("Cone" + std::to_string(i),
                                                  Vector3f(1.0f, 1.0f, 1.0f));
-        Vector3f ran(dist::real<float>(), dist::real<float>(), dist::real<float>());
+        Vector3f ran(
+            dist::real<float>(), dist::real<float>(), dist::real<float>());
         box.transform.position(ran * 4000.0f - 2000.0f);
         box.transform.scaling(ran * 4.0f + 2.0f);
     }
@@ -173,12 +184,12 @@ bool MiscLookAt::onPaint()
     static float time = 0.0f;
     time += dt();
 
-    //sphere.transform.position(Vector3f(sinf(time * 0.7f) * 2000.0f,
-    //                          cosf(time * 0.5f) * 2000.0f,
-    //                          cosf(time * 0.3f) * 2000.0f));
+    // sphere.transform.position(Vector3f(sinf(time * 0.7f) * 2000.0f,
+    //                           cosf(time * 0.5f) * 2000.0f,
+    //                           cosf(time * 0.3f) * 2000.0f));
 
-    //for (auto it: m_scene->children())
-    //  it->lookAt(m_cube->position());
+    // for (auto it: m_scene->children())
+    //   it->lookAt(m_cube->position());
 
     m_camera.transform.translate(m_mouse_position);
     m_camera.transform.lookAt(m_scene.root->transform.position());

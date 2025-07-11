@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GEOMETRY_SPHERE_HPP
-#  define OPENGLCPPWRAPPER_GEOMETRY_SPHERE_HPP
+#define OPENGLCPPWRAPPER_GEOMETRY_SPHERE_HPP
 
-#  include "Scene/Geometry/Geometry.hpp"
+#include "Scene/Geometry/Geometry.hpp"
 
 // *****************************************************************************
 //! \brief
@@ -53,7 +53,7 @@ protected:
     bool generate(GLVertexBuffer<Vector3f>& vertices,
                   GLVertexBuffer<Vector3f>& normals,
                   GLVertexBuffer<Vector2f>& uv,
-                  GLIndex32&        index);
+                  GLIndex32& index);
 
 public:
 

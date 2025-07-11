@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef LINE_BASIC_MATERIAL_HPP
-#  define LINE_BASIC_MATERIAL_HPP
+#define LINE_BASIC_MATERIAL_HPP
 
-#  include "Scene/Material/Material.hpp"
-#  include "Scene/Material/Color.hpp"
-#  include "OpenGL/Textures/Textures.hpp"
+#include "OpenGL/Textures/Textures.hpp"
+#include "Scene/Material/Color.hpp"
+#include "Scene/Material/Material.hpp"
 
 class LineBasicMaterial: public Material
 {
@@ -39,10 +39,12 @@ public:
 
 public:
 
-    LineBasicMaterial(GLVAO& vao, LineBasicMaterial::Config const& conf = LineBasicMaterial::Config())
-        : Material("LineBasicMaterial", vao),
-          config(conf)
-    {}
+    LineBasicMaterial(
+        GLVAO& vao,
+        LineBasicMaterial::Config const& conf = LineBasicMaterial::Config())
+        : Material("LineBasicMaterial", vao), config(conf)
+    {
+    }
 
     /*inline float& width()
     {

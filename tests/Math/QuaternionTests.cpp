@@ -21,15 +21,16 @@
 #include "main.hpp"
 #define protected public
 #define private public
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#    include "Math/Quaternion.hpp"
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include "Math/Quaternion.hpp"
+#pragma GCC diagnostic pop
 #undef protected
 #undef private
 
 //--------------------------------------------------------------------------
-static void check_vector(Vector3f const& v, const float x, const float y, const float z)
+static void
+check_vector(Vector3f const& v, const float x, const float y, const float z)
 {
     ASSERT_EQ(x, v.x);
     ASSERT_EQ(y, v.y);
@@ -37,7 +38,7 @@ static void check_vector(Vector3f const& v, const float x, const float y, const 
 }
 
 template <typename T, size_t r, size_t c>
-static void check_matrix(Matrix<T,r,c> const &a, Matrix<T,r,c> const &b)
+static void check_matrix(Matrix<T, r, c> const& a, Matrix<T, r, c> const& b)
 {
     for (size_t i = 0_z; i < r * c; ++i)
     {
@@ -136,13 +137,12 @@ TEST(TestQuaternions, testangles)
         ASSERT_EQ(0.0f, v.x);
         ASSERT_EQ(0.0f, v.y);
         ASSERT_EQ(1.0f, v.z);
-        ASSERT_EQ(units::angle::degree_t(0.0f).to<int>(),
-                  q.angle().to<int>());
+        ASSERT_EQ(units::angle::degree_t(0.0f).to<int>(), q.angle().to<int>());
     }
 
     {
         Quatf q = Quatf::fromAngleAxis(units::angle::degree_t(0.0f),
-                                       Vector3f(0,0,1));
+                                       Vector3f(0, 0, 1));
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
         ASSERT_EQ(0.0f, q[2]);
@@ -150,7 +150,7 @@ TEST(TestQuaternions, testangles)
     }
 
     {
-        Quatf q(units::angle::degree_t(0.0f), Vector3f(0,0,1));
+        Quatf q(units::angle::degree_t(0.0f), Vector3f(0, 0, 1));
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
         ASSERT_EQ(0.0f, q[2]);
@@ -169,12 +169,25 @@ TEST(TestQuaternions, testmatrix)
 
     {
         Quatf q = Quatf::fromAngleAxis(units::angle::degree_t(45.0f),
-                                       Vector3f(0,1,0));
+                                       Vector3f(0, 1, 0));
         Matrix44f m = q.toMatrix();
-        check_matrix(Matrix44f({0.707107f, 0.0f, -0.707107f, 0.0f,
-                                0.0f, 1.0f, 0.0f, 0.0f,
-                                0.707107f, 0.0f, 0.707107f, 0.0f,
-                                0.0f, 0.0f, 0.0f, 1.0f}), m);
+        check_matrix(Matrix44f({ 0.707107f,
+                                 0.0f,
+                                 -0.707107f,
+                                 0.0f,
+                                 0.0f,
+                                 1.0f,
+                                 0.0f,
+                                 0.0f,
+                                 0.707107f,
+                                 0.0f,
+                                 0.707107f,
+                                 0.0f,
+                                 0.0f,
+                                 0.0f,
+                                 0.0f,
+                                 1.0f }),
+                     m);
     }
 }
 

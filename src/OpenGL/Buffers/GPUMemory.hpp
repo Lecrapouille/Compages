@@ -19,17 +19,17 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_MEMORY_HPP
-#  define OPENGLCPPWRAPPER_MEMORY_HPP
+#define OPENGLCPPWRAPPER_MEMORY_HPP
 
-#  include <atomic>
-#  include <cstddef>
+#include <atomic>
+#include <cstddef>
 
 //----------------------------------------------------------------------------
 //! \brief Track the estimated usage of GPU memory in kilo bytes.
 //----------------------------------------------------------------------------
 inline std::atomic<size_t>& GPUMemory()
 {
-    static std::atomic<size_t> mem_gpu{0u};
+    static std::atomic<size_t> mem_gpu{ 0u };
     return mem_gpu;
 }
 

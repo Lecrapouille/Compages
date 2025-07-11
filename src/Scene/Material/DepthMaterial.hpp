@@ -19,19 +19,19 @@
 //=====================================================================
 
 #ifndef DEPTH_MATERIAL_HPP
-#  define DEPTH_MATERIAL_HPP
+#define DEPTH_MATERIAL_HPP
 
-#  include "Scene/Material/Material.hpp"
+#include "Scene/Material/Material.hpp"
 
-class DepthMaterial : public Material
+class DepthMaterial: public Material
 {
 public:
 
-    struct Config {};
+    struct Config
+    {
+    };
 
-    DepthMaterial(GLVAO& vao)
-        : Material("DepthMaterial", vao)
-    {}
+    DepthMaterial(GLVAO& vao) : Material("DepthMaterial", vao) {}
 
     float& near()
     {

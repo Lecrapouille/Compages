@@ -25,9 +25,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLLOCATION_HPP
-#  define OPENGLCPPWRAPPER_GLLOCATION_HPP
+#define OPENGLCPPWRAPPER_GLLOCATION_HPP
 
-#  include "OpenGL/GLObject.hpp"
+#include "OpenGL/GLObject.hpp"
 
 // *****************************************************************************
 //! \brief Base class representing either an attribute variable or an uniform
@@ -49,12 +49,11 @@
 //! managed privately by GLProgam and therefore shall not be used directly by
 //! the user. Indeed
 
-
 //! Locations, depending on their type and used for creating the associated VBO
 //! for attributes, textures for samplers when a VAO is bound to a GLProgram or
 //! modifiying shader states for uniforms when a VAO is bound to a GLProgram.
 
-//this class is only managed by \c GLProgram and they are
+// this class is only managed by \c GLProgram and they are
 //! created automatically when shader code is parsed.
 
 // *****************************************************************************
@@ -69,17 +68,21 @@ public:
     //! \brief Constructor. This constructor makes no other actions.
     //!
     //! \param[in] name Give a name to the instance. GLProgram uses these names
-    //! in their internal hash table and shall reference to a real variable name insde the GLSL shader code.
+    //! in their internal hash table and shall reference to a real variable name
+    //! insde the GLSL shader code.
     //! \param[in] dim set the dimension of variable (1 for scalar else the
     //! dimension of vector: 2, 3, 4 or dimension of matrices ...)
     //! \param[in] type set the OpenGL type of data (GL_FLOAT, GL_INT ...)
     //! \param[in] program set the GLProgram identifier (which is the owner of
     //! this instance).
     //--------------------------------------------------------------------------
-    GLLocation(const char *name, const GLint size, const GLenum type,
+    GLLocation(const char* name,
+               const GLint size,
+               const GLenum type,
                const GLuint program)
         : GLObject(name, type), m_size(size), m_program(program)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Destructor. Release elements in CPU and GPU memories.

@@ -25,14 +25,14 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_ELEMENT_BUFFER_OBJECT_HPP
-#  define OPENGLCPPWRAPPER_ELEMENT_BUFFER_OBJECT_HPP
+#define OPENGLCPPWRAPPER_ELEMENT_BUFFER_OBJECT_HPP
 
-#  include "OpenGL/Buffers/Buffer.hpp"
+#include "OpenGL/Buffers/Buffer.hpp"
 
 // *****************************************************************************
 //! \brief Element Buffer Object
 // *****************************************************************************
-template<typename T>
+template <typename T>
 class GLElementBuffer: public GLBuffer<T>
 {
 public:
@@ -44,25 +44,28 @@ public:
     //--------------------------------------------------------------------------
     explicit GLElementBuffer(std::string const& name, BufferUsage const usage)
         : GLBuffer<T>(name, GL_ELEMENT_ARRAY_BUFFER, usage)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Constructor with the object name and reserved number of
     //! elements.
     //--------------------------------------------------------------------------
-    explicit GLElementBuffer(std::string const& name, const size_t size,
-                           BufferUsage const usage)
+    explicit GLElementBuffer(std::string const& name,
+                             const size_t size,
+                             BufferUsage const usage)
         : GLBuffer<T>(name, GL_ELEMENT_ARRAY_BUFFER, size, usage)
-    {}
+    {
+    }
 
-    template<typename U>
+    template <typename U>
     inline GLElementBuffer<T>& operator=(std::initializer_list<U> il)
     {
         PendingContainer<T>::operator=(il);
         return *this;
     }
 
-    template<typename U>
+    template <typename U>
     inline GLElementBuffer<T>& operator=(std::vector<U> const& other)
     {
         PendingContainer<T>::operator=(other);
@@ -81,14 +84,23 @@ public:
     inline GLenum gltype() const;
 };
 
-template<>
-inline GLenum GLElementBuffer<uint32_t>::gltype() const { return GL_UNSIGNED_INT; }
+template <>
+inline GLenum GLElementBuffer<uint32_t>::gltype() const
+{
+    return GL_UNSIGNED_INT;
+}
 
-template<>
-inline GLenum GLElementBuffer<uint16_t>::gltype() const { return GL_UNSIGNED_SHORT; }
+template <>
+inline GLenum GLElementBuffer<uint16_t>::gltype() const
+{
+    return GL_UNSIGNED_SHORT;
+}
 
-template<>
-inline GLenum GLElementBuffer<uint8_t>::gltype() const { return GL_UNSIGNED_BYTE; }
+template <>
+inline GLenum GLElementBuffer<uint8_t>::gltype() const
+{
+    return GL_UNSIGNED_BYTE;
+}
 
 // *****************************************************************************
 //! \brief

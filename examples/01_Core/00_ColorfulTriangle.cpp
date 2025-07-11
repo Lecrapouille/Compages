@@ -29,17 +29,16 @@
 //!  - for key in hash maps (GLVBO, GLAttributes, GLSamplers) in this case names
 //!    are private and are internally managed automatically .
 //------------------------------------------------------------------------------
-ColorfulTriangle::ColorfulTriangle(uint32_t const width, uint32_t const height,
-                               const char *title)
-    : GLWindow(width, height, title),
-      m_prog("Prog"),
-      m_triangle("triangle")
-      // Possible alternative for VAO:
-      //   m_triangle(<name>, BufferUsage::<usage>, <reserve size for VBO>)
-      // Where:
-      //   - <usage> is STREAM_DRAW or STATIC_DRAW or DYNAMIC_DRAW (default). See
-      //     documentation of glBufferData() for more details.
-      //   - <reserve size for VBO> number of elements to allocate when creating VBO.
+ColorfulTriangle::ColorfulTriangle(uint32_t const width,
+                                   uint32_t const height,
+                                   const char* title)
+    : GLWindow(width, height, title), m_prog("Prog"), m_triangle("triangle")
+// Possible alternative for VAO:
+//   m_triangle(<name>, BufferUsage::<usage>, <reserve size for VBO>)
+// Where:
+//   - <usage> is STREAM_DRAW or STATIC_DRAW or DYNAMIC_DRAW (default). See
+//     documentation of glBufferData() for more details.
+//   - <reserve size for VBO> number of elements to allocate when creating VBO.
 {
     std::cout << "Hello ColorfulTriangle: " << info() << std::endl;
 }
@@ -95,21 +94,21 @@ bool ColorfulTriangle::onSetup()
                     "} v2f;                               \n");
 
     // Load vertex shader from a classic string.
-    m_vertex_shader <<
-            "in vec2      position;                   \n"
-            "in vec3      color;                      \n"
-            "out " << v2f <<
-            "void main() {                            \n"
-            "  v2f.color = color;                     \n"
-            "  gl_Position = vec4(position, 0.0, 1.0);\n"
-            "}";
+    m_vertex_shader << "in vec2      position;                   \n"
+                       "in vec3      color;                      \n"
+                       "out "
+                    << v2f
+                    << "void main() {                            \n"
+                       "  v2f.color = color;                     \n"
+                       "  gl_Position = vec4(position, 0.0, 1.0);\n"
+                       "}";
 
     // Example of how to insert string from the begining
     "#version 330 core\n" >> m_vertex_shader;
 
     // Load fragment shader from C++11 raw string.
     m_fragment_shader <<
-            R"GLSL(#version 330 core
+        R"GLSL(#version 330 core
                    in struct v2f_s {
                      vec3 color;
                    } v2f;
@@ -119,11 +118,11 @@ bool ColorfulTriangle::onSetup()
                    })GLSL";
 
     // Optional. For debug, shaders can be displayed with:
-    std::cout << "Shader program: " << m_vertex_shader.name()
-              << ":" << std::endl;
+    std::cout << "Shader program: " << m_vertex_shader.name() << ":"
+              << std::endl;
     std::cout << m_vertex_shader << std::endl << std::endl;
-    std::cout << "Fragment program: " << m_fragment_shader.name()
-              << ":" << std::endl;
+    std::cout << "Fragment program: " << m_fragment_shader.name() << ":"
+              << std::endl;
     std::cout << m_fragment_shader << std::endl << std::endl;
 
     // You have to compile shaders into the class GLProgram. If shaders
@@ -150,8 +149,8 @@ bool ColorfulTriangle::onSetup()
     // textures. In our example, the VAO will have a single VBO named position.
     if (!m_prog.bind(m_triangle))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
@@ -159,22 +158,17 @@ bool ColorfulTriangle::onSetup()
     // shall refer to the variable position inside the GLSL code. If you rename
     // it in the shader you will have to rename here too. Beware name are case
     // sensitive.
-    m_triangle.vector2f("position") =
-    {
-        Vector2f(-1.0f, -1.0f), // X, Y
-        Vector2f(1.0f, -1.0f),
-        Vector2f(0.0f, 1.0f)
-    };
+    m_triangle.vector2f("position") = { Vector2f(-1.0f, -1.0f), // X, Y
+                                        Vector2f(1.0f, -1.0f),
+                                        Vector2f(0.0f, 1.0f) };
 
     // Fill VBOs of the VAO: init triangle vertex colors. Note "color" shall
     // refer to the variable color inside the GLSL code. If you rename it in the
     // shader you will have to rename here too. Beware name are case sensitive.
-    m_triangle.vector3f("color") =
-    {
-        Vector3f(1.0f, 0.0f, 0.0f), // Red, Green, Blue
-        Vector3f(0.0f, 1.0f, 0.0f),
-        Vector3f(0.0f, 0.0f, 1.0f)
-    };
+    m_triangle.vector3f(
+        "color") = { Vector3f(1.0f, 0.0f, 0.0f), // Red, Green, Blue
+                     Vector3f(0.0f, 1.0f, 0.0f),
+                     Vector3f(0.0f, 0.0f, 1.0f) };
 
     // Optional. Helper for debugging states of your GLVAO. See
     // examples/debug.cpp

@@ -19,29 +19,29 @@
 //=====================================================================
 
 #ifndef BULLETWRAPPER_HPP
-#  define BULLETWRAPPER_HPP
+#define BULLETWRAPPER_HPP
 
-#    pragma GCC diagnostic push
-#      pragma GCC diagnostic ignored "-Wpragmas"
-#      pragma GCC diagnostic ignored "-Wreorder"
-#      pragma GCC diagnostic ignored "-Wreorder-ctor"
-#      pragma GCC diagnostic ignored "-Wdeprecated-copy"
-#      pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#      pragma GCC diagnostic ignored "-Wsign-conversion"
-#      pragma GCC diagnostic ignored "-Wold-style-cast"
-#      pragma GCC diagnostic ignored "-Wfloat-equal"
-#      pragma GCC diagnostic ignored "-Wold-style-cast"
-#      pragma GCC diagnostic ignored "-Wcast-qual"
-#      pragma GCC diagnostic ignored "-Wfloat-conversion"
-#      pragma GCC diagnostic ignored "-Wconversion"
-#      pragma GCC diagnostic ignored "-Wcast-align"
-#      define BT_THREADSAFE 0
-#      include "bullet/btBulletDynamicsCommon.h"
-#    pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wreorder"
+#pragma GCC diagnostic ignored "-Wreorder-ctor"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wcast-align"
+#define BT_THREADSAFE 0
+#include "bullet/btBulletDynamicsCommon.h"
+#pragma GCC diagnostic pop
 
-#  include "Math/Transformable.hpp"
-#  include "Math/Vector.hpp"
-#  include <forward_list>
+#include "Math/Transformable.hpp"
+#include "Math/Vector.hpp"
+#include <forward_list>
 
 class RigidBody;
 
@@ -71,7 +71,10 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Getter. Return the DiscreteDynamicsWorld used.
     //--------------------------------------------------------------------------
-    btDiscreteDynamicsWorld& world() { return *m_dynamicsWorld; }
+    btDiscreteDynamicsWorld& world()
+    {
+        return *m_dynamicsWorld;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Add a object in the list of objects to update the dynamic.
@@ -129,7 +132,6 @@ private:
     bool m_initialTransformSaved = false;
 };
 
-
 // *****************************************************************************
 //! \brief Base class for a moving SceneTree node. Integrate a physical object
 //! (btRigidBody), a collision shape (btCollisionShape) and the transform
@@ -163,7 +165,8 @@ public:
     //! \param[in] transform the attitude and position to apply on reset.
     //! \param[in] reset if set to true for
     //--------------------------------------------------------------------------
-    void setInitialTransform(Transformable3D const& transform, bool reset = true);
+    void setInitialTransform(Transformable3D const& transform,
+                             bool reset = true);
 
     //--------------------------------------------------------------------------
     //! \brief Set the object's mass and replace the one used as param in the
@@ -189,9 +192,9 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Update callback.
-    //! This function is called automatically by PhysicsManager::update() for each
-    //! registered object. It update position and attitude of graphical object
-    //! from its physhical state.
+    //! This function is called automatically by PhysicsManager::update() for
+    //! each registered object. It update position and attitude of graphical
+    //! object from its physhical state.
     //--------------------------------------------------------------------------
     void update();
 
@@ -216,63 +219,75 @@ protected:
 namespace rigidbody
 {
 
-    // *************************************************************************
-    //! \brief
-    // *************************************************************************
-    class WorldPlane: public RigidBody
-    {
-    public:
+// *************************************************************************
+//! \brief
+// *************************************************************************
+class WorldPlane: public RigidBody
+{
+public:
 
-        WorldPlane(Transformable3D& transform, Vector3f const& thickness,
-                   float restitution = 0.0f, float friction = 0.5f);
-    };
+    WorldPlane(Transformable3D& transform,
+               Vector3f const& thickness,
+               float restitution = 0.0f,
+               float friction = 0.5f);
+};
 
-    // *************************************************************************
-    //! \brief
-    // *************************************************************************
-    class Sphere: public RigidBody
-    {
-    public:
+// *************************************************************************
+//! \brief
+// *************************************************************************
+class Sphere: public RigidBody
+{
+public:
 
-        Sphere(Transformable3D& transform, float radius, units::mass::kilogram_t mass,
-               float restitution = 0.0f, float friction = 0.5f);
-    };
+    Sphere(Transformable3D& transform,
+           float radius,
+           units::mass::kilogram_t mass,
+           float restitution = 0.0f,
+           float friction = 0.5f);
+};
 
-    // *************************************************************************
-    //! \brief
-    // *************************************************************************
-    class Box: public RigidBody
-    {
-    public:
+// *************************************************************************
+//! \brief
+// *************************************************************************
+class Box: public RigidBody
+{
+public:
 
-        Box(Transformable3D& transform, Vector3f const& dimensions,
+    Box(Transformable3D& transform,
+        Vector3f const& dimensions,
+        units::mass::kilogram_t mass,
+        float restitution = 0.0f,
+        float friction = 0.5f);
+};
+
+// *************************************************************************
+//! \brief
+// *************************************************************************
+class Capsule: public RigidBody
+{
+public:
+
+    Capsule(Transformable3D& transform,
+            float radius,
+            float height,
             units::mass::kilogram_t mass,
-            float restitution = 0.0f, float friction = 0.5f);
-    };
+            float restitution = 0.0f,
+            float friction = 0.5f);
+};
 
-    // *************************************************************************
-    //! \brief
-    // *************************************************************************
-    class Capsule: public RigidBody
-    {
-    public:
+// *************************************************************************
+//! \brief
+// *************************************************************************
+class Cylinder: public RigidBody
+{
+public:
 
-        Capsule(Transformable3D& transform, float radius, float height,
-                units::mass::kilogram_t mass,
-                float restitution = 0.0f, float friction = 0.5f);
-    };
-
-    // *************************************************************************
-    //! \brief
-    // *************************************************************************
-    class Cylinder: public RigidBody
-    {
-    public:
-
-        Cylinder(Transformable3D& transform, Vector3f const& dimensions,
-                 units::mass::kilogram_t mass,
-                 float restitution = 0.0f, float friction = 0.5f);
-    };
+    Cylinder(Transformable3D& transform,
+             Vector3f const& dimensions,
+             units::mass::kilogram_t mass,
+             float restitution = 0.0f,
+             float friction = 0.5f);
+};
 } // namespace rigidbody
 
 #endif // BULLETWRAPPER_HPP

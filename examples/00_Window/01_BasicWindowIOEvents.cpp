@@ -22,8 +22,9 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-BasicWindowIOEvents::BasicWindowIOEvents(uint32_t const width, uint32_t const height,
-                                         const char *title)
+BasicWindowIOEvents::BasicWindowIOEvents(uint32_t const width,
+                                         uint32_t const height,
+                                         const char* title)
     : GLWindow(width, height, title)
 {
     std::cout << "Hello BasicWindowIOEvents: " << info() << std::endl;
@@ -49,9 +50,8 @@ void BasicWindowIOEvents::onWindowResized()
     // Note: height is never zero !
     float ratio = GLWindow::width<float>() / GLWindow::height<float>();
 
-    std::cout << "New Window dimension "
-              << width<int>() << " x " << height<int>()
-              << ". Ratio is " << ratio << std::endl;
+    std::cout << "New Window dimension " << width<int>() << " x "
+              << height<int>() << ". Ratio is " << ratio << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -87,9 +87,8 @@ void BasicWindowIOEvents::onKeyboardEvent()
 // -----------------------------------------------------------------------------
 void BasicWindowIOEvents::onMouseButtonPressed()
 {
-    std::cout << "Mouse button " << static_cast<int>(mouse().button)
-              << " was " << (mouse().pressed ? "pressed" : "released")
-              << std::endl;
+    std::cout << "Mouse button " << static_cast<int>(mouse().button) << " was "
+              << (mouse().pressed ? "pressed" : "released") << std::endl;
 
     static bool state = true;
     state ^= true;
@@ -105,9 +104,8 @@ void BasicWindowIOEvents::onMouseMoved()
               << static_cast<int>(GLWindow::mouse().position.x) << " x "
               << static_cast<int>(GLWindow::mouse().position.y) << std::endl;
 
-    std::cout << "Mouse delta movement: "
-             << mouse().displacement.x << " x "
-             << mouse().displacement.y << std::endl;
+    std::cout << "Mouse delta movement: " << mouse().displacement.x << " x "
+              << mouse().displacement.y << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -125,8 +123,7 @@ void BasicWindowIOEvents::onMouseScrolled()
 //------------------------------------------------------------------
 void BasicWindowIOEvents::onGPUMemoryChanged(size_t size)
 {
-    std::cout << "Estimated GPU memory usage: "
-              << size << " bytes"
+    std::cout << "Estimated GPU memory usage: " << size << " bytes"
               << std::endl;
 }
 
@@ -134,8 +131,8 @@ void BasicWindowIOEvents::onGPUMemoryChanged(size_t size)
 bool BasicWindowIOEvents::onSetup()
 {
     // Enable IO callbacks. Without this method: no events are triggered.
-    reactTo(Event::MouseMove | Event::MouseScroll |
-            Event::MouseButton | Event::Keyboard);
+    reactTo(Event::MouseMove | Event::MouseScroll | Event::MouseButton |
+            Event::Keyboard);
 
     // Do not show the mouse cursor.
     hideCursor();

@@ -1,13 +1,11 @@
-#include <iostream>
-#include <string>
-#include <list>
-#include <fstream>
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <regex>
-#include "../../Common/Path.hpp"
 #include "../../Common/File.hpp"
+#include "../../Common/Path.hpp"
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <list>
+#include <regex>
+#include <string>
 
 class GLShader
 {
@@ -18,9 +16,7 @@ public:
     std::string m_file_name;
     Path path;
 
-    GLShader()
-        : path(".:include")
-    {}
+    GLShader() : path(".:include") {}
 
     bool read(std::string const& path, std::string& code)
     {
@@ -50,7 +46,7 @@ public:
                     msg = "Failed reading file '" + path + "'. Reason was '" +
                           ::strerror(errno) + "'";
                     std::cerr << msg << std::endl;
-                    //concatError(msg);
+                    // concatError(msg);
                     return false;
                 }
             }
@@ -59,7 +55,7 @@ public:
                 msg = "Failed reading file '" + path +
                       "'. Reason was 'cannot get the file size'";
                 std::cerr << msg << std::endl;
-                //concatError(msg);
+                // concatError(msg);
                 return false;
             }
         }
@@ -68,7 +64,7 @@ public:
             msg = "Failed opening file '" + path + "'. Reason was '" +
                   ::strerror(errno) + "'";
             std::cerr << msg << std::endl;
-            //concatError(msg);
+            // concatError(msg);
             return false;
         }
 
@@ -87,62 +83,68 @@ public:
         std::list<std::string> opened_files;
 
         bool changed;
-        do {
+        do
+        {
             new_code = "";
             changed = false;
-            //std::cout << "New code " << m_file_name << ": [" << code.str() << "]" << std::endl;
+            // std::cout << "New code " << m_file_name << ": [" << code.str() <<
+            // "]" << std::endl;
             while (std::getline(code, line))
             {
-                //std::cout << "Line: [" << line << "]" << std::endl;
+                // std::cout << "Line: [" << line << "]" << std::endl;
                 std::regex_search(line.c_str(), matches, regex);
                 if (matches.empty())
                 {
                     new_code += line;
                     new_code += '\n';
-                    //std::cout << "ADD LINE: [" << new_code << "]" << std::endl;
+                    // std::cout << "ADD LINE: [" << new_code << "]" <<
+                    // std::endl;
                 }
                 else
                 {
-                    // Found a file to include, read its whole content and append it
-                    // to the code
+                    // Found a file to include, read its whole content and
+                    // append it to the code
                     std::string full_path = path.expand(matches.str(1));
                     m_file_name = File::fileName(full_path);
-                    if (opened_files.end() ==
-                        std::find(opened_files.begin(), opened_files.end(), m_file_name))
+                    if (opened_files.end() == std::find(opened_files.begin(),
+                                                        opened_files.end(),
+                                                        m_file_name))
                     {
-                        //std::cout << "Add to opened files: " << m_file_name << std::endl;
+                        // std::cout << "Add to opened files: " << m_file_name
+                        // << std::endl;
                         opened_files.push_back(m_file_name);
                         if (!read(full_path, new_code))
                             return false;
-                        //std::cout << "Replaced by new code: [" << new_code << "]" << std::endl;
+                        // std::cout << "Replaced by new code: [" << new_code <<
+                        // "]" << std::endl;
 
                         // By security add the character on the same line after
                         // "include foo"
-                        std::string eol =
-                                line.substr(matches.position(0) +
-                                            matches.str(0).size());
+                        std::string eol = line.substr(matches.position(0) +
+                                                      matches.str(0).size());
                         if (!eol.empty())
                         {
                             new_code += '\n';
-                            //std::cout << "EOL:" << eol << std::endl;
+                            // std::cout << "EOL:" << eol << std::endl;
                             new_code += eol;
                         }
                         changed = true;
                     }
                     else
                     {
-                        //std::cout << full_path << " already included" << std::endl;
-                        //std::cout << "Code: [" << new_code << "]" << std::endl;
-                        //std::cout << "Line: [" << line << "]" << std::endl;
+                        // std::cout << full_path << " already included" <<
+                        // std::endl; std::cout << "Code: [" << new_code << "]"
+                        // << std::endl; std::cout << "Line: [" << line << "]"
+                        // << std::endl;
                     }
                 }
             }
 
-            // Reparse the shader code to keep searching potential token 'include'
-            // added by the included file.
+            // Reparse the shader code to keep searching potential token
+            // 'include' added by the included file.
             if (changed)
             {
-                //std::cout << "changed" << std::endl;
+                // std::cout << "changed" << std::endl;
                 code.clear();
                 code.str(new_code);
             }
@@ -153,7 +155,8 @@ public:
     }
 };
 
-// g++ -W -Wall --std=c++11 tests.cpp -I../.. ../../Common/Path.cpp ../../Common/File.cpp -o prog
+// g++ -W -Wall --std=c++11 tests.cpp -I../.. ../../Common/Path.cpp
+// ../../Common/File.cpp -o prog
 int main()
 {
     GLShader s;

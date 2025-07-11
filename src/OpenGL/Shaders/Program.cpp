@@ -28,9 +28,7 @@
 #include "OpenGL/Buffers/iVAO.hpp"
 
 //------------------------------------------------------------------------------
-GLProgram::GLProgram(std::string const& name)
-    : GLObject(name, 0)
-{}
+GLProgram::GLProgram(std::string const& name) : GLObject(name, 0) {}
 
 //------------------------------------------------------------------------------
 GLProgram::~GLProgram()
@@ -59,7 +57,8 @@ void GLProgram::concatError(std::string const& msg)
 //------------------------------------------------------------------------------
 bool GLProgram::bind(GLVAO& vao)
 {
-    std::cout << "bind GLVAO " << vao.name() << " to GLProgram " << name() << std::endl;
+    std::cout << "bind GLVAO " << vao.name() << " to GLProgram " << name()
+              << std::endl;
 
     // First compile the GLProgram (compile shaders and load GLSL variables) if
     // this has not been done yet. Indeed GLProgram will populate the bound VAO
@@ -68,7 +67,7 @@ bool GLProgram::bind(GLVAO& vao)
     {
         if (!compile())
         {
-            std::string err("Tried to bind GLVAO "  + vao.name() +
+            std::string err("Tried to bind GLVAO " + vao.name() +
                             " to the GLProgram " + name() +
                             " which has failed to compile");
             concatError(err);
@@ -103,8 +102,10 @@ bool GLProgram::bind(GLVAO& vao)
     {
         assert(vao.m_program != nullptr);
         std::string err("You have tried to bind the GLVAO " + vao.name() +
-                        "to GLProgram " + name() + " but the GLVAO was previously"
-                        " bound to GLProgram " + vao.m_program->name());
+                        "to GLProgram " + name() +
+                        " but the GLVAO was previously"
+                        " bound to GLProgram " +
+                        vao.m_program->name());
         concatError(err);
         return false;
     }
@@ -120,7 +121,7 @@ std::string GLProgram::strerror()
         if (m_shaders.size() != 0u)
         {
             msg += "The following shaders failed to compile:\n";
-            for (auto& it: m_shaders)
+            for (auto& it : m_shaders)
             {
                 if (!it->compiled())
                 {
@@ -148,7 +149,8 @@ bool GLProgram::compile(GLVertexShader& vertex, GLFragmentShader& fragment)
 }
 
 //------------------------------------------------------------------------------
-bool GLProgram::compile(GLVertexShader& vertex, GLFragmentShader& fragment,
+bool GLProgram::compile(GLVertexShader& vertex,
+                        GLFragmentShader& fragment,
                         GLGeometryShader& geometry)
 {
     m_shaders.clear();
@@ -178,16 +180,17 @@ bool GLProgram::onCreate()
 bool GLProgram::onSetup()
 {
     bool success = true;
-    std::cout << "Linking shaders into GLProgram named "
-              << name() << " ..." << std::endl;
+    std::cout << "Linking shaders into GLProgram named " << name() << " ..."
+              << std::endl;
 
     // Compile shaders if they have not yet been compiled. Keep iterating even
     // if one has failed in the aim to display the most errors.
-    for (auto& it: m_shaders)
+    for (auto& it : m_shaders)
     {
         if (it->code().size() == 0u)
         {
-            std::string msg = "  - " + it->name() + ":\nhas empty code source\n";
+            std::string msg =
+                "  - " + it->name() + ":\nhas empty code source\n";
             concatError(msg);
             success = false;
         }
@@ -202,7 +205,7 @@ bool GLProgram::onSetup()
     if (success)
     {
         // Attach shaders to program
-        for (auto& it: m_shaders)
+        for (auto& it : m_shaders)
         {
             glCheck(glAttachShader(m_handle, it->handle()));
         }
@@ -216,25 +219,27 @@ bool GLProgram::onSetup()
         // when a VAO will be bind to the GLProgram.
         if (success)
         {
-            std::cout << "Generating attributes and uniforms for GLProgram named "
-                      << name() << "..." << std::endl;
+            std::cout
+                << "Generating attributes and uniforms for GLProgram named "
+                << name() << "..." << std::endl;
 
             success = generateAttributesAndUniforms();
             if (success)
             {
                 m_error.clear();
 
-                // Force calling onActivate() without checks since GLObject::begin()
-                // ca                return true;lls onActivate() before onSetup() but for GLProgram this should
-                // be the inversed. So onActivate() was called before this method
-                // and has failed because this GLProgram was not yet compiled. So
-                // now, activate the GLProgram.
+                // Force calling onActivate() without checks since
+                // GLObject::begin() ca                return true;lls
+                // onActivate() before onSetup() but for GLProgram this should
+                // be the inversed. So onActivate() was called before this
+                // method and has failed because this GLProgram was not yet
+                // compiled. So now, activate the GLProgram.
                 glCheck(glUseProgram(m_handle));
 
-                // Force calling onUpdate() allowing to update uniforms since the
-                // API allows the user to define uniforms before compiling the
-                // GLProgram. This allows for example to create 3d object with
-                // predefined materials before compiling shaders
+                // Force calling onUpdate() allowing to update uniforms since
+                // the API allows the user to define uniforms before compiling
+                // the GLProgram. This allows for example to create 3d object
+                // with predefined materials before compiling shaders
                 m_need_update = true;
             }
         }
@@ -248,7 +253,7 @@ bool GLProgram::onSetup()
 //------------------------------------------------------------------------------
 bool GLProgram::onUpdate()
 {
-    for (auto const& it: m_uniforms)
+    for (auto const& it : m_uniforms)
     {
         it.second->begin();
     }
@@ -271,7 +276,7 @@ void GLProgram::onActivate()
 //------------------------------------------------------------------------------
 void GLProgram::onDeactivate()
 {
-    for (auto const& it: m_uniforms)
+    for (auto const& it : m_uniforms)
     {
         it.second->end();
     }
@@ -304,7 +309,7 @@ bool GLProgram::checkLinkageStatus(GLuint handle)
 void GLProgram::detachAllShaders()
 {
     m_failedShaders.clear();
-    for (auto& it: m_shaders)
+    for (auto& it : m_shaders)
     {
         if (it->compiled())
         {
@@ -336,8 +341,8 @@ bool GLProgram::generateAttributesAndUniforms()
     location = static_cast<GLuint>(count);
     while (location--)
     {
-        glCheck(glGetActiveUniform(m_handle, location, BUFFER_SIZE, nullptr,
-                                   &size, &type, name));
+        glCheck(glGetActiveUniform(
+            m_handle, location, BUFFER_SIZE, nullptr, &size, &type, name));
         if (!storeUniformOrSampler(type, name))
             return false;
     }
@@ -348,8 +353,8 @@ bool GLProgram::generateAttributesAndUniforms()
     location = static_cast<GLuint>(count);
     while (location--)
     {
-        glCheck(glGetActiveAttrib(m_handle, location, BUFFER_SIZE, nullptr,
-                                  &size, &type, name));
+        glCheck(glGetActiveAttrib(
+            m_handle, location, BUFFER_SIZE, nullptr, &size, &type, name));
         storeAttribute(type, name);
     }
 
@@ -357,154 +362,171 @@ bool GLProgram::generateAttributesAndUniforms()
 }
 
 //------------------------------------------------------------------------------
-void GLProgram::storeAttribute(GLenum type, const char *name)
+void GLProgram::storeAttribute(GLenum type, const char* name)
 {
     switch (type)
     {
-    case GL_INT:
-        createAttribute<int>(name);
-        return;
-    case GL_INT_VEC2:
-        createAttribute<Vector2i>(name);
-        return;
-    case GL_INT_VEC3:
-        createAttribute<Vector3i>(name);
-        return;
-    case GL_INT_VEC4:
-        createAttribute<Vector4i>(name);
-        return;
-    case GL_UNSIGNED_INT:
-        createAttribute<unsigned int>(name);
-        return;
-    case GL_UNSIGNED_INT_VEC2:
-        createAttribute<Vector2u>(name);
-        return;
-    case GL_UNSIGNED_INT_VEC3:
-        createAttribute<Vector3u>(name);
-        return;
-    case GL_UNSIGNED_INT_VEC4:
-        createAttribute<Vector4u>(name);
-        return;
-    case GL_FLOAT:
-        createAttribute<float>(name);
-        return;
-    case GL_FLOAT_VEC2:
-        createAttribute<Vector2f>(name);
-        return;
-    case GL_FLOAT_VEC3:
-        createAttribute<Vector3f>(name);
-        return;
-    case GL_FLOAT_VEC4:
-        createAttribute<Vector4f>(name);
-        return;
-    default:
-        std::string msg =
+        case GL_INT:
+            createAttribute<int>(name);
+            return;
+        case GL_INT_VEC2:
+            createAttribute<Vector2i>(name);
+            return;
+        case GL_INT_VEC3:
+            createAttribute<Vector3i>(name);
+            return;
+        case GL_INT_VEC4:
+            createAttribute<Vector4i>(name);
+            return;
+        case GL_UNSIGNED_INT:
+            createAttribute<unsigned int>(name);
+            return;
+        case GL_UNSIGNED_INT_VEC2:
+            createAttribute<Vector2u>(name);
+            return;
+        case GL_UNSIGNED_INT_VEC3:
+            createAttribute<Vector3u>(name);
+            return;
+        case GL_UNSIGNED_INT_VEC4:
+            createAttribute<Vector4u>(name);
+            return;
+        case GL_FLOAT:
+            createAttribute<float>(name);
+            return;
+        case GL_FLOAT_VEC2:
+            createAttribute<Vector2f>(name);
+            return;
+        case GL_FLOAT_VEC3:
+            createAttribute<Vector3f>(name);
+            return;
+        case GL_FLOAT_VEC4:
+            createAttribute<Vector4f>(name);
+            return;
+        default:
+            std::string msg =
                 "The type of Attribute " + std::to_string(type) + " for " +
                 std::string(name) +
                 " is not managed. Please report this bug to developpers!";
-        throw GL::Exception(msg);
+            throw GL::Exception(msg);
     }
 }
 //------------------------------------------------------------------------------
-bool GLProgram::storeUniformOrSampler(GLenum type, const char *name)
+bool GLProgram::storeUniformOrSampler(GLenum type, const char* name)
 {
     switch (type)
     {
-        // Store new vector or scalar
+            // Store new vector or scalar
 
-    case GL_FLOAT:
-        return updateOrCreateUniform<float>(name);
-    case GL_FLOAT_VEC2:
-        return updateOrCreateUniform<Vector2f>(name);
-    case GL_FLOAT_VEC3:
-        return updateOrCreateUniform<Vector3f>(name);
-    case GL_FLOAT_VEC4:
-        return updateOrCreateUniform<Vector4f>(name);
-    case GL_INT:
-        return updateOrCreateUniform<int>(name);
-    case GL_INT_VEC2:
-        return updateOrCreateUniform<Vector2i>(name);
-    case GL_INT_VEC3:
-        return updateOrCreateUniform<Vector3i>(name);
-    case GL_INT_VEC4:
-        return updateOrCreateUniform<Vector4i>(name);
-    case GL_UNSIGNED_INT:
-        return updateOrCreateUniform<unsigned int>(name);
-    case GL_UNSIGNED_INT_VEC2:
-        return updateOrCreateUniform<Vector2u>(name);
-    case GL_UNSIGNED_INT_VEC3:
-        return updateOrCreateUniform<Vector3u>(name);
-    case GL_UNSIGNED_INT_VEC4:
-        return updateOrCreateUniform<Vector4u>(name);
+        case GL_FLOAT:
+            return updateOrCreateUniform<float>(name);
+        case GL_FLOAT_VEC2:
+            return updateOrCreateUniform<Vector2f>(name);
+        case GL_FLOAT_VEC3:
+            return updateOrCreateUniform<Vector3f>(name);
+        case GL_FLOAT_VEC4:
+            return updateOrCreateUniform<Vector4f>(name);
+        case GL_INT:
+            return updateOrCreateUniform<int>(name);
+        case GL_INT_VEC2:
+            return updateOrCreateUniform<Vector2i>(name);
+        case GL_INT_VEC3:
+            return updateOrCreateUniform<Vector3i>(name);
+        case GL_INT_VEC4:
+            return updateOrCreateUniform<Vector4i>(name);
+        case GL_UNSIGNED_INT:
+            return updateOrCreateUniform<unsigned int>(name);
+        case GL_UNSIGNED_INT_VEC2:
+            return updateOrCreateUniform<Vector2u>(name);
+        case GL_UNSIGNED_INT_VEC3:
+            return updateOrCreateUniform<Vector3u>(name);
+        case GL_UNSIGNED_INT_VEC4:
+            return updateOrCreateUniform<Vector4u>(name);
 
-        // Store matrices
+            // Store matrices
 
-    case GL_FLOAT_MAT2:
-        return updateOrCreateUniform<Matrix22f>(name);
-    case GL_FLOAT_MAT3:
-        return updateOrCreateUniform<Matrix33f>(name);
-    case GL_FLOAT_MAT4:
-        return updateOrCreateUniform<Matrix44f>(name);
+        case GL_FLOAT_MAT2:
+            return updateOrCreateUniform<Matrix22f>(name);
+        case GL_FLOAT_MAT3:
+            return updateOrCreateUniform<Matrix33f>(name);
+        case GL_FLOAT_MAT4:
+            return updateOrCreateUniform<Matrix44f>(name);
 
-        // Store new sampler
+            // Store new sampler
 
-    case GL_SAMPLER_1D:
-        createSampler<GLSampler1D>(name);
-        return true;
-    case GL_SAMPLER_2D:
-        createSampler<GLSampler2D>(name);
-        return true;
-    case GL_SAMPLER_3D:
-        createSampler<GLSampler3D>(name);
-        return true;
-    case GL_SAMPLER_CUBE:
-        createSampler<GLSamplerCube>(name);
-        return true;
-    default:
-        std::string msg =
-                "The type " + std::to_string(type) + " of Uniform for " + std::string(name) +
+        case GL_SAMPLER_1D:
+            createSampler<GLSampler1D>(name);
+            return true;
+        case GL_SAMPLER_2D:
+            createSampler<GLSampler2D>(name);
+            return true;
+        case GL_SAMPLER_3D:
+            createSampler<GLSampler3D>(name);
+            return true;
+        case GL_SAMPLER_CUBE:
+            createSampler<GLSamplerCube>(name);
+            return true;
+        default:
+            std::string msg =
+                "The type " + std::to_string(type) + " of Uniform for " +
+                std::string(name) +
                 " is not managed. Please report this bug to developpers!";
-        throw GL::Exception(msg);
-        return false;
+            throw GL::Exception(msg);
+            return false;
     }
 
     return false;
 }
 
 //------------------------------------------------------------------------------
-size_t GLProgram::getFailedShaders(std::vector<std::string>& list, bool const clear) const
+size_t GLProgram::getFailedShaders(std::vector<std::string>& list,
+                                   bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list = m_failedShaders;
     return list.size();
 }
 
 //------------------------------------------------------------------------------
-size_t GLProgram::getUniformNames(std::vector<std::string>& list, bool const clear) const
+size_t GLProgram::getUniformNames(std::vector<std::string>& list,
+                                  bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_uniforms.size());
-    for (auto const& it: m_uniforms)
+    for (auto const& it : m_uniforms)
         list.push_back(it.first);
     return list.size();
 }
 
 //------------------------------------------------------------------------------
-size_t GLProgram::getAttributeNames(std::vector<std::string>& list, bool const clear) const
+size_t GLProgram::getAttributeNames(std::vector<std::string>& list,
+                                    bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_attributes.size());
-    for (auto const& it: m_attributes)
+    for (auto const& it : m_attributes)
         list.push_back(it.first);
     return list.size();
 }
 
 //------------------------------------------------------------------------------
-size_t GLProgram::getSamplerNames(std::vector<std::string>& list, bool const clear) const
+size_t GLProgram::getSamplerNames(std::vector<std::string>& list,
+                                  bool const clear) const
 {
-    if (clear) { list.clear(); }
+    if (clear)
+    {
+        list.clear();
+    }
     list.reserve(m_samplers.size());
-    for (auto const& it: m_samplers)
+    for (auto const& it : m_samplers)
         list.push_back(it.first);
     return list.size();
 }

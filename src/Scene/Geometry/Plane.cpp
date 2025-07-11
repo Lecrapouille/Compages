@@ -67,8 +67,12 @@ bool Plane::generate(GLVertexBuffer<Vector3f>& vertices,
             uint32_t const d = uint32_t((ix + 1_z) + gridX1 * iy);
 
             // Faces
-            index.append(a); index.append(b); index.append(d);
-            index.append(b); index.append(c); index.append(d);
+            index.append(a);
+            index.append(b);
+            index.append(d);
+            index.append(b);
+            index.append(c);
+            index.append(d);
         }
     }
 
@@ -90,11 +94,11 @@ bool Plane::generate(GLVAO32& vao, const bool clear)
 
     auto& positions = vao.vector3f(shaders::name::position);
     auto& normals = vao.hasVBO<Vector3f>(shaders::name::normal)
-                    ? vao.vector3f(shaders::name::normal)
-                    : tmp_normals;
+                        ? vao.vector3f(shaders::name::normal)
+                        : tmp_normals;
     auto& UVs = vao.hasVBO<Vector2f>(shaders::name::uv)
-                ? vao.vector2f(shaders::name::uv)
-                : tmp_uv;
+                    ? vao.vector2f(shaders::name::uv)
+                    : tmp_uv;
 
     if (clear)
     {

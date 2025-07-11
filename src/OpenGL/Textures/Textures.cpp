@@ -160,7 +160,7 @@ GLint CPU2GPUFormat(GLenum format, GLenum type)
     {
         if (type == GL_UNSIGNED_INT_24_8)
             return GL_DEPTH24_STENCIL8;
-         if (type == GL_FLOAT_32_UNSIGNED_INT_24_8_REV)
+        if (type == GL_FLOAT_32_UNSIGNED_INT_24_8_REV)
             return GL_DEPTH32F_STENCIL8;
     }
     else if (format == GL_STENCIL_INDEX)

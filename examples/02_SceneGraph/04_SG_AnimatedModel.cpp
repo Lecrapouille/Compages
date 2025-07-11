@@ -22,8 +22,9 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-SGAnimatedModel::SGAnimatedModel(uint32_t const width, uint32_t const height,
-                                 const char *title)
+SGAnimatedModel::SGAnimatedModel(uint32_t const width,
+                                 uint32_t const height,
+                                 const char* title)
     : GLWindow(width, height, title), m_camera("camera")
 {
     std::cout << "Hello SGAnimatedModel: " << info() << std::endl;
@@ -45,20 +46,21 @@ void SGAnimatedModel::onWindowResized()
 bool SGAnimatedModel::onSetup()
 {
     glCheck(glEnable(GL_DEPTH_TEST));
-    //glCheck(glDepthFunc(GL_LESS));
-    //glCheck(glEnable(GL_BLEND));
-    //glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    // glCheck(glDepthFunc(GL_LESS));
+    // glCheck(glEnable(GL_BLEND));
+    // glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     m_model = AnimatedModel::create<AnimatedModel>(
-       "/home/qq/MyGitHub/OpenGLCppWrapper/examples/external/assets/cowboy.json");
+        "/home/qq/MyGitHub/OpenGLCppWrapper/examples/external/assets/"
+        "cowboy.json");
     m_model->getAnimator().startAnimation("");
     m_scene.root = std::move(m_model);
 
-    m_camera.transform.lookAt
-       (Vector3f(0.0, -15.0, 5.0), Vector3f(0,0,0), Vector3f(0,1,0));
+    m_camera.transform.lookAt(
+        Vector3f(0.0, -15.0, 5.0), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
     m_camera.is(Camera::Type::PERSPECTIVE);
 
-    //m_scene.setup();
+    // m_scene.setup();
 
     return true;
 }

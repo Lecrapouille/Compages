@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_INCLUDE_WINDOW_HPP
-#  define OPENGLCPPWRAPPER_INCLUDE_WINDOW_HPP
+#define OPENGLCPPWRAPPER_INCLUDE_WINDOW_HPP
 
-#  include "UI/DearImGui.hpp"
-#  include "UI/Window.hpp"
+#include "UI/DearImGui.hpp"
+#include "UI/Window.hpp"
 
 #endif // OPENGLCPPWRAPPER_INCLUDE_WINDOW_HPP

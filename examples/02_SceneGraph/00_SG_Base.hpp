@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_00_SG_BASE_HPP
-#  define EXAMPLE_00_SG_BASE_HPP
+#define EXAMPLE_00_SG_BASE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to apply the depth material to a 3D shape.
@@ -31,7 +31,7 @@ class SGBase: public GLWindow
 {
 public:
 
-    SGBase(uint32_t const width, uint32_t const height, const char *title);
+    SGBase(uint32_t const width, uint32_t const height, const char* title);
     ~SGBase();
 
     static std::string info()

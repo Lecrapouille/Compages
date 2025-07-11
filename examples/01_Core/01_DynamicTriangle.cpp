@@ -22,11 +22,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-DynamicTriangle::DynamicTriangle(uint32_t const width, uint32_t const height,
-                                 const char *title)
-    : GLWindow(width, height, title),
-      m_prog("Prog"),
-      m_triangle("triangle")
+DynamicTriangle::DynamicTriangle(uint32_t const width,
+                                 uint32_t const height,
+                                 const char* title)
+    : GLWindow(width, height, title), m_prog("Prog"), m_triangle("triangle")
 {
     std::cout << "Hello DynamicTriangle: " << info() << std::endl;
 }
@@ -46,28 +45,25 @@ void DynamicTriangle::onWindowResized()
 //------------------------------------------------------------------------------
 //! \brief Vertices of the triangle.
 //------------------------------------------------------------------------------
-static std::vector<Vector2f> initial_position =
-{
-    Vector2f(-1.0f, -1.0f), Vector2f(1.0f, -1.0f), Vector2f(0.0f, 1.0f)
-};
+static std::vector<Vector2f> initial_position = { Vector2f(-1.0f, -1.0f),
+                                                  Vector2f(1.0f, -1.0f),
+                                                  Vector2f(0.0f, 1.0f) };
 
 //------------------------------------------------------------------------------
 bool DynamicTriangle::onSetup()
 {
-    m_vertex_shader <<
-            "#version 330 core                        \n"
-            "in vec2      position;                   \n"
-            "void main() {                            \n"
-            "  gl_Position = vec4(position, 0.0, 1.0);\n"
-            "}";
+    m_vertex_shader << "#version 330 core                        \n"
+                       "in vec2      position;                   \n"
+                       "void main() {                            \n"
+                       "  gl_Position = vec4(position, 0.0, 1.0);\n"
+                       "}";
 
-    m_fragment_shader <<
-            "#version 330 core                      \n"
-            "uniform vec3 color;                    \n"
-            "out vec4 fragColor;                    \n"
-            "void main() {                          \n"
-            "  fragColor = vec4(color, 1.0);        \n"
-            "}";
+    m_fragment_shader << "#version 330 core                      \n"
+                         "uniform vec3 color;                    \n"
+                         "out vec4 fragColor;                    \n"
+                         "void main() {                          \n"
+                         "  fragColor = vec4(color, 1.0);        \n"
+                         "}";
 
     if (!m_prog.compile(m_vertex_shader, m_fragment_shader))
     {
@@ -78,8 +74,8 @@ bool DynamicTriangle::onSetup()
 
     if (!m_prog.bind(m_triangle))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
@@ -115,7 +111,8 @@ bool DynamicTriangle::onPaint()
     const float ct = c * 0.5f + 0.5f;
     const float st = sinf(time) * 0.5f + 0.5f;
 
-    // Change vertices position over time. Dirty CPU data are transmitted to GPU.
+    // Change vertices position over time. Dirty CPU data are transmitted to
+    // GPU.
     GLVertexBuffer<Vector2f>& position = m_triangle.vector2f("position");
     position = initial_position;
     position *= c;

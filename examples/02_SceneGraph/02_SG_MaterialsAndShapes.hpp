@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_02_SG_MATERIALS_AND_SHAPES_HPP
-#  define EXAMPLE_02_SG_MATERIALS_AND_SHAPES_HPP
+#define EXAMPLE_02_SG_MATERIALS_AND_SHAPES_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to apply the depth material to a 3D shape.
@@ -31,7 +31,9 @@ class SGMatAndShape: public GLWindow
 {
 public:
 
-    SGMatAndShape(uint32_t const width, uint32_t const height, const char *title);
+    SGMatAndShape(uint32_t const width,
+                  uint32_t const height,
+                  const char* title);
     ~SGMatAndShape();
 
     static std::string info()
@@ -57,9 +59,7 @@ private:
     {
     public:
 
-        GUI(SGMatAndShape& window)
-            :  DearImGuiLayer(window, "DearIMGUI")
-        {}
+        GUI(SGMatAndShape& window) : DearImGuiLayer(window, "DearIMGUI") {}
 
     protected:
 

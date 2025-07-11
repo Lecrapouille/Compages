@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_SWITCH_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_SWITCH_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_SWITCH_HPP
 
-#  include "Scene/SceneTree.hpp"
+#include "Scene/SceneTree.hpp"
 
 // *****************************************************************************
 //! \brief A special node scene allowing to select a single child allowed to be
@@ -29,7 +29,7 @@
 //! \note this node has been inspired by OpenInventor soSwitch
 //! https://grey.colorado.edu/coin3d/classSoSwitch.html
 // *****************************************************************************
-class SwitchNode : public SceneObject
+class SwitchNode: public SceneObject
 {
 public:
 
@@ -38,9 +38,7 @@ public:
     //!
     //! \param name the name of the node. It is used mainly for the debug.
     //--------------------------------------------------------------------------
-    SwitchNode(std::string const& name)
-        : SceneObject(name)
-    {}
+    SwitchNode(std::string const& name) : SceneObject(name) {}
 
 public:
 
@@ -57,7 +55,7 @@ public:
     void select(size_t const nth)
     {
         if (m_designated == nth)
-            return ;
+            return;
 
         m_designated = nth;
         designated2effective();
@@ -73,7 +71,8 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Switch to the next child. Start to the first if the last was used.
+    //! \brief Switch to the next child. Start to the first if the last was
+    //! used.
     //--------------------------------------------------------------------------
     void next()
     {
@@ -83,7 +82,8 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Switch to the previous child. Start to the last if the first was used.
+    //! \brief Switch to the previous child. Start to the last if the first was
+    //! used.
     //--------------------------------------------------------------------------
     void previous()
     {
@@ -99,20 +99,20 @@ public:
     //--------------------------------------------------------------------------
     inline friend std::ostream& operator<<(std::ostream& os, SwitchNode& node)
     {
-        return os << *static_cast<Node*>(&node)
-                  << "Switched to child " << node.m_selected
-                  << ": " << node.children[node.m_selected]->name()
-                  << std::endl;
+        return os << *static_cast<Node*>(&node) << "Switched to child "
+                  << node.m_selected << ": "
+                  << node.children[node.m_selected]->name() << std::endl;
     }
 
 private:
 
     //--------------------------------------------------------------------------
-    //! \brief Make the desired child traversable and the others not traversable.
+    //! \brief Make the desired child traversable and the others not
+    //! traversable.
     //--------------------------------------------------------------------------
     void updateEnabledChild()
     {
-        for (auto& it: children)
+        for (auto& it : children)
             it->enable(false);
 
         children[m_selected]->enable(true);

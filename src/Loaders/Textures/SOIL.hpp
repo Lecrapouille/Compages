@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SOIL_TEXTURES_LOADER_HPP
-#  define OPENGLCPPWRAPPER_SOIL_TEXTURES_LOADER_HPP
+#define OPENGLCPPWRAPPER_SOIL_TEXTURES_LOADER_HPP
 
-#  include "Loaders/TextureLoader.hpp"
-#  include "SOIL/SOIL.h"
-#  include <iostream>
+#include "Loaders/TextureLoader.hpp"
+#include "SOIL/SOIL.h"
+#include <iostream>
 
 // *****************************************************************************
 //! \brief Class wrapping SOIL library for loading and saving textures
@@ -40,7 +40,8 @@ public:
     //!   - GLTexture::PixelFormat::LUMINANCE
     //!   - GLTexture::PixelFormat::LUMINANCE_ALPHA
     //--------------------------------------------------------------------------
-    virtual bool setPixelFormat(GLTexture::PixelFormat const cpuformat) override;
+    virtual bool
+    setPixelFormat(GLTexture::PixelFormat const cpuformat) override;
 
     //--------------------------------------------------------------------------
     //! \brief See documention from TextureLoader class.
@@ -77,8 +78,10 @@ public:
     //!   - HDR: converted to LDR, unless loaded with HDR functions (RGBE or
     //!          RGBdivA or RGBdivA2)
     //--------------------------------------------------------------------------
-    virtual bool load(std::string const&, GLTexture::Buffer& buffer,
-                      size_t& width, size_t& height) override;
+    virtual bool load(std::string const&,
+                      GLTexture::Buffer& buffer,
+                      size_t& width,
+                      size_t& height) override;
 
     //--------------------------------------------------------------------------
     //! \brief See documention from TextureLoader class.
@@ -87,15 +90,17 @@ public:
     //!   - BMP: RGB, uncompressed
     //!   - DDS: RGB as DXT1, or RGBA as DXT5
     //--------------------------------------------------------------------------
-    virtual bool save(std::string const&, GLTexture::Buffer const& buffer,
-                      size_t const width, size_t const height) override;
+    virtual bool save(std::string const&,
+                      GLTexture::Buffer const& buffer,
+                      size_t const width,
+                      size_t const height) override;
 
 private:
 
     size_t m_pixelCount = 0;
-    int    m_soilFormat = SOIL_LOAD_AUTO;
+    int m_soilFormat = SOIL_LOAD_AUTO;
     GLenum m_pixelType = GL_UNSIGNED_BYTE;
-    bool   m_isValid = false;
+    bool m_isValid = false;
 };
 
 #endif // OPENGLCPPWRAPPER_SOIL_TEXTURES_LOADER_HPP

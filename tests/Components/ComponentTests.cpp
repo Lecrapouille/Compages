@@ -21,10 +21,10 @@
 #include "main.hpp"
 #define protected public
 #define private public
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#    include "Components/Components.hpp"
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include "Components/Components.hpp"
+#pragma GCC diagnostic pop
 #undef protected
 #undef private
 
@@ -33,9 +33,7 @@ class NamedComponent: public Component
 {
 public:
 
-    NamedComponent(std::string && name)
-        : m_name(name)
-    {}
+    NamedComponent(std::string&& name) : m_name(name) {}
 
     std::string const& name() const
     {
@@ -52,9 +50,7 @@ class Collider: public NamedComponent
 {
 public:
 
-    Collider(std::string && name)
-        : NamedComponent(std::move(name))
-    {}
+    Collider(std::string&& name) : NamedComponent(std::move(name)) {}
 
     virtual bool isClassType(const std::size_t classType) const
     {
@@ -80,9 +76,7 @@ class BoxCollider: public Collider
 {
 public:
 
-    BoxCollider(std::string && name)
-        : Collider(std::move(name))
-    {}
+    BoxCollider(std::string&& name) : Collider(std::move(name)) {}
 
     virtual bool isClassType(const std::size_t classType) const
     {
@@ -151,7 +145,6 @@ TEST(TestComponents, testConstructor)
     ASSERT_EQ(client.m_components.size(), 0u);
 }
 
-
 //--------------------------------------------------------------------------
 TEST(TestComponents, testNominalCases)
 {
@@ -163,8 +156,12 @@ TEST(TestComponents, testNominalCases)
     // Check it has been inserted.
     ASSERT_EQ(1u, client.m_components.size());
     ASSERT_EQ(1u, client.countComponents());
-    ASSERT_EQ(&boxcollider1, static_cast<NamedComponent*>(client.m_components[0].get()));
-    ASSERT_STREQ("BoxCollider", static_cast<NamedComponent*>(client.m_components[0].get())->name().c_str());
+    ASSERT_EQ(&boxcollider1,
+              static_cast<NamedComponent*>(client.m_components[0].get()));
+    ASSERT_STREQ("BoxCollider",
+                 static_cast<NamedComponent*>(client.m_components[0].get())
+                     ->name()
+                     .c_str());
     ASSERT_STREQ("BoxCollider", boxcollider1.name().c_str());
     ASSERT_EQ(42, boxcollider1.doCollider());
     ASSERT_EQ(66, boxcollider1.doBoxCollider());
@@ -188,10 +185,18 @@ TEST(TestComponents, testNominalCases)
     Collider& collider2 = client.addComponent<Collider>("Collider");
     ASSERT_EQ(2u, client.m_components.size());
     ASSERT_EQ(2u, client.countComponents());
-    ASSERT_EQ(&boxcollider1, static_cast<NamedComponent*>(client.m_components[0].get()));
-    ASSERT_EQ(&collider2, static_cast<NamedComponent*>(client.m_components[1].get()));
-    ASSERT_STREQ("BoxCollider", static_cast<NamedComponent*>(client.m_components[0].get())->name().c_str());
-    ASSERT_STREQ("Collider", static_cast<NamedComponent*>(client.m_components[1].get())->name().c_str());
+    ASSERT_EQ(&boxcollider1,
+              static_cast<NamedComponent*>(client.m_components[0].get()));
+    ASSERT_EQ(&collider2,
+              static_cast<NamedComponent*>(client.m_components[1].get()));
+    ASSERT_STREQ("BoxCollider",
+                 static_cast<NamedComponent*>(client.m_components[0].get())
+                     ->name()
+                     .c_str());
+    ASSERT_STREQ("Collider",
+                 static_cast<NamedComponent*>(client.m_components[1].get())
+                     ->name()
+                     .c_str());
     ASSERT_STREQ("Collider", collider2.name().c_str());
     ASSERT_EQ(42, collider2.doCollider());
 
@@ -199,7 +204,8 @@ TEST(TestComponents, testNominalCases)
     // type matching element. In our case BoxCollider is returned since it's the
     // first element in the container with BoxCollider as type.
     BoxCollider& boxcollider3 = client.getComponent<BoxCollider>();
-    ASSERT_EQ(&boxcollider3, static_cast<NamedComponent*>(client.m_components[0].get()));
+    ASSERT_EQ(&boxcollider3,
+              static_cast<NamedComponent*>(client.m_components[0].get()));
     ASSERT_STREQ("BoxCollider", boxcollider3.name().c_str());
     ASSERT_EQ(true, boxcollider3.isClassType("BoxCollider"_hash));
     ASSERT_EQ(42, boxcollider3.doCollider());
@@ -210,7 +216,8 @@ TEST(TestComponents, testNominalCases)
     // of the container, the BoxCollider of the 1st slot is returned since it's
     // the first element in the container with Collider type as ancestor.
     Collider& collider3 = client.getComponent<Collider>();
-    ASSERT_EQ(&collider3, static_cast<NamedComponent*>(client.m_components[0].get()));
+    ASSERT_EQ(&collider3,
+              static_cast<NamedComponent*>(client.m_components[0].get()));
     ASSERT_STREQ("BoxCollider", collider3.name().c_str());
     ASSERT_EQ(true, collider3.isClassType("Collider"_hash));
     ASSERT_EQ(42, collider3.doCollider());
@@ -230,7 +237,8 @@ TEST(TestComponents, testNominalCases)
     try
     {
         Collider& collider4 = client.getComponent<Collider>();
-        ADD_FAILURE() << "Should have thow an exception since no more component";
+        ADD_FAILURE()
+            << "Should have thow an exception since no more component";
         std::cout << collider4.name() << std::endl;
     }
     catch (std::out_of_range const& e)

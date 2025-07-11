@@ -20,6 +20,7 @@
 
 #include "UI/Layer.hpp"
 
-Layer::Layer(GLWindow &window, std::string const& name)
+Layer::Layer(GLWindow& window, std::string const& name)
     : m_window(window), m_name(name)
-{}
+{
+}

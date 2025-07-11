@@ -49,8 +49,8 @@ std::ostream& operator<<(std::ostream& os, btVector3 const& v)
 //------------------------------------------------------------------------------
 std::ostream& operator<<(std::ostream& os, btQuaternion const& q)
 {
-    return os << "(" << q.getW() << ", (" << q.getX() << ", "
-              << q.getY() << ", " << q.getZ() << "))";
+    return os << "(" << q.getW() << ", (" << q.getX() << ", " << q.getY()
+              << ", " << q.getZ() << "))";
 }
 
 //------------------------------------------------------------------------------
@@ -80,22 +80,26 @@ inline static Quatf cast_quaternion(btQuaternion const& q)
 //------------------------------------------------------------------------------
 PhysicsManager::PhysicsManager(Vector3f const& gravity)
 {
-    m_collisionConfiguration = std::make_unique<btDefaultCollisionConfiguration>();
-    m_dispatcher = std::make_unique<btCollisionDispatcher>(m_collisionConfiguration.get());
+    m_collisionConfiguration =
+        std::make_unique<btDefaultCollisionConfiguration>();
+    m_dispatcher =
+        std::make_unique<btCollisionDispatcher>(m_collisionConfiguration.get());
     m_broadphase = std::make_unique<btDbvtBroadphase>();
     m_solver = std::make_unique<btSequentialImpulseConstraintSolver>();
-    m_dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>
-                      (m_dispatcher.get(), m_broadphase.get(),
-                       m_solver.get(), m_collisionConfiguration.get());
+    m_dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(
+        m_dispatcher.get(),
+        m_broadphase.get(),
+        m_solver.get(),
+        m_collisionConfiguration.get());
     m_dynamicsWorld->setGravity(btVector3(gravity.x, gravity.y, gravity.z));
 }
 
-//void PhysicsManager::debugDraw(int debugFlags)
+// void PhysicsManager::debugDraw(int debugFlags)
 //{
-//    if (m_dynamicsWorldsWorld->getDebugDrawer())
-//        m_dynamicsWorldsWorld->getDebugDrawer()->setDebugMode(debugFlags);
-//    m_dynamicsWorldsWorld->debugDrawWorld();
-//}
+//     if (m_dynamicsWorldsWorld->getDebugDrawer())
+//         m_dynamicsWorldsWorld->getDebugDrawer()->setDebugMode(debugFlags);
+//     m_dynamicsWorldsWorld->debugDrawWorld();
+// }
 
 //------------------------------------------------------------------------------
 void PhysicsManager::attach(RigidBody& obj)
@@ -117,7 +121,7 @@ void PhysicsManager::detach(RigidBody& obj)
 //------------------------------------------------------------------------------
 void PhysicsManager::memorizeStates()
 {
-    for (auto it: m_objects)
+    for (auto it : m_objects)
     {
         it->setInitialTransform(it->m_transform, true);
     }
@@ -135,7 +139,7 @@ void PhysicsManager::update(float dt)
 
     m_dynamicsWorld->stepSimulation(dt);
 
-    for (auto it: m_objects)
+    for (auto it : m_objects)
     {
         it->update();
     }
@@ -144,7 +148,7 @@ void PhysicsManager::update(float dt)
 //------------------------------------------------------------------------------
 void PhysicsManager::reset()
 {
-    for (auto it: m_objects)
+    for (auto it : m_objects)
     {
         it->reset();
     }
@@ -163,9 +167,8 @@ RigidBody::RigidBody(Transformable3D& transform,
     m_collision_shape = std::move(shape);
     m_motion = std::make_unique<btDefaultMotionState>(m_initial_transform);
 
-    btRigidBody::btRigidBodyConstructionInfo info(mass.to<btScalar>(),
-                                                  m_motion.get(),
-                                                  m_collision_shape.get());
+    btRigidBody::btRigidBodyConstructionInfo info(
+        mass.to<btScalar>(), m_motion.get(), m_collision_shape.get());
     info.m_restitution = restitution;
     info.m_friction = friction;
     m_rigid_body = std::make_unique<btRigidBody>(info);
@@ -173,11 +176,15 @@ RigidBody::RigidBody(Transformable3D& transform,
 }
 
 //------------------------------------------------------------------------------
-void RigidBody::setInitialTransform(Transformable3D const& transform, bool apply)
+void RigidBody::setInitialTransform(Transformable3D const& transform,
+                                    bool apply)
 {
     m_initial_transform = btTransform(cast_quaternion(transform.attitude()),
                                       cast_vector(transform.position()));
-    if (apply) { reset(); }
+    if (apply)
+    {
+        reset();
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -224,44 +231,75 @@ void RigidBody::update()
 
 namespace rigidbody
 {
-    //--------------------------------------------------------------------------
-    WorldPlane::WorldPlane(Transformable3D& transform, Vector3f const& thickness,
-                           float restitution, float friction)
-        : RigidBody(transform,
-                    std::make_unique<btStaticPlaneShape>(thickness2norm(thickness), 0),
-                    kilogram_t(0), restitution, friction)
-    {}
+//--------------------------------------------------------------------------
+WorldPlane::WorldPlane(Transformable3D& transform,
+                       Vector3f const& thickness,
+                       float restitution,
+                       float friction)
+    : RigidBody(
+          transform,
+          std::make_unique<btStaticPlaneShape>(thickness2norm(thickness), 0),
+          kilogram_t(0),
+          restitution,
+          friction)
+{
+}
 
-    //--------------------------------------------------------------------------
-    Sphere::Sphere(Transformable3D& transform, float radius, kilogram_t mass,
-                   float restitution, float friction)
-        : RigidBody(transform, std::make_unique<btSphereShape>(radius),
-                    mass, restitution, friction)
-    {}
+//--------------------------------------------------------------------------
+Sphere::Sphere(Transformable3D& transform,
+               float radius,
+               kilogram_t mass,
+               float restitution,
+               float friction)
+    : RigidBody(transform,
+                std::make_unique<btSphereShape>(radius),
+                mass,
+                restitution,
+                friction)
+{
+}
 
-    //--------------------------------------------------------------------------
-    Box::Box(Transformable3D& transform, Vector3f const& dimensions, kilogram_t mass,
-                   float restitution, float friction)
-        : RigidBody(transform,
-                    std::make_unique<btBoxShape>(cast_vector(dimensions)),
-                    mass, restitution, friction)
-    {}
+//--------------------------------------------------------------------------
+Box::Box(Transformable3D& transform,
+         Vector3f const& dimensions,
+         kilogram_t mass,
+         float restitution,
+         float friction)
+    : RigidBody(transform,
+                std::make_unique<btBoxShape>(cast_vector(dimensions)),
+                mass,
+                restitution,
+                friction)
+{
+}
 
-    //--------------------------------------------------------------------------
-    Capsule::Capsule(Transformable3D& transform, float radius, float height,
-                     units::mass::kilogram_t mass,
-                     float restitution, float friction)
-        : RigidBody(transform,
-                    std::make_unique<btCapsuleShape>(radius, height),
-                    mass, restitution, friction)
-    {}
+//--------------------------------------------------------------------------
+Capsule::Capsule(Transformable3D& transform,
+                 float radius,
+                 float height,
+                 units::mass::kilogram_t mass,
+                 float restitution,
+                 float friction)
+    : RigidBody(transform,
+                std::make_unique<btCapsuleShape>(radius, height),
+                mass,
+                restitution,
+                friction)
+{
+}
 
-    //--------------------------------------------------------------------------
-    Cylinder::Cylinder(Transformable3D& transform, Vector3f const& dimensions, kilogram_t mass,
-                       float restitution, float friction)
-        : RigidBody(transform,
-                    std::make_unique<btCylinderShape>(cast_vector(dimensions)),
-                    mass, restitution, friction)
-    {}
+//--------------------------------------------------------------------------
+Cylinder::Cylinder(Transformable3D& transform,
+                   Vector3f const& dimensions,
+                   kilogram_t mass,
+                   float restitution,
+                   float friction)
+    : RigidBody(transform,
+                std::make_unique<btCylinderShape>(cast_vector(dimensions)),
+                mass,
+                restitution,
+                friction)
+{
+}
 
 } // namespace rigidbody

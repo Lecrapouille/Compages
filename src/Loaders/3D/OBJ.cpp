@@ -19,9 +19,9 @@
 //=====================================================================
 
 #include "Loaders/3D/OBJ.hpp"
-#include <sstream>
-#include <fstream>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 
 // TODO manage o, g and s
 // https://web.cse.ohio-state.edu/~shen.94/581/Site/Lab3_files/Labhelp_Obj_parser.htm
@@ -52,8 +52,8 @@ bool OBJFileLoader::load(std::string const& fileName,
 
     if (!readObjFile(objData, fileName))
     {
-        m_error = "Failed loading 3D file '" + fileName + "'. Reason was: '"
-                  + std::strerror(errno) + "'";
+        m_error = "Failed loading 3D file '" + fileName + "'. Reason was: '" +
+                  std::strerror(errno) + "'";
         std::cerr << m_error << std::endl;
         return false;
     }
@@ -137,8 +137,9 @@ bool OBJFileLoader::load(std::string const& fileName,
             }
             catch (std::exception const&)
             {
-                m_error = "Failed loading 3D file '" + fileName + "'. Reason was: '"
-                        + "Erroneous face index at line " + std::to_string(lines) + "'";
+                m_error = "Failed loading 3D file '" + fileName +
+                          "'. Reason was: '" + "Erroneous face index at line " +
+                          std::to_string(lines) + "'";
                 std::cerr << m_error << std::endl;
                 return false;
             }

@@ -24,8 +24,9 @@
 float BasicWindowImGui::color[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
 
 //------------------------------------------------------------------------------
-BasicWindowImGui::BasicWindowImGui(uint32_t const width, uint32_t const height,
-                         const char *title)
+BasicWindowImGui::BasicWindowImGui(uint32_t const width,
+                                   uint32_t const height,
+                                   const char* title)
     : GLWindow(width, height, title)
 {
     std::cout << "Hello BasicWindowImGui: " << info() << std::endl;
@@ -66,11 +67,10 @@ bool BasicWindowImGui::GUI::onImGuiRender()
     BasicWindowImGui& win = owner<BasicWindowImGui>();
 
     ImGui::Begin("Hello, world!");
-    ImGui::TextColored(ImVec4(win.color[0],
-                              win.color[1],
-                              win.color[2],
-                              win.color[3]),
-                       "%s", "Change the background color");
+    ImGui::TextColored(
+        ImVec4(win.color[0], win.color[1], win.color[2], win.color[3]),
+        "%s",
+        "Change the background color");
     ImGui::ColorEdit3("color", win.color);
     ImGui::End();
 

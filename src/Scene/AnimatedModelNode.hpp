@@ -21,16 +21,16 @@
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_SCENE_ANIMATED_MODEL_HPP
 #define OPENGLCPPWRAPPER_SCENEGRAPH_SCENE_ANIMATED_MODEL_HPP
 
-#  include "nlohmann/json.hpp"
-#  include "Scene/SceneTree.hpp"
-#  include "OpenGL/Buffers/iVAO.hpp"
-#  include "Loaders/Textures/SOIL.hpp"
-#  include "Scene/Camera/CameraNode.hpp"
-#  include "Math/Matrix.hpp"
-#  include "Math/Quaternion.hpp"
-#  include <unordered_map>
-#  include <vector>
-#  include <string>
+#include "Loaders/Textures/SOIL.hpp"
+#include "Math/Matrix.hpp"
+#include "Math/Quaternion.hpp"
+#include "OpenGL/Buffers/iVAO.hpp"
+#include "Scene/Camera/CameraNode.hpp"
+#include "Scene/SceneTree.hpp"
+#include "nlohmann/json.hpp"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // Based on https://github.com/emargollo/OpenGL-Animator
 // also inspired from ThinMatrix's tutorial playlist
@@ -88,9 +88,18 @@ public:
         }
     }
 
-    inline std::string const& getName() const { return m_name; }
-    inline double getDuration() const { return m_duration; }
-    inline std::vector<JointAnim> const& getJointAnims() const { return m_jointAnims; }
+    inline std::string const& getName() const
+    {
+        return m_name;
+    }
+    inline double getDuration() const
+    {
+        return m_duration;
+    }
+    inline std::vector<JointAnim> const& getJointAnims() const
+    {
+        return m_jointAnims;
+    }
 
 private:
 
@@ -109,7 +118,8 @@ public:
         Matrix44f finalTransformation;
     };
 
-    AnimatedMesh(nlohmann::json const& jsonObj, std::string const& texture_path);
+    AnimatedMesh(nlohmann::json const& jsonObj,
+                 std::string const& texture_path);
 
     bool Draw(Matrix44f const& modelMatrix)
     {
@@ -129,15 +139,15 @@ public:
 
     std::vector<Matrix44f> GetBoneArray()
     {
-	    std::vector<Matrix44f> boneArray;
+        std::vector<Matrix44f> boneArray;
 
-	    boneArray.assign(m_boneDataMap.size(), Matrix44f());
-	    for (auto i : m_boneDataMap)
-	    {
-		    boneArray[i.first] = i.second.finalTransformation;
-	    }
+        boneArray.assign(m_boneDataMap.size(), Matrix44f());
+        for (auto i : m_boneDataMap)
+        {
+            boneArray[i.first] = i.second.finalTransformation;
+        }
 
-	    return boneArray;
+        return boneArray;
     }
 
     bool LoadTexture(std::string const& filename)
@@ -151,8 +161,8 @@ public:
         texture.wrap(GLTexture::Wrap::MIRRORED_REPEAT);
 
         // Read the png file and load data on the texture (CPU side). Dirty data
-        // will be automaticaly transfered to the GPU. Note that the loader is by
-        // default SOIL but you can pass it your own load as 2nd parameter.
+        // will be automaticaly transfered to the GPU. Note that the loader is
+        // by default SOIL but you can pass it your own load as 2nd parameter.
         return texture.load<SOIL>(filename);
     }
 
@@ -176,41 +186,57 @@ class Joint
 {
 public:
 
-	inline Matrix44f const& getTransform() const { return m_jointTransform; }
-	inline void setTransform(Matrix44f const& transform) { m_jointTransform = transform; }
-	inline void setName(std::string const& name) { m_name = name; }
-	inline std::string const& getName() const { return m_name; }
-	std::vector<std::unique_ptr<Joint>>	const& getChildren() const { return m_children; }
-	void addChild(std::unique_ptr<Joint> j) { m_children.push_back(std::move(j)); }
+    inline Matrix44f const& getTransform() const
+    {
+        return m_jointTransform;
+    }
+    inline void setTransform(Matrix44f const& transform)
+    {
+        m_jointTransform = transform;
+    }
+    inline void setName(std::string const& name)
+    {
+        m_name = name;
+    }
+    inline std::string const& getName() const
+    {
+        return m_name;
+    }
+    std::vector<std::unique_ptr<Joint>> const& getChildren() const
+    {
+        return m_children;
+    }
+    void addChild(std::unique_ptr<Joint> j)
+    {
+        m_children.push_back(std::move(j));
+    }
 
-	Joint* Find(std::string const& name)
-	{
-		if (m_name == name)
+    Joint* Find(std::string const& name)
+    {
+        if (m_name == name)
             return this;
 
-		for (auto const& joint: m_children)
-		{
-			Joint* j = joint->Find(name);
-			if (j != nullptr)
+        for (auto const& joint : m_children)
+        {
+            Joint* j = joint->Find(name);
+            if (j != nullptr)
                 return j;
-		}
-		return nullptr;
-	}
+        }
+        return nullptr;
+    }
 
 private:
 
-	Matrix44f m_jointTransform;
-	std::vector<std::unique_ptr<Joint>> m_children;
-	std::string m_name;
+    Matrix44f m_jointTransform;
+    std::vector<std::unique_ptr<Joint>> m_children;
+    std::string m_name;
 };
 
 class Animator
 {
 public:
 
-    Animator(AnimatedModel* model)
-        : m_model(model)
-    {}
+    Animator(AnimatedModel* model) : m_model(model) {}
 
     void startAnimation(const std::string& animationName)
     {
@@ -238,20 +264,35 @@ private:
         std::unordered_map<std::string, Matrix44f> jointTransforms;
         for (auto jointKeys : m_currentAnimation->getJointAnims())
         {
-            //Using upper bound as it will never return the first value of a map.
-            auto posNext = jointKeys.m_positionKeys.upper_bound(m_animationTime);
-            auto rotNext = jointKeys.m_rotationKeys.upper_bound(m_animationTime);
-            auto scaleNext = jointKeys.m_scallingKeys.upper_bound(m_animationTime);
+            // Using upper bound as it will never return the first value of a
+            // map.
+            auto posNext =
+                jointKeys.m_positionKeys.upper_bound(m_animationTime);
+            auto rotNext =
+                jointKeys.m_rotationKeys.upper_bound(m_animationTime);
+            auto scaleNext =
+                jointKeys.m_scallingKeys.upper_bound(m_animationTime);
 
-            if (posNext == jointKeys.m_positionKeys.end()) { posNext--; }
-            if (rotNext == jointKeys.m_rotationKeys.end()) { rotNext--; }
-            if (scaleNext == jointKeys.m_scallingKeys.end()) { scaleNext--; }
+            if (posNext == jointKeys.m_positionKeys.end())
+            {
+                posNext--;
+            }
+            if (rotNext == jointKeys.m_rotationKeys.end())
+            {
+                rotNext--;
+            }
+            if (scaleNext == jointKeys.m_scallingKeys.end())
+            {
+                scaleNext--;
+            }
 
             Vector3f pos = GetInterpolatedPos(*(std::prev(posNext)), *posNext);
             Quatf rot = GetInterpolatedRot(*(std::prev(rotNext)), *rotNext);
-            Vector3f scale = GetInterpolatedScale(*(std::prev(scaleNext)), *scaleNext);
+            Vector3f scale =
+                GetInterpolatedScale(*(std::prev(scaleNext)), *scaleNext);
 
-            Matrix44f transform = matrix::translationMatrix(pos) * rot.toMatrix() * matrix::scalingMatrix(scale);
+            Matrix44f transform = matrix::translationMatrix(pos) *
+                                  rot.toMatrix() * matrix::scalingMatrix(scale);
             jointTransforms.insert(std::make_pair(jointKeys.m_name, transform));
         }
         return jointTransforms;
@@ -306,11 +347,15 @@ private:
             d = -d;
         }
 
-        maths::clamp(d, -1.0f, 1.0f); // Robustness: Stay within domain of acos()
+        maths::clamp(
+            d, -1.0f, 1.0f); // Robustness: Stay within domain of acos()
         float theta_0 = std::acos(d); // theta_0 = angle between input vectors
         float theta = theta_0 * t;    // theta = angle between q0 and result
 
-        float s0 = std::cos(theta) - d * std::sin(theta) / std::sin(theta_0);  // == sin(theta_0 - theta) / sin(theta_0)
+        float s0 =
+            std::cos(theta) -
+            d * std::sin(theta) /
+                std::sin(theta_0); // == sin(theta_0 - theta) / sin(theta_0)
         float s1 = std::sin(theta) / std::sin(theta_0);
 
         return (s0 * q0) + (s1 * q1);
@@ -324,117 +369,130 @@ private:
     double m_animationTime;
 };
 
-class AnimatedModel : public SceneObject
+class AnimatedModel: public SceneObject
 {
 public:
 
     using Ptr = std::unique_ptr<AnimatedModel>;
 
-	AnimatedModel(std::string const& filename)
-       : SceneObject(filename)
+    AnimatedModel(std::string const& filename) : SceneObject(filename)
     {
-	    m_animator = std::make_unique<Animator>(this);
-	    m_rootJoint = std::make_unique<Joint>();
+        m_animator = std::make_unique<Animator>(this);
+        m_rootJoint = std::make_unique<Joint>();
         if (!LoadModel(filename))
         {
             std::cout << "Failed loading model" << std::endl;
         }
     }
 
-	bool LoadModel(const std::string& filename)
+    bool LoadModel(const std::string& filename)
     {
-	    nlohmann::json model;
-	    std::ifstream file(filename);
+        nlohmann::json model;
+        std::ifstream file(filename);
         if (!file)
         {
-            std::cerr << "Failed loading animated model. File '"
-                      << filename << "' does not exist" << std::endl;
+            std::cerr << "Failed loading animated model. File '" << filename
+                      << "' does not exist" << std::endl;
             return false;
         }
-	    file >> model;
-	    file.close();
+        file >> model;
+        file.close();
 
-	    if (model.find("texture") != model.end())
-	    {
-		    m_path_texture = "/home/qq/MyGitHub/OpenGLCppWrapper/examples/external/assets/";
-		    m_path_texture += model["texture"].get<std::string>();
-	    }
-	    for (nlohmann::json const& jsonMesh : model["meshes"])
-	    {
-		    m_meshes.push_back(std::make_unique<AnimatedMesh>(jsonMesh, m_path_texture));
-	    }
-	    for (nlohmann::json const& jsonAnimation : model["animations"])
-	    {
-		    m_animator->addAnimation(jsonAnimation);
-	    }
+        if (model.find("texture") != model.end())
+        {
+            m_path_texture =
+                "/home/qq/MyGitHub/OpenGLCppWrapper/examples/external/assets/";
+            m_path_texture += model["texture"].get<std::string>();
+        }
+        for (nlohmann::json const& jsonMesh : model["meshes"])
+        {
+            m_meshes.push_back(
+                std::make_unique<AnimatedMesh>(jsonMesh, m_path_texture));
+        }
+        for (nlohmann::json const& jsonAnimation : model["animations"])
+        {
+            m_animator->addAnimation(jsonAnimation);
+        }
 
-	    LoadJointHierarchy(model["rootnode"]);
-	    InitJointHierarchy(*m_rootJoint, Matrix44f(matrix::Type::Identity));
+        LoadJointHierarchy(model["rootnode"]);
+        InitJointHierarchy(*m_rootJoint, Matrix44f(matrix::Type::Identity));
         return true;
     }
 
-	void LoadJointHierarchy(nlohmann::json root)
+    void LoadJointHierarchy(nlohmann::json root)
     {
-std::cout << "  LoadJointHierarchy: " << root["name"] << std::endl;
+        std::cout << "  LoadJointHierarchy: " << root["name"] << std::endl;
 
-	    Vector3f pos(root["pos"]["x"], root["pos"]["y"], root["pos"]["z"]);
-	    Quatf rot(root["rot"]["w"], root["rot"]["x"], root["rot"]["y"], root["rot"]["z"]);
-	    Vector3f scale(root["scale"]["x"], root["scale"]["y"], root["scale"]["z"]);
+        Vector3f pos(root["pos"]["x"], root["pos"]["y"], root["pos"]["z"]);
+        Quatf rot(root["rot"]["w"],
+                  root["rot"]["x"],
+                  root["rot"]["y"],
+                  root["rot"]["z"]);
+        Vector3f scale(
+            root["scale"]["x"], root["scale"]["y"], root["scale"]["z"]);
 
-	    // GLM order: Matrix44f modelMatrix = matrix::translationMatrix(pos) * rot.toMatrix() * matrix::scalingMatrix(scale);
-        Matrix44f modelMatrix = matrix::scalingMatrix(scale) * rot.toMatrix() * matrix::translationMatrix(pos);
-	    m_inverseModelMatrix = matrix::inverse(modelMatrix);
+        // GLM order: Matrix44f modelMatrix = matrix::translationMatrix(pos) *
+        // rot.toMatrix() * matrix::scalingMatrix(scale);
+        Matrix44f modelMatrix = matrix::scalingMatrix(scale) * rot.toMatrix() *
+                                matrix::translationMatrix(pos);
+        m_inverseModelMatrix = matrix::inverse(modelMatrix);
 
-std::cout << "Scaling: " << matrix::scalingMatrix(Vector3f(1.0f,2.0f,3.0f)) << std::endl;
-std::cout << "Trans: " << matrix::translationMatrix(Vector3f(1.0f,2.0f,3.0f)) << std::endl;
-std::cout << "Rot: " << rot.toMatrix() << std::endl;
-std::cout << "Model: " << modelMatrix << std::endl;
-std::cout << "Model^-1: " << m_inverseModelMatrix << std::endl;
+        std::cout << "Scaling: "
+                  << matrix::scalingMatrix(Vector3f(1.0f, 2.0f, 3.0f))
+                  << std::endl;
+        std::cout << "Trans: "
+                  << matrix::translationMatrix(Vector3f(1.0f, 2.0f, 3.0f))
+                  << std::endl;
+        std::cout << "Rot: " << rot.toMatrix() << std::endl;
+        std::cout << "Model: " << modelMatrix << std::endl;
+        std::cout << "Model^-1: " << m_inverseModelMatrix << std::endl;
 
-	    m_rootJoint->setTransform(modelMatrix);
-	    m_rootJoint->setName(root["name"]);
-	    for (nlohmann::json const& child : root["children"])
-	    {
-		    m_rootJoint->addChild(std::move(LoadJoint(child)));
-	    }
+        m_rootJoint->setTransform(modelMatrix);
+        m_rootJoint->setName(root["name"]);
+        for (nlohmann::json const& child : root["children"])
+        {
+            m_rootJoint->addChild(std::move(LoadJoint(child)));
+        }
     }
 
-	void InitJointHierarchy(Joint const& root, Matrix44f const& parentTransform)
+    void InitJointHierarchy(Joint const& root, Matrix44f const& parentTransform)
     {
-	    Matrix44f globalTransform = parentTransform * root.getTransform();
+        Matrix44f globalTransform = parentTransform * root.getTransform();
 
-	    //Insert configure bones final transforms for each mesh
-	    UpdateMeshBone(root.getName(), globalTransform);
+        // Insert configure bones final transforms for each mesh
+        UpdateMeshBone(root.getName(), globalTransform);
 
-	    for (auto const& j: root.getChildren())
-	    {
-		    InitJointHierarchy(*j, globalTransform);
-	    }
+        for (auto const& j : root.getChildren())
+        {
+            InitJointHierarchy(*j, globalTransform);
+        }
     }
 
-	void UpdateMeshBone(std::string const& jointName, Matrix44f const& globalTransform)
+    void UpdateMeshBone(std::string const& jointName,
+                        Matrix44f const& globalTransform)
     {
-	    for (auto& mesh: m_meshes)
-	    {
-		    if (mesh->m_boneIdMap.find(jointName) == mesh->m_boneIdMap.end())
+        for (auto& mesh : m_meshes)
+        {
+            if (mesh->m_boneIdMap.find(jointName) == mesh->m_boneIdMap.end())
                 continue;
-		    unsigned int id = mesh->m_boneIdMap[jointName];
-		    mesh->m_boneDataMap[id].finalTransformation =
-                m_inverseModelMatrix * globalTransform * mesh->m_boneDataMap[id].offsetMatrix;
-	    }
+            unsigned int id = mesh->m_boneIdMap[jointName];
+            mesh->m_boneDataMap[id].finalTransformation =
+                m_inverseModelMatrix * globalTransform *
+                mesh->m_boneDataMap[id].offsetMatrix;
+        }
     }
 
     virtual void onUpdate(float const dt) override
     {
-	    m_animator->Update(dt/*elapsedTime*/);
+        m_animator->Update(dt /*elapsedTime*/);
     }
 
-	// void Draw(Transform position, Camera camera)
+    // void Draw(Transform position, Camera camera)
     virtual bool onDraw(Matrix44f const& modelMatrix) override
     {
         bool res = true;
 
-        for (auto const& it: m_meshes)
+        for (auto const& it : m_meshes)
         {
             res &= it->Draw(modelMatrix);
         }
@@ -444,51 +502,63 @@ std::cout << "Model^-1: " << m_inverseModelMatrix << std::endl;
 
     virtual void onCameraUpdated(Camera& camera) override
     {
-        for (auto const& it: m_meshes)
+        for (auto const& it : m_meshes)
         {
             it->cameraUpdated(camera);
         }
     }
 
-	Animator& getAnimator() { return *m_animator; }
-	Joint& getRootJoint() { return *m_rootJoint; }
-
-	Joint* FindJoint(std::string const& jointName)
+    Animator& getAnimator()
     {
-	    return m_rootJoint->Find(jointName);
+        return *m_animator;
+    }
+    Joint& getRootJoint()
+    {
+        return *m_rootJoint;
+    }
+
+    Joint* FindJoint(std::string const& jointName)
+    {
+        return m_rootJoint->Find(jointName);
     }
 
 private:
 
-	std::unique_ptr<Joint> LoadJoint(nlohmann::json joint)
+    std::unique_ptr<Joint> LoadJoint(nlohmann::json joint)
     {
-	    std::unique_ptr<Joint> j = std::make_unique<Joint>();
+        std::unique_ptr<Joint> j = std::make_unique<Joint>();
 
-	    Vector3f pos(joint["pos"]["x"], joint["pos"]["y"], joint["pos"]["z"]);
-	    Quatf rot(joint["rot"]["w"], joint["rot"]["x"], joint["rot"]["y"], joint["rot"]["z"]);
-	    Vector3f scale(joint["scale"]["x"], joint["scale"]["y"], joint["scale"]["z"]);
+        Vector3f pos(joint["pos"]["x"], joint["pos"]["y"], joint["pos"]["z"]);
+        Quatf rot(joint["rot"]["w"],
+                  joint["rot"]["x"],
+                  joint["rot"]["y"],
+                  joint["rot"]["z"]);
+        Vector3f scale(
+            joint["scale"]["x"], joint["scale"]["y"], joint["scale"]["z"]);
 
-	    // GLM: Matrix44f jointMatrix = matrix::translationMatrix(pos) * rot.toMatrix() * matrix::scalingMatrix(scale);
-        Matrix44f jointMatrix = matrix::scalingMatrix(scale) * rot.toMatrix() * matrix::translationMatrix(pos);
+        // GLM: Matrix44f jointMatrix = matrix::translationMatrix(pos) *
+        // rot.toMatrix() * matrix::scalingMatrix(scale);
+        Matrix44f jointMatrix = matrix::scalingMatrix(scale) * rot.toMatrix() *
+                                matrix::translationMatrix(pos);
 
-	    j->setTransform(jointMatrix);
-	    j->setName(joint["name"]);
+        j->setTransform(jointMatrix);
+        j->setName(joint["name"]);
 
-	    for (nlohmann::json child : joint["children"])
-	    {
-		    j->addChild(std::move(LoadJoint(child)));
-	    }
+        for (nlohmann::json child : joint["children"])
+        {
+            j->addChild(std::move(LoadJoint(child)));
+        }
 
-	    return j;
+        return j;
     }
 
 private:
 
-	Matrix44f m_inverseModelMatrix;
+    Matrix44f m_inverseModelMatrix;
 
-	std::vector<std::unique_ptr<AnimatedMesh>> m_meshes;
-	std::unique_ptr<Joint> m_rootJoint;
-	std::unique_ptr<Animator> m_animator;
+    std::vector<std::unique_ptr<AnimatedMesh>> m_meshes;
+    std::unique_ptr<Joint> m_rootJoint;
+    std::unique_ptr<Animator> m_animator;
     std::string m_path_texture;
 };
 

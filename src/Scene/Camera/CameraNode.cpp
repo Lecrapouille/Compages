@@ -50,13 +50,15 @@ bool Camera::setViewPort(float x, float y, float w, float h)
 {
     if (!(x >= 0.0f) && (x < 1.0f))
     {
-        std::cerr << "Top-left x coordinate shall be within [0 .. 1[" << std::endl;
+        std::cerr << "Top-left x coordinate shall be within [0 .. 1["
+                  << std::endl;
         return false;
     }
 
     if (!(x >= 0.0f) && (y < 1.0f))
     {
-        std::cerr << "Top-left y coordinate shall be within [0 .. 1[" << std::endl;
+        std::cerr << "Top-left y coordinate shall be within [0 .. 1["
+                  << std::endl;
         return false;
     }
 
@@ -80,7 +82,8 @@ bool Camera::setViewPort(float x, float y, float w, float h)
 
     if (y + h > 1.0f)
     {
-        std::cerr << "Top-left y coordinate + height shall be <= 1" << std::endl;
+        std::cerr << "Top-left y coordinate + height shall be <= 1"
+                  << std::endl;
         return false;
     }
 

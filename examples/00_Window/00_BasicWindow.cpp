@@ -25,8 +25,9 @@
 //! \brief Constructor. You need to pass the window size and title to base
 //! Window.
 //------------------------------------------------------------------------------
-BasicWindow::BasicWindow(uint32_t const width, uint32_t const height,
-                         const char *title)
+BasicWindow::BasicWindow(uint32_t const width,
+                         uint32_t const height,
+                         const char* title)
     : GLWindow(width, height, title)
 {
     std::cout << "Hello BasicWindow: " << info() << std::endl;
@@ -50,11 +51,13 @@ bool BasicWindow::onSetup()
     std::cout << "Setup BasicWindow" << std::endl;
 
     // Three cases:
-    // - setup ends with success => return true. In this case the function onPaint()
+    // - setup ends with success => return true. In this case the function
+    // onPaint()
     //   will be called periodically by GLWindow.
-    // - setup reaches an error => return false. In case, the onPaint() function will
-    //   not be called and instead the function onSetupFailed() is called and the
-    //   program immediatley exit (and release CPU and GPU memory before).
+    // - setup reaches an error => return false. In case, the onPaint() function
+    // will
+    //   not be called and instead the function onSetupFailed() is called and
+    //   the program immediatley exit (and release CPU and GPU memory before).
     // - Throw GL::Exception it will be catck by GLWindow and onSetupFailed()
     //   will be called before ending the application.
     return true;
@@ -79,9 +82,7 @@ bool BasicWindow::onPaint()
     // The delta time (in seconds) from the previous onPaint() and frames per
     // seconds (FPS) are automatically computed.
     std::cout << "Delta time: " << uint32_t(dt() * 1000.0f) << " ms."
-              << "   FPS: " << fps()
-              << "        \r"
-              << std::flush;
+              << "   FPS: " << fps() << "        \r" << std::flush;
 
     // Change the background color over time
 

@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_TRANSFORMABLE_HPP
-#  define OPENGLCPPWRAPPER_TRANSFORMABLE_HPP
+#define OPENGLCPPWRAPPER_TRANSFORMABLE_HPP
 
-#  include "Math/Transformation.hpp"
-#  include "Math/Quaternion.hpp"
+#include "Math/Quaternion.hpp"
+#include "Math/Transformation.hpp"
 
 // *****************************************************************************
 //! \brief The coordinate space in which to operate.
@@ -65,7 +65,8 @@ public:
           m_inverse_transform(matrix::Identity),
           m_transform_needs_update(false),
           m_inverse_trans_needs_update(false)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Restore states to default. Init position and origin to 0.
@@ -164,7 +165,7 @@ public:
     //! \brief Set the position of the object (relative to its origin).
     //! \param[in] position: World coordinates.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& local_position(Vector<T, n> const& position)
+    inline Transformable<T, n>& local_position(Vector<T, n> const& position)
     {
         m_position = position + m_origin;
         m_transform_needs_update = true;
@@ -187,8 +188,8 @@ public:
     //! \param[in] offset: relative displacement. How much we want to move the
     //! object in which direction.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& translate(Vector<T, n> const& offset,
-                                         Space relativeTo = Space::World)
+    inline Transformable<T, n>& translate(Vector<T, n> const& offset,
+                                          Space relativeTo = Space::World)
     {
         if (relativeTo == Space::World)
         {
@@ -209,7 +210,7 @@ public:
     //! \param[in] offset: relative displacement. How much we want to move the
     //! object along its right or left direction.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& moveRight(T const& offset)
+    inline Transformable<T, n>& moveRight(T const& offset)
     {
         m_position += offset * right();
         m_transform_needs_update = true;
@@ -223,7 +224,7 @@ public:
     //! \param[in] offset: relative displacement. How much we want to move the
     //! object along its up or down direction.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& moveUp(T const& offset)
+    inline Transformable<T, n>& moveUp(T const& offset)
     {
         m_position += offset * up();
         m_transform_needs_update = true;
@@ -237,7 +238,7 @@ public:
     //! \param[in] offset: relative displacement. How much we want to move the
     //! object along its forward or backward direction.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& moveForward(T const& offset)
+    inline Transformable<T, n>& moveForward(T const& offset)
     {
         m_position += offset * forward();
         m_transform_needs_update = true;
@@ -250,7 +251,7 @@ public:
     //--------------------------------------------------------------------------
     Matrix<T, n + 1u, n + 1u> translation()
     {
-        Matrix<T, n+1u, n+1u> I(matrix::Identity);
+        Matrix<T, n + 1u, n + 1u> I(matrix::Identity);
         m_transform = matrix::translate(I, m_position);
         return m_transform;
     }
@@ -259,7 +260,7 @@ public:
     //! \brief Set the absolute scale factor of the object.
     //! \param[in] offset: relative displacement.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& scaling(Vector<T, n> const& scale)
+    inline Transformable<T, n>& scaling(Vector<T, n> const& scale)
     {
         m_scale = scale;
         m_transform_needs_update = true;
@@ -278,7 +279,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Relative scaling of the object.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& scale(Vector<T, n> const& factor)
+    inline Transformable<T, n>& scale(Vector<T, n> const& factor)
     {
         m_scale *= factor;
         m_transform_needs_update = true;
@@ -292,7 +293,7 @@ public:
     //! \note for scaling children use methods Transformable::scale or
     //! Transformable::scaleFactor.
     //--------------------------------------------------------------------------
-    inline Transformable<T,n>& localScale(Vector<T, n> const &scale)
+    inline Transformable<T, n>& localScale(Vector<T, n> const& scale)
     {
         m_local_scaling = scale;
 
@@ -302,7 +303,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Get the local scaling.
     //--------------------------------------------------------------------------
-    inline Vector<T, n> const &localScale() const
+    inline Vector<T, n> const& localScale() const
     {
         return m_local_scaling;
     }
@@ -336,9 +337,9 @@ public:
     //! \brief Set the absolute orientation of the object.
     //! \param angle in radian.
     //--------------------------------------------------------------------------
-    Transformable<T,n>& rotate(units::angle::radian_t const angle,
-                               Vector<T, n> const& axis,
-                               Space relativeTo = Space::Self)
+    Transformable<T, n>& rotate(units::angle::radian_t const angle,
+                                Vector<T, n> const& axis,
+                                Space relativeTo = Space::Self)
     {
         return rotate(Quatf::fromAngleAxis(angle, axis), relativeTo);
     }
@@ -346,7 +347,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    Transformable<T,n>& rotate(Quat<T> const& q, Space relativeTo = Space::Self)
+    Transformable<T, n>& rotate(Quat<T> const& q,
+                                Space relativeTo = Space::Self)
     {
         if (relativeTo == Space::Self)
         {
@@ -365,8 +367,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Local rotation over its right axis.
     //--------------------------------------------------------------------------
-    Transformable<T,n>& pitch(units::angle::radian_t const angle,
-                              Space relativeTo = Space::Self)
+    Transformable<T, n>& pitch(units::angle::radian_t const angle,
+                               Space relativeTo = Space::Self)
     {
         return rotate(angle, right(), relativeTo);
     }
@@ -374,8 +376,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Local rotation over its up axis.
     //--------------------------------------------------------------------------
-    Transformable<T,n>& yaw(units::angle::radian_t const angle,
-                            Space relativeTo = Space::Self)
+    Transformable<T, n>& yaw(units::angle::radian_t const angle,
+                             Space relativeTo = Space::Self)
     {
         return rotate(angle, up(), relativeTo);
     }
@@ -383,8 +385,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Local rotation over its forward axis.
     //--------------------------------------------------------------------------
-    Transformable<T,n>& roll(units::angle::radian_t const angle,
-                             Space relativeTo = Space::Self)
+    Transformable<T, n>& roll(units::angle::radian_t const angle,
+                              Space relativeTo = Space::Self)
     {
         return rotate(angle, forward(), relativeTo);
     }
@@ -405,7 +407,8 @@ public:
     //!    conjugate it instead of applying glm::inverse, since the result is a
     //!    unit quat and for such quats the inverse is equal to the conjugate.
     //--------------------------------------------------------------------------
-    void lookAt(Vector3f const &position, Vector3f const &target, Vector3f const &up)
+    void
+    lookAt(Vector3f const& position, Vector3f const& target, Vector3f const& up)
     {
         m_position = position;
         Matrix44f mat = matrix::lookAt(position, target, up);
@@ -417,7 +420,7 @@ public:
     //! \brief Same than lookAt(position, target, up) but the up direction is
     //! deduced.
     //--------------------------------------------------------------------------
-    void lookAt(Vector3f const &position, Vector3f const &target)
+    void lookAt(Vector3f const& position, Vector3f const& target)
     {
         // Get back the up direction
         Vector3f direction = vector::normalize(target - position);
@@ -435,7 +438,7 @@ public:
     //! \brief Same than lookAt(position, target, up) but the positon is not
     //! changed and the up direction is deduced.
     //--------------------------------------------------------------------------
-    void lookAt(Vector3f const &target)
+    void lookAt(Vector3f const& target)
     {
         // Get back the up direction
         Vector3f direction = vector::normalize(target - m_position);
@@ -463,9 +466,10 @@ public:
     {
         if (m_transform_needs_update)
         {
-            Matrix<T, n+1u, n+1u> I(matrix::Identity);
+            Matrix<T, n + 1u, n + 1u> I(matrix::Identity);
             m_transform = matrix::translate(I, m_position - m_origin);
-            m_transform = matrix::rotate(m_transform, m_orientation.angle(), m_orientation.axis());
+            m_transform = matrix::rotate(
+                m_transform, m_orientation.angle(), m_orientation.axis());
             m_transform = matrix::scale(m_transform, m_scale);
             m_transform_needs_update = false;
             m_inverse_trans_needs_update = true;
@@ -489,7 +493,7 @@ public:
 
     inline bool modified() const
     {
-       return m_transform_needs_update;
+        return m_transform_needs_update;
     }
 
 protected:

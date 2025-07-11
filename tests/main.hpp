@@ -19,14 +19,14 @@
 //==============================================================================
 
 #ifndef MAIN_HPP
-#  define MAIN_HPP
+#define MAIN_HPP
 
-#  include <gmock/gmock.h>
-#  include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-#  include "OpenGL/Context/OpenGL.hpp"
-#  include <GL/glew.h>
-#  include <GLFW/glfw3.h>
+#include "OpenGL/Context/OpenGL.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 using namespace ::testing;
 

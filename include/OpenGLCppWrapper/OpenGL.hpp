@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_INCLUDE_OPENGL_HPP
-#  define OPENGLCPPWRAPPER_INCLUDE_OPENGL_HPP
+#define OPENGLCPPWRAPPER_INCLUDE_OPENGL_HPP
 
-#  include "OpenGL/Shaders/Program.hpp"
-#  include "OpenGL/Buffers/FrameBuffers.hpp"
+#include "OpenGL/Buffers/FrameBuffers.hpp"
+#include "OpenGL/Shaders/Program.hpp"
 
 #endif // OPENGLCPPWRAPPER_INCLUDE_OPENGL_HPP

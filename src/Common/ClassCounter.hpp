@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef CLASS_COUNTER_HPP
-#  define CLASS_COUNTER_HPP
+#define CLASS_COUNTER_HPP
 
-#  include <cstddef>
-#  include <atomic>
+#include <atomic>
+#include <cstddef>
 
 typedef size_t Key;
 
@@ -34,53 +34,79 @@ typedef size_t Key;
 //!
 //! Inspired from: http://www.drdobbs.com/cpp/counting-objects-in-c/184403484
 // *****************************************************************************
-template<class T> class InstanceCounter
+template <class T>
+class InstanceCounter
 {
 public:
 
-  //! \brief Empty constructor. Increase the number of instances.
-  InstanceCounter() { ++m_how_many; }
-  //! \brief Constructor by copy. Increase the number of instances.
-  InstanceCounter(const InstanceCounter&) { ++m_how_many; }
-  //! \brief Destructor. Decrease the number of instances.
-  ~InstanceCounter() { --m_how_many; }
-  //! \brief Static member. Return the number of instances.
-  static Key count() { return m_how_many.load(); }
+    //! \brief Empty constructor. Increase the number of instances.
+    InstanceCounter()
+    {
+        ++m_how_many;
+    }
+    //! \brief Constructor by copy. Increase the number of instances.
+    InstanceCounter(const InstanceCounter&)
+    {
+        ++m_how_many;
+    }
+    //! \brief Destructor. Decrease the number of instances.
+    ~InstanceCounter()
+    {
+        --m_how_many;
+    }
+    //! \brief Static member. Return the number of instances.
+    static Key count()
+    {
+        return m_how_many.load();
+    }
 
 private:
 
-  //! \brief Static member saving the number of instances.
-  static std::atomic<Key> m_how_many;
+    //! \brief Static member saving the number of instances.
+    static std::atomic<Key> m_how_many;
 };
 
-template<class T>
+template <class T>
 std::atomic<Key> InstanceCounter<T>::m_how_many(0U);
 
 // *****************************************************************************
 //! \brief
 // *****************************************************************************
-template<class T> class UniqueID
+template <class T>
+class UniqueID
 {
 public:
 
-  //! \brief Empty constructor. Increase the unique identifier.
-  UniqueID() { ++m_id_count; }
-  //! \brief Constructor by copy. Increase the unique identifier.
-  UniqueID(const UniqueID&) { ++m_id_count; }
-  //! \brief Destructor.
-  ~UniqueID() { }
-  //! \brief Static member. Reset unique identifier.
-  static void resetID() { m_id_count = -1U; }
-  //! \brief Return the unique identifier.
-  static Key getID() { return m_id_count.load(); }
+    //! \brief Empty constructor. Increase the unique identifier.
+    UniqueID()
+    {
+        ++m_id_count;
+    }
+    //! \brief Constructor by copy. Increase the unique identifier.
+    UniqueID(const UniqueID&)
+    {
+        ++m_id_count;
+    }
+    //! \brief Destructor.
+    ~UniqueID() {}
+    //! \brief Static member. Reset unique identifier.
+    static void resetID()
+    {
+        m_id_count = -1U;
+    }
+    //! \brief Return the unique identifier.
+    static Key getID()
+    {
+        return m_id_count.load();
+    }
 
 private:
 
-  //! \brief Static member saving the number of instances.
-  static std::atomic<Key> m_id_count;
+    //! \brief Static member saving the number of instances.
+    static std::atomic<Key> m_id_count;
 };
 
-template<class T>
+template <class T>
 std::atomic<Key> UniqueID<T>::m_id_count(0U);
 
 #endif // CLASS_COUNTER_HPP

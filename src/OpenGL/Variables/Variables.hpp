@@ -25,10 +25,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLVARIABLES_HPP
-#  define OPENGLCPPWRAPPER_GLVARIABLES_HPP
+#define OPENGLCPPWRAPPER_GLVARIABLES_HPP
 
-#  include "OpenGL/Variables/Attribute.hpp"
-#  include "OpenGL/Variables/Uniform.hpp"
-#  include "OpenGL/Variables/Samplers.hpp"
+#include "OpenGL/Variables/Attribute.hpp"
+#include "OpenGL/Variables/Samplers.hpp"
+#include "OpenGL/Variables/Uniform.hpp"
 
 #endif // OPENGLCPPWRAPPER_GLVARIABLES_HPP

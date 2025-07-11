@@ -23,7 +23,9 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-SkyBoxShape::SkyBoxShape(uint32_t const width, uint32_t const height, const char *title)
+SkyBoxShape::SkyBoxShape(uint32_t const width,
+                         uint32_t const height,
+                         const char* title)
     : GLWindow(width, height, title),
       m_shape("Shape"),
       m_skybox("SkyBox"),
@@ -44,11 +46,8 @@ void SkyBoxShape::onWindowResized()
 {
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    Matrix44f const& proj =
-            matrix::perspective(60.0_deg,
-                                width<float>() / height<float>(),
-                                0.1f,
-                                100.0f);
+    Matrix44f const& proj = matrix::perspective(
+        60.0_deg, width<float>() / height<float>(), 0.1f, 100.0f);
     m_progShape.matrix44f("projection") = proj;
     m_progSkyBox.matrix44f("projection") = proj;
 }
@@ -70,25 +69,36 @@ bool SkyBoxShape::createSkyBox()
 
     if (!m_progSkyBox.bind(m_skybox))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_progSkyBox.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_progSkyBox.strerror()
+                  << "'" << std::endl;
         return false;
     }
 
     // Now we have to fill VBOs with data: here vertices. Because in
     // vertex shader a_position is vect3 we have to cast to Vector3f.
-    m_skybox.vector3f("position") =
-    {
-        #include "geometry/cube_position.txt"
+    m_skybox.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
 
     // Add 6 textures to the sky box
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_X, "external/assets/right.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_X, "external/assets/left.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_Y, "external/assets/top.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_Y, "external/assets/bottom.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_Z, "external/assets/front.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_Z, "external/assets/back.jpg")) return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_X, "external/assets/right.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_X, "external/assets/left.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_Y, "external/assets/top.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_Y, "external/assets/bottom.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_Z, "external/assets/front.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_Z, "external/assets/back.jpg"))
+        return false;
 
     return true;
 }
@@ -102,7 +112,8 @@ bool SkyBoxShape::createShape()
     vs2.read("01_Core/shaders/07_MultipleObjects.vs");
     fs2.read("01_Core/shaders/07_MultipleObjects.fs");
 
-    // Compile shader as OpenGL program. This one will instanciate all OpenGL objects for you.
+    // Compile shader as OpenGL program. This one will instanciate all OpenGL
+    // objects for you.
     if (!m_progShape.compile(vs2, fs2))
     {
         std::cerr << "Failed compiling OpenGL program. Reason was '"
@@ -114,20 +125,18 @@ bool SkyBoxShape::createShape()
     m_progShape.vector4f("color") = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
     if (!m_progShape.bind(m_shape))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_progShape.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_progShape.strerror()
+                  << "'" << std::endl;
         return false;
     }
 
-    m_shape.vector3f("position") =
-    {
-        #include "geometry/cube_position.txt"
+    m_shape.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
     m_shape.vector3f("position") *= 0.5f;
 
-    m_shape.vector2f("UV") =
-    {
-        #include "geometry/cube_texture.txt"
+    m_shape.vector2f("UV") = {
+#include "geometry/cube_texture.txt"
     };
 
     GLTexture2D& texture = m_shape.texture2D("texID");
@@ -151,8 +160,9 @@ bool SkyBoxShape::onSetup()
     return createShape() && createSkyBox();
 }
 
-static Vector3f lookat = Vector3f(2,2,2);
-static Matrix44f view = matrix::lookAt(Vector3f(5,5,5), lookat, Vector3f(0,1,0));
+static Vector3f lookat = Vector3f(2, 2, 2);
+static Matrix44f view =
+    matrix::lookAt(Vector3f(5, 5, 5), lookat, Vector3f(0, 1, 0));
 
 // --------------------------------------------------------------
 //! \brief Draw the shape.

@@ -19,23 +19,24 @@
 //=====================================================================
 
 #ifndef GENERAL_TREE_HPP
-#  define GENERAL_TREE_HPP
+#define GENERAL_TREE_HPP
 
-#  include <vector>
-#  include <memory>
-#  include <iostream>
+#include <iostream>
+#include <memory>
+#include <vector>
 
 //------------------------------------------------------------------------------
 //! \brief General Tree class. This class is made to allow derived class to
 //! access to parent and child nodes. This is easier to create scene graph and
 //! contrary to std container data has to be mixed with internal states.
 //! If this is not desired you can see other implementations:
-//! - https://github.com/reconndev/General-Tree/blob/master/GeneralTree/GeneralTree.hpp
+//! -
+//! https://github.com/reconndev/General-Tree/blob/master/GeneralTree/GeneralTree.hpp
 //! - https://gist.github.com/phoemur/6dd18d608438373185f6a2457662c1c2
 //! - https://github.com/taskflow/taskflow/blob/master/taskflow/core/graph.hpp
 //! \tparam T derived class deriving from Tree.
 //------------------------------------------------------------------------------
-template<class T>
+template <class T>
 class Tree
 {
 public:
@@ -49,7 +50,7 @@ public:
     //! \brief Create a new T as smart pointer. Use insert() to add it in the
     //! tree.
     //--------------------------------------------------------------------------
-    template<class X, typename ...ArgsT>
+    template <class X, typename... ArgsT>
     static std::unique_ptr<X> create(ArgsT&&... args)
     {
         return std::make_unique<X>(std::forward<ArgsT>(args)...);
@@ -66,8 +67,9 @@ public:
     //--------------------------------------------------------------------------
     virtual ~Tree<T>()
     {
-        //std::cout << "Bye " << static_cast<T*>(this)->name() << std::endl;
-        // Avoid using implicit recursive deletion due to usage of smart pointer
+        // std::cout << "Bye " << static_cast<T*>(this)->name() << std::endl;
+        //  Avoid using implicit recursive deletion due to usage of smart
+        //  pointer
         clear(); // FIXME ?
     }
 
@@ -76,7 +78,7 @@ public:
     //! \param[in] args parameters to the tree node constructor.
     //! \return the reference to the newly created tree node.
     //--------------------------------------------------------------------------
-    template<class X, typename ...ArgsT>
+    template <class X, typename... ArgsT>
     X& attach(ArgsT&&... args)
     {
         children.push_back(create<X>(std::forward<ArgsT>(args)...));
@@ -103,11 +105,9 @@ public:
     //--------------------------------------------------------------------------
     size_t detach(Ptr node)
     {
-        auto it = std::find_if(children.begin(), children.end(),
-                               [node](Ptr i)
-                               {
-                                   return i.get() == node.get();
-                               });
+        auto it = std::find_if(children.begin(),
+                               children.end(),
+                               [node](Ptr i) { return i.get() == node.get(); });
 
         if (it != children.end())
         {
@@ -178,12 +178,12 @@ public:
     //! \param[in] functor lambda function to call on each node.
     //! \param[in] args extra parameters of the lambda function.
     //--------------------------------------------------------------------------
-    template<typename Functor, typename ...ArgsT>
+    template <typename Functor, typename... ArgsT>
     void traverse(Functor functor, ArgsT&&... args)
     {
         functor(static_cast<T*>(this), std::forward<ArgsT>(args)...);
 
-        for (auto& child: children)
+        for (auto& child : children)
         {
             child->traverse(functor, std::forward<ArgsT>(args)...);
         }
@@ -195,12 +195,12 @@ public:
     //! \param[in] functor lambda function to call on each node.
     //! \param[in] args extra parameters of the lambda function.
     //--------------------------------------------------------------------------
-    template<typename Functor, typename ...ArgsT>
+    template <typename Functor, typename... ArgsT>
     void traverse(Functor functor, ArgsT&&... args) const
     {
         functor(static_cast<const T*>(this), std::forward<ArgsT>(args)...);
 
-        for (auto& child: children)
+        for (auto& child : children)
         {
             child->traverse(functor, std::forward<ArgsT>(args)...);
         }
@@ -214,9 +214,8 @@ public:
     {
         size_t count = 0u;
         Tree<T>::traverse([](T const* node, size_t& c)
-                          {
-                              c += node->children.size();
-                          }, count);
+                          { c += node->children.size(); },
+                          count);
         return count + 1u;
     }
 
@@ -236,15 +235,13 @@ private:
     //!
     //! \param node newly inserted node.
     //--------------------------------------------------------------------------
-    virtual void onNodeAdded()
-    {}
+    virtual void onNodeAdded() {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when a node has been removed. By default do nothing but
     //! derived class can override this method.
     //--------------------------------------------------------------------------
-    virtual void onNodeRemoved()
-    {}
+    virtual void onNodeRemoved() {}
 
 public:
 

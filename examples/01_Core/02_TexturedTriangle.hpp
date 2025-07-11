@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_02_TEXTURED_TRIANGLE_HPP
-#  define EXAMPLE_02_TEXTURED_TRIANGLE_HPP
+#define EXAMPLE_02_TEXTURED_TRIANGLE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief This example shows how to create a simple textured triangle.
@@ -31,7 +31,9 @@ class TexturedTriangle: public GLWindow
 {
 public:
 
-    TexturedTriangle(uint32_t const width, uint32_t const height, const char *title);
+    TexturedTriangle(uint32_t const width,
+                     uint32_t const height,
+                     const char* title);
     ~TexturedTriangle();
 
     static std::string info()
@@ -50,10 +52,10 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLProgram          m_prog;
-    GLVAO              m_triangle;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLProgram m_prog;
+    GLVAO m_triangle;
 };
 
 #endif // EXAMPLE_02_TEXTURED_TRIANGLE_HPP

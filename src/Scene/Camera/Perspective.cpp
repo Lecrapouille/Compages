@@ -22,7 +22,9 @@
 #include "Math/Transformation.hpp"
 
 //------------------------------------------------------------------------------
-Perspective::Perspective(units::angle::radian_t const fov, float const near, float const far)
+Perspective::Perspective(units::angle::radian_t const fov,
+                         float const near,
+                         float const far)
     : m_projection(matrix::Identity), m_near(near), m_far(far), m_aspect(0.5f)
 {
     setFieldOfView(fov);

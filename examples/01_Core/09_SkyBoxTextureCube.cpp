@@ -23,7 +23,9 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-SkyBoxTextureCube::SkyBoxTextureCube(uint32_t const width, uint32_t const height, const char *title)
+SkyBoxTextureCube::SkyBoxTextureCube(uint32_t const width,
+                                     uint32_t const height,
+                                     const char* title)
     : GLWindow(width, height, title),
       m_skybox("SkyBoxTextureCube"),
       m_prog("progSkyBox")
@@ -42,11 +44,8 @@ void SkyBoxTextureCube::onWindowResized()
 {
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    m_prog.matrix44f("projection") =
-            matrix::perspective(60.0_deg,
-                                width<float>() / height<float>(),
-                                0.1f,
-                                100.0f);
+    m_prog.matrix44f("projection") = matrix::perspective(
+        60.0_deg, width<float>() / height<float>(), 0.1f, 100.0f);
 }
 
 //------------------------------------------------------------------------------
@@ -66,23 +65,34 @@ bool SkyBoxTextureCube::createSkyBox()
 
     if (!m_prog.bind(m_skybox))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
-    m_skybox.vector3f("position") =
-    {
-        #include "geometry/cube_position.txt"
+    m_skybox.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
 
     // Add 6 textures to the sky box
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_X, "external/assets/right.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_X, "external/assets/left.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_Y, "external/assets/top.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_Y, "external/assets/bottom.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::POSITIVE_Z, "external/assets/front.jpg")) return false;
-    if (!m_skybox.textureCube("skybox").load<SOIL>(GLTextureCube::Map::NEGATIVE_Z, "external/assets/back.jpg")) return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_X, "external/assets/right.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_X, "external/assets/left.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_Y, "external/assets/top.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_Y, "external/assets/bottom.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::POSITIVE_Z, "external/assets/front.jpg"))
+        return false;
+    if (!m_skybox.textureCube("skybox").load<SOIL>(
+            GLTextureCube::Map::NEGATIVE_Z, "external/assets/back.jpg"))
+        return false;
 
     return true;
 }
@@ -107,9 +117,10 @@ bool SkyBoxTextureCube::onSetup()
 // -----------------------------------------------------------------------------
 bool SkyBoxTextureCube::drawSkyBox()
 {
-    static Vector3f lookat = Vector3f(1,8,8);
+    static Vector3f lookat = Vector3f(1, 8, 8);
     // Remove translation from the view matrix
-    Matrix44f view = matrix::lookAt(Vector3f(10,10,10), lookat, Vector3f(0,1,0));
+    Matrix44f view =
+        matrix::lookAt(Vector3f(10, 10, 10), lookat, Vector3f(0, 1, 0));
     m_prog.matrix44f("view") = Matrix44f(Matrix33f(view));
 
     // Change depth function so depth test passes when values are equal

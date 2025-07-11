@@ -25,12 +25,13 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLOBJECT_HPP
-#  define OPENGLCPPWRAPPER_GLOBJECT_HPP
+#define OPENGLCPPWRAPPER_GLOBJECT_HPP
 
-#  include "OpenGL/Context/OpenGL.hpp"
-#  include <cassert>
+#include "OpenGL/Context/OpenGL.hpp"
+#include <cassert>
 
-// FIXME: peut on supprimer les virtual onCreate() par un Curiously recurring template pattern ??
+// FIXME: peut on supprimer les virtual onCreate() par un Curiously recurring
+// template pattern ??
 // ***************************************************************************
 //! \class GLObject GLObject.hpp
 //! \ingroup OpenGL
@@ -55,8 +56,8 @@
 //! signed vs. unsigned conversion compilation warnings or usage of explicit
 //! static_cast.
 // ***************************************************************************
-template<class T>
-class GLObject : private NonCopyable
+template <class T>
+class GLObject: private NonCopyable
 {
 public:
 
@@ -116,29 +117,30 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Template method pattern. Perform some pending operations
     //! (creation, setup, update) when needed. This method is kind of state
-    //! machine and only calls pure virtual methods such as onCreate(), onSetup(),
-    //! onUpdate() ... which have to be implemented in derived classes.
+    //! machine and only calls pure virtual methods such as onCreate(),
+    //! onSetup(), onUpdate() ... which have to be implemented in derived
+    //! classes.
     //--------------------------------------------------------------------------
     void begin()
     {
         if (m_need_create)
         {
-#  ifdef CHECK_OPENGL
+#ifdef CHECK_OPENGL
             // OpenGL context shall be present
             m_context = GL::Context::getCurrentContext();
             if (m_context == nullptr)
-                return ;
-#  endif
+                return;
+#endif
 
             // Usually call glCreateXXX()
             m_need_create = onCreate();
         }
 
-#  ifdef CHECK_OPENGL
+#ifdef CHECK_OPENGL
         assert(m_context == GL::Context::getCurrentContext() &&
                "You are trying to manipulate an OpenGL object "
                "that has been created from a different context");
-#  endif
+#endif
 
         // Usually call glBindXXX()
         onActivate();
@@ -149,7 +151,7 @@ public:
             m_need_setup = onSetup();
             if (m_need_setup)
             {
-                return ;
+                return;
             }
         }
 
@@ -167,11 +169,11 @@ public:
     //--------------------------------------------------------------------------
     inline void end()
     {
-#  ifdef CHECK_OPENGL
+#ifdef CHECK_OPENGL
         assert(m_context == GL::Context::getCurrentContext() &&
                "You are trying to manipulate an OpenGL object "
                "that has been created from a different context");
-#  endif
+#endif
 
         if (m_handle > initialHandleValue())
         {
@@ -181,19 +183,20 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Release the memory allocated only for GPU, states of the instance
-    //! wrapping the OpenGL are reseted. This means the instance is still reusable.
+    //! wrapping the OpenGL are reseted. This means the instance is still
+    //! reusable.
     //!
     //! \note the OpenGL object will be created back after a call of begin().
     //--------------------------------------------------------------------------
     void release()
     {
-#  ifdef CHECK_OPENGL
+#ifdef CHECK_OPENGL
         assert(((m_context == GL::Context::getCurrentContext()) ||
                 (m_context == nullptr)) &&
                "You are trying to manipulate an OpenGL object "
                "that has been created in a different context");
         m_context = nullptr;
-#  endif
+#endif
 
         if (m_handle > initialHandleValue())
         {
@@ -279,12 +282,12 @@ private:
 
 protected:
 
-#  ifdef CHECK_OPENGL
+#ifdef CHECK_OPENGL
     //! \brief Memorize the OpenGL context (meaning in which windows the object
     //! has been created). To check if the OpenGL is always access by the same
     //! context.
     GL::Context::Window* m_context = nullptr;
-#  endif
+#endif
 
     //! \brief Object name used as the same time as a key for lookup tables and
     //! for debuging (logs, ...)
@@ -304,11 +307,17 @@ protected:
 };
 
 //--------------------------------------------------------------------------
-template<>
-inline GLenum GLObject<GLenum>::initialHandleValue() const { return 0u; }
+template <>
+inline GLenum GLObject<GLenum>::initialHandleValue() const
+{
+    return 0u;
+}
 
 //--------------------------------------------------------------------------
-template<>
-inline GLint GLObject<GLint>::initialHandleValue() const { return -1; }
+template <>
+inline GLint GLObject<GLint>::initialHandleValue() const
+{
+    return -1;
+}
 
 #endif // OPENGLCPPWRAPPER_GLOBJECT_HPP

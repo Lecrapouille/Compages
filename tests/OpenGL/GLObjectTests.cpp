@@ -21,16 +21,15 @@
 #include "main.hpp"
 #define protected public
 #define private public
-#  include "OpenGL/GLObject.hpp"
+#include "OpenGL/GLObject.hpp"
 #undef protected
 #undef private
 
-class FakeObject : public GLObject<GLint>
+class FakeObject: public GLObject<GLint>
 {
 public:
 
-    FakeObject()
-        : GLObject<GLint>("FakeObject", 42)
+    FakeObject() : GLObject<GLint>("FakeObject", 42)
     {
         reset();
     }

@@ -25,23 +25,24 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLATTRIBUTES_HPP
-#  define OPENGLCPPWRAPPER_GLATTRIBUTES_HPP
+#define OPENGLCPPWRAPPER_GLATTRIBUTES_HPP
 
-#  include "OpenGL/Variables/Location.hpp"
-#  include <cassert>
+#include "OpenGL/Variables/Location.hpp"
+#include <cassert>
 
 // *****************************************************************************
-//! \brief Represent an attribute variable used in a GLSL shader program (refered
-//! by \c in and \c out keywords) and used for creating the associated VBO when a
-//! VAO is bound to a GLProgram. Example:
+//! \brief Represent an attribute variable used in a GLSL shader program
+//! (refered by \c in and \c out keywords) and used for creating the associated
+//! VBO when a VAO is bound to a GLProgram. Example:
 //! \code
 //!   in vec3 position;
 //! \endcode
 //!
 //! This class only stores informations about the attribute variable (dimension,
-//! type) but does not hold any value. These information are then used by GLProgam
-//! when a VAO is bind to it for creating VBO inside the VAO. GLAttribute should
-//! not be used directly by the user but internaly private instances by GLProgram.
+//! type) but does not hold any value. These information are then used by
+//! GLProgam when a VAO is bind to it for creating VBO inside the VAO.
+//! GLAttribute should not be used directly by the user but internaly private
+//! instances by GLProgram.
 // *****************************************************************************
 class GLAttribute: public GLLocation
 {
@@ -49,15 +50,20 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
-    //! \param[in] name Give a name to the instance. The name shall be in accordance to
-    //! the attibute variable in the GLSL shader. The GLProgram uses these names as internal hash key.
-    //! \param[in] size set the dimension of variable (1 for scalar, 2 .. 4 depending on the
-    //! dimension of the vector).
-    //! \param[in] gltype set the OpenGL type of data (GL_FLOAT, GL_INT, GL_FLOAT_VEC4 ...)
+    //! \param[in] name Give a name to the instance. The name shall be in
+    //! accordance to the attibute variable in the GLSL shader. The GLProgram
+    //! uses these names as internal hash key.
+    //! \param[in] size set the dimension of variable (1 for scalar, 2 .. 4
+    //! depending on the dimension of the vector).
+    //! \param[in] gltype set the OpenGL type of data (GL_FLOAT, GL_INT,
+    //! GL_FLOAT_VEC4 ...)
     //! \param[in] prog the handle of the GLProgram (which is the owner of this
     //! instance).
     //--------------------------------------------------------------------------
-    GLAttribute(const char *name, const GLint size, const GLint gltype, const GLuint prog)
+    GLAttribute(const char* name,
+                const GLint size,
+                const GLint gltype,
+                const GLuint prog)
         : GLLocation(name, size, static_cast<GLenum>(gltype), prog)
     {
         assert((size >= 1) && (size <= 4));
@@ -89,12 +95,16 @@ private:
     //--------------------------------------------------------------------------
     virtual void onActivate() override
     {
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wold-style-cast"
-        glCheck(glVertexAttribPointer(m_index, m_size, m_target, GL_FALSE,
-                                      static_cast<GLsizei>(m_stride),
-                                      (void*) m_offset)); // Do not place it onCreate
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+        glCheck(
+            glVertexAttribPointer(m_index,
+                                  m_size,
+                                  m_target,
+                                  GL_FALSE,
+                                  static_cast<GLsizei>(m_stride),
+                                  (void*)m_offset)); // Do not place it onCreate
+#pragma GCC diagnostic pop
         glCheck(glEnableVertexAttribArray(m_index));
     }
 

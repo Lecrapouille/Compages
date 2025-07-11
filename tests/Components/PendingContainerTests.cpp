@@ -21,7 +21,7 @@
 #include "main.hpp"
 #define protected public
 #define private public
-#  include "OpenGL/Buffers/PendingContainer.hpp"
+#include "OpenGL/Buffers/PendingContainer.hpp"
 #undef protected
 #undef private
 
@@ -78,7 +78,7 @@ TEST(PendingContainerTests, TestConstructors)
     ASSERT_EQ(10u, pc2.m_container.capacity());
     ASSERT_EQ(10u, pc2.size());
     ASSERT_EQ(10u, pc2.capacity());
-    for (auto it: pc2.m_container)
+    for (auto it : pc2.m_container)
     {
         ASSERT_EQ(42, it);
     }
@@ -88,7 +88,7 @@ TEST(PendingContainerTests, TestConstructors)
     pc2.resize(2u);
     ASSERT_EQ(2u, pc2.size());
     ASSERT_EQ(20u, pc2.capacity());
-    for (auto it: pc2.m_container)
+    for (auto it : pc2.m_container)
     {
         ASSERT_EQ(42, it);
     }
@@ -104,9 +104,12 @@ TEST(PendingContainerTests, TestConstructors)
     size_t i = pc2.size();
     while (i--)
     {
-        if (i < 2u) {
+        if (i < 2u)
+        {
             ASSERT_EQ(42, pc2.m_container[i]);
-        } else {
+        }
+        else
+        {
             ASSERT_EQ(0, pc2.m_container[i]);
         }
     }
@@ -153,9 +156,12 @@ TEST(PendingContainerTests, TestConstructors)
     i = pc4.size();
     while (i--)
     {
-        if (i < 2u) {
+        if (i < 2u)
+        {
             ASSERT_EQ(42, pc4.m_container[i]);
-        } else {
+        }
+        else
+        {
             ASSERT_EQ(0, pc4.m_container[i]);
         }
     }
@@ -170,7 +176,7 @@ TEST(PendingContainerTests, TestConstructors)
     ASSERT_EQ(5u, pc4.getPending().second);
 
     // --- Test 6
-    PendingContainer<int> pc5({66, 42, 55});
+    PendingContainer<int> pc5({ 66, 42, 55 });
     ASSERT_EQ(true, pc5.isPending());
     ASSERT_EQ(0u, pc5.getPending().first);
     ASSERT_EQ(3u, pc5.getPending().second);
@@ -187,7 +193,7 @@ TEST(PendingContainerTests, TestConstructors)
 
     pc5.clearPending();
     ASSERT_EQ(false, pc5.isPending());
-    pc5.append({56, 57, 58, 59, 60});
+    pc5.append({ 56, 57, 58, 59, 60 });
     ASSERT_EQ(true, pc5.isPending());
     ASSERT_EQ(3u, pc5.getPending().first);
     ASSERT_EQ(8u, pc5.getPending().second);
@@ -222,7 +228,7 @@ TEST(PendingContainerTests, TestConstructors)
     ASSERT_EQ(0u, pc5.getPending().first);
     ASSERT_EQ(21u, pc5.getPending().second);
 
-    pc5.append(std::vector<int>({1, 2, 3}));
+    pc5.append(std::vector<int>({ 1, 2, 3 }));
     ASSERT_EQ(true, pc5.isPending());
     ASSERT_EQ(0u, pc5.getPending().first);
     ASSERT_EQ(24u, pc5.getPending().second);
@@ -236,7 +242,7 @@ TEST(PendingContainerTests, TestConstructors)
     ASSERT_EQ(25u, pc5.size());
     ASSERT_EQ(42u, pc5.capacity());
 
-    pc5.append(PendingContainer<int>({5}));
+    pc5.append(PendingContainer<int>({ 5 }));
     ASSERT_EQ(true, pc5.isPending());
     ASSERT_EQ(0u, pc5.getPending().first);
     ASSERT_EQ(26u, pc5.getPending().second);
@@ -254,7 +260,7 @@ TEST(PendingContainerTests, TestConstructors)
 //--------------------------------------------------------------------------
 TEST(PendingContainerTests, TestArithmeticsValid)
 {
-    PendingContainer<int> pc1({42, 5, 50, 10});
+    PendingContainer<int> pc1({ 42, 5, 50, 10 });
     ASSERT_EQ(true, pc1.isPending());
     ASSERT_EQ(0u, pc1.getPending().first);
     ASSERT_EQ(4u, pc1.getPending().second);
@@ -269,26 +275,31 @@ TEST(PendingContainerTests, TestArithmeticsValid)
     ASSERT_EQ(50, pc1.max());
     ASSERT_EQ(false, pc1.isPending());
 
-    PendingContainer<int> pc2({-42, -5, -50, -10});
+    PendingContainer<int> pc2({ -42, -5, -50, -10 });
     ASSERT_EQ(true, pc2.isPending());
     pc2.clearPending();
     pc2.abs();
-    ASSERT_EQ(std::vector<int>({42, 5, 50, 10}), pc2.m_container);
+    ASSERT_EQ(std::vector<int>({ 42, 5, 50, 10 }), pc2.m_container);
     ASSERT_EQ(true, pc2.isPending());
     ASSERT_EQ(0u, pc2.getPending().first);
     ASSERT_EQ(4u, pc2.getPending().second);
 
-    PendingContainer<float> pc3({4.0f, 9.0f, 16.0f, 25.0f});
+    PendingContainer<float> pc3({ 4.0f, 9.0f, 16.0f, 25.0f });
     pc3.clearPending();
     pc3.sqrt();
-    ASSERT_EQ(std::vector<float>({2.0f, 3.0f, 4.0f, 5.0f}), pc3.m_container);
+    ASSERT_EQ(std::vector<float>({ 2.0f, 3.0f, 4.0f, 5.0f }), pc3.m_container);
     ASSERT_EQ(true, pc3.isPending());
     ASSERT_EQ(0u, pc3.getPending().first);
     ASSERT_EQ(4u, pc3.getPending().second);
     pc3.squared();
-    ASSERT_EQ(std::vector<float>({4.0f, 9.0f, 16.0f, 25.0f}), pc3.m_container);
+    ASSERT_EQ(std::vector<float>({ 4.0f, 9.0f, 16.0f, 25.0f }),
+              pc3.m_container);
     pc3.cos();
-    ASSERT_EQ(std::vector<float>({std::cos(4.0f), std::cos(9.0f), std::cos(16.0f), std::cos(25.0f)}), pc3.m_container);
+    ASSERT_EQ(std::vector<float>({ std::cos(4.0f),
+                                   std::cos(9.0f),
+                                   std::cos(16.0f),
+                                   std::cos(25.0f) }),
+              pc3.m_container);
     pc3.clearPending();
 
     PendingContainer<float> pc4;
@@ -296,15 +307,22 @@ TEST(PendingContainerTests, TestArithmeticsValid)
     ASSERT_EQ(true, pc4.isPending());
     ASSERT_EQ(0u, pc4.getPending().first);
     ASSERT_EQ(4u, pc4.getPending().second);
-    ASSERT_EQ(std::vector<float>({std::cos(4.0f), std::cos(9.0f), std::cos(16.0f), std::cos(25.0f)}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ std::cos(4.0f),
+                                   std::cos(9.0f),
+                                   std::cos(16.0f),
+                                   std::cos(25.0f) }),
+              pc4.m_container);
 
     pc4.clearPending();
-    pc4 = std::vector<float>({2.0f, 3.0f, 4.0f, 5.0f});
+    pc4 = std::vector<float>({ 2.0f, 3.0f, 4.0f, 5.0f });
     ASSERT_EQ(true, pc4.isPending());
     ASSERT_EQ(0u, pc4.getPending().first);
     ASSERT_EQ(4u, pc4.getPending().second);
     pc4.sin();
-    ASSERT_EQ(std::vector<float>({std::sin(2.0f), std::sin(3.0f), std::sin(4.0f), std::sin(5.0f)}), pc4.m_container);
+    ASSERT_EQ(
+        std::vector<float>(
+            { std::sin(2.0f), std::sin(3.0f), std::sin(4.0f), std::sin(5.0f) }),
+        pc4.m_container);
     ASSERT_EQ(true, pc4.isPending());
     ASSERT_EQ(0u, pc4.getPending().first);
     ASSERT_EQ(4u, pc4.getPending().second);
@@ -312,39 +330,46 @@ TEST(PendingContainerTests, TestArithmeticsValid)
     pc4.clear();
     ASSERT_EQ(false, pc4.isPending());
     pc4.clearPending();
-    pc4 = {2.0f, 3.0f, 4.0f, 5.0f};
+    pc4 = { 2.0f, 3.0f, 4.0f, 5.0f };
     ASSERT_EQ(true, pc4.isPending());
     ASSERT_EQ(0u, pc4.getPending().first);
     ASSERT_EQ(4u, pc4.getPending().second);
-    ASSERT_EQ(std::vector<float>({2.0f, 3.0f, 4.0f, 5.0f}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ 2.0f, 3.0f, 4.0f, 5.0f }), pc4.m_container);
 
     pc4.clearPending();
     pc4 *= 2.0f;
     ASSERT_EQ(true, pc4.isPending());
     ASSERT_EQ(0u, pc4.getPending().first);
     ASSERT_EQ(4u, pc4.getPending().second);
-    ASSERT_EQ(std::vector<float>({4.0f, 6.0f, 8.0f, 10.0f}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ 4.0f, 6.0f, 8.0f, 10.0f }), pc4.m_container);
 
     pc4 += 2.0f;
-    ASSERT_EQ(std::vector<float>({6.0f, 8.0f, 10.0f, 12.0f}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ 6.0f, 8.0f, 10.0f, 12.0f }),
+              pc4.m_container);
     pc4 -= 2.0f;
-    ASSERT_EQ(std::vector<float>({4.0f, 6.0f, 8.0f, 10.0f}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ 4.0f, 6.0f, 8.0f, 10.0f }), pc4.m_container);
     pc4 /= 2.0f;
-    ASSERT_EQ(std::vector<float>({2.0f, 3.0f, 4.0f, 5.0f}), pc4.m_container);
+    ASSERT_EQ(std::vector<float>({ 2.0f, 3.0f, 4.0f, 5.0f }), pc4.m_container);
 
     std::cout << pc4 << std::endl;
     float* a = pc4.to_array();
     float const* ca = pc4.to_array();
-    ASSERT_NE(nullptr, a); ASSERT_NE(nullptr, ca);
-    ASSERT_EQ(2.0f, a[0]); ASSERT_EQ(2.0f, ca[0]);
-    ASSERT_EQ(3.0f, a[1]); ASSERT_EQ(3.0f, ca[1]);
-    ASSERT_EQ(4.0f, a[2]); ASSERT_EQ(4.0f, ca[2]);
-    ASSERT_EQ(5.0f, a[3]); ASSERT_EQ(5.0f, ca[3]);
+    ASSERT_NE(nullptr, a);
+    ASSERT_NE(nullptr, ca);
+    ASSERT_EQ(2.0f, a[0]);
+    ASSERT_EQ(2.0f, ca[0]);
+    ASSERT_EQ(3.0f, a[1]);
+    ASSERT_EQ(3.0f, ca[1]);
+    ASSERT_EQ(4.0f, a[2]);
+    ASSERT_EQ(4.0f, ca[2]);
+    ASSERT_EQ(5.0f, a[3]);
+    ASSERT_EQ(5.0f, ca[3]);
 
     PendingContainer<int> pc0;
     int* a0 = pc0.to_array();
     int const* ca0 = pc0.to_array();
-    ASSERT_EQ(nullptr, a0); ASSERT_EQ(nullptr, ca0);
+    ASSERT_EQ(nullptr, a0);
+    ASSERT_EQ(nullptr, ca0);
 
     PendingContainer<int> const pc00;
     int const* ca00 = pc00.to_array();
@@ -355,25 +380,41 @@ TEST(PendingContainerTests, TestArithmeticsValid)
 TEST(PendingContainerTests, TestArithmeticsInvalid)
 {
     PendingContainer<int> pc0;
-    try {
+    try
+    {
         pc0.sum();
         ASSERT_FALSE("Exception not caught");
-    } catch (std::out_of_range&) { }
+    }
+    catch (std::out_of_range&)
+    {
+    }
 
-    try {
+    try
+    {
         pc0.prod();
         ASSERT_FALSE("Exception not caught");
-    } catch (std::out_of_range&) { }
+    }
+    catch (std::out_of_range&)
+    {
+    }
 
-    try {
+    try
+    {
         pc0.min();
         ASSERT_FALSE("Exception not caught");
-    } catch (std::out_of_range&) { }
+    }
+    catch (std::out_of_range&)
+    {
+    }
 
-    try {
+    try
+    {
         pc0.max();
         ASSERT_FALSE("Exception not caught");
-    } catch (std::out_of_range&) { }
+    }
+    catch (std::out_of_range&)
+    {
+    }
 }
 
 TEST(PendingContainerTests, TestNotExpandable)
@@ -386,7 +427,7 @@ TEST(PendingContainerTests, TestNotExpandable)
 
     try
     {
-        pc0 = {4, 6, 8, 10};
+        pc0 = { 4, 6, 8, 10 };
         ASSERT_FALSE("Exception not caught");
     }
     catch (std::out_of_range&)
@@ -399,7 +440,7 @@ TEST(PendingContainerTests, TestNotExpandable)
 
     try
     {
-        pc0.append({4, 6, 8, 10});
+        pc0.append({ 4, 6, 8, 10 });
         ASSERT_FALSE("Exception not caught");
     }
     catch (std::out_of_range&)

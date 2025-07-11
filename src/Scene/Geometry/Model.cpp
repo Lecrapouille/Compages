@@ -20,7 +20,7 @@
 
 #include "Scene/Geometry/Model.hpp"
 #include "Loaders/3D/OBJ.hpp"
-//#include "Loaders/3D/MD5mesh.hpp"
+// #include "Loaders/3D/MD5mesh.hpp"
 #include "Common/NonCppStd.hpp"
 
 static std::string extension(std::string const& path)
@@ -47,7 +47,7 @@ static std::map<std::string, std::unique_ptr<ShapeLoader>> loaders()
     std::map<std::string, std::unique_ptr<ShapeLoader>> mp;
 
     mp["obj"] = std::make_unique<OBJFileLoader>();
-    //mp["md5mesh"] = std::make_unique<MD5MeshFileLoader>();
+    // mp["md5mesh"] = std::make_unique<MD5MeshFileLoader>();
 
     return mp;
 }
@@ -55,8 +55,8 @@ static std::map<std::string, std::unique_ptr<ShapeLoader>> loaders()
 //--------------------------------------------------------------------------
 bool Model::generate(GLVAO32& vao, const bool clear)
 {
-    static std::map<std::string, std::unique_ptr<ShapeLoader>>
-            s_loaders = loaders();
+    static std::map<std::string, std::unique_ptr<ShapeLoader>> s_loaders =
+        loaders();
 
     if (config.path.size() == 0u)
     {
@@ -86,11 +86,11 @@ bool Model::generate(GLVAO32& vao, const bool clear)
 
     auto& positions = vao.vector3f(shaders::name::position);
     auto& normals = vao.hasVBO<Vector3f>(shaders::name::normal)
-                    ? vao.vector3f(shaders::name::normal)
-                    : tmp_normals;
+                        ? vao.vector3f(shaders::name::normal)
+                        : tmp_normals;
     auto& UVs = vao.hasVBO<Vector2f>(shaders::name::uv)
-                ? vao.vector2f(shaders::name::uv)
-                : tmp_uv;
+                    ? vao.vector2f(shaders::name::uv)
+                    : tmp_uv;
 
     if (clear)
     {
@@ -100,5 +100,6 @@ bool Model::generate(GLVAO32& vao, const bool clear)
         vao.index().clear();
     }
 
-    return loader->second->load(config.path, positions, normals, UVs, vao.index());
+    return loader->second->load(
+        config.path, positions, normals, UVs, vao.index());
 }

@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLTEXTURE_CUBE_HPP
-#  define OPENGLCPPWRAPPER_GLTEXTURE_CUBE_HPP
+#define OPENGLCPPWRAPPER_GLTEXTURE_CUBE_HPP
 
 // *****************************************************************************
 //! \file GLTexture3D.hpp file implements:
@@ -33,8 +33,8 @@
 //!   - GLTextureCube: A 3D Texture specialized for rendering skybox.
 // *****************************************************************************
 
-#  include <array>
-#  include "OpenGL/Textures/Texture2D.hpp"
+#include "OpenGL/Textures/Texture2D.hpp"
+#include <array>
 
 // *****************************************************************************
 //! \brief A 3D Texture specialized for rendering skybox.
@@ -42,6 +42,7 @@
 class GLTextureCube: public GLTexture
 {
 public:
+
     //! \brief Cubic Texture.
     enum class Map : GLenum
     {
@@ -65,7 +66,8 @@ public:
     //--------------------------------------------------------------------------
     GLTextureCube(std::string const& name)
         : GLTexture(3u, name, GL_TEXTURE_CUBE_MAP)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief \brief Allow to know if data have been transfered into
@@ -97,11 +99,12 @@ public:
     //!
     //! \return false if the texture failed to be loaded.
     //--------------------------------------------------------------------------
-    template<class L>
-    bool load(Map const target, const char *const filename)
+    template <class L>
+    bool load(Map const target, const char* const filename)
     {
-        const size_t index = static_cast<size_t>(target) -
-                             static_cast<size_t>(GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+        const size_t index =
+            static_cast<size_t>(target) -
+            static_cast<size_t>(GL_TEXTURE_CUBE_MAP_POSITIVE_X);
 
         return m_textures[index]->load<L>(filename);
     }
@@ -117,14 +120,16 @@ private:
         m_depth = countLoadedTextures();
         if (MAX_TEXTURES != m_depth)
         {
-            //ERROR("Cannot setup texture '%s'. Reason '6 Textures2D shall have been loaded'", cname());
+            // ERROR("Cannot setup texture '%s'. Reason '6 Textures2D shall have
+            // been loaded'", cname());
             return true;
         }
 
         size_t i = MAX_TEXTURES;
         while (i--)
         {
-            m_textures[i]->m_target = GLenum(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+            m_textures[i]->m_target =
+                GLenum(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
             m_textures[i]->options(m_options);
             m_textures[i]->specifyTexture2D();
         }
@@ -171,15 +176,14 @@ private:
     //! \note: unique_ptr is to avoid calling the deleted GLTexture2D copy
     //! constructor (GLObject are non copyable).
     //--------------------------------------------------------------------------
-    std::array<std::unique_ptr<GLTexture2D>, MAX_TEXTURES> m_textures
-    {{
-          std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_X"),
-          std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_X"),
-          std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_Y"),
-          std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_Y"),
-          std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_Z"),
-          std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_Z"),
-    }};
+    std::array<std::unique_ptr<GLTexture2D>, MAX_TEXTURES> m_textures{ {
+        std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_X"),
+        std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_X"),
+        std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_Y"),
+        std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_Y"),
+        std::make_unique<GLTexture2D>("CUBEMAP_POSITIVE_Z"),
+        std::make_unique<GLTexture2D>("CUBEMAP_NEGATIVE_Z"),
+    } };
 };
 
 #endif // OPENGLCPPWRAPPER_GLTEXTURE_CUBE_HPP

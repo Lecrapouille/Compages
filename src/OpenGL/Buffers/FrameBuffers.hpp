@@ -25,14 +25,14 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLFRAMEBUFFER_HPP
-#  define OPENGLCPPWRAPPER_GLFRAMEBUFFER_HPP
+#define OPENGLCPPWRAPPER_GLFRAMEBUFFER_HPP
 
-#  include "OpenGL/Textures/Texture2D.hpp"
+#include "OpenGL/Textures/Texture2D.hpp"
 
 // *****************************************************************************
 //! \brief Base class for render buffer object.
 // *****************************************************************************
-class GLRenderBuffer : public GLObject<GLenum>
+class GLRenderBuffer: public GLObject<GLenum>
 {
 public:
 
@@ -44,8 +44,10 @@ public:
     //! \param height Buffer height (pixel)
     //! \param format Buffer format
     //--------------------------------------------------------------------------
-    GLRenderBuffer(std::string const& name, const uint32_t width,
-                   const uint32_t height, const GLenum attachment,
+    GLRenderBuffer(std::string const& name,
+                   const uint32_t width,
+                   const uint32_t height,
+                   const GLenum attachment,
                    const GLenum format)
         : GLObject(name, GL_RENDERBUFFER)
     {
@@ -71,8 +73,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    virtual void draw() const
-    {}
+    virtual void draw() const {}
 
     //--------------------------------------------------------------------------
     //! \brief Return the Buffer width (pixels).
@@ -138,7 +139,8 @@ private:
     //--------------------------------------------------------------------------
     virtual bool onSetup() override
     {
-        glCheck(glRenderbufferStorage(m_target, m_format,
+        glCheck(glRenderbufferStorage(m_target,
+                                      m_format,
                                       static_cast<GLsizei>(m_width),
                                       static_cast<GLsizei>(m_height)));
         return false;
@@ -174,23 +176,27 @@ protected:
 
     uint32_t m_width;
     uint32_t m_height;
-    GLenum   m_attachment;
-    GLenum   m_format;
+    GLenum m_attachment;
+    GLenum m_format;
 };
 
 // *****************************************************************************
 //! \brief GLRenderBuffer holding a texture.
 // *****************************************************************************
-class GLTextureBuffer : public GLRenderBuffer
+class GLTextureBuffer: public GLRenderBuffer
 {
 public:
 
-    GLTextureBuffer(GLTexture2D& texture,
-                    const uint32_t width,
-                    const uint32_t height,
-                    const GLenum attachment,
-                    const GLTexture::PixelFormat format = GLTexture::PixelFormat::RGBA)
-        : GLRenderBuffer(texture.name(), width, height, attachment,
+    GLTextureBuffer(
+        GLTexture2D& texture,
+        const uint32_t width,
+        const uint32_t height,
+        const GLenum attachment,
+        const GLTexture::PixelFormat format = GLTexture::PixelFormat::RGBA)
+        : GLRenderBuffer(texture.name(),
+                         width,
+                         height,
+                         attachment,
                          static_cast<GLenum>(format)),
           m_texture(texture)
     {
@@ -242,8 +248,7 @@ private:
         m_texture.end();
     }
 
-    virtual void onRelease() override
-    {}
+    virtual void onRelease() override {}
 
 private:
 
@@ -253,21 +258,28 @@ private:
 // *****************************************************************************
 //! \brief Color buffer object.
 // *****************************************************************************
-class GLColorBuffer : public GLRenderBuffer
+class GLColorBuffer: public GLRenderBuffer
 {
 public:
 
-    GLColorBuffer(std::string const& name,
-                  const uint32_t width,
-                  const uint32_t height,
-                  const GLenum attachment,
-                  const GLTexture::PixelFormat format = GLTexture::PixelFormat::RGBA)
-        : GLRenderBuffer(name, width, height, attachment, static_cast<GLenum>(format))
-    {}
+    GLColorBuffer(
+        std::string const& name,
+        const uint32_t width,
+        const uint32_t height,
+        const GLenum attachment,
+        const GLTexture::PixelFormat format = GLTexture::PixelFormat::RGBA)
+        : GLRenderBuffer(name,
+                         width,
+                         height,
+                         attachment,
+                         static_cast<GLenum>(format))
+    {
+    }
 
     virtual void attach() override
     {
-        glCheck(glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
+        glCheck(glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
     }
 
     //--------------------------------------------------------------------------
@@ -282,40 +294,54 @@ public:
 // *****************************************************************************
 //! \brief Depth buffer object.
 // *****************************************************************************
-class GLDepthBuffer : public GLRenderBuffer
+class GLDepthBuffer: public GLRenderBuffer
 {
 public:
 
     GLDepthBuffer(std::string const& name,
                   const uint32_t width,
                   const uint32_t height,
-                  const GLTexture::PixelFormat format = GLTexture::PixelFormat::DEPTH_COMPONENT)
-        : GLRenderBuffer(name, width, height, GL_DEPTH_ATTACHMENT, static_cast<GLenum>(format))
-    {}
+                  const GLTexture::PixelFormat format =
+                      GLTexture::PixelFormat::DEPTH_COMPONENT)
+        : GLRenderBuffer(name,
+                         width,
+                         height,
+                         GL_DEPTH_ATTACHMENT,
+                         static_cast<GLenum>(format))
+    {
+    }
 
     virtual void attach() override
     {
-        glCheck(glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
+        glCheck(glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
     }
 };
 
 // *****************************************************************************
 //! \brief Stencil buffer object.
 // *****************************************************************************
-class GLStencilBuffer : public GLRenderBuffer
+class GLStencilBuffer: public GLRenderBuffer
 {
 public:
 
     GLStencilBuffer(std::string const& name,
                     const uint32_t width,
                     const uint32_t height,
-                    const GLTexture::PixelFormat format = GLTexture::PixelFormat::STENCIL_INDEX)
-        : GLRenderBuffer(name, width, height, GL_STENCIL_ATTACHMENT, static_cast<GLenum>(format))
-    {}
+                    const GLTexture::PixelFormat format =
+                        GLTexture::PixelFormat::STENCIL_INDEX)
+        : GLRenderBuffer(name,
+                         width,
+                         height,
+                         GL_STENCIL_ATTACHMENT,
+                         static_cast<GLenum>(format))
+    {
+    }
 
     virtual void attach() override
     {
-        glCheck(glFramebufferRenderbuffer(GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
+        glCheck(glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, m_attachment, m_target, m_handle));
     }
 };
 
@@ -329,24 +355,25 @@ public:
 //! It has one or several color buffers, zero or one depth buffer and zero
 //! or one stencil buffer.
 // *****************************************************************************
-class GLFrameBuffer : public GLObject<GLenum>
+class GLFrameBuffer: public GLObject<GLenum>
 {
 public:
 
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    GLFrameBuffer(std::string const& name)
-        : GLObject(name, GL_FRAMEBUFFER)
-    {}
+    GLFrameBuffer(std::string const& name) : GLObject(name, GL_FRAMEBUFFER) {}
 
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
     GLFrameBuffer(std::string const& name,
-                  const uint32_t width, const uint32_t height,
-                  const uint8_t nb_colors = 1u, // FIXME: use enum to detect error at compile-time
-                  const bool with_depth = true, const bool with_stencil = false)
+                  const uint32_t width,
+                  const uint32_t height,
+                  const uint8_t nb_colors =
+                      1u, // FIXME: use enum to detect error at compile-time
+                  const bool with_depth = true,
+                  const bool with_stencil = false)
         : GLObject(name, GL_FRAMEBUFFER)
     {
         m_width = width;
@@ -372,7 +399,8 @@ public:
         }
         else
         {
-            throw GL::Exception("FrameBuffer cannot hold more than 16 color buffers");
+            throw GL::Exception(
+                "FrameBuffer cannot hold more than 16 color buffers");
         }
     }
 
@@ -387,7 +415,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    template<typename Functor>
+    template <typename Functor>
     void render(Functor functor)
     {
         begin();
@@ -398,14 +426,18 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    template<typename Functor>
-    void render(const uint32_t x, const uint32_t y,
-                const uint32_t width, const uint32_t height,
+    template <typename Functor>
+    void render(const uint32_t x,
+                const uint32_t y,
+                const uint32_t width,
+                const uint32_t height,
                 Functor functor)
     {
         begin();
-        glCheck(glViewport(static_cast<GLint>(x), static_cast<GLint>(y),
-                           static_cast<GLsizei>(width), static_cast<GLsizei>(height)));
+        glCheck(glViewport(static_cast<GLint>(x),
+                           static_cast<GLint>(y),
+                           static_cast<GLsizei>(width),
+                           static_cast<GLsizei>(height)));
         functor();
         end();
     }
@@ -420,17 +452,20 @@ public:
         m_width = width;
         m_height = height;
 
-        for (auto& it: m_color_buffers) {
+        for (auto& it : m_color_buffers)
+        {
             it->resize(width, height);
             m_pending_attachments.push_back(it);
         }
 
-        if (nullptr != m_depth_buffer) {
+        if (nullptr != m_depth_buffer)
+        {
             m_depth_buffer->resize(width, height);
             m_pending_attachments.push_back(m_depth_buffer);
         }
 
-        if (nullptr != m_stencil_buffer) {
+        if (nullptr != m_stencil_buffer)
+        {
             m_stencil_buffer->resize(width, height);
             m_pending_attachments.push_back(m_stencil_buffer);
         }
@@ -480,7 +515,8 @@ public:
         const GLenum id = static_cast<GLenum>(m_color_buffers.size());
         const GLenum attachment = GL_COLOR_ATTACHMENT0 + id;
 
-        GLTextureBuffer* buf = new GLTextureBuffer(texture, m_width, m_height, attachment);
+        GLTextureBuffer* buf =
+            new GLTextureBuffer(texture, m_width, m_height, attachment);
         m_color_buffers.push_back(buf);
         m_pending_attachments.push_back(buf);
         m_need_setup = true;
@@ -496,7 +532,8 @@ public:
         const GLenum attachment = GL_COLOR_ATTACHMENT0 + id;
         const std::string name("ColorBuffer" + std::to_string(id));
 
-        GLColorBuffer* buf = new GLColorBuffer(name, m_width, m_height, attachment);
+        GLColorBuffer* buf =
+            new GLColorBuffer(name, m_width, m_height, attachment);
         m_color_buffers.push_back(buf); // TODO: max 16 elements
         m_pending_attachments.push_back(buf);
         m_need_setup = true;
@@ -511,7 +548,8 @@ public:
     {
         if (unlikely(nullptr == m_depth_buffer))
         {
-            m_depth_buffer = new GLDepthBuffer("DepthBuffer", m_width, m_height);
+            m_depth_buffer =
+                new GLDepthBuffer("DepthBuffer", m_width, m_height);
             m_pending_attachments.push_back(m_depth_buffer);
             m_need_setup = true;
         }
@@ -525,7 +563,8 @@ public:
     {
         if (unlikely(nullptr == m_stencil_buffer))
         {
-            m_stencil_buffer = new GLStencilBuffer("StencilBuffer", m_width, m_height);
+            m_stencil_buffer =
+                new GLStencilBuffer("StencilBuffer", m_width, m_height);
             m_pending_attachments.push_back(m_stencil_buffer);
             m_need_setup = true;
         }
@@ -574,10 +613,11 @@ private:
     {
         if (likely(checkNumberOfBuffers()))
         {
-            for (auto& it: m_pending_attachments)
+            for (auto& it : m_pending_attachments)
             {
                 glCheck(glClearColor(1.0f, 0.0f, 0.4f, 0.0f));
-                //DEBUG("Framebuffer '%s' is attaching '%s'", cname(), it->cname());
+                // DEBUG("Framebuffer '%s' is attaching '%s'", cname(),
+                // it->cname());
                 it->begin();
                 it->attach();
                 it->draw();
@@ -589,8 +629,9 @@ private:
         }
         else
         {
-            std::cerr << "Framebuffer '%s' needs at least one image attached to it"
-                      << name() << std::endl;
+            std::cerr
+                << "Framebuffer '%s' needs at least one image attached to it"
+                << name() << std::endl;
             return true;
         }
     }
@@ -603,24 +644,32 @@ private:
         GLenum res = glCheck(glCheckFramebufferStatus(m_target));
         switch (res)
         {
-        case GL_FRAMEBUFFER_COMPLETE:
-            /* success */
-            break;
-        case GL_FRAMEBUFFER_UNDEFINED:
-            throw GL::Exception("Framebuffer '" + name() + "' is undefined");
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-            throw GL::Exception("FrameBuffer '" + name() + "' has incomplete attachments");
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-            throw GL::Exception("Framebuffer '" + name() + "' does not have at least one image attached to it");
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-            throw GL::Exception("FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-            throw GL::Exception("FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
-        case GL_FRAMEBUFFER_UNSUPPORTED:
-            throw GL::Exception("Framebuffer '" + name() + "' has a combination of internal formats used by attachments is not supported");
-        case 0:
-        default:
-            throw GL::Exception("Framebuffer '" + name() + "' has its target not equal to GL_FRAMEBUFFER");
+            case GL_FRAMEBUFFER_COMPLETE:
+                /* success */
+                break;
+            case GL_FRAMEBUFFER_UNDEFINED:
+                throw GL::Exception("Framebuffer '" + name() +
+                                    "' is undefined");
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                throw GL::Exception("FrameBuffer '" + name() +
+                                    "' has incomplete attachments");
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                throw GL::Exception(
+                    "Framebuffer '" + name() +
+                    "' does not have at least one image attached to it");
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+                throw GL::Exception("FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER");
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+                throw GL::Exception("FRAMEBUFFER_INCOMPLETE_READ_BUFFER");
+            case GL_FRAMEBUFFER_UNSUPPORTED:
+                throw GL::Exception("Framebuffer '" + name() +
+                                    "' has a combination of internal formats "
+                                    "used by attachments is not supported");
+            case 0:
+            default:
+                throw GL::Exception(
+                    "Framebuffer '" + name() +
+                    "' has its target not equal to GL_FRAMEBUFFER");
         }
         return false;
     }
@@ -650,7 +699,8 @@ private:
 
     //--------------------------------------------------------------------------
     //! \brief Check if the framebuffer has at least one render buffer.
-    //! \throw GL::Exception if the framebuffer has not at least one render buffer.
+    //! \throw GL::Exception if the framebuffer has not at least one render
+    //! buffer.
     //--------------------------------------------------------------------------
     bool checkNumberOfBuffers() const
     {
@@ -670,7 +720,8 @@ private:
     //--------------------------------------------------------------------------
     void throw_if_reached_max_buffers()
     {
-        if (m_color_buffers.size() >= 16_z) {
+        if (m_color_buffers.size() >= 16_z)
+        {
             throw GL::Exception("Reached the maximum number of render buffers");
         }
     }
@@ -678,12 +729,12 @@ private:
 private:
 
     //! \brief GLColorBuffer or GLTexture2D
-    std::vector<GLRenderBuffer*> m_color_buffers;  // at least one buffer
-    GLDepthBuffer*               m_depth_buffer = nullptr;   // 0 or 1 buffer
-    GLStencilBuffer*             m_stencil_buffer = nullptr; // 0 or 1 buffer
+    std::vector<GLRenderBuffer*> m_color_buffers; // at least one buffer
+    GLDepthBuffer* m_depth_buffer = nullptr;      // 0 or 1 buffer
+    GLStencilBuffer* m_stencil_buffer = nullptr;  // 0 or 1 buffer
     std::vector<GLRenderBuffer*> m_pending_attachments;
-    uint32_t                     m_width = 0;
-    uint32_t                     m_height = 0;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
 };
 
 #endif // OPENGLCPPWRAPPER_GLFRAMEBUFFER_HPP

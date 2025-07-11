@@ -23,8 +23,9 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-PostProdFrameBuffer::PostProdFrameBuffer(uint32_t const width, uint32_t const height,
-                                         const char *title)
+PostProdFrameBuffer::PostProdFrameBuffer(uint32_t const width,
+                                         uint32_t const height,
+                                         const char* title)
     : GLWindow(width, height, title),
       m_fbo("FBO"),
       m_prog_scene("prog_cube"),
@@ -47,10 +48,8 @@ void PostProdFrameBuffer::onWindowResized()
 {
     glCheck(glViewport(0, 0, width<int>(), height<int>()));
 
-    m_prog_scene.matrix44f("projection") =
-            matrix::perspective(50.0_deg,
-                                width<float>() / height<float>(),
-                                0.1f, 10.0f);
+    m_prog_scene.matrix44f("projection") = matrix::perspective(
+        50.0_deg, width<float>() / height<float>(), 0.1f, 10.0f);
     m_prog_screen.scalarf("screen_width") = width<float>();
     m_prog_screen.scalarf("screen_height") = height<float>();
 }
@@ -73,37 +72,34 @@ bool PostProdFrameBuffer::firstProgram()
     // Create the cube
     if (!m_prog_scene.bind(m_cube))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog_scene.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog_scene.strerror()
+                  << "'" << std::endl;
         return false;
     }
-    m_cube.vector3f("position") =
-    {
-        #include "geometry/cube_position.txt"
+    m_cube.vector3f("position") = {
+#include "geometry/cube_position.txt"
     };
-    m_cube.vector2f("UV") =
-    {
-        #include "geometry/cube_texture.txt"
+    m_cube.vector2f("UV") = {
+#include "geometry/cube_texture.txt"
     };
 
     // Create the floor
     if (!m_prog_scene.bind(m_floor))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog_scene.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog_scene.strerror()
+                  << "'" << std::endl;
         return false;
     }
-    m_floor.vector3f("position") =
-    {
-        #include "geometry/floor_position.txt"
+    m_floor.vector3f("position") = {
+#include "geometry/floor_position.txt"
     };
-    m_floor.vector2f("UV") =
-    {
-       #include "geometry/floor_texture.txt"
+    m_floor.vector2f("UV") = {
+#include "geometry/floor_texture.txt"
     };
 
     // Apply textures
-    if (!m_cube.texture2D("texID").load<SOIL>("external/assets/wooden-crate.jpg"))
+    if (!m_cube.texture2D("texID").load<SOIL>(
+            "external/assets/wooden-crate.jpg"))
         return false;
     if (!m_floor.texture2D("texID").load<SOIL>("external/assets/path.png"))
         return false;
@@ -111,10 +107,10 @@ bool PostProdFrameBuffer::firstProgram()
     // Init Model-View-Project matrices (shader uniforms)
     float ratio = width<float>() / height<float>();
     m_prog_scene.matrix44f("projection") =
-            matrix::perspective(50.0_deg, ratio, 0.1f, 10.0f);
+        matrix::perspective(50.0_deg, ratio, 0.1f, 10.0f);
     m_prog_scene.matrix44f("model") = Matrix44f(matrix::Identity);
     m_prog_scene.matrix44f("view") =
-            matrix::lookAt(Vector3f(3,3,3), Vector3f(0,0,0), Vector3f(0,1,0));
+        matrix::lookAt(Vector3f(3, 3, 3), Vector3f(0, 0, 0), Vector3f(0, 1, 0));
 
     return true;
 }
@@ -137,20 +133,17 @@ bool PostProdFrameBuffer::secondProgram()
     // Create a quad
     if (!m_prog_screen.bind(m_screen))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog_screen.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog_screen.strerror()
+                  << "'" << std::endl;
         return false;
     }
-    m_screen.vector2f("position") =
-    {
+    m_screen.vector2f("position") = {
         Vector2f(-1.0f, 1.0f), Vector2f(-1.0f, -1.0f), Vector2f(1.0f, -1.0f),
-        Vector2f(-1.0f, 1.0f), Vector2f( 1.0f, -1.0f), Vector2f(1.0f,  1.0f)
+        Vector2f(-1.0f, 1.0f), Vector2f(1.0f, -1.0f),  Vector2f(1.0f, 1.0f)
     };
-    m_screen.vector2f("UV") =
-    {
-        Vector2f(0.0f, 1.0f), Vector2f(0.0f, 0.0f), Vector2f(1.0f, 0.0f),
-        Vector2f(0.0f, 1.0f), Vector2f(1.0f, 0.0f), Vector2f(1.0f, 1.0f)
-    };
+    m_screen.vector2f("UV") = { Vector2f(0.0f, 1.0f), Vector2f(0.0f, 0.0f),
+                                Vector2f(1.0f, 0.0f), Vector2f(0.0f, 1.0f),
+                                Vector2f(1.0f, 0.0f), Vector2f(1.0f, 1.0f) };
 
     m_prog_screen.scalarf("screen_width") = width<float>();
     m_prog_screen.scalarf("screen_height") = height<float>();
@@ -185,22 +178,27 @@ bool PostProdFrameBuffer::onPaint()
     time += dt();
 
     // First pass: draw to the framebuffer texture
-    m_fbo.render(0u, 0u, width<uint32_t>(), height<uint32_t>(), [this]()
-    {
-        glCheck(glClearColor(0.0f, 0.0f, 0.4f, 0.0f));
-        glCheck(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        glEnable(GL_DEPTH_TEST);
-        if (!m_floor.draw(Mode::TRIANGLES, 0u, 6u))
-        {
-           std::cerr << "Floor not renderered" << std::endl;
-           return ;
-        }
-        if (!m_cube.draw(Mode::TRIANGLES, 0u, 36u))
-        {
-           std::cerr << "Cube not renderered" << std::endl;
-           return ;
-        }
-    });
+    m_fbo.render(0u,
+                 0u,
+                 width<uint32_t>(),
+                 height<uint32_t>(),
+                 [this]()
+                 {
+                     glCheck(glClearColor(0.0f, 0.0f, 0.4f, 0.0f));
+                     glCheck(
+                         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+                     glEnable(GL_DEPTH_TEST);
+                     if (!m_floor.draw(Mode::TRIANGLES, 0u, 6u))
+                     {
+                         std::cerr << "Floor not renderered" << std::endl;
+                         return;
+                     }
+                     if (!m_cube.draw(Mode::TRIANGLES, 0u, 36u))
+                     {
+                         std::cerr << "Cube not renderered" << std::endl;
+                         return;
+                     }
+                 });
 
     // Second pass: draw to the screen
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);

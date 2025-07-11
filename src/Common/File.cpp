@@ -29,35 +29,37 @@
 //------------------------------------------------------------------
 bool File::readAllFile(std::string const& filename, std::string& buffer)
 {
-  std::ifstream infile;
-  bool res = false;
+    std::ifstream infile;
+    bool res = false;
 
-  // Read the shader code from a file
-  infile.open(filename, std::ifstream::in);
-  if (infile.is_open())
+    // Read the shader code from a file
+    infile.open(filename, std::ifstream::in);
+    if (infile.is_open())
     {
-      infile.seekg(0, std::ios::end);
-      std::streampos pos = infile.tellg();
-      if (pos > 0)
+        infile.seekg(0, std::ios::end);
+        std::streampos pos = infile.tellg();
+        if (pos > 0)
         {
-          buffer.resize(static_cast<size_t>(pos));
-          infile.seekg(0, std::ios::beg);
-          infile.read(&buffer[0U],
-                      static_cast<std::streamsize>(buffer.size()));
-          res = infile.good();
-          if (!res)
+            buffer.resize(static_cast<size_t>(pos));
+            infile.seekg(0, std::ios::beg);
+            infile.read(&buffer[0U],
+                        static_cast<std::streamsize>(buffer.size()));
+            res = infile.good();
+            if (!res)
             {
-              printf("Failed reading the whole file '%s'. Reason is '%s'\n",
-                     filename.c_str(), strerror(errno));
+                printf("Failed reading the whole file '%s'. Reason is '%s'\n",
+                       filename.c_str(),
+                       strerror(errno));
             }
         }
-      infile.close();
+        infile.close();
     }
-  else
+    else
     {
-      printf("Failed open file '%s'. Reason is '%s'\n",
-             filename.c_str(), strerror(errno));
+        printf("Failed open file '%s'. Reason is '%s'\n",
+               filename.c_str(),
+               strerror(errno));
     }
 
-  return res;
+    return res;
 }

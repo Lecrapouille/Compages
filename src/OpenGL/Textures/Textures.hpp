@@ -25,11 +25,11 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLTEXTURES_HPP
-#  define OPENGLCPPWRAPPER_GLTEXTURES_HPP
+#define OPENGLCPPWRAPPER_GLTEXTURES_HPP
 
-#  include "OpenGL/Textures/Texture1D.hpp"
-#  include "OpenGL/Textures/Texture2D.hpp"
-#  include "OpenGL/Textures/Texture3D.hpp"
-#  include "OpenGL/Textures/TextureCube.hpp"
+#include "OpenGL/Textures/Texture1D.hpp"
+#include "OpenGL/Textures/Texture2D.hpp"
+#include "OpenGL/Textures/Texture3D.hpp"
+#include "OpenGL/Textures/TextureCube.hpp"
 
 #endif // OPENGLCPPWRAPPER_GLTEXTURES_HPP

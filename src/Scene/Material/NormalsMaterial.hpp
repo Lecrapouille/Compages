@@ -19,19 +19,19 @@
 //=====================================================================
 
 #ifndef NORMALS_MATERIAL_HPP
-#  define NORMALS_MATERIAL_HPP
+#define NORMALS_MATERIAL_HPP
 
-#  include "Scene/Material/Material.hpp"
+#include "Scene/Material/Material.hpp"
 
-class NormalsMaterial : public Material
+class NormalsMaterial: public Material
 {
 public:
 
-    struct Config {};
+    struct Config
+    {
+    };
 
-    NormalsMaterial(GLVAO& vao)
-        : Material("NormalsMaterial", vao)
-    {}
+    NormalsMaterial(GLVAO& vao) : Material("NormalsMaterial", vao) {}
 
     inline float& opacity()
     {

@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLSHADER_HPP
-#  define OPENGLCPPWRAPPER_GLSHADER_HPP
+#define OPENGLCPPWRAPPER_GLSHADER_HPP
 
 // ****************************************************************************
 //! \file Shaders.hpp holds the GLSL shader code, offers some macros
@@ -39,13 +39,13 @@
 //!   - GLGeometryShader:
 // ****************************************************************************
 
-#  include "OpenGL/GLObject.hpp"
-#  include "Common/Path.hpp"
-#  include <string.h> // strerror
-#  include <vector>
-#  include <fstream>
-#  include <sstream>
-#  include <iostream>
+#include "Common/Path.hpp"
+#include "OpenGL/GLObject.hpp"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string.h> // strerror
+#include <vector>
 
 // ****************************************************************************
 //! \brief Class holding the GLSL shader code, offering some routines for
@@ -56,7 +56,8 @@ class GLShader: public GLObject<GLenum>
 {
     friend class GLProgram;
     friend std::ostream& operator<<(std::ostream& os, GLShader const& shader);
-    template<typename T> friend GLShader& operator>>(T const& s, GLShader& shader);
+    template <typename T>
+    friend GLShader& operator>>(T const& s, GLShader& shader);
 
 public:
 
@@ -82,7 +83,7 @@ public:
     //! \param[in] code: the new code source.
     //! \return this instance of class.
     //-------------------------------------------------------------------------
-    template<typename T>
+    template <typename T>
     GLShader& operator=(T const& code)
     {
         throw_if_already_compiled();
@@ -95,7 +96,7 @@ public:
     //! \param[in] code: the new code source to append to m_code.
     //! \return this instance of class.
     //-------------------------------------------------------------------------
-    template<typename T>
+    template <typename T>
     GLShader& operator+=(T const& code)
     {
         throw_if_already_compiled();
@@ -109,7 +110,7 @@ public:
     //! m_code.
     //! \return this instance of class.
     //-------------------------------------------------------------------------
-    template<typename T>
+    template <typename T>
     GLShader& operator<<(T const& code)
     {
         throw_if_already_compiled();
@@ -120,9 +121,9 @@ public:
     //-------------------------------------------------------------------------
     //! \brief Needed for accepting std::endl when appending shader codes.
     //-------------------------------------------------------------------------
-    GLShader& operator<<(std::ostream& (*/*os*/)(std::ostream&))
+    GLShader& operator<<(std::ostream& (* /*os*/)(std::ostream&))
     {
-       return operator<<('\n');
+        return operator<<('\n');
     }
 
     //-------------------------------------------------------------------------
@@ -156,7 +157,7 @@ public:
     {
         return m_code;
     }
-    
+
     //-------------------------------------------------------------------------
     //! \brief Return true if the instance has no dummy code.
     //-------------------------------------------------------------------------
@@ -260,7 +261,7 @@ private:
     void concatError(std::string const& msg);
 
 private:
-    
+
     //-------------------------------------------------------------------------
     //! \brief Since includes are not an allowed tokens, this method allows
     //! their usage.
@@ -310,7 +311,7 @@ inline std::ostream& operator<<(std::ostream& os, GLShader const& shader)
 //--------------------------------------------------------------------------
 //! \brief Prepend the shader code to the shader.
 //--------------------------------------------------------------------------
-template<typename T>
+template <typename T>
 inline GLShader& operator>>(T const& code, GLShader& shader)
 {
     shader.m_code = code + shader.m_code;

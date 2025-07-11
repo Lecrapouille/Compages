@@ -25,7 +25,7 @@
 
 //------------------------------------------------------------------------------
 Path::Path(std::string const& path, char const delimiter)
-  : m_delimiter(delimiter)
+    : m_delimiter(delimiter)
 {
     add(path);
 }
@@ -70,7 +70,7 @@ std::pair<std::string, bool> Path::find(std::string const& filename) const
     if (File::exist(filename))
         return std::make_pair(filename, true);
 
-    for (auto const& it: m_search_paths)
+    for (auto const& it : m_search_paths)
     {
         std::string file(it + filename);
         if (File::exist(file))
@@ -84,7 +84,7 @@ std::pair<std::string, bool> Path::find(std::string const& filename) const
 //------------------------------------------------------------------------------
 std::string Path::expand(std::string const& filename) const
 {
-    for (auto const& it: m_search_paths)
+    for (auto const& it : m_search_paths)
     {
         std::string file(it + filename);
         if (File::exist(file))
@@ -95,13 +95,15 @@ std::string Path::expand(std::string const& filename) const
 }
 
 //------------------------------------------------------------------------------
-bool Path::open(std::string& filename, std::ifstream& ifs, std::ios_base::openmode mode) const
+bool Path::open(std::string& filename,
+                std::ifstream& ifs,
+                std::ios_base::openmode mode) const
 {
     ifs.open(filename.c_str(), mode);
     if (ifs)
         return true;
 
-    for (auto const& it: m_search_paths)
+    for (auto const& it : m_search_paths)
     {
         std::string file(it + filename);
         ifs.open(file.c_str(), mode);
@@ -117,13 +119,15 @@ bool Path::open(std::string& filename, std::ifstream& ifs, std::ios_base::openmo
 }
 
 //------------------------------------------------------------------------------
-bool Path::open(std::string& filename, std::ofstream& ofs, std::ios_base::openmode mode) const
+bool Path::open(std::string& filename,
+                std::ofstream& ofs,
+                std::ios_base::openmode mode) const
 {
     ofs.open(filename.c_str(), mode);
     if (ofs)
         return true;
 
-    for (auto const& it: m_search_paths)
+    for (auto const& it : m_search_paths)
     {
         std::string file(it + filename);
         ofs.open(file.c_str(), mode);
@@ -139,13 +143,15 @@ bool Path::open(std::string& filename, std::ofstream& ofs, std::ios_base::openmo
 }
 
 //------------------------------------------------------------------------------
-bool Path::open(std::string& filename, std::fstream& fs, std::ios_base::openmode mode) const
+bool Path::open(std::string& filename,
+                std::fstream& fs,
+                std::ios_base::openmode mode) const
 {
     fs.open(filename.c_str(), mode);
     if (fs)
         return true;
 
-    for (auto const& it: m_search_paths)
+    for (auto const& it : m_search_paths)
     {
         std::string file(it + filename);
         fs.open(filename.c_str(), mode);
@@ -176,7 +182,7 @@ void Path::update()
         m_string_path += ".";
         m_string_path += m_delimiter;
 
-        for (auto const& it: m_search_paths)
+        for (auto const& it : m_search_paths)
         {
             m_string_path += it;
             m_string_path.pop_back(); // Remove the '/' char
@@ -195,7 +201,7 @@ void Path::split(std::string const& path)
     while (std::getline(ss, directory, m_delimiter))
     {
         if (directory.empty())
-            continue ;
+            continue;
 
         if ((*directory.rbegin() == '\\') || (*directory.rbegin() == '/'))
             m_search_paths.push_back(directory);

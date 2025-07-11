@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLTEXTURE3D_HPP
-#  define OPENGLCPPWRAPPER_GLTEXTURE3D_HPP
+#define OPENGLCPPWRAPPER_GLTEXTURE3D_HPP
 
 // *****************************************************************************
 //! \file GLTexture3D.hpp file implements:
@@ -33,7 +33,7 @@
 //!   - GLTextureCube: A 3D Texture specialized for rendering skybox.
 // *****************************************************************************
 
-#  include "OpenGL/Textures/Texture2D.hpp"
+#include "OpenGL/Textures/Texture2D.hpp"
 
 // *****************************************************************************
 //! \brief A 3D Texture.
@@ -45,14 +45,12 @@ public:
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    GLTexture3D(std::string const& name)
-        : GLTexture(3u, name, GL_TEXTURE_3D)
-    {}
+    GLTexture3D(std::string const& name) : GLTexture(3u, name, GL_TEXTURE_3D) {}
 
     //--------------------------------------------------------------------------
     //! \brief
     //--------------------------------------------------------------------------
-    template<class L>
+    template <class L>
     bool load(std::vector<std::string> const& filenames)
     {
         static_assert(std::is_base_of<TextureLoader, L>::value,
@@ -68,7 +66,8 @@ public:
 
         m_cpuPixelCount = loader.getPixelCount();
         m_cpuPixelType = loader.getPixelType();
-        m_gpuPixelFormat = CPU2GPUFormat(GLenum(m_cpuPixelFormat), GLenum(m_cpuPixelType));
+        m_gpuPixelFormat =
+            CPU2GPUFormat(GLenum(m_cpuPixelFormat), GLenum(m_cpuPixelType));
         if (m_gpuPixelFormat < 0)
             return false;
 
@@ -77,16 +76,18 @@ public:
         {
             // Load a Texture2D and pack it subsequently into a large 2D texture
             m_width = m_height = 0;
-            if (unlikely(!loader.load(filenames[i].c_str(), m_buffer, m_width, m_height)))
+            if (unlikely(!loader.load(
+                    filenames[i].c_str(), m_buffer, m_width, m_height)))
                 return false;
 
             // Check consistency of Texture2D dimension
-            if ((i != 0u) && ((prevWidth != m_width) || (prevHeight != m_height)))
+            if ((i != 0u) &&
+                ((prevWidth != m_width) || (prevHeight != m_height)))
             {
-                std::cerr << "Failed picture file " << i << ": '" << filenames[i]
-                          << "' has not correct dimension ("
-                          << prevWidth << " x " << prevHeight
-                          << ")" << std::endl;
+                std::cerr << "Failed picture file " << i << ": '"
+                          << filenames[i] << "' has not correct dimension ("
+                          << prevWidth << " x " << prevHeight << ")"
+                          << std::endl;
                 return false;
             }
 
@@ -106,7 +107,8 @@ private:
     //--------------------------------------------------------------------------
     inline void specifyTexture3D() const
     {
-        glCheck(glTexImage3D(m_target, 0,
+        glCheck(glTexImage3D(m_target,
+                             0,
                              static_cast<GLint>(m_gpuPixelFormat),
                              static_cast<GLsizei>(m_width),
                              static_cast<GLsizei>(m_height),
@@ -126,8 +128,7 @@ private:
         if (unlikely(!loaded()))
         {
             std::cerr << "Cannot setup texture '" << name()
-                      << "'. Reason 'Data not yet loaded'"
-                      << std::endl;
+                      << "'. Reason 'Data not yet loaded'" << std::endl;
             return true;
         }
 

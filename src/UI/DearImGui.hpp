@@ -19,29 +19,29 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_UI_DEARIMGUI_HPP
-#  define OPENGLCPPWRAPPER_UI_DEARIMGUI_HPP
+#define OPENGLCPPWRAPPER_UI_DEARIMGUI_HPP
 
 // ********************************************************************************************
 //! \file GLImGUI.hpp wraps function calls of the ImGUI project.
 // ********************************************************************************************
 
-#  include "UI/Window.hpp"
-#  include "UI/Layer.hpp"
+#include "UI/Layer.hpp"
+#include "UI/Window.hpp"
 
-#  define IMGUI_IMPL_OPENGL_LOADER_GLEW
-#  pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wold-style-cast"
-#    pragma GCC diagnostic ignored "-Wstrict-overflow"
-#    pragma GCC diagnostic ignored "-Wswitch-default"
-#    pragma GCC diagnostic ignored "-Wcast-qual"
-#    pragma GCC diagnostic ignored "-Waggregate-return"
-#    pragma GCC diagnostic ignored "-Wsign-promo"
-#    pragma GCC diagnostic ignored "-Wfloat-equal"
-#    pragma GCC diagnostic ignored "-Wsign-conversion"
-#    pragma GCC diagnostic ignored "-Wconversion"
-#      include "imgui/backends/imgui_impl_glfw.h"
-#      include "imgui/backends/imgui_impl_opengl3.h"
-#   pragma GCC diagnostic pop
+#define IMGUI_IMPL_OPENGL_LOADER_GLEW
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Waggregate-return"
+#pragma GCC diagnostic ignored "-Wsign-promo"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_opengl3.h"
+#pragma GCC diagnostic pop
 
 #include <iostream> // TODO temporary
 
@@ -56,12 +56,14 @@ public:
 
     enum class Theme
     {
-        Classic, Dark
+        Classic,
+        Dark
     };
 
-    DearImGuiLayer(GLWindow &window, std::string const& name)
+    DearImGuiLayer(GLWindow& window, std::string const& name)
         : Layer(window, name)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Release Dear imgui allocated resources.

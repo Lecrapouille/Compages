@@ -25,22 +25,22 @@
 void LineBasicMaterial::generate(GLVertexShader& vertexShader,
                                  GLFragmentShader& fragmentShader)
 {
-    //if (program.hasUniform<Vector3f>("color"))
-    //    config.useColor = true;
+    // if (program.hasUniform<Vector3f>("color"))
+    //     config.useColor = true;
 
-    //if (program.hasUniform<float>("width"))
-    //    config.useWidth = true;
+    // if (program.hasUniform<float>("width"))
+    //     config.useWidth = true;
 
-    shaders::materials::basic::line::code(vertexShader);//, config);
-    shaders::materials::basic::line::code(fragmentShader);//, config);
+    shaders::materials::basic::line::code(vertexShader);   //, config);
+    shaders::materials::basic::line::code(fragmentShader); //, config);
 }
 
 //-----------------------------------------------------------------------------
 void LineBasicMaterial::init()
 {
-    //if (!program.hasUniform<Vector3f>("color"))
-    //    color() = Vector3f(1.0f, 1.0f, 1.0f);
+    // if (!program.hasUniform<Vector3f>("color"))
+    //     color() = Vector3f(1.0f, 1.0f, 1.0f);
 
-    //if (!program.hasUniform<Vector3f>("width"))
-    //    width() = 1.0f;
+    // if (!program.hasUniform<Vector3f>("width"))
+    //     width() = 1.0f;
 }

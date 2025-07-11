@@ -19,12 +19,12 @@
 //=====================================================================
 
 #include "UI/Window.hpp"
-#include "UI/Layer.hpp"
 #include "OpenGL/Buffers/GPUMemory.hpp"
-#include <stdexcept>
+#include "UI/Layer.hpp"
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include <cassert>
+#include <stdexcept>
 
 GLWindow::Mouse GLWindow::m_mouse;
 std::vector<char> GLWindow::m_lastKeys;
@@ -42,23 +42,23 @@ static void initGlew()
     // Print out some info about the graphics drivers
     std::cout << std::endl;
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION)
+              << std::endl;
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << std::endl;
 
-#  pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 
     // Make sure OpenGL version 3.3 API is available
     if (!GLEW_VERSION_3_3)
         throw GL::Exception("OpenGL 3.3 API is not available!");
 
-#   pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 }
 
-
-class Glfw3 : private NonCopyable
+class Glfw3: private NonCopyable
 {
 public:
 
@@ -76,9 +76,7 @@ protected:
 
         // Callback triggered when GLFW failed.
         glfwSetErrorCallback([](int /*errorCode*/, const char* msg)
-        {
-            throw GL::Exception(msg);
-        });
+                             { throw GL::Exception(msg); });
 
         if (!glfwInit())
         {
@@ -100,7 +98,9 @@ protected:
 };
 
 //------------------------------------------------------------------------------
-GLWindow::GLWindow(uint32_t const width, uint32_t const height, const char *title)
+GLWindow::GLWindow(uint32_t const width,
+                   uint32_t const height,
+                   const char* title)
     : m_title(title)
 {
     Glfw3::instance();
@@ -133,7 +133,7 @@ GLWindow::~GLWindow()
     GL::Context::makeCurrentContext(m_context);
 
     // Layers
-    //for (auto& it: m_layers)
+    // for (auto& it: m_layers)
     //{
     //    it->onRelease();
     //}
@@ -214,122 +214,143 @@ void GLWindow::reactTo(GLWindow::Event const events)
     if ((events & GLWindow::Event::MouseMove) != GLWindow::Event::None)
     {
         // Mouse moved event
-        glfwSetCursorPosCallback(m_context, [](GLFWwindow* obj, double xpos, double ypos)
-        {
-            static double lastX = xpos;
-            static double lastY = ypos;
+        glfwSetCursorPosCallback(
+            m_context,
+            [](GLFWwindow* obj, double xpos, double ypos)
+            {
+                static double lastX = xpos;
+                static double lastY = ypos;
 
-            // Get the window.
-            assert(nullptr != obj);
-            GLWindow* window = static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
+                // Get the window.
+                assert(nullptr != obj);
+                GLWindow* window =
+                    static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
 
-            // Save context.
-            GL::Context::Window* current = GL::Context::getCurrentContext();
-            GL::Context::makeCurrentContext(window->m_context);
+                // Save context.
+                GL::Context::Window* current = GL::Context::getCurrentContext();
+                GL::Context::makeCurrentContext(window->m_context);
 
-            // Update mouse states
-            window->m_mouse.position.x = xpos;
-            window->m_mouse.position.y = ypos;
-            window->m_mouse.displacement.x = xpos - lastX;
-            window->m_mouse.displacement.y = lastY - ypos; // Reversed since
-                                                           // y-coordinates go
-                                                           // from bottom to top
-            lastX = xpos;
-            lastY = ypos;
+                // Update mouse states
+                window->m_mouse.position.x = xpos;
+                window->m_mouse.position.y = ypos;
+                window->m_mouse.displacement.x = xpos - lastX;
+                window->m_mouse.displacement.y =
+                    lastY - ypos; // Reversed since
+                                  // y-coordinates go
+                                  // from bottom to top
+                lastX = xpos;
+                lastY = ypos;
 
-            // Callback to be implemented by the derived class
-            window->onMouseMoved();
+                // Callback to be implemented by the derived class
+                window->onMouseMoved();
 
-            // Clear states
-            window->m_mouse.displacement.x = 0.0;
-            window->m_mouse.displacement.y = 0.0;
+                // Clear states
+                window->m_mouse.displacement.x = 0.0;
+                window->m_mouse.displacement.y = 0.0;
 
-            // Restore context.
-            GL::Context::makeCurrentContext(current);
-        });
+                // Restore context.
+                GL::Context::makeCurrentContext(current);
+            });
     }
 
     // Mouse scroll event
     if ((events & GLWindow::Event::MouseScroll) != GLWindow::Event::None)
     {
-        glfwSetScrollCallback(m_context, [](GLFWwindow* obj, double xoffset, double yoffset)
-        {
-            // Get the window.
-            assert(nullptr != obj);
-            GLWindow* window = static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
+        glfwSetScrollCallback(
+            m_context,
+            [](GLFWwindow* obj, double xoffset, double yoffset)
+            {
+                // Get the window.
+                assert(nullptr != obj);
+                GLWindow* window =
+                    static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
 
-            // Save context.
-            GL::Context::Window* current = GL::Context::getCurrentContext();
-            GL::Context::makeCurrentContext(window->m_context);
+                // Save context.
+                GL::Context::Window* current = GL::Context::getCurrentContext();
+                GL::Context::makeCurrentContext(window->m_context);
 
-            // Update mouse states
-            window->m_mouse.scroll.x = xoffset;
-            window->m_mouse.scroll.y = yoffset;
+                // Update mouse states
+                window->m_mouse.scroll.x = xoffset;
+                window->m_mouse.scroll.y = yoffset;
 
-            // Callback to be implemented by the derived class
-            window->onMouseScrolled();
+                // Callback to be implemented by the derived class
+                window->onMouseScrolled();
 
-            // Clear states
-            window->m_mouse.scroll.x = 0.0;
-            window->m_mouse.scroll.y = 0.0;
+                // Clear states
+                window->m_mouse.scroll.x = 0.0;
+                window->m_mouse.scroll.y = 0.0;
 
-            // Restore context.
-            GL::Context::makeCurrentContext(current);
-        });
+                // Restore context.
+                GL::Context::makeCurrentContext(current);
+            });
     }
 
     // Mouse click event
     if ((events & GLWindow::Event::MouseButton) != GLWindow::Event::None)
     {
-        glfwSetMouseButtonCallback(m_context, [](GLFWwindow* obj, int button, int action, int /*mods*/)
-        {
-            // Get the window.
-            assert(nullptr != obj);
-            GLWindow* window = static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
+        glfwSetMouseButtonCallback(
+            m_context,
+            [](GLFWwindow* obj, int button, int action, int /*mods*/)
+            {
+                // Get the window.
+                assert(nullptr != obj);
+                GLWindow* window =
+                    static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
 
-            // Save context.
-            GL::Context::Window* current = GL::Context::getCurrentContext();
-            GL::Context::makeCurrentContext(window->m_context);
+                // Save context.
+                GL::Context::Window* current = GL::Context::getCurrentContext();
+                GL::Context::makeCurrentContext(window->m_context);
 
-            // Update mouse states
-            window->m_mouse.button = static_cast<GLWindow::Mouse::Button>(button);
-            window->m_mouse.pressed = (action == GLFW_PRESS); // else GLFW_RELEASE
+                // Update mouse states
+                window->m_mouse.button =
+                    static_cast<GLWindow::Mouse::Button>(button);
+                window->m_mouse.pressed =
+                    (action == GLFW_PRESS); // else GLFW_RELEASE
 
-            // Callback to be implemented by the derived class
-            window->onMouseButtonPressed();
+                // Callback to be implemented by the derived class
+                window->onMouseButtonPressed();
 
-            // Clear states
-            window->m_mouse.button = GLWindow::Mouse::Button::NONE;
-            window->m_mouse.pressed = false;
+                // Clear states
+                window->m_mouse.button = GLWindow::Mouse::Button::NONE;
+                window->m_mouse.pressed = false;
 
-            // Restore context.
-            GL::Context::makeCurrentContext(current);
-        });
+                // Restore context.
+                GL::Context::makeCurrentContext(current);
+            });
     }
 
     // Key pressed or released events
     if ((events & GLWindow::Event::Keyboard) != GLWindow::Event::None)
     {
-        glfwSetKeyCallback(m_context, [](GLFWwindow* obj, int key, int /*scancode*/, int action, int /*mods*/)
-        {
-            // Get the window.
-            assert(nullptr != obj);
-            GLWindow* window = static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
-
-            // Save context.
-            GL::Context::Window* current = GL::Context::getCurrentContext();
-            GL::Context::makeCurrentContext(window->m_context);
-
-            // Update keyboard states
+        glfwSetKeyCallback(
+            m_context,
+            [](GLFWwindow* obj,
+               int key,
+               int /*scancode*/,
+               int action,
+               int /*mods*/)
             {
-                const std::lock_guard<std::mutex> lock(window->m_mutex_keyboard);
-                window->m_currentKeys[static_cast<size_t>(key)] =
-                        (action == GLFW_PRESS) ? GLWindow::KEY_PRESS : GLWindow::KEY_RELEASE;
-            }
+                // Get the window.
+                assert(nullptr != obj);
+                GLWindow* window =
+                    static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
 
-            // Restore context.
-            GL::Context::makeCurrentContext(current);
-        });
+                // Save context.
+                GL::Context::Window* current = GL::Context::getCurrentContext();
+                GL::Context::makeCurrentContext(window->m_context);
+
+                // Update keyboard states
+                {
+                    const std::lock_guard<std::mutex> lock(
+                        window->m_mutex_keyboard);
+                    window->m_currentKeys[static_cast<size_t>(key)] =
+                        (action == GLFW_PRESS) ? GLWindow::KEY_PRESS
+                                               : GLWindow::KEY_RELEASE;
+                }
+
+                // Restore context.
+                GL::Context::makeCurrentContext(current);
+            });
     }
 }
 
@@ -341,30 +362,35 @@ bool GLWindow::setup()
     // Set this window as active context
     GL::Context::makeCurrentContext(m_context);
 
-    // Save the context address: it will be passed as parameter in glfw callbacks
+    // Save the context address: it will be passed as parameter in glfw
+    // callbacks
     glfwSetWindowUserPointer(m_context, this);
 
     // Set the windows resized callback. I use lambda function instead of static
     // function to access to private methods.
-    glfwSetFramebufferSizeCallback(m_context, [](GLFWwindow* obj, int width, int height)
-    {
-        // Get the window.
-        assert(nullptr != obj);
-        GLWindow* window = static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
+    glfwSetFramebufferSizeCallback(
+        m_context,
+        [](GLFWwindow* obj, int width, int height)
+        {
+            // Get the window.
+            assert(nullptr != obj);
+            GLWindow* window =
+                static_cast<GLWindow*>(glfwGetWindowUserPointer(obj));
 
-        // Save context.
-        GL::Context::Window* current = GL::Context::getCurrentContext();
-        GL::Context::makeCurrentContext(window->m_context);
+            // Save context.
+            GL::Context::Window* current = GL::Context::getCurrentContext();
+            GL::Context::makeCurrentContext(window->m_context);
 
-        // Call the GLWindow callback that has to be implemented by the derived
-        // class.
-        window->staticWidth() = std::max(1u, static_cast<uint32_t>(width));
-        window->staticHeight() = std::max(1u, static_cast<uint32_t>(height));
-        window->onWindowResized();
+            // Call the GLWindow callback that has to be implemented by the
+            // derived class.
+            window->staticWidth() = std::max(1u, static_cast<uint32_t>(width));
+            window->staticHeight() =
+                std::max(1u, static_cast<uint32_t>(height));
+            window->onWindowResized();
 
-        // Restore context.
-        GL::Context::makeCurrentContext(current);
-    });
+            // Restore context.
+            GL::Context::makeCurrentContext(current);
+        });
 
     // Ensure we can capture keyboard being pressed below.
     glfwSetInputMode(m_context, GLFW_STICKY_KEYS, GL_TRUE);
@@ -392,7 +418,7 @@ bool GLWindow::setup()
         }
 
         // Layers
-        for (auto& it: m_layers)
+        for (auto& it : m_layers)
         {
             if (unlikely(!it->onSetup()))
             {
@@ -440,7 +466,7 @@ bool GLWindow::update()
         }
 
         // Render Layers
-        for (auto& it: m_layers)
+        for (auto& it : m_layers)
         {
             if (unlikely(!it->onPaint()))
             {
@@ -475,10 +501,10 @@ bool GLWindow::update()
 bool GLWindow::haltCondition()
 {
     // Check if the ESC key was pressed or the window was closed
-    // Note: use keyPressed() not isKeyDown() because if Event::Keyboard is not we
-    // no longer can halt the window.
+    // Note: use keyPressed() not isKeyDown() because if Event::Keyboard is not
+    // we no longer can halt the window.
     return (GLFW_PRESS == glfwGetKey(m_context, GLFW_KEY_ESCAPE)) ||
-            (glfwWindowShouldClose(m_context));
+           (glfwWindowShouldClose(m_context));
 }
 
 //------------------------------------------------------------------------------
@@ -498,8 +524,7 @@ bool GLWindow::run()
         }
 
         m_should_halt |= haltCondition();
-    }
-    while (!m_should_halt);
+    } while (!m_should_halt);
 
     return true;
 }

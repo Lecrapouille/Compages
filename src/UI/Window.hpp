@@ -19,15 +19,15 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_UI_WINDOW_HPP
-#  define OPENGLCPPWRAPPER_UI_WINDOW_HPP
+#define OPENGLCPPWRAPPER_UI_WINDOW_HPP
 
 // *****************************************************************************
 //! \file GLWindow.hpp manages a window and its i/o for drawing OpenGL scenes.
 // *****************************************************************************
 
-#  include "OpenGL/Context/OpenGL.hpp"
-#  include "Math/Vector.hpp"
-#  include <mutex>
+#include "Math/Vector.hpp"
+#include "OpenGL/Context/OpenGL.hpp"
+#include <mutex>
 
 class Layer;
 
@@ -64,16 +64,22 @@ public:
             RIGHT = GLFW_MOUSE_BUTTON_RIGHT,
             MIDDLE = GLFW_MOUSE_BUTTON_MIDDLE,
             ONE = GLFW_MOUSE_BUTTON_1,
-            TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT,
+            TWO,
+            THREE,
+            FOUR,
+            FIVE,
+            SIX,
+            SEVEN,
+            EIGHT,
             NONE = GLFW_MOUSE_BUTTON_LAST + 1u,
         };
 
         //! \brief position (x and y coordinate)
-        Vector2g position = {0.0};
+        Vector2g position = { 0.0 };
         //! \brief displacement (delta position)
-        Vector2g displacement = {0.0};
+        Vector2g displacement = { 0.0 };
         //! \brief scrolling
-        Vector2g scroll = {0.0};
+        Vector2g scroll = { 0.0 };
         //! \brief is cursor visible ?
         bool visible = true;
         //! \brief button pressed or released ?
@@ -105,7 +111,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Create a glfw3 window with given initial size and title.
     //--------------------------------------------------------------------------
-    GLWindow(uint32_t const width, uint32_t const height, const char *title);
+    GLWindow(uint32_t const width, uint32_t const height, const char* title);
 
     //--------------------------------------------------------------------------
     //! \brief Destroy the glfw3 window.
@@ -122,7 +128,10 @@ public:
     //! \brief Start the inifinite loop running the window calling the setup()
     //! method and the update() method at the given FPS (TODO).
     //--------------------------------------------------------------------------
-    inline void halt() { m_should_halt = true; }
+    inline void halt()
+    {
+        m_should_halt = true;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Enable event reactions from mouse boutton, mouse scroll, mouse
@@ -143,13 +152,19 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Return the delta time (in s) from the previous update() call.
     //--------------------------------------------------------------------------
-    inline float dt() const { return m_deltaTime; }
+    inline float dt() const
+    {
+        return m_deltaTime;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Return the number of frame per seconds from the previous update()
     //! call. The value is averaged along 1 second.
     //--------------------------------------------------------------------------
-    inline uint32_t fps() const { return m_fps; }
+    inline uint32_t fps() const
+    {
+        return m_fps;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Return the OpenGL context linked to this window.
@@ -165,20 +180,29 @@ public:
     //! mouse callback functions onMouseButtonPressed(), onMouseScrolled(),
     //! onMouseMoved().
     //--------------------------------------------------------------------------
-    static GLWindow::Mouse& mouse() { return m_mouse; }
+    static GLWindow::Mouse& mouse()
+    {
+        return m_mouse;
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Return the current width of the window. To be used from mouse
     //! callback functions onResized().
     //--------------------------------------------------------------------------
-    template<typename T>
-    static T width() { return static_cast<T>(staticWidth()); }
+    template <typename T>
+    static T width()
+    {
+        return static_cast<T>(staticWidth());
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Return the current height of the window.
     //--------------------------------------------------------------------------
-    template<typename T>
-    static T height() { return static_cast<T>(staticHeight()); }
+    template <typename T>
+    static T height()
+    {
+        return static_cast<T>(staticHeight());
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Change the size of the window. Do not call this method if you
@@ -193,7 +217,7 @@ public:
     inline bool isFullScreen() const
     {
         return (m_context != nullptr) &&
-                (glfwGetWindowMonitor(m_context) != nullptr);
+               (glfwGetWindowMonitor(m_context) != nullptr);
     }
 
     //--------------------------------------------------------------------------
@@ -221,7 +245,7 @@ public:
     static bool wasKeyPressed(size_t const key)
     {
         return GLWindow::KEY_PRESS == m_currentKeys[key] &&
-                GLWindow::KEY_RELEASE == m_lastKeys[key];
+               GLWindow::KEY_RELEASE == m_lastKeys[key];
     }
 
     //--------------------------------------------------------------------------
@@ -231,7 +255,7 @@ public:
     static bool wasKeyReleased(size_t const key)
     {
         return GLWindow::KEY_RELEASE == m_currentKeys[key] &&
-                GLWindow::KEY_PRESS == m_lastKeys[key];
+               GLWindow::KEY_PRESS == m_lastKeys[key];
     }
 
 private:
@@ -254,46 +278,40 @@ private:
     //! \brief Callback when the GPU received new data. Default behavior
     //! is to do nothing.
     //--------------------------------------------------------------------------
-    virtual void onGPUMemoryChanged(size_t /*bytes*/)
-    {}
+    virtual void onGPUMemoryChanged(size_t /*bytes*/) {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when a key of the keyboard has been pressed or released.
     //! Enable event reaction throught makeReactOn();
     //--------------------------------------------------------------------------
-    virtual void onKeyboardEvent()
-    {}
+    virtual void onKeyboardEvent() {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when the mouse has been moved. Default behavior
     //! is to do nothing. Call mouse() to get mouse states.
     //! Enable event reaction throught makeReactOn();
     //--------------------------------------------------------------------------
-    virtual void onMouseMoved()
-    {}
+    virtual void onMouseMoved() {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when the mouse has been scrolled. Default behavior
     //! is to do nothing. Call mouse() to get mouse states.
     //! Enable event reaction throught makeReactOn();
     //--------------------------------------------------------------------------
-    virtual void onMouseScrolled()
-    {}
+    virtual void onMouseScrolled() {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when the mouse has been pressed. Default behavior
     //! is to do nothing. Call mouse() to get mouse states.
     //! Enable event reaction throught makeReactOn();
     //--------------------------------------------------------------------------
-    virtual void onMouseButtonPressed()
-    {}
+    virtual void onMouseButtonPressed() {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback when the window has its size changed.
     //! Use template mtthods width<T>(), height<T>() to get new size.
     //--------------------------------------------------------------------------
-    virtual void onWindowResized()
-    {}
+    virtual void onWindowResized() {}
 
     //--------------------------------------------------------------------------
     //! \brief Graphics setup. This method will call onSetup() on success or
@@ -309,8 +327,8 @@ private:
     virtual bool onSetup() = 0;
 
     //--------------------------------------------------------------------------
-    //! \brief Callback triggered when the method setup() failed. By default this
-    //! method does nothing.
+    //! \brief Callback triggered when the method setup() failed. By default
+    //! this method does nothing.
     //--------------------------------------------------------------------------
     virtual void onSetupFailed(std::string const& reason) = 0;
 
@@ -322,9 +340,9 @@ private:
     bool update();
 
     //--------------------------------------------------------------------------
-    //! \brief Condition for halting the window loop started by run(). By default
-    //! when the ESC key has been pressed or when the user has clicked on the X
-    //! button. Override this function to change the defalut behavior.
+    //! \brief Condition for halting the window loop started by run(). By
+    //! default when the ESC key has been pressed or when the user has clicked
+    //! on the X button. Override this function to change the defalut behavior.
     //! \return true when the application shall halt the run() method.. Return
     //! false to continue the run() method.
     //--------------------------------------------------------------------------
@@ -375,7 +393,7 @@ private:
     //! \brief OpenGL context associated to this window.
     GL::Context::Window* m_context = nullptr;
     //! \brief Windows title.
-    const char *m_title = nullptr;
+    const char* m_title = nullptr;
     //! \brief Used for computing m_deltaTime.
     double m_lastTime = 0.0;
     //! \brief Used for computing m_deltaTime.
@@ -421,7 +439,7 @@ constexpr GLWindow::Event operator&(GLWindow::Event lhs, GLWindow::Event rhs)
 constexpr bool operator==(GLWindow::Event lhs, GLWindow::Event rhs)
 {
     return static_cast<std::underlying_type<GLWindow::Event>::type>(lhs) ==
-            static_cast<std::underlying_type<GLWindow::Event>::type>(rhs);
+           static_cast<std::underlying_type<GLWindow::Event>::type>(rhs);
 }
 
 #endif // OPENGLCPPWRAPPER_UI_WINDOW_HPP

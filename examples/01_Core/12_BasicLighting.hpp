@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_12_BASIC_LIGHTING_HPP
-#  define EXAMPLE_12_BASIC_LIGHTING_HPP
+#define EXAMPLE_12_BASIC_LIGHTING_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to create a basic light.
@@ -31,7 +31,9 @@ class BasicLighting: public GLWindow
 {
 public:
 
-    BasicLighting(uint32_t const width, uint32_t const height, const char *title);
+    BasicLighting(uint32_t const width,
+                  uint32_t const height,
+                  const char* title);
     ~BasicLighting();
 
     static std::string info()
@@ -53,12 +55,12 @@ private:
 
 private:
 
-    GLVertexShader     m_vs1, m_vs2;
-    GLFragmentShader   m_fs1, m_fs2;
-    GLVAO              m_cube;
-    GLVAO              m_lamp;
-    GLProgram          m_prog_cube;
-    GLProgram          m_prog_lamp;
+    GLVertexShader m_vs1, m_vs2;
+    GLFragmentShader m_fs1, m_fs2;
+    GLVAO m_cube;
+    GLVAO m_lamp;
+    GLProgram m_prog_cube;
+    GLProgram m_prog_lamp;
 };
 
 #endif // EXAMPLE_12_BASIC_LIGHTING_HPP

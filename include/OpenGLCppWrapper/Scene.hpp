@@ -19,25 +19,25 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_INCLUDE_SCENE_GRAPH_HPP
-#  define OPENGLCPPWRAPPER_INCLUDE_SCENE_GRAPH_HPP
+#define OPENGLCPPWRAPPER_INCLUDE_SCENE_GRAPH_HPP
 
-#  include "Scene/Material/DepthMaterial.hpp"
-#  include "Scene/Material/NormalsMaterial.hpp"
-#  include "Scene/Material/MeshBasicMaterial.hpp"
-#  include "Scene/Material/LineBasicMaterial.hpp"
+#include "Scene/Material/DepthMaterial.hpp"
+#include "Scene/Material/LineBasicMaterial.hpp"
+#include "Scene/Material/MeshBasicMaterial.hpp"
+#include "Scene/Material/NormalsMaterial.hpp"
 
-#  include "Scene/Geometry/Plane.hpp"
-#  include "Scene/Geometry/Box.hpp"
-#  include "Scene/Geometry/Tube.hpp"
-#  include "Scene/Geometry/Sphere.hpp"
-#  include "Scene/Geometry/Model.hpp"
+#include "Scene/Geometry/Box.hpp"
+#include "Scene/Geometry/Model.hpp"
+#include "Scene/Geometry/Plane.hpp"
+#include "Scene/Geometry/Sphere.hpp"
+#include "Scene/Geometry/Tube.hpp"
 
-#  include "Scene/Camera/CameraNode.hpp"
-#  include "Scene/CameraRigNode.hpp"
-#  include "Scene/ShapeNode.hpp"
-#  include "Scene/BlinkerNode.hpp"
-#  include "Scene/AnimatedModelNode.hpp"
+#include "Scene/AnimatedModelNode.hpp"
+#include "Scene/BlinkerNode.hpp"
+#include "Scene/Camera/CameraNode.hpp"
+#include "Scene/CameraRigNode.hpp"
+#include "Scene/ShapeNode.hpp"
 
-#  include "Scene/Helper/AxesHelper.hpp"
+#include "Scene/Helper/AxesHelper.hpp"
 
 #endif // OPENGLCPPWRAPPER_INCLUDE_SCENE_GRAPH_HPP

@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef MATERIAL_HPP
-#  define MATERIAL_HPP
+#define MATERIAL_HPP
 
-#  include "OpenGL/Buffers/VAO.hpp"
+#include "OpenGL/Buffers/VAO.hpp"
 
 // *****************************************************************************
 //! \brief Interface class for defining the reaction of an object to the light.
@@ -39,7 +39,8 @@ public:
           m_vert_shader("VS_" + name),
           m_frag_shader("FS_" + name),
           m_vao(vao)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Needed because of pure virtual method.
@@ -66,13 +67,13 @@ private:
     //! \brief Generate the code for vertex and fragment shaders.
     //--------------------------------------------------------------------------
     virtual void generate(GLVertexShader& /*vert*/, GLFragmentShader& /*frag*/)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Initialize uniform glsl variables with default values.
     //--------------------------------------------------------------------------
-    virtual void init()
-    {}
+    virtual void init() {}
 
 public:
 

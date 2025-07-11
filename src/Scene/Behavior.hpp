@@ -19,7 +19,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_BEHAVIOR_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_BEHAVIOR_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_BEHAVIOR_HPP
 
 class Camera;
 
@@ -36,18 +36,17 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Calback triggered when the object becomes enabled and active.
     //--------------------------------------------------------------------------
-    virtual void onEnable()
-    {}
+    virtual void onEnable() {}
 
     //--------------------------------------------------------------------------
     //! \brief Calback triggered when the object becomes disabled.
     //--------------------------------------------------------------------------
-    virtual void onDisable()
-    {}
+    virtual void onDisable() {}
 
     //--------------------------------------------------------------------------
     //! \brief Calback triggered just when the scene is loaded. Used it for
-    //! configuring or restoring internal states of the object (setting, config).
+    //! configuring or restoring internal states of the object (setting,
+    //! config).
     //! \return true when the setup succeeded, false on failure.
     //--------------------------------------------------------------------------
     virtual bool onSetup()
@@ -58,8 +57,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Callback triggered when visiting the scene for updating
     //! transformation matrices. This method does nothing by default but can be
-    //! overrided by TreeNode3D's derived classes for animating/moving the current
-    //! node (which will impact on position of descendant nodes).
+    //! overrided by TreeNode3D's derived classes for animating/moving the
+    //! current node (which will impact on position of descendant nodes).
     //!
     //! \note: the project https://github.com/vahlers/scg3 traverse the tree
     //! using the vistor design pattern. I did not follow because I am a big fan
@@ -67,14 +66,13 @@ public:
     //! understand. In the course https://research.ncl.ac.uk/game/mastersdegree/
     //! graphicsforgames/scenegraphs/Tutorial%206%20-%20Scene%20Graphs.pdf
     //! they let derived classes override the method update() but suppose the
-    //! developper will call the method update() of the parent class. I think this
-    //! is an error prone pratice. I think doUpdate() does the same thing in a more
-    //! simpler way for the developper.
+    //! developper will call the method update() of the parent class. I think
+    //! this is an error prone pratice. I think doUpdate() does the same thing
+    //! in a more simpler way for the developper.
     //!
     //! \param[in] dt: delta time from the previous update.
     //--------------------------------------------------------------------------
-    virtual void onUpdate(float const /*dt*/)
-    {}
+    virtual void onUpdate(float const /*dt*/) {}
 
     //--------------------------------------------------------------------------
     //! \brief Callback triggered when drawing the scene.
@@ -90,8 +88,7 @@ public:
     //! \brief Callback triggered when the camera has moved.
     //! \param[in] camera.
     //--------------------------------------------------------------------------
-    virtual void onCameraUpdated(Camera& /*camera*/)
-    {}
+    virtual void onCameraUpdated(Camera& /*camera*/) {}
 };
 
 #endif // OPENGLCPPWRAPPER_SCENEGRAPH_BEHAVIOR_HPP

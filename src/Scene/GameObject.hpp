@@ -19,18 +19,18 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_SCENEGRAPH_GAME_OBJECT_HPP
-#  define OPENGLCPPWRAPPER_SCENEGRAPH_GAME_OBJECT_HPP
+#define OPENGLCPPWRAPPER_SCENEGRAPH_GAME_OBJECT_HPP
 
-#  include "Common/ClassCounter.hpp"
-#  include "Components/Components.hpp"
-#  include "Scene/Behavior.hpp"
+#include "Common/ClassCounter.hpp"
+#include "Components/Components.hpp"
+#include "Scene/Behavior.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief Base and abstract GameObject class specialized for game.
 //------------------------------------------------------------------------------
-class GameObject : private UniqueID<GameObject>,
-                   private InstanceCounter<GameObject>,
-                   public Behavior
+class GameObject: private UniqueID<GameObject>,
+                  private InstanceCounter<GameObject>,
+                  public Behavior
 {
 public:
 
@@ -38,13 +38,12 @@ public:
     //! \brief Set the name of the GameObject and generate an unique identifier.
     //--------------------------------------------------------------------------
     GameObject(std::string const& name /* TODO: components*/)
-        : m_id(UniqueID<GameObject>::getID()),
-          m_name(name)
-    {}
+        : m_id(UniqueID<GameObject>::getID()), m_name(name)
+    {
+    }
 
     GameObject(std::string const& name, std::string const& tag_)
-        : m_id(UniqueID<GameObject>::getID()),
-          m_name(name)
+        : m_id(UniqueID<GameObject>::getID()), m_name(name)
     {
         tag = tag_;
     }
@@ -52,10 +51,11 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Generate an unique identifier and set the default name
     //--------------------------------------------------------------------------
-   GameObject()
+    GameObject()
         : m_id(UniqueID<GameObject>::getID()),
           m_name("GameObject" + std::to_string(m_id))
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Return the object name. Should be unique.

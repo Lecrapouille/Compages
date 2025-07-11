@@ -25,10 +25,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLUNIFORM_HPP
-#  define OPENGLCPPWRAPPER_GLUNIFORM_HPP
+#define OPENGLCPPWRAPPER_GLUNIFORM_HPP
 
-#  include "OpenGL/Variables/Location.hpp"
-#  include "Math/Matrix.hpp"
+#include "Math/Matrix.hpp"
+#include "OpenGL/Variables/Location.hpp"
 
 // *****************************************************************************
 //! \brief Represent an uniform variable used in a GLSL shader program (refered
@@ -49,24 +49,29 @@
 //! MatrixXXf with X = [2 .. 4] for matrices or GLSamplerXD with X = [1 .. 3]
 //! (and GLSamplerCube) for textures.
 // *****************************************************************************
-template<class T>
+template <class T>
 class GLUniform: public GLLocation
 {
 public:
 
     //--------------------------------------------------------------------------
     //! \brief See GLLocation constructor.
-    //! \param[in] name Give a name to the instance. The name shall be in accordance to
-    //! the uniform variable in the GLSL shader. GLProgram uses these names as internal hash key.
-    //! \param[in] size set the dimension of variable (1 for scalar, 2 .. 4 depending on the
-    //! dimension of the vector).
+    //! \param[in] name Give a name to the instance. The name shall be in
+    //! accordance to the uniform variable in the GLSL shader. GLProgram uses
+    //! these names as internal hash key.
+    //! \param[in] size set the dimension of variable (1 for scalar, 2 .. 4
+    //! depending on the dimension of the vector).
     //! \param[in] gltype set the OpenGL type of data (GL_FLOAT, GL_INT ...)
     //! \param[in] prog the handle of the GLProgram (which is the owner of this
     //! instance).
     //--------------------------------------------------------------------------
-    GLUniform(const char *name, const GLint dim, const GLint gltype, const GLuint prog)
+    GLUniform(const char* name,
+              const GLint dim,
+              const GLint gltype,
+              const GLuint prog)
         : GLLocation(name, dim, static_cast<GLenum>(gltype), prog)
-    {}
+    {
+    }
 
     //--------------------------------------------------------------------------
     //! \brief Destructor. Release elements from CPU and GPU.
@@ -77,10 +82,11 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Setter in the C# propety style. Modify the CPU data. The new value
-    //! will be transfered to GPU memory on the next GLObject::begin() call.
+    //! \brief Setter in the C# propety style. Modify the CPU data. The new
+    //! value will be transfered to GPU memory on the next GLObject::begin()
+    //! call.
     //--------------------------------------------------------------------------
-    template<class U>
+    template <class U>
     GLUniform<T>& operator=(const U& val)
     {
         GLUniform<T>::m_data = T(val);
@@ -100,7 +106,8 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Setter. Return the reference of CPU data in write mode. New value
     //! will be transfered to GPU memory.
-    //! \fixme Could be nice to avoid transfering to the GPU if we set the same val
+    //! \fixme Could be nice to avoid transfering to the GPU if we set the same
+    //! val
     //--------------------------------------------------------------------------
     inline operator T&()
     {
@@ -124,8 +131,7 @@ private:
     //! \brief Bind the OpenGL Uniform. This is a dummy method. No
     //! action is made.
     //--------------------------------------------------------------------------
-    virtual void onActivate() override
-    {}
+    virtual void onActivate() override {}
 
     //--------------------------------------------------------------------------
     //! \brief Setup the behavior of the instance. This is a dummy
@@ -151,15 +157,13 @@ private:
     //! \brief Unbind the OpenGL Uniform. This is a dummy method. No
     //! action is made.
     //--------------------------------------------------------------------------
-    virtual void onDeactivate() override
-    {}
+    virtual void onDeactivate() override {}
 
     //--------------------------------------------------------------------------
     //! \brief Destroy the OpenGL Uniform. This is a dummy method. No
     //! action is made.
     //--------------------------------------------------------------------------
-    virtual void onRelease() override
-    {}
+    virtual void onRelease() override {}
 
     //--------------------------------------------------------------------------
     //! \brief Transfer the CPU data to the GPU data.
@@ -168,96 +172,96 @@ private:
 
 protected:
 
-    T m_data {};
+    T m_data{};
 };
 
-template<>
+template <>
 inline void GLUniform<float>::apply(const float& value) const
 {
     glCheck(glUniform1f(m_handle, value));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector2f>::apply(const Vector2f& value) const
 {
     glCheck(glUniform2f(m_handle, value.x, value.y));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector3f>::apply(const Vector3f& value) const
 {
     glCheck(glUniform3f(m_handle, value.x, value.y, value.z));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector4f>::apply(const Vector4f& value) const
 {
     glCheck(glUniform4f(m_handle, value.x, value.y, value.z, value.w));
 }
 
-template<>
+template <>
 inline void GLUniform<int>::apply(const int& value) const
 {
     glCheck(glUniform1i(m_handle, value));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector2i>::apply(const Vector2i& value) const
 {
     glCheck(glUniform2i(m_handle, value.x, value.y));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector3i>::apply(const Vector3i& value) const
 {
     glCheck(glUniform3i(m_handle, value.x, value.y, value.z));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector4i>::apply(const Vector4i& value) const
 {
     glCheck(glUniform4i(m_handle, value.x, value.y, value.z, value.w));
 }
 
-template<>
+template <>
 inline void GLUniform<unsigned int>::apply(const unsigned int& value) const
 {
     glCheck(glUniform1ui(m_handle, value));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector2u>::apply(const Vector2u& value) const
 {
     glCheck(glUniform2ui(m_handle, value.x, value.y));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector3u>::apply(const Vector3u& value) const
 {
     glCheck(glUniform3ui(m_handle, value.x, value.y, value.z));
 }
 
-template<>
+template <>
 inline void GLUniform<Vector4u>::apply(const Vector4u& value) const
 {
     glCheck(glUniform4ui(m_handle, value.x, value.y, value.z, value.w));
 }
 
-template<>
+template <>
 inline void GLUniform<Matrix22f>::apply(const Matrix22f& m) const
 {
     // GL_FALSE because our matrices are already transposed (column-major).
     glCheck(glUniformMatrix2fv(m_handle, 1, GL_FALSE, m));
 }
 
-template<>
+template <>
 inline void GLUniform<Matrix33f>::apply(const Matrix33f& m) const
 {
     // GL_FALSE because our matrices are already transposed (column-major).
     glCheck(glUniformMatrix3fv(m_handle, 1, GL_FALSE, m));
 }
 
-template<>
+template <>
 inline void GLUniform<Matrix44f>::apply(const Matrix44f& m) const
 {
     // GL_FALSE because our matrices are already transposed (column-major).

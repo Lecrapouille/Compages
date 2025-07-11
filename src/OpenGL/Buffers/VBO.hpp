@@ -25,14 +25,14 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_VERTEX_BUFFER_OBJECT_HPP
-#  define OPENGLCPPWRAPPER_VERTEX_BUFFER_OBJECT_HPP
+#define OPENGLCPPWRAPPER_VERTEX_BUFFER_OBJECT_HPP
 
-#  include "OpenGL/Buffers/Buffer.hpp"
+#include "OpenGL/Buffers/Buffer.hpp"
 
 // *****************************************************************************
 //! \brief Buffer for vertex attribute data.
 // *****************************************************************************
-template<typename T>
+template <typename T>
 class GLVertexBuffer: public GLBuffer<T>
 {
 public:
@@ -48,29 +48,29 @@ public:
     //! https://stackoverflow.com/questions/64633899/no-inheritance-found-with-
     //! operator-and-initializer-list
     //--------------------------------------------------------------------------
-    //using GLBuffer<T>::operator=;
+    // using GLBuffer<T>::operator=;
 
     //--------------------------------------------------------------------------
     //! \brief Constructor with the object name and reserved number of
     //! elements.
     //--------------------------------------------------------------------------
-    explicit GLVertexBuffer(std::string const& name, size_t const size,
+    explicit GLVertexBuffer(std::string const& name,
+                            size_t const size,
                             BufferUsage const usage)
         : GLBuffer<T>(name, GL_ARRAY_BUFFER, size, usage)
-    {}
+    {
+    }
 
-    GLVertexBuffer()
-        : GLBuffer<T>()
-    {}
+    GLVertexBuffer() : GLBuffer<T>() {}
 
-    template<typename U>
+    template <typename U>
     inline GLVertexBuffer<T>& operator=(std::initializer_list<U> il)
     {
         PendingContainer<T>::operator=(il);
         return *this;
     }
 
-    template<typename U>
+    template <typename U>
     inline GLVertexBuffer<T>& operator=(std::vector<U> const& other)
     {
         PendingContainer<T>::operator=(other);

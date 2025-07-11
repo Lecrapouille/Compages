@@ -23,11 +23,10 @@
 #include <iostream>
 
 //------------------------------------------------------------------------------
-MultiTexturedSquare::MultiTexturedSquare(uint32_t const width, uint32_t const height,
-                                             const char *title)
-    : GLWindow(width, height, title),
-      m_prog("Prog"),
-      m_square("square")
+MultiTexturedSquare::MultiTexturedSquare(uint32_t const width,
+                                         uint32_t const height,
+                                         const char* title)
+    : GLWindow(width, height, title), m_prog("Prog"), m_square("square")
 {
     std::cout << "Hello MultiTexturedSquare: " << info() << std::endl;
 }
@@ -47,13 +46,16 @@ void MultiTexturedSquare::onWindowResized()
 //------------------------------------------------------------------------------
 bool MultiTexturedSquare::loadTextures()
 {
-    if (!m_square.texture2D("blendMap").load<SOIL>("external/assets/blendMap.png"))
+    if (!m_square.texture2D("blendMap")
+             .load<SOIL>("external/assets/blendMap.png"))
         return false;
-    if (!m_square.texture2D("backgroundTexture").load<SOIL>("external/assets/grassy2.png"))
+    if (!m_square.texture2D("backgroundTexture")
+             .load<SOIL>("external/assets/grassy2.png"))
         return false;
     if (!m_square.texture2D("rTexture").load<SOIL>("external/assets/mud.png"))
         return false;
-    if (!m_square.texture2D("gTexture").load<SOIL>("external/assets/grassFlowers.png"))
+    if (!m_square.texture2D("gTexture")
+             .load<SOIL>("external/assets/grassFlowers.png"))
         return false;
     if (!m_square.texture2D("bTexture").load<SOIL>("external/assets/path.png"))
         return false;
@@ -79,28 +81,26 @@ bool MultiTexturedSquare::onSetup()
     // Create VBOs of the VAO.
     if (!m_prog.bind(m_square))
     {
-        std::cerr << "Failed binding. Reason was '"
-                  << m_prog.strerror() << "'" << std::endl;
+        std::cerr << "Failed binding. Reason was '" << m_prog.strerror() << "'"
+                  << std::endl;
         return false;
     }
 
     // Fill VBOs of the VAO: init square vertex positions.
-    m_square.vector3f("position") =
-    {
+    m_square.vector3f("position") = {
         // Triangle 1
-        Vector3f(1.0f,  1.0f, 0.0f),
+        Vector3f(1.0f, 1.0f, 0.0f),
         Vector3f(1.0f, -1.0f, 0.0f),
-        Vector3f(-1.0f,  1.0f, 0.0f),
+        Vector3f(-1.0f, 1.0f, 0.0f),
 
         // Triangle 2
         Vector3f(1.0f, -1.0f, 0.0f),
         Vector3f(-1.0f, -1.0f, 0.0f),
-        Vector3f(-1.0f,  1.0f, 0.0f),
+        Vector3f(-1.0f, 1.0f, 0.0f),
     };
 
     // Fill VBOs of the VAO: init square texture positions.
-    m_square.vector2f("UV") =
-    {
+    m_square.vector2f("UV") = {
         // Triangle 1
         Vector2f(1.0f, 1.0f),
         Vector2f(1.0f, 0.0f),

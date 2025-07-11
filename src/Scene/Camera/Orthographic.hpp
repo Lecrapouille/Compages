@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef SCENE_CAMERA_ORTHOGRAPHIC_HPP
-#  define SCENE_CAMERA_ORTHOGRAPHIC_HPP
+#define SCENE_CAMERA_ORTHOGRAPHIC_HPP
 
-#  include "Components/Components.hpp"
-#  include "Math/Transformable.hpp"
+#include "Components/Components.hpp"
+#include "Math/Transformable.hpp"
 
 // *****************************************************************************
 //! \brief Define orthographic computation needed for the Camera
@@ -43,8 +43,9 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Initialize orthographic projection.
-    //! Aspect ratio is determined in updateProjection() from current viewport dimensions,
-    //! left and right borders are adjusted to comply with m_aspect ratio.
+    //! Aspect ratio is determined in updateProjection() from current viewport
+    //! dimensions, left and right borders are adjusted to comply with m_aspect
+    //! ratio.
     //!
     //! \param left left border
     //! \param right right border
@@ -88,6 +89,5 @@ protected:
     float m_frustum_size;
     bool m_dirty;
 };
-
 
 #endif // SCENE_CAMERA_ORTHOGRAPHIC_HPP

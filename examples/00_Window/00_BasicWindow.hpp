@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef EXAMPLE_00_WINDOW_00_BASIC_WINDOW_HPP
-#  define EXAMPLE_00_WINDOW_00_BASIC_WINDOW_HPP
+#define EXAMPLE_00_WINDOW_00_BASIC_WINDOW_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------------------
 //! \brief This example shows how to create a basic window instanciating an
@@ -34,7 +34,7 @@ class BasicWindow: public GLWindow
 {
 public:
 
-    BasicWindow(uint32_t const width, uint32_t const height, const char *title);
+    BasicWindow(uint32_t const width, uint32_t const height, const char* title);
     ~BasicWindow();
 
     static std::string info()

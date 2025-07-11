@@ -25,10 +25,10 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLBUFFER_HPP
-#  define OPENGLCPPWRAPPER_GLBUFFER_HPP
+#define OPENGLCPPWRAPPER_GLBUFFER_HPP
 
-#  include "OpenGL/GLObject.hpp"
-#  include "OpenGL/Buffers/PendingContainer.hpp"
+#include "OpenGL/Buffers/PendingContainer.hpp"
+#include "OpenGL/GLObject.hpp"
 
 //! \brief Specifies the expected usage pattern of the data store for
 //! glBufferData.
@@ -40,42 +40,48 @@ enum class BufferUsage : GLenum
 };
 
 // FIXME Workaround to have VAO::VBOs[0].size()
-class IGLBuffer
-  : public GLObject<GLenum>
+class IGLBuffer: public GLObject<GLenum>
 {
 public:
 
-  explicit IGLBuffer(std::string const& name, GLenum const target)
-      : GLObject(name, target)
-  {}
+    explicit IGLBuffer(std::string const& name, GLenum const target)
+        : GLObject(name, target)
+    {
+    }
 
-  virtual size_t size() const = 0;
+    virtual size_t size() const = 0;
 };
 
 // *****************************************************************************
 //! \brief GLBuffer is a class of contigous elements (array) CPU side that is
-//! aware of area of dirty elements that needs to be updated to the GPU. GLBuffer
-//! can be used to store vertex data in Vertex Buffer Object (VBO), pixels data
-//! retrieved from images (texture) or for framebuffer. Mostly of time vertices
-//! in a VBO are indexed by a Element Buffer Object (EBO) which is also a GLBuffer.
+//! aware of area of dirty elements that needs to be updated to the GPU.
+//! GLBuffer can be used to store vertex data in Vertex Buffer Object (VBO),
+//! pixels data retrieved from images (texture) or for framebuffer. Mostly of
+//! time vertices in a VBO are indexed by a Element Buffer Object (EBO) which is
+//! also a GLBuffer.
 // *****************************************************************************
-template<typename T>
+template <typename T>
 class GLBuffer: public IGLBuffer, public PendingContainer<T>
 {
 public:
 
     //--------------------------------------------------------------------------
     //! \brief Constructor with the object name.
-    //! \param target: specialization into GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER ...
+    //! \param target: specialization into GL_ARRAY_BUFFER,
+    //! GL_ELEMENT_ARRAY_BUFFER ...
     //! \param[in] usage:
-    //!   - BufferUsage::STREAM_DRAW: The data store contents will be modified once and
+    //!   - BufferUsage::STREAM_DRAW: The data store contents will be modified
+    //!   once and
     //!     used at most a few times.
-    //!   - BufferUsage::STATIC_DRAW: The data store contents will be modified once and
+    //!   - BufferUsage::STATIC_DRAW: The data store contents will be modified
+    //!   once and
     //!     used many times.
-    //!   - BufferUsage::DYNAMIC_DRAW: The data store contents will be modified repeatedly
+    //!   - BufferUsage::DYNAMIC_DRAW: The data store contents will be modified
+    //!   repeatedly
     //!     and used many times.
     //--------------------------------------------------------------------------
-    explicit GLBuffer(std::string const& name, GLenum const target,
+    explicit GLBuffer(std::string const& name,
+                      GLenum const target,
                       BufferUsage const usage)
         : IGLBuffer(name, target)
     {
@@ -85,16 +91,17 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Constructor with the object name and reserved number of elements.
     //--------------------------------------------------------------------------
-    explicit GLBuffer(std::string const& name, GLenum const target,
-                      size_t const size, BufferUsage const usage)
+    explicit GLBuffer(std::string const& name,
+                      GLenum const target,
+                      size_t const size,
+                      BufferUsage const usage)
         : IGLBuffer(name, target), PendingContainer<T>(size)
     {
         m_usage = static_cast<GLenum>(usage);
     }
 
     // FIXME: can be removed ?
-    explicit GLBuffer()
-        : IGLBuffer("", GL_ARRAY_BUFFER)
+    explicit GLBuffer() : IGLBuffer("", GL_ARRAY_BUFFER)
     {
         m_usage = static_cast<GLenum>(BufferUsage::STATIC_DRAW);
     }
@@ -115,11 +122,14 @@ public:
 
     //--------------------------------------------------------------------------
     //! \brief Set the usage for VBOs when they are created:
-    //!   - BufferUsage::STREAM_DRAW: The data store contents will be modified once and
+    //!   - BufferUsage::STREAM_DRAW: The data store contents will be modified
+    //!   once and
     //!     used at most a few times.
-    //!   - BufferUsage::STATIC_DRAW: The data store contents will be modified once and
+    //!   - BufferUsage::STATIC_DRAW: The data store contents will be modified
+    //!   once and
     //!     used many times.
-    //!   - BufferUsage::DYNAMIC_DRAW: The data store contents will be modified repeatedly
+    //!   - BufferUsage::DYNAMIC_DRAW: The data store contents will be modified
+    //!   repeatedly
     //!     and used many times.
     //! \note: to be called before calling begin(), else it will not talen into
     //! account.
@@ -153,8 +163,8 @@ private:
     //--------------------------------------------------------------------------
     virtual bool onSetup() override
     {
-        const GLsizeiptr bytes = static_cast<GLsizeiptr>
-                                 (PendingContainer<T>::capacity() * sizeof (T));
+        const GLsizeiptr bytes = static_cast<GLsizeiptr>(
+            PendingContainer<T>::capacity() * sizeof(T));
         glCheck(glBufferData(m_target, bytes, NULL, m_usage));
 
         return false;
@@ -177,8 +187,8 @@ private:
         PendingContainer<T>::getPending(pos_start, pos_end);
         PendingContainer<T>::clearPending();
 
-        size_t offset = sizeof (T) * pos_start;
-        size_t nbytes = sizeof (T) * (pos_end - pos_start);
+        size_t offset = sizeof(T) * pos_start;
+        size_t nbytes = sizeof(T) * (pos_end - pos_start);
         glCheck(glBufferSubData(m_target,
                                 static_cast<GLintptr>(offset),
                                 static_cast<GLsizeiptr>(nbytes),

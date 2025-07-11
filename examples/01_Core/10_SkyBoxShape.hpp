@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_10_SKYBOX_SHAPE_HPP
-#  define EXAMPLE_10_SKYBOX_SHAPE_HPP
+#define EXAMPLE_10_SKYBOX_SHAPE_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 //------------------------------------------------------------------
 //! \file this example paints a shape inside a skybox. A skybox is
@@ -35,7 +35,7 @@ class SkyBoxShape: public GLWindow
 {
 public:
 
-    SkyBoxShape(uint32_t const width, uint32_t const height, const char *title);
+    SkyBoxShape(uint32_t const width, uint32_t const height, const char* title);
     ~SkyBoxShape();
 
     static std::string info()
@@ -57,10 +57,10 @@ private:
 
 private:
 
-    GLVertexShader     vs1, vs2;
-    GLFragmentShader   fs1, fs2;
-    GLVAO              m_shape, m_skybox;
-    GLProgram          m_progShape, m_progSkyBox;
+    GLVertexShader vs1, vs2;
+    GLFragmentShader fs1, fs2;
+    GLVAO m_shape, m_skybox;
+    GLProgram m_progShape, m_progSkyBox;
 };
 
 #endif // EXAMPLE_10_SKYBOX_SHAPE_HPP

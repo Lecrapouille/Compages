@@ -19,10 +19,10 @@
 //=====================================================================
 
 #ifndef EXAMPLE_04_INDEXED_BOX_HPP
-#  define EXAMPLE_04_INDEXED_BOX_HPP
+#define EXAMPLE_04_INDEXED_BOX_HPP
 
-#  include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
-#  include "../debug.hpp"
+#include "../debug.hpp"
+#include "OpenGLCppWrapper/OpenGLCppWrapper.hpp"
 
 // *****************************************************************************
 //! \brief This example shows how to create a simple textured triangle.
@@ -31,7 +31,7 @@ class IndexedQuad: public GLWindow
 {
 public:
 
-    IndexedQuad(uint32_t const width, uint32_t const height, const char *title);
+    IndexedQuad(uint32_t const width, uint32_t const height, const char* title);
     ~IndexedQuad();
 
     static std::string info()
@@ -49,14 +49,14 @@ private:
 
 private:
 
-    GLVertexShader     m_vertex_shader;
-    GLFragmentShader   m_fragment_shader;
-    GLProgram          m_prog;
+    GLVertexShader m_vertex_shader;
+    GLFragmentShader m_fragment_shader;
+    GLProgram m_prog;
 
     //! \brief Indexed VAO where indices are uint32_t.
     //! You can use instead GLVAO16 where indices are uint16_t.
     //! You can use instead GLVAO8 where indices are uint8_t.
-    GLVAO32            m_box;
+    GLVAO32 m_box;
 };
 
 #endif // EXAMPLE_04_INDEXED_BOX_HPP

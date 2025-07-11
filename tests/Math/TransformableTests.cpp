@@ -21,37 +21,39 @@
 #include "main.hpp"
 #define protected public
 #define private public
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wfloat-equal"
-#    include "Math/Transformable.hpp"
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include "Math/Transformable.hpp"
+#pragma GCC diagnostic pop
 #undef protected
 #undef private
 
 //--------------------------------------------------------------------------
-#define ASSERT_NEAR_VECTOR3(vect, a, b, c, thresh)                      \
-    ASSERT_NEAR(vect[0], a, thresh);                                    \
-    ASSERT_NEAR(vect[1], b, thresh);                                    \
+#define ASSERT_NEAR_VECTOR3(vect, a, b, c, thresh) \
+    ASSERT_NEAR(vect[0], a, thresh);               \
+    ASSERT_NEAR(vect[1], b, thresh);               \
     ASSERT_NEAR(vect[2], c, thresh)
 
 //--------------------------------------------------------------------------
-#define ASSERT_EQ_VECTOR3(vect, a, b, c)                        \
-    ASSERT_EQ(vect[0], a);                                      \
-    ASSERT_EQ(vect[1], b);                                      \
+#define ASSERT_EQ_VECTOR3(vect, a, b, c) \
+    ASSERT_EQ(vect[0], a);               \
+    ASSERT_EQ(vect[1], b);               \
     ASSERT_EQ(vect[2], c)
 
 //--------------------------------------------------------------------------
-#define ASSERT_MATRIX_NEAR(expected, actual, thresh)                    \
-    for (size_t idx = 0; idx < 16u; ++idx)                              \
-    {                                                                   \
-        ASSERT_NEAR(expected.data()[idx], actual.data()[idx], thresh) << "at index: " << idx; \
+#define ASSERT_MATRIX_NEAR(expected, actual, thresh)                  \
+    for (size_t idx = 0; idx < 16u; ++idx)                            \
+    {                                                                 \
+        ASSERT_NEAR(expected.data()[idx], actual.data()[idx], thresh) \
+            << "at index: " << idx;                                   \
     }
 
 //--------------------------------------------------------------------------
-#define ASSERT_MATRIX(expected, actual)                                 \
-    for (size_t idx = 0; idx < 16u; ++idx)                              \
-    {                                                                   \
-        ASSERT_EQ(expected.data()[idx], actual.data()[idx]) << "at index: " << idx; \
+#define ASSERT_MATRIX(expected, actual)                     \
+    for (size_t idx = 0; idx < 16u; ++idx)                  \
+    {                                                       \
+        ASSERT_EQ(expected.data()[idx], actual.data()[idx]) \
+            << "at index: " << idx;                         \
     }
 
 //--------------------------------------------------------------------------
@@ -93,15 +95,39 @@ TEST(TestTransformable, testConstructor)
         ASSERT_EQ_VECTOR3(M.scaling(), 2.0f, 2.0f, 2.0f);
         ASSERT_EQ_VECTOR3(M.localScale(), 2.0f, 2.0f, 2.0f);
         ASSERT_MATRIX(M.matrix(),
-                      Matrix44f({2.0f, 0.0f, 0.0f, 0.0f,
-                                 0.0f, 2.0f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 2.0f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f}));
+                      Matrix44f({ 2.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  2.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  2.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  1.0f }));
         ASSERT_MATRIX(M.invMatrix(),
-                      Matrix44f({0.5f, 0.0f, 0.0f, 0.0f,
-                                 0.0f, 0.5f, 0.0f, 0.0f,
-                                 0.0f, 0.0f, 0.5f, 0.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f}));
+                      Matrix44f({ 0.5f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.5f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.5f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  0.0f,
+                                  1.0f }));
     }
 
     // Reset
@@ -129,10 +155,9 @@ TEST(TestTransformable, QQ)
     std::cout << "Direction: " << M.direction() << std::endl;
 
     std::cout << "Rotation: " << M.rotation() << std::endl;
-    M.rotate(units::angle::degree_t(45.0f), Vector3f(1,0,0));
+    M.rotate(units::angle::degree_t(45.0f), Vector3f(1, 0, 0));
     std::cout << "Rotation: " << M.rotation() << std::endl;
-    M.position(Vector3f(1,2,3));
+    M.position(Vector3f(1, 2, 3));
     M.roll(units::angle::degree_t(45.0f));
-    std::cout << "Transform: " << M.matrix()
-              << std::endl << std::endl;
+    std::cout << "Transform: " << M.matrix() << std::endl << std::endl;
 }

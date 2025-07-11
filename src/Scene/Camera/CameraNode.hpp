@@ -19,11 +19,11 @@
 //=====================================================================
 
 #ifndef CAMERA_NODE_HPP
-#  define CAMERA_NODE_HPP
+#define CAMERA_NODE_HPP
 
-#  include "Scene/SceneTree.hpp"
-#  include "Scene/Camera/Perspective.hpp"
-#  include "Scene/Camera/Orthographic.hpp"
+#include "Scene/Camera/Orthographic.hpp"
+#include "Scene/Camera/Perspective.hpp"
+#include "Scene/SceneTree.hpp"
 
 // *****************************************************************************
 //! \brief Define a basic 3D Camera that can be stored inside a scene tree.
@@ -32,7 +32,11 @@ class Camera: public SceneObject
 {
 public:
 
-    enum class Type { ORTHOGRAPHIC, PERSPECTIVE };
+    enum class Type
+    {
+        ORTHOGRAPHIC,
+        PERSPECTIVE
+    };
 
     //--------------------------------------------------------------------------
     //! \brief Initialize camera state with a given name and select a type of

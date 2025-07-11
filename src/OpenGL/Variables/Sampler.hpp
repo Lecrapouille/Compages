@@ -25,7 +25,7 @@
 //=====================================================================
 
 #ifndef OPENGLCPPWRAPPER_GLSAMPLER_HPP
-#  define OPENGLCPPWRAPPER_GLSAMPLER_HPP
+#define OPENGLCPPWRAPPER_GLSAMPLER_HPP
 
 // *****************************************************************************
 //! \file Sampler.hpp file implements:
@@ -36,7 +36,7 @@
 //!   - GLSamplerCube:
 // *****************************************************************************
 
-#  include "OpenGL/Variables/Location.hpp"
+#include "OpenGL/Variables/Location.hpp"
 
 // *****************************************************************************
 //! \brief A GLSampler is an OpenGL uniform for texture.
@@ -52,7 +52,9 @@ public:
     //! \param texture_id count texture.
     //! \param prog
     //--------------------------------------------------------------------------
-    GLSampler(const char *name, const GLint gltype, const size_t texture_id,
+    GLSampler(const char* name,
+              const GLint gltype,
+              const size_t texture_id,
               const GLuint prog)
         : GLLocation(name, 0, static_cast<GLenum>(gltype), prog),
           m_texture_id(GLenum(texture_id))
@@ -118,8 +120,7 @@ private:
     //! \brief Unbind the OpenGL Uniform. This is a dummy method. No
     //! action is made.
     //--------------------------------------------------------------------------
-    virtual void onDeactivate() override
-    {}
+    virtual void onDeactivate() override {}
 
     //--------------------------------------------------------------------------
     //! \brief Destroy the OpenGL Uniform. This is a dummy method. No
@@ -127,7 +128,7 @@ private:
     //--------------------------------------------------------------------------
     virtual void onRelease() override
     {
-        //GLLocation::onRelease();
+        // GLLocation::onRelease();
     }
 
 protected:

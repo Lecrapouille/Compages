@@ -19,9 +19,9 @@
 //=====================================================================
 
 #ifndef SHAPE_LOADER_HPP
-#  define SHAPE_LOADER_HPP
+#define SHAPE_LOADER_HPP
 
-#  include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
+#include <OpenGLCppWrapper/OpenGLCppWrapper.hpp>
 
 class ShapeLoader
 {
@@ -41,7 +41,7 @@ public:
 
 protected:
 
-   std::string m_error;
+    std::string m_error;
 };
 
 #endif
