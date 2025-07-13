@@ -38,6 +38,7 @@
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#pragma GCC diagnostic ignored "-Warith-conversion"
 #define BT_THREADSAFE 0
 #include "bullet/btBulletDynamicsCommon.h"
 #pragma GCC diagnostic pop

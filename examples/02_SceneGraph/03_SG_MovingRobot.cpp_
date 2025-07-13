@@ -18,7 +18,7 @@
 // along with OpenGLCppWrapper.  If not, see <http://www.gnu.org/licenses/>.
 //=====================================================================
 
-#include "04_SceneGraph.hpp"
+#include "03_SG_MovingRobot.hpp"
 #include <sstream>
 
 //------------------------------------------------------------------------------
