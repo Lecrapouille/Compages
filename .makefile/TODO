@@ -1,0 +1,2 @@
+#include "generated/MyProject/project_info.hpp" versus #include "project_info.hpp"
+Remplacer le namespace project par generated::<nom du projet>

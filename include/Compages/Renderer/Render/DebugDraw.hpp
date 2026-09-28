@@ -1,0 +1,81 @@
+//=============================================================================
+// Compages: A C++20 OpenGL wrapper.
+// Copyright 2018-2026 Quentin Quadrat <lecrapouille@gmail.com>
+//
+// This file is part of Compages.
+//
+// Compages is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Compages is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Compages.  If not, see <http://www.gnu.org/licenses/>.
+//=============================================================================
+
+#pragma once
+
+#include "Compages/GPU/Buffer.hpp"
+#include "Compages/Core/Result.hpp"
+#include "Compages/GPU/Pipeline.hpp"
+#include "Compages/GPU/Shader.hpp"
+#include "Compages/Core/AABB.hpp"
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+#include "Compages/Renderer/Render/CameraFrame.hpp"
+
+#include <vector>
+
+namespace compages::renderer
+{
+
+// ****************************************************************************
+//! \brief Immediate-mode debug overlay: lines and wire boxes.
+//!
+//! Call \c clear() at the start of a frame, queue primitives, then \c flush()
+//! after the main Renderer while the same pass is open.
+// ****************************************************************************
+class DebugDraw
+{
+public:
+
+    [[nodiscard]] compages::Status ensureInitialized();
+
+    void clear();
+
+    void line(Vector3f const& p_a,
+              Vector3f const& p_b,
+              Vector3f const& p_color = Vector3f(1.0f, 0.2f, 0.2f));
+
+    void box(AABB const& p_local_bounds,
+             Matrix44f const& p_world_matrix,
+             Vector3f const& p_color = Vector3f(0.2f, 1.0f, 0.4f));
+
+    void ray(Vector3f const& p_origin,
+             Vector3f const& p_direction,
+             float p_length,
+             Vector3f const& p_color = Vector3f(1.0f, 1.0f, 0.2f));
+
+    [[nodiscard]] compages::Status flush(CameraFrame const& p_camera);
+
+private:
+
+    struct DebugVertex
+    {
+        Vector3f position;
+        Vector3f color;
+    };
+
+    bool m_ready = false;
+    compages::gpu::Program m_program;
+    compages::gpu::Pipeline m_pipeline;
+    compages::gpu::Buffer<DebugVertex> m_vertices;
+    std::vector<DebugVertex> m_pending;
+};
+
+} // namespace compages::renderer

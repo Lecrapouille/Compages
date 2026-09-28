@@ -1,0 +1,34 @@
+//==============================================================================
+// Compages: A C++20 OpenGL wrapper.
+// Copyright 2018-2026 Quentin Quadrat <lecrapouille@gmail.com>
+//
+// This file is part of Compages.
+//
+// Compages is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Compages.  If not, see <http://www.gnu.org/licenses/>.
+//==============================================================================
+
+#pragma once
+
+#include <cstddef>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+using namespace ::testing;
+
+// size_t is 32 or 64 bits depending on the architecture; this keeps
+// literals like 4_z typed as size_t in the Math tests.
+constexpr std::size_t operator""_z(unsigned long long const n)
+{
+    return static_cast<std::size_t>(n);
+}
