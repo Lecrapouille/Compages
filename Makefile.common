@@ -1,4 +1,0 @@
-PROJECT_NAME := OpenGLCppWrapper
-PROJECT_VERSION := 0.9.3
-COMPILATION_MODE := debug
-CXX_STANDARD := --std=c++17
