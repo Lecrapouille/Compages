@@ -1,0 +1,265 @@
+name: Compages build and tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # Linux
+  # ============================================================================
+  build-linux:
+    name: Build and test on Linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential cmake git pkg-config \
+            libgl1-mesa-dev libgl1-mesa-dri libglfw3-dev \
+            libdw-dev lcov \
+            mesa-utils xvfb xauth
+
+      - name: Download, configure and install Google test
+        run: |
+          wget https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz
+          tar xf googletest-1.17.0.tar.gz
+          cd googletest-1.17.0
+          cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON .
+          sudo make install
+
+      - name: Prepare third-party dependencies
+        run: |
+          make download-external-libs
+          V=1 make compile-external-libs
+
+      - name: Check gallery parity and budgets
+        run: make -C examples check-contracts
+
+      - name: Build Compages and gallery
+        run: V=1 make -j"$(nproc --all)" all
+
+      - name: Build unit tests
+        run: |
+          cd tests
+          V=1 make -j"$(nproc --all)" all
+
+      - name: Run unit tests with llvmpipe
+        run: |
+          xvfb-run -a env \
+            LIBGL_ALWAYS_SOFTWARE=1 \
+            MESA_GL_VERSION_OVERRIDE=4.5 \
+            MESA_GLSL_VERSION_OVERRIDE=450 \
+            ./build/Compages-UnitTest
+
+      - name: Check all gallery examples with llvmpipe
+        run: |
+          xvfb-run -a env \
+            LIBGL_ALWAYS_SOFTWARE=1 \
+            MESA_GL_VERSION_OVERRIDE=4.5 \
+            MESA_GLSL_VERSION_OVERRIDE=450 \
+            ./build/Compages-examples --check
+
+      - name: Install Compages
+        run: |
+          sudo make install
+          sudo ldconfig
+
+      - name: Build and run an installed consumer
+        run: |
+          export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          pkg-config --modversion Compages
+          cat > /tmp/compages-consumer.cpp <<'CPP'
+          #include <Compages/Compages.hpp>
+
+          int main()
+          {
+              return gpu::initialized() ? 1 : 0;
+          }
+          CPP
+          c++ -std=c++20 /tmp/compages-consumer.cpp \
+            -o /tmp/compages-consumer \
+            $(pkg-config --cflags --libs Compages)
+          /tmp/compages-consumer
+
+      - name: Stage build artifacts
+        run: bash .github/scripts/stage-artifacts.sh linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: compages-linux-x86_64
+          path: ci-artifacts/linux/
+          if-no-files-found: error
+
+  # ============================================================================
+  # macOS
+  # ============================================================================
+  build-macos:
+    name: Build and test on macOS
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install packages
+        run: |
+          brew install cmake glfw pkg-config lcov
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix)/share/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Download, configure and install Google test
+        run: |
+          wget https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz
+          tar xf googletest-1.17.0.tar.gz
+          cd googletest-1.17.0
+          cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON .
+          sudo make install
+
+      - name: Configure Homebrew paths for GLFW
+        run: |
+          glfw_prefix="$(brew --prefix glfw)"
+          echo "USER_CXXFLAGS=-I${glfw_prefix}/include" >> "$GITHUB_ENV"
+          echo "USER_LDFLAGS=-L${glfw_prefix}/lib -Wl,-rpath,${glfw_prefix}/lib" >> "$GITHUB_ENV"
+
+      - name: Prepare third-party dependencies
+        run: |
+          make download-external-libs
+          make compile-external-libs
+
+      - name: Check gallery parity and budgets
+        run: make -C examples check-contracts
+
+      - name: Build Compages and gallery
+        run: make -j"$(sysctl -n hw.logicalcpu)" all
+
+      - name: Build and run unit tests
+        run: |
+          cd tests
+          make -j"$(sysctl -n hw.logicalcpu)" all
+          ../build/Compages-UnitTest
+
+      - name: Install Compages
+        run: sudo make install
+
+      - name: Build and run an installed consumer
+        run: |
+          pkg-config --modversion Compages
+          cat > /tmp/compages-consumer.cpp <<'CPP'
+          #include <Compages/Compages.hpp>
+
+          int main()
+          {
+              return gpu::initialized() ? 1 : 0;
+          }
+          CPP
+          c++ -std=c++20 /tmp/compages-consumer.cpp \
+            -o /tmp/compages-consumer \
+            $(pkg-config --cflags --libs Compages)
+          DYLD_LIBRARY_PATH=/usr/local/lib /tmp/compages-consumer
+
+      - name: Stage build artifacts
+        run: bash .github/scripts/stage-artifacts.sh macos
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: compages-macos-arm64
+          path: ci-artifacts/macos/
+          if-no-files-found: error
+
+  # ============================================================================
+  # Release packaging (tags and manual runs)
+  # ============================================================================
+  package:
+    name: Package release
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    env:
+      RELEASE_DIR: release/Compages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(grep '^PROJECT_VERSION' Makefile.common | awk '{print $3}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Combine artifacts
+        run: |
+          mkdir -p "$RELEASE_DIR/linux-x86_64" "$RELEASE_DIR/macos-arm64"
+
+          if [ -d artifacts/compages-linux-x86_64 ]; then
+            cp -a artifacts/compages-linux-x86_64/. "$RELEASE_DIR/linux-x86_64/"
+            find "$RELEASE_DIR/linux-x86_64" -name "*.so*" -exec chmod +x {} \;
+            chmod +x "$RELEASE_DIR/linux-x86_64/bin/"* 2>/dev/null || true
+            echo "Linux artifacts copied"
+          fi
+
+          if [ -d artifacts/compages-macos-arm64 ]; then
+            cp -a artifacts/compages-macos-arm64/. "$RELEASE_DIR/macos-arm64/"
+            chmod +x "$RELEASE_DIR/macos-arm64/bin/"* 2>/dev/null || true
+            echo "macOS artifacts copied"
+          fi
+
+          cp LICENSE "$RELEASE_DIR/"
+          echo "${{ steps.version.outputs.version }}" > "$RELEASE_DIR/VERSION"
+
+      - name: Create release archive
+        run: |
+          ZIP_NAME="Compages-${{ steps.version.outputs.version }}.zip"
+          cd "$(dirname "$RELEASE_DIR")"
+          zip -ry "../$ZIP_NAME" "$(basename "$RELEASE_DIR")"/
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: Compages-${{ steps.version.outputs.version }}
+          path: ${{ env.RELEASE_DIR }}/
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_NAME }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

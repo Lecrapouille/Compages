@@ -1,0 +1,28 @@
+#!/bin/bash -e
+
+# Script called by `make compile-external-libs`. MyMakefile looks for a file
+# named exactly "compilation" inside the third parties folder.
+#
+# ReactPhysics3D is kept as a private static dependency. Build
+# and install it below external/ so no system path is modified.
+
+RP3D_SOURCE="reactphysics3d"
+RP3D_BUILD="${RP3D_SOURCE}/build-compages/${OS}"
+RP3D_INSTALL="${RP3D_SOURCE}/install-compages/${OS}"
+
+print-compile "${RP3D_SOURCE}"
+
+call-cmake \
+    -S "${RP3D_SOURCE}" \
+    -B "${RP3D_BUILD}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="${PWD}/${RP3D_INSTALL}" \
+    -DCMAKE_INSTALL_LIBDIR=lib \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DRP3D_COMPILE_TESTS=OFF \
+    -DRP3D_COMPILE_TESTBED=OFF \
+    -DRP3D_COMPILE_PROFILING=OFF
+
+cmake --build "${RP3D_BUILD}" --parallel "${NPROC}"
+cmake --install "${RP3D_BUILD}"
