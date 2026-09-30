@@ -11,6 +11,9 @@
 
 #include <vector>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -26,7 +29,7 @@ constexpr int HEIGHT = 32;
 // ****************************************************************************
 struct Corner
 {
-    Vector2f position;
+    compages::core::Vector2f position;
 };
 
 //! \brief A triangle covering the whole target, wound counter clockwise.
@@ -797,8 +800,8 @@ TEST_F(DrawTest, RefusesABufferOfTheWrongVertex)
 {
     struct Fat
     {
-        Vector2f position;
-        Vector2f padding;
+        compages::core::Vector2f position;
+        compages::core::Vector2f padding;
     };
 
     auto wrong = compages::gpu::Buffer<Fat>::create(3u,
@@ -822,9 +825,9 @@ TEST_F(DrawTest, DrawsEachInstanceAtItsOwnPlace)
 {
     struct Sprite
     {
-        Vector2f center;
-        Vector2f extent;
-        Vector4f color;
+        compages::core::Vector2f center;
+        compages::core::Vector2f extent;
+        compages::core::Vector4f color;
     };
 
     constexpr const char* vertex = R"(#version 450 core
@@ -906,7 +909,7 @@ TEST_F(DrawTest, RefusesMoreInstancesThanTheBufferHolds)
 {
     struct Sprite
     {
-        Vector2f center;
+        compages::core::Vector2f center;
     };
 
     constexpr const char* vertex = R"(#version 450 core

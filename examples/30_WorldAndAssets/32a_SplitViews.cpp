@@ -19,7 +19,7 @@ std::string SplitViews::description() const
            "moves once; each camera draws into its own half.";
 }
 
-compages::gpu::Status SplitViews::setUp()
+compages::Status SplitViews::setUp()
 {
     m_scene.background(0.05f, 0.08f, 0.20f);
     m_map.background(0.10f, 0.10f, 0.10f);
@@ -29,9 +29,10 @@ compages::gpu::Status SplitViews::setUp()
     m_scene.box("Ground", compages::renderer::color(0.20f, 0.28f, 0.20f))
         .position(0.0f, -0.5f, 0.0f)
         .scale(140.0f, 1.0f, 140.0f);
-    m_pillar = m_scene.box("Pillar", compages::renderer::color(0.85f, 0.55f, 0.35f))
-                   .position(0.0f, 8.0f, 0.0f)
-                   .scale(4.0f, 16.0f, 4.0f);
+    m_pillar =
+        m_scene.box("Pillar", compages::renderer::color(0.85f, 0.55f, 0.35f))
+            .position(0.0f, 8.0f, 0.0f)
+            .scale(4.0f, 16.0f, 4.0f);
     for (int i = 0; i < 8; ++i)
     {
         const float a = 6.2831853f * float(i) / 8.0f;
@@ -43,23 +44,25 @@ compages::gpu::Status SplitViews::setUp()
     // The left half: a perspective camera, that the right mouse button turns.
     m_eye = m_scene.camera("Eye").position(30.0f, 55.0f, 85.0f);
     m_eye.get<compages::world::Camera>().viewport = { 0.0f, 0.0f, 0.5f, 1.0f };
-    m_eye.add<compages::world::Orbit>(Vector3f(0.0f, 8.0f, 0.0f));
+    m_eye.add<compages::world::Orbit>(
+        compages::core::Vector3f(0.0f, 8.0f, 0.0f));
 
     // The right half: an orthographic camera straight above, 80 units across
     // half its height, so that the whole ring fits.
-    m_top = m_scene.camera("Top")
-                .position(0.0f, 120.0f, 0.0f)
-                .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
-                .set(compages::world::Camera{ .projection =
-                                        compages::world::Camera::Projection::Orthographic,
-                                    .ortho_half_height = 80.0f,
-                                    .near_plane = 1.0f,
-                                    .far_plane = 300.0f,
-                                    .viewport = { 0.5f, 0.0f, 0.5f, 1.0f } });
+    m_top =
+        m_scene.camera("Top")
+            .position(0.0f, 120.0f, 0.0f)
+            .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+            .set(compages::world::Camera{
+                .projection = compages::world::Camera::Projection::Orthographic,
+                .ortho_half_height = 80.0f,
+                .near_plane = 1.0f,
+                .far_plane = 300.0f,
+                .viewport = { 0.5f, 0.0f, 0.5f, 1.0f } });
     return m_scene.prepare();
 }
 
-void SplitViews::draw(Frame const& p_frame)
+void SplitViews::draw(compages::world::ViewFrame const& p_frame)
 {
     // The pillar turns, the World moves once, then each camera draws its half.
     // draw() would update and render together, and there are two cameras.

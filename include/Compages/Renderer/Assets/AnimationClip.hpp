@@ -17,7 +17,7 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief One sampled curve that writes a local TRS channel of an EntityId.
+//! \brief One sampled curve that writes a local TRS channel of an compages::world::EntityId.
 //!
 //! Times are in seconds. Values are packed: three floats per key for
 //! translation and scale, four (glTF xyzw) for rotation.

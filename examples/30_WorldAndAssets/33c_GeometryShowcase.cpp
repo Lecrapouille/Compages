@@ -19,7 +19,7 @@ std::string GeometryShowcase::description() const
            "The camera turns around the plateau.";
 }
 
-compages::gpu::Status GeometryShowcase::setUp()
+compages::Status GeometryShowcase::setUp()
 {
     // The camera turns around the plateau by itself.
     m_scene.background(0.06f, 0.07f, 0.10f).ambient(0.22f, 0.22f, 0.24f);
@@ -34,43 +34,52 @@ compages::gpu::Status GeometryShowcase::setUp()
 
     // The textured shader without a picture: it samples white.
     compages::renderer::Look through_pbr = compages::renderer::texture({});
-    through_pbr.color = Vector3f(0.28f, 0.45f, 0.92f);
+    through_pbr.color = compages::core::Vector3f(0.28f, 0.45f, 0.92f);
 
     // One of each look the Scene can give a shape: a colour, a tinted
     // texture, a depth ramp, and the normals.
-    m_props.emplace_back(m_scene.box("cube", compages::renderer::color(0.85f, 0.28f, 0.24f))
-                          .position(-3.0f, 0.5f, -3.0f));
-    m_props.emplace_back(m_scene.box("box", compages::renderer::color(0.30f, 0.72f, 0.38f))
-                          .position(0.0f, 0.35f, -3.0f)
-                          .scale(1.2f, 0.7f, 0.9f));
-    m_props.emplace_back(m_scene.sphere("sphere", through_pbr)
-                          .position(3.0f, 0.45f, -3.0f)
-                          .scale(0.9f));
-    m_props.emplace_back(m_scene.cone("cone", compages::renderer::color(0.92f, 0.55f, 0.18f))
-                          .position(-3.0f, 0.5f, 0.0f));
     m_props.emplace_back(
-        m_scene.cylinder("cylinder", compages::renderer::color(0.25f, 0.70f, 0.82f))
+        m_scene.box("cube", compages::renderer::color(0.85f, 0.28f, 0.24f))
+            .position(-3.0f, 0.5f, -3.0f));
+    m_props.emplace_back(
+        m_scene.box("box", compages::renderer::color(0.30f, 0.72f, 0.38f))
+            .position(0.0f, 0.35f, -3.0f)
+            .scale(1.2f, 0.7f, 0.9f));
+    m_props.emplace_back(m_scene.sphere("sphere", through_pbr)
+                             .position(3.0f, 0.45f, -3.0f)
+                             .scale(0.9f));
+    m_props.emplace_back(
+        m_scene.cone("cone", compages::renderer::color(0.92f, 0.55f, 0.18f))
+            .position(-3.0f, 0.5f, 0.0f));
+    m_props.emplace_back(
+        m_scene
+            .cylinder("cylinder",
+                      compages::renderer::color(0.25f, 0.70f, 0.82f))
             .position(0.0f, 0.5f, 0.0f));
     m_props.emplace_back(
-        m_scene.pyramid("pyramid", compages::renderer::color(0.90f, 0.82f, 0.25f))
+        m_scene
+            .pyramid("pyramid", compages::renderer::color(0.90f, 0.82f, 0.25f))
             .position(3.0f, 0.5f, 0.0f)
             .scale(1.3f, 1.0f, 1.3f));
-    m_props.emplace_back(m_scene.box("depth", compages::renderer::depth(8.0f, 22.0f))
-                          .position(0.0f, 0.5f, 3.0f));
-    m_props.emplace_back(m_scene.sphere("normals", compages::renderer::normals())
-                          .position(3.0f, 0.42f, 3.0f)
-                          .scale(0.84f));
+    m_props.emplace_back(
+        m_scene.box("depth", compages::renderer::depth(8.0f, 22.0f))
+            .position(0.0f, 0.5f, 3.0f));
+    m_props.emplace_back(
+        m_scene.sphere("normals", compages::renderer::normals())
+            .position(3.0f, 0.42f, 3.0f)
+            .scale(0.84f));
 
     // No shortcut for a tube: built along Z, it is stood up by its rotation.
     compages::renderer::MeshAsset tube;
-    COMPAGES_TRY_ASSIGN(tube, compages::renderer::makeTube(0.35f, 0.55f, 0.95f, 18u));
+    COMPAGES_TRY_ASSIGN(tube,
+                        compages::renderer::makeTube(0.35f, 0.55f, 0.95f, 18u));
     m_scene.mesh(std::move(tube), "tube", compages::renderer::normals())
         .position(-3.0f, 0.48f, 3.0f)
         .rotation(1.5707963f, { 1.0f, 0.0f, 0.0f });
     return m_scene.prepare();
 }
 
-void GeometryShowcase::draw(Frame const& p_frame)
+void GeometryShowcase::draw(compages::world::ViewFrame const& p_frame)
 {
     // The shapes turn; the plateau stays.
     for (compages::world::Entity& prop : m_props)

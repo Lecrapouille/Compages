@@ -18,9 +18,10 @@ namespace
 //! \brief What the driver is allowed to do with the memory afterwards.
 //!
 //! This is the whole difference between the three usages, and it is a promise
-//! rather than a permission: telling the driver that memory will never be written
-//! again lets it put the memory where the device reads it fastest. Asking for
-//! GL_DYNAMIC_STORAGE_BIT when it is not needed gives that up for nothing.
+//! rather than a permission: telling the driver that memory will never be
+//! written again lets it put the memory where the device reads it fastest.
+//! Asking for GL_DYNAMIC_STORAGE_BIT when it is not needed gives that up for
+//! nothing.
 GLbitfield storageFlags(BufferUsage p_usage)
 {
     switch (p_usage)
@@ -44,8 +45,8 @@ GLbitfield storageFlags(BufferUsage p_usage)
 //     glBufferData(GL_ARRAY_BUFFER, bytes, data, usage);
 //     glBindBuffer(GL_ARRAY_BUFFER, 0);
 //
-// where the target had to be picked before the buffer had a purpose, whatever was
-// bound before was silently replaced, and forgetting the last line left a
+// where the target had to be picked before the buffer had a purpose, whatever
+// was bound before was silently replaced, and forgetting the last line left a
 // dangling binding for the next unrelated call to trip over.
 Result<NativeId> createBuffer(std::size_t p_bytes,
                               const void* p_data,
@@ -59,14 +60,13 @@ Result<NativeId> createBuffer(std::size_t p_bytes,
         return failure("the driver refused to create a buffer");
     }
 
-    glNamedBufferStorage(name,
-                         static_cast<GLsizeiptr>(p_bytes),
-                         p_data,
-                         storageFlags(p_usage));
+    glNamedBufferStorage(
+        name, static_cast<GLsizeiptr>(p_bytes), p_data, storageFlags(p_usage));
 
     // Nothing here asks glGetError() whether that worked. Out of memory is
     // reported by the debug callback with a sentence naming the size, which is
-    // strictly more than an error code would say, and it costs nothing per call.
+    // strictly more than an error code would say, and it costs nothing per
+    // call.
     return static_cast<NativeId>(name);
 }
 
@@ -87,11 +87,12 @@ void writeBuffer(NativeId p_buffer,
                          p_data);
 }
 
-// glBindBufferBase rather than glBindBufferRange when the whole buffer is meant,
-// because the range form insists on an offset aligned to a device dependent
-// number, 256 bytes on much hardware, and refuses a range that is not. Passing a
-// zero offset through the range form would work; passing the whole buffer through
-// it means saying its size, which the caller would have to fetch for no reason.
+// glBindBufferBase rather than glBindBufferRange when the whole buffer is
+// meant, because the range form insists on an offset aligned to a device
+// dependent number, 256 bytes on much hardware, and refuses a range that is
+// not. Passing a zero offset through the range form would work; passing the
+// whole buffer through it means saying its size, which the caller would have to
+// fetch for no reason.
 void bindBufferToPoint(BufferKind p_kind,
                        NativeId p_buffer,
                        int p_binding,

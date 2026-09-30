@@ -12,6 +12,9 @@
 #include <cstring>
 #include <vector>
 
+
+
+
 using namespace tests;
 
 // GPU_STD140 specialises a template in compages::gpu::std140, which a type hidden in an
@@ -24,8 +27,8 @@ using namespace tests;
 // ****************************************************************************
 struct Matrices
 {
-    Matrix44f projection;
-    Matrix44f view;
+    compages::core::Matrix44f projection;
+    compages::core::Matrix44f view;
 };
 GPU_STD140(Matrices, projection, view);
 
@@ -37,8 +40,8 @@ GPU_STD140(Matrices, projection, view);
 // ****************************************************************************
 struct Renamed
 {
-    Matrix44f a;
-    Matrix44f b;
+    compages::core::Matrix44f a;
+    compages::core::Matrix44f b;
 };
 GPU_STD140(Renamed, a, b);
 
@@ -47,7 +50,7 @@ GPU_STD140(Renamed, a, b);
 // ****************************************************************************
 struct Half
 {
-    Matrix44f projection;
+    compages::core::Matrix44f projection;
 };
 GPU_STD140(Half, projection);
 
@@ -149,7 +152,7 @@ void main()
 
 struct Corner
 {
-    Vector2f position;
+    compages::core::Vector2f position;
 };
 
 const std::vector<Corner> BIG_TRIANGLE{ { { -1.0f, -1.0f } },
@@ -313,7 +316,7 @@ TEST_F(UniformBlockTest, WritesWhereTheDriverSaidTheMembersLive)
     ASSERT_TRUE(bool(made)) << made.error();
     auto block = made.take();
 
-    const Vector3f light(0.25f, 0.5f, 0.75f);
+    const compages::core::Vector3f light(0.25f, 0.5f, 0.75f);
     ASSERT_TRUE(bool(block.set("lightDirection", light))) << block.describe();
     ASSERT_TRUE(bool(block.set("exposure", 2.5f)));
     ASSERT_TRUE(bool(block.update()));
@@ -391,7 +394,7 @@ TEST_F(UniformBlockTest, RefusesATypeTheShaderDidNotDeclare)
     ASSERT_TRUE(bool(made)) << made.error();
     auto block = made.take();
 
-    auto written = block.set("exposure", Vector3f(1.0f, 0.0f, 0.0f));
+    auto written = block.set("exposure", compages::core::Vector3f(1.0f, 0.0f, 0.0f));
     ASSERT_FALSE(bool(written));
     ASSERT_THAT(written.error(), HasSubstr("float"));
     ASSERT_THAT(written.error(), HasSubstr("vec3"));
@@ -408,7 +411,7 @@ TEST_F(UniformBlockTest, CopiesAMat3OneColumnAtATime)
     ASSERT_TRUE(bool(made)) << made.error();
     auto block = made.take();
 
-    Matrix33f axes(compages::matrix::Identity);
+    compages::core::Matrix33f axes(compages::core::matrix::Identity);
     ASSERT_TRUE(bool(block.set("axes", axes))) << block.describe();
     ASSERT_TRUE(bool(block.update()));
 
@@ -436,8 +439,8 @@ TEST_F(UniformBlockTest, CopiesAMatchingStructWhole)
     auto block = made.take();
 
     Matrices value;
-    value.projection = Matrix44f(compages::matrix::Identity);
-    value.view = Matrix44f(compages::matrix::Identity);
+    value.projection = compages::core::Matrix44f(compages::core::matrix::Identity);
+    value.view = compages::core::Matrix44f(compages::core::matrix::Identity);
     value.view[0][0] = 7.0f;
     block.assign(value);
     ASSERT_TRUE(bool(block.bind()));
@@ -446,6 +449,40 @@ TEST_F(UniformBlockTest, CopiesAMatchingStructWhole)
     ASSERT_NE(view, nullptr);
     const auto bytes = deviceBytes(block.untyped());
     ASSERT_FLOAT_EQ(floatAt(bytes, view->offset), 7.0f);
+}
+
+// The translation of a transform sits in column 3 of the C++ matrix, and std140
+// stores the columns one after the other: the typed copy and set() shall both
+// put it in the last 16 bytes of the matrix.
+TEST_F(UniformBlockTest, TypedCopyAndSetAgreeOnMatrixLayout)
+{
+    auto program = linked(MATRICES_FRAGMENT);
+    auto made =
+        compages::gpu::TypedUniformBlock<Matrices>::create(program, "Matrices");
+    ASSERT_TRUE(bool(made)) << made.error();
+    auto typed = made.take();
+    auto plain_made = compages::gpu::UniformBlock::create(program, "Matrices");
+    ASSERT_TRUE(bool(plain_made)) << plain_made.error();
+    auto plain = plain_made.take();
+
+    const compages::core::Matrix44f identity(compages::core::matrix::Identity);
+    const compages::core::Matrix44f moved =
+        compages::core::translate(identity, compages::core::Vector3f(1.0f, 2.0f, 3.0f));
+
+    typed.assign(Matrices{ identity, moved });
+    ASSERT_TRUE(bool(typed.bind()));
+    ASSERT_TRUE(bool(plain.set("projection", identity)));
+    ASSERT_TRUE(bool(plain.set("view", moved)));
+    ASSERT_TRUE(bool(plain.update()));
+
+    compages::gpu::BlockMember const* view = plain.info().find("view");
+    ASSERT_NE(view, nullptr);
+    const auto typed_bytes = deviceBytes(typed.untyped());
+    const auto plain_bytes = deviceBytes(plain);
+    ASSERT_EQ(typed_bytes, plain_bytes);
+    ASSERT_FLOAT_EQ(floatAt(typed_bytes, view->offset + 48u), 1.0f);
+    ASSERT_FLOAT_EQ(floatAt(typed_bytes, view->offset + 52u), 2.0f);
+    ASSERT_FLOAT_EQ(floatAt(typed_bytes, view->offset + 56u), 3.0f);
 }
 
 TEST_F(UniformBlockTest, RefusesAStructWhoseNamesDoNotMatchTheShader)
@@ -478,7 +515,7 @@ TEST_F(UniformBlockTest, TheShaderReadsWhatWasWritten)
     ASSERT_TRUE(bool(made)) << made.error();
     auto block = made.take();
 
-    ASSERT_TRUE(bool(block.set("colour", Vector4f(0.0f, 1.0f, 0.0f, 1.0f))));
+    ASSERT_TRUE(bool(block.set("colour", compages::core::Vector4f(0.0f, 1.0f, 0.0f, 1.0f))));
     ASSERT_TRUE(bool(block.bind()));
 
     auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
@@ -513,7 +550,7 @@ TEST_F(UniformBlockTest, OneBlockFeedsTwoPrograms)
 
     // Half intensity, so the second program, which squares the colour, paints a
     // darker green that cannot be mistaken for the first.
-    ASSERT_TRUE(bool(block.set("colour", Vector4f(0.0f, 0.5f, 0.0f, 1.0f))));
+    ASSERT_TRUE(bool(block.set("colour", compages::core::Vector4f(0.0f, 0.5f, 0.0f, 1.0f))));
     ASSERT_TRUE(bool(block.bind()));
 
     auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
@@ -571,7 +608,7 @@ TEST_F(UniformBlockTest, BindSendsWhatWasWritten)
     // bind() is the call a frame makes. Forgetting the update first is the
     // one-frame lag that looks like the values of the previous frame, so the two
     // are one function.
-    ASSERT_TRUE(bool(block.set("colour", Vector4f(1.0f, 0.0f, 0.0f, 1.0f))));
+    ASSERT_TRUE(bool(block.set("colour", compages::core::Vector4f(1.0f, 0.0f, 0.0f, 1.0f))));
     ASSERT_TRUE(bool(block.bind()));
 
     auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,

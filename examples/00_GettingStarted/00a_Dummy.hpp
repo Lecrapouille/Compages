@@ -12,14 +12,20 @@
 namespace examples
 {
 
-class Dummy final : public Example
+class Dummy final: public Example
 {
 public:
 
-    [[nodiscard]] std::string name() const override { return "00a_Dummy"; }
+    [[nodiscard]] std::string name() const override
+    {
+        return "00a_Dummy";
+    }
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override { return compages::gpu::success(); }
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override
+    {
+        return compages::success();
+    }
+    void draw(compages::world::ViewFrame const& p_frame) override;
 };
 
 } // namespace examples

@@ -46,6 +46,9 @@
 #include <limits>
 #include <type_traits>
 
+namespace compages::core
+{
+
 // *****************************************************************************
 //! \class Quat
 //! \brief Template representation of a quaternion q = (a, (b,c,d)) in the axis
@@ -259,8 +262,7 @@ public:
     //--------------------------------------------------------------------------
     Matrix<T, 4u, 4u> toMatrix() const
     {
-        // glm code
-        Matrix<T, 4u, 4u> Result(compages::matrix::Identity);
+        Matrix<T, 4u, 4u> Result(compages::core::matrix::Identity);
         T qxx(b * b);
         T qyy(c * c);
         T qzz(d * d);
@@ -271,42 +273,19 @@ public:
         T qwy(a * c);
         T qwz(a * d);
 
-        Result[0][0] = T(1) - T(2) * (qyy + qzz);
-        Result[0][1] = T(2) * (qxy + qwz);
-        Result[0][2] = T(2) * (qxz - qwy);
+        Result(0, 0) = T(1) - T(2) * (qyy + qzz);
+        Result(0, 1) = T(2) * (qxy - qwz);
+        Result(0, 2) = T(2) * (qxz + qwy);
 
-        Result[1][0] = T(2) * (qxy - qwz);
-        Result[1][1] = T(1) - T(2) * (qxx + qzz);
-        Result[1][2] = T(2) * (qyz + qwx);
+        Result(1, 0) = T(2) * (qxy + qwz);
+        Result(1, 1) = T(1) - T(2) * (qxx + qzz);
+        Result(1, 2) = T(2) * (qyz - qwx);
 
-        Result[2][0] = T(2) * (qxz + qwy);
-        Result[2][1] = T(2) * (qyz - qwx);
-        Result[2][2] = T(1) - T(2) * (qxx + qyy);
+        Result(2, 0) = T(2) * (qxz - qwy);
+        Result(2, 1) = T(2) * (qyz + qwx);
+        Result(2, 2) = T(1) - T(2) * (qxx + qyy);
 
         return Result;
-
-#if 0 // FIXME original code
-        Matrix<T, 4u, 4u> R(compages::matrix::Identity); // TODO to be optimized
-
-        T const aa = a * a;
-        T const bb = b * b;
-        T const cc = c * c;
-        T const dd = d * d;
-
-        R(0, 0) = aa + bb - cc - dd;
-        R(1, 0) = 2 * b * c + 2 * a * d;
-        R(2, 0) = 2 * b * d - 2 * a * c;
-
-        R(0, 1) = 2 * b * c - 2 * a * d;
-        R(1, 1) = aa - bb + cc - dd;
-        R(2, 1) = 2 * c * d + 2 * a * b;
-
-        R(0, 2) = 2 * b * d + 2 * a * c;
-        R(1, 2) = 2 * c * d - 2 * a * b;
-        R(2, 2) = aa - bb - cc + dd;
-
-        return R;
-#endif
     }
 
     //--------------------------------------------------------------------------
@@ -658,4 +637,6 @@ float dot(Quat<T> const& q1, Quat<T> const& q2)
 {
     return q1.a * q2.a + q1.b * q2.b + q1.c * q2.c + q1.d * q2.d;
 }
+
+} // namespace compages::core
 

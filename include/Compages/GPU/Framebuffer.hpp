@@ -65,8 +65,8 @@ public:
     //! a colour texture used as depth, images of different sizes, or a
     //! combination the driver refuses.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Framebuffer> create(
-        std::span<const Attachment> p_colors, Attachment p_depth = {});
+    [[nodiscard]] static Result<Framebuffer>
+    create(std::span<const Attachment> p_colors, Attachment p_depth = {});
 
     // ------------------------------------------------------------------------
     //! \brief A target of one colour texture.
@@ -85,7 +85,8 @@ public:
     //! \code
     //! compages::gpu::Texture color, depth;
     //! COMPAGES_TRY(color.allocate({ .width = 512u, .height = 512u }));
-    //! COMPAGES_TRY(depth.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
+    //! COMPAGES_TRY(depth.allocate({ .format =
+    //! compages::gpu::PixelFormat::Depth32F,
     //!                               .width = 512u, .height = 512u }));
     //! COMPAGES_TRY(m_target.attach(color, depth));
     //! \endcode

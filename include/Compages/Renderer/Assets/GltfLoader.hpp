@@ -7,18 +7,18 @@
 
 #pragma once
 
-#include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Core/Result.hpp"
+#include "Compages/Renderer/Assets/AssetManager.hpp"
 
 #include <string>
 
 namespace compages::renderer
 {
 
-//! \brief Import a reusable glTF prefab without creating World entities.
-[[nodiscard]] compages::Result<PrefabId>
-loadGltf(std::string const& p_path,
-         AssetManager& p_assets,
-         MaterialId p_shared_material = {});
+//! \brief Import a reusable glTF prefab without creating compages::world::World
+//! entities.
+[[nodiscard]] Result<PrefabId> loadGltf(std::string const& p_path,
+                                        AssetManager& p_assets,
+                                        MaterialId p_shared_material = {});
 
 } // namespace compages::renderer

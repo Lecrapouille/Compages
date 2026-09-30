@@ -44,8 +44,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
@@ -70,11 +70,11 @@ private:
     void step();
     void flush(float p_scale);
 
-    [[nodiscard]] compages::gpu::Status makeColormap();
-    [[nodiscard]] compages::gpu::Status makeSprite();
+    [[nodiscard]] compages::Status makeColormap();
+    [[nodiscard]] compages::Status makeSprite();
 
     std::vector<Body> m_bodies;
-    std::vector<Vector2f> m_positions;
+    std::vector<compages::core::Vector2f> m_positions;
     std::vector<float> m_sizes;
     //! \brief Index of the first hydrogen cloud. The cores follow, one each.
     std::size_t m_clouds = 0u;

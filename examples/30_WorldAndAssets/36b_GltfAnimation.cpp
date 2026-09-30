@@ -15,36 +15,37 @@ namespace examples
 
 std::string GltfAnimation::description() const
 {
-    return "Soldier.glb and the clips it came with. Choose one in the Try it panel, or press "
+    return "Soldier.glb and the clips it came with. Choose one in the Try it "
+           "panel, or press "
            "1 to idle, 2 to walk, 3 to run. Right drag turns around it. Needs "
            "Soldier.glb in external/Compages-data/.";
 }
 
-compages::gpu::Status GltfAnimation::setUp()
+compages::Status GltfAnimation::setUp()
 {
     // The clips live in the file. Walk is the one the example starts on.
     const std::string path = dataPath("Soldier.glb");
     if (path.empty())
     {
-        return compages::gpu::failure("Soldier.glb is missing: run make download in "
-                            "external/, or set COMPAGES_DATA_PATH");
+        return compages::failure("Soldier.glb is missing: run make download in "
+                                 "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.10f, 0.12f, 0.15f);
     COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(path));
     // The model looks down -Z, away from a camera placed in front: half a turn
     // shows its face.
-    m_soldier.rotation(3.14159265f, Vector3f(0.0f, 1.0f, 0.0f));
+    m_soldier.rotation(3.14159265f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     if (!m_scene.play(m_soldier, "Walk"))
     {
-        return compages::gpu::failure("Soldier.glb has no Walk clip");
+        return compages::failure("Soldier.glb has no Walk clip");
     }
     m_clips = m_scene.clips(m_soldier);
-    const Vector3f middle = m_scene.frameAll();
+    const compages::core::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
 }
 
-void GltfAnimation::draw(Frame const& p_frame)
+void GltfAnimation::draw(compages::world::ViewFrame const& p_frame)
 {
     // play() is cheap to call every frame: the same clip keeps playing.
     if (p_frame.input.down(compages::world::Key::D1))

@@ -9,8 +9,12 @@
 
 #include "Compages/Core/Vector.hpp"
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
+
+
 
 // ****************************************************************************
 //! \brief The world's ambient information: what a Scene tells the renderer
@@ -23,20 +27,20 @@ struct Environment
 {
     //! \brief A dim colour multiplied by the material colour to fake the light
     //! that comes from every direction.
-    Vector3f ambient{ 0.15f, 0.15f, 0.18f };
+    compages::core::Vector3f ambient{ 0.15f, 0.15f, 0.18f };
 
     //! \brief Direction the built-in lit shader receives when no directional
-    //! light is present in the World. Points toward the light (i.e. the
+    //! light is present in the compages::world::World. Points toward the light (i.e. the
     //! opposite of what the photons travel).
-    Vector3f default_light_direction{ 0.4f, 0.8f, 0.6f };
+    compages::core::Vector3f default_light_direction{ 0.4f, 0.8f, 0.6f };
 
     //! \brief Colour of that light when no directional light is present. Black
     //! leaves the scene to its ambient and its lamps: a cave, a night.
-    Vector3f default_light_color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f default_light_color{ 1.0f, 1.0f, 1.0f };
 
     //! \brief What the distance fades to, and how fast. A density of zero is
     //! no fog; around 0.1 hides what is twenty units away.
-    Vector3f fog_color{ 0.0f, 0.0f, 0.0f };
+    compages::core::Vector3f fog_color{ 0.0f, 0.0f, 0.0f };
     float fog_density = 0.0f;
 };
 

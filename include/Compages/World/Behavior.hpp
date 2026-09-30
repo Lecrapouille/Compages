@@ -93,7 +93,7 @@ protected:
     // ------------------------------------------------------------------------
     //! \brief Timing from the last World update (size and delta time).
     // ------------------------------------------------------------------------
-    [[nodiscard]] Frame const& frame() const;
+    [[nodiscard]] compages::core::Frame const& frame() const;
 
 private:
 

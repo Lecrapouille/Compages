@@ -7,17 +7,19 @@
 
 #pragma once
 
-#include "Compages/Renderer/Assets/AssetIds.hpp"
-#include "Compages/Renderer/Assets/Skin.hpp"
-#include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
 #include "Compages/Core/AABB.hpp"
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Buffer.hpp"
+#include "Compages/GPU/Core/Enums.hpp"
+#include "Compages/Renderer/Assets/AssetIds.hpp"
+#include "Compages/Renderer/Assets/Skin.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
 
@@ -30,23 +32,24 @@ namespace compages::renderer
 // ****************************************************************************
 struct MeshVertex
 {
-    Vector3f position;
-    Vector3f normal;
+    compages::core::Vector3f position;
+    compages::core::Vector3f normal;
     //! \brief Texture coordinates. Unused by the lit shader; required by PBR
     //! and by meshes imported from glTF.
-    Vector2f uv{ 0.0f, 0.0f };
+    compages::core::Vector2f uv{ 0.0f, 0.0f };
     //! \brief Four joint indices. Ignored when the mesh is rigid
     //! (\c uJointCount == 0 in the shader).
-    Vector4i joints{ 0, 0, 0, 0 };
+    compages::core::Vector4i joints{ 0, 0, 0, 0 };
     //! \brief Four weights, defaulting to a rigid bind on joint 0.
-    Vector4f weights{ 1.0f, 0.0f, 0.0f, 0.0f };
+    compages::core::Vector4f weights{ 1.0f, 0.0f, 0.0f, 0.0f };
 };
 
 // ****************************************************************************
 //! \brief The GPU-side realization of a mesh, plus its local bounds.
 //!
-//! Owned by the AssetManager. World components refer to it by MeshAssetId, not
-//! by pointer or handle: the AssetManager is what keeps the buffers alive.
+//! Owned by the AssetManager. compages::world::World components refer to it by
+//! MeshAssetId, not by pointer or handle: the AssetManager is what keeps the
+//! buffers alive.
 // ****************************************************************************
 struct MeshAsset
 {
@@ -67,7 +70,7 @@ struct MeshAsset
     compages::gpu::IndexType index_type = compages::gpu::IndexType::UInt16;
     //! \brief Bounding box of the mesh in its own local space. What the
     //! renderer transforms per instance before culling.
-    AABB local_bounds;
+    compages::core::AABB local_bounds;
     //! \brief Inverse-bind skeleton, empty when the mesh is rigid.
     SkinAssetId skin{};
     //! \brief Rest-pose vertices used to rebuild \c vertices each frame when
@@ -76,13 +79,14 @@ struct MeshAsset
     //! \brief Four joint indices per rest-pose vertex, matching \c rest_pose.
     std::vector<std::uint16_t> joint_indices;
     //! \brief Four weights per rest-pose vertex, matching \c rest_pose.
-    std::vector<Vector4f> joint_weights;
+    std::vector<compages::core::Vector4f> joint_weights;
 
     //! \brief The GPU index buffer matching \c index_type.
     [[nodiscard]] compages::gpu::BufferHandle indexBuffer() const
     {
-        return (index_type == compages::gpu::IndexType::UInt16) ? short_indices.handle()
-                                                      : long_indices.handle();
+        return (index_type == compages::gpu::IndexType::UInt16)
+                   ? short_indices.handle()
+                   : long_indices.handle();
     }
 
     //! \brief Are the vertices and the indices on the GPU?
@@ -101,22 +105,21 @@ struct MeshAsset
         long_indices = compages::gpu::Buffer<std::uint32_t>();
     }
 
-    [[nodiscard]] compages::Status upload()
+    [[nodiscard]] Status upload()
     {
         if (uploaded())
         {
-            return compages::success();
+            return success();
         }
         if (source_vertices.empty() || source_indices.empty())
         {
-            return compages::failure("mesh has no CPU data to upload");
+            return failure("mesh has no CPU data to upload");
         }
-        COMPAGES_TRY_ASSIGN(
-            vertices,
-            compages::gpu::Buffer<MeshVertex>::from(
-                std::span<const MeshVertex>(source_vertices),
-                compages::gpu::BufferKind::Vertex,
-                compages::gpu::BufferUsage::Immutable));
+        COMPAGES_TRY_ASSIGN(vertices,
+                            compages::gpu::Buffer<MeshVertex>::from(
+                                std::span<const MeshVertex>(source_vertices),
+                                compages::gpu::BufferKind::Vertex,
+                                compages::gpu::BufferUsage::Immutable));
         index_count = source_indices.size();
         if (source_vertices.size() <= 65536u)
         {
@@ -126,12 +129,11 @@ struct MeshAsset
                 narrow[i] = static_cast<std::uint16_t>(source_indices[i]);
             }
             index_type = compages::gpu::IndexType::UInt16;
-            COMPAGES_TRY_ASSIGN(
-                short_indices,
-                compages::gpu::Buffer<std::uint16_t>::from(
-                    std::span<const std::uint16_t>(narrow),
-                    compages::gpu::BufferKind::Index,
-                    compages::gpu::BufferUsage::Immutable));
+            COMPAGES_TRY_ASSIGN(short_indices,
+                                compages::gpu::Buffer<std::uint16_t>::from(
+                                    std::span<const std::uint16_t>(narrow),
+                                    compages::gpu::BufferKind::Index,
+                                    compages::gpu::BufferUsage::Immutable));
         }
         else
         {
@@ -143,7 +145,7 @@ struct MeshAsset
                     compages::gpu::BufferKind::Index,
                     compages::gpu::BufferUsage::Immutable));
         }
-        return compages::success();
+        return success();
     }
 };
 

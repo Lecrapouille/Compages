@@ -47,12 +47,11 @@ public:
     //!
     //! \param[in] p_title what the title bar says.
     //! \param[in] p_width,p_height how large to open it.
-    //! \return why it could not be opened, which on a machine without a suitable
-    //! driver is worth reading rather than crashing on.
+    //! \return why it could not be opened, which on a machine without a
+    //! suitable driver is worth reading rather than crashing on.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::gpu::Status open(std::string const& p_title,
-                                  int p_width,
-                                  int p_height);
+    [[nodiscard]] compages::Status
+    open(std::string const& p_title, int p_width, int p_height);
 
     // ------------------------------------------------------------------------
     //! \brief Has the user asked to close the window?
@@ -65,8 +64,8 @@ public:
     void close();
 
     // ------------------------------------------------------------------------
-    //! \brief Handle whatever the user did, and find out how large the window is
-    //! now.
+    //! \brief Handle whatever the user did, and find out how large the window
+    //! is now.
     // ------------------------------------------------------------------------
     void beginFrame();
 
@@ -78,9 +77,9 @@ public:
     // ------------------------------------------------------------------------
     //! \brief How wide the drawable part of the window is, in pixels.
     //!
-    //! Not the same as the size the window was asked for on a screen that scales
-    //! its contents, which is why it is read every frame from the driver rather
-    //! than remembered from open().
+    //! Not the same as the size the window was asked for on a screen that
+    //! scales its contents, which is why it is read every frame from the driver
+    //! rather than remembered from open().
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uint32_t width() const
     {
@@ -102,8 +101,8 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Frames per second, averaged over the last second so that the number
-    //! is readable rather than flickering.
+    //! \brief Frames per second, averaged over the last second so that the
+    //! number is readable rather than flickering.
     // ------------------------------------------------------------------------
     [[nodiscard]] float framesPerSecond() const
     {
@@ -113,23 +112,38 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Where the mouse is, in pixels from the bottom left of the window.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Vector2f mouse() const;
+    [[nodiscard]] compages::core::Vector2f mouse() const;
 
     // ------------------------------------------------------------------------
     //! \brief How far the mouse moved since the previous \c beginFrame, y up.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Vector2f mouseDelta() const { return m_mouse_delta; }
+    [[nodiscard]] compages::core::Vector2f mouseDelta() const
+    {
+        return m_mouse_delta;
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Scroll wheel this frame. Consumed: the next \c beginFrame
     //! resets it. Positive is away from the user.
     // ------------------------------------------------------------------------
-    [[nodiscard]] float scroll() const { return m_scroll; }
+    [[nodiscard]] float scroll() const
+    {
+        return m_scroll;
+    }
 
-    [[nodiscard]] bool mouseLeft() const { return m_mouse_left; }
-    [[nodiscard]] bool mouseRight() const { return m_mouse_right; }
+    [[nodiscard]] bool mouseLeft() const
+    {
+        return m_mouse_left;
+    }
+    [[nodiscard]] bool mouseRight() const
+    {
+        return m_mouse_right;
+    }
     //! \brief True on the frame the left button went down.
-    [[nodiscard]] bool mouseLeftPressed() const { return m_mouse_left_pressed; }
+    [[nodiscard]] bool mouseLeftPressed() const
+    {
+        return m_mouse_left_pressed;
+    }
 
     [[nodiscard]] bool keyDown(int p_glfw_key) const;
 
@@ -158,8 +172,8 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief The window itself, for the parts of the examples that need it, such
-    //! as attaching a user interface to it.
+    //! \brief The window itself, for the parts of the examples that need it,
+    //! such as attaching a user interface to it.
     // ------------------------------------------------------------------------
     [[nodiscard]] GLFWwindow* handle() const
     {
@@ -180,14 +194,14 @@ private:
     double m_last_time = 0.0;
     float m_elapsed = 0.0f;
 
-    //! \brief What the frame rate is averaged over, so that the number shown does
-    //! not jump on every frame.
+    //! \brief What the frame rate is averaged over, so that the number shown
+    //! does not jump on every frame.
     double m_second_started = 0.0;
     int m_frames_this_second = 0;
     float m_frames_per_second = 0.0f;
 
-    Vector2f m_mouse{ 0.0f, 0.0f };
-    Vector2f m_mouse_delta{ 0.0f, 0.0f };
+    compages::core::Vector2f m_mouse{ 0.0f, 0.0f };
+    compages::core::Vector2f m_mouse_delta{ 0.0f, 0.0f };
     bool m_mouse_seen = false;
     float m_scroll = 0.0f;
     bool m_mouse_left = false;

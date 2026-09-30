@@ -7,7 +7,13 @@
 
 #include "main.hpp"
 
+
+#include "Compages/World/Entity.hpp"
 #include "Compages/World/World.hpp"
+
+#include <stdexcept>
+
+
 
 TEST(WorldHierarchy, StartsWithNothing)
 {
@@ -96,4 +102,63 @@ TEST(WorldHierarchy, RefusesACycle)
     auto cycled = world.setParent(a, b);
     ASSERT_FALSE(bool(cycled));
     ASSERT_THAT(cycled.error(), HasSubstr("cycle"));
+}
+
+// Regression: KeepWorld used to give a wrong rotation as soon as the child or
+// one of its parents was rotated (the rotation matrix was not transposed before
+// being turned into a quaternion). The existing test only used translations.
+TEST(WorldHierarchy, KeepWorldReparentPreservesRotatedAndScaledPose)
+{
+
+    compages::world::World world;
+    compages::world::Entity parent = world.entity("parent")
+                        .position(3.0f, 1.0f, -2.0f)
+                        .rotation(1.0f, compages::core::Vector3f(0.0f, 1.0f, 0.0f))
+                        .scale(2.0f);
+    compages::world::Entity child = parent.child("child")
+                       .position(1.0f, 2.0f, 3.0f)
+                       .rotation(0.5f, compages::core::Vector3f(1.0f, 0.0f, 0.0f))
+                       .scale(1.0f, 2.0f, 3.0f);
+    compages::core::Frame frame;
+    frame.elapsed = 0.0f;
+    world.update(frame);
+    const compages::core::Matrix44f before = world.worldMatrix(child.id());
+
+    ASSERT_TRUE(bool(world.setParent(child.id(), compages::world::EntityId{},
+                                     compages::world::ReparentPolicy::KeepWorld)));
+    world.update(frame);
+    const compages::core::Matrix44f after = world.worldMatrix(child.id());
+
+    for (std::size_t row = 0u; row < 4u; ++row)
+    {
+        for (std::size_t col = 0u; col < 4u; ++col)
+        {
+            EXPECT_NEAR(before[row][col], after[row][col], 1.0e-4f)
+                << "row " << row << " column " << col;
+        }
+    }
+}
+
+// Regression: past 65535 living entities the spatial graph (16-bit node index)
+// silently linked the wrong nodes in release builds.
+TEST(WorldHierarchy, RefusesMoreLivingEntitiesThanTheGraphCanIndex)
+{
+    compages::world::World world;
+    for (std::uint32_t i = 0u; i < compages::world::EntityId::MAX_COUNT; ++i)
+    {
+        (void)world.create();
+    }
+    ASSERT_EQ(world.living(), compages::world::EntityId::MAX_COUNT);
+    EXPECT_THROW((void)world.create(), std::length_error);
+    ASSERT_EQ(world.living(), compages::world::EntityId::MAX_COUNT);
+}
+
+TEST(WorldHierarchy, EntitySetParentReportsFailureInsteadOfAsserting)
+{
+    compages::world::World world;
+    compages::world::Entity a = world.entity("a");
+    compages::world::Entity b = a.child("b");
+
+    EXPECT_FALSE(bool(a.setParent(b)));
+    EXPECT_TRUE(bool(b.setParent(a)));
 }

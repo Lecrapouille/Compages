@@ -7,8 +7,8 @@
 
 #include "Common/Screenshot.hpp"
 
-// The one translation unit that holds the code of the writer, and the warnings it
-// produces. Ours are left as strict as they are everywhere else.
+// The one translation unit that holds the code of the writer, and the warnings
+// it produces. Ours are left as strict as they are everywhere else.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -27,23 +27,23 @@
 namespace examples
 {
 
-compages::gpu::Status writePng(std::string const& p_path,
-                     std::uint32_t p_width,
-                     std::uint32_t p_height,
-                     std::span<const std::byte> p_pixels)
+compages::Status writePng(std::string const& p_path,
+                          std::uint32_t p_width,
+                          std::uint32_t p_height,
+                          std::span<const std::byte> p_pixels)
 {
     const std::size_t needed =
         static_cast<std::size_t>(p_width) * p_height * 4u;
     if (p_pixels.size() < needed)
     {
-        return compages::gpu::failure(
+        return compages::failure(
             "there are not enough pixels for a picture of this size: " +
             std::to_string(p_pixels.size()) + " bytes for " +
             std::to_string(needed) + " needed");
     }
 
-    // The device hands the bottom row over first, and an image file holds the top
-    // row first.
+    // The device hands the bottom row over first, and an image file holds the
+    // top row first.
     stbi_flip_vertically_on_write(1);
 
     const int written = stbi_write_png(p_path.c_str(),
@@ -54,11 +54,12 @@ compages::gpu::Status writePng(std::string const& p_path,
                                        static_cast<int>(p_width * 4u));
     if (written == 0)
     {
-        return compages::gpu::failure("could not write " + p_path +
-                            ". Does the directory exist and is it writable?");
+        return compages::failure(
+            "could not write " + p_path +
+            ". Does the directory exist and is it writable?");
     }
 
-    return compages::gpu::success();
+    return compages::success();
 }
 
 } // namespace examples

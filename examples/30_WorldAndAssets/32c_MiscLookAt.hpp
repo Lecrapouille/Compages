@@ -31,7 +31,7 @@ namespace examples
 //! for (compages::world::Entity& cone : m_cones) cone.lookAt(target);
 //! \endcode
 // ****************************************************************************
-class MiscLookAt final : public Example
+class MiscLookAt final: public Example
 {
 public:
 
@@ -41,8 +41,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

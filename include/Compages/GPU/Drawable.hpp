@@ -38,6 +38,11 @@
 //! sent to the GPU when drawing, without being asked.
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -85,7 +90,8 @@ concept AttributeValues =
 //! struct is the natural shape. Its fields are matched to the shader
 //! attributes by name, read off the struct by the compiler:
 //! \code
-//! struct Vertex { Vector2f position; Vector3f color; };
+//! struct Vertex { compages::core::Vector2f position; compages::core::Vector3f
+//! color; };
 //!
 //! m_triangle.vertices<Vertex>({ { {-0.8f, -0.6f}, {1, 0, 0} },
 //!                               { { 0.8f, -0.6f}, {0, 1, 0} },
@@ -98,7 +104,7 @@ concept AttributeValues =
 //! of its own and bound when drawing:
 //! \code
 //! m_quad["scale"] = 2.0f;
-//! m_quad["tint"]  = Vector3f(1.0f, 0.8f, 0.6f);
+//! m_quad["tint"]  = compages::core::Vector3f(1.0f, 0.8f, 0.6f);
 //! m_quad["image"] = m_texture;   // the texture must outlive the drawable
 //! \endcode
 //!
@@ -107,7 +113,8 @@ concept AttributeValues =
 //! \code
 //! m_cube.state().depth_test = true;
 //! m_cube.indices({ 0, 1, 2, 2, 3, 0 });
-//! m_cube.draw();                         // or draw(compages::gpu::Primitive::Lines)
+//! m_cube.draw();                         // or
+//! draw(compages::gpu::Primitive::Lines)
 //! \endcode
 //!
 //! Nothing here returns an error except load(): a misspelled name, values of
@@ -135,20 +142,23 @@ public:
         //! components of one vector for a uniform.
         //!
         //! \code
-        //! drawable["position"] = { {-1, -1}, {1, -1}, {0, 1} };   // vec2 attribute
+        //! drawable["position"] = { {-1, -1}, {1, -1}, {0, 1} };   // vec2
+        //! attribute
         //! \endcode
         //!
         //! Whole numbers are welcome for a float attribute: the list is
         //! converted to what the shader declares.
         // --------------------------------------------------------------------
-        Slot& operator=(std::initializer_list<std::initializer_list<float>> p_values)
+        Slot&
+        operator=(std::initializer_list<std::initializer_list<float>> p_values)
         {
             m_drawable.assignNested(m_name, p_values);
             return *this;
         }
 
         //! \brief Same, when every value is written as a whole number.
-        Slot& operator=(std::initializer_list<std::initializer_list<int>> p_values)
+        Slot&
+        operator=(std::initializer_list<std::initializer_list<int>> p_values)
         {
             m_drawable.assignNested(m_name, p_values);
             return *this;
@@ -174,8 +184,8 @@ public:
         //! the shader declares.
         //!
         //! \code
-        //! std::vector<Vector3f> positions = computePositions();
-        //! drawable["position"] = positions;
+        //! std::vector<compages::core::Vector3f> positions =
+        //! computePositions(); drawable["position"] = positions;
         //! \endcode
         // --------------------------------------------------------------------
         template <detail::AttributeValues R>
@@ -185,8 +195,8 @@ public:
             m_drawable.assignTyped(
                 m_name,
                 TypeOf<Element>::value,
-                std::as_bytes(std::span<const Element>(std::ranges::data(p_values),
-                                                       std::ranges::size(p_values))));
+                std::as_bytes(std::span<const Element>(
+                    std::ranges::data(p_values), std::ranges::size(p_values))));
             return *this;
         }
 
@@ -195,7 +205,8 @@ public:
         //!
         //! \code
         //! drawable["time"]  = p_frame.total;
-        //! drawable["model"] = Matrix44f(compages::matrix::Identity);
+        //! drawable["model"] =
+        //! compages::core::Matrix44f(compages::core::matrix::Identity);
         //! \endcode
         // --------------------------------------------------------------------
         template <detail::UniformValue T>
@@ -231,17 +242,18 @@ public:
         //! \brief Change the value of one vertex of an attribute.
         //!
         //! \code
-        //! drawable["position"].set(2u, Vector2f(0.0f, 0.5f));
+        //! drawable["position"].set(2u, compages::core::Vector2f(0.0f, 0.5f));
         //! \endcode
         // --------------------------------------------------------------------
         template <typename T>
         void set(std::size_t p_vertex, T const& p_value)
         {
             static_assert(std::is_trivially_copyable_v<T>);
-            m_drawable.assignOne(m_name,
-                                 TypeOf<T>::value,
-                                 p_vertex,
-                                 std::as_bytes(std::span<const T>(&p_value, 1u)));
+            m_drawable.assignOne(
+                m_name,
+                TypeOf<T>::value,
+                p_vertex,
+                std::as_bytes(std::span<const T>(&p_value, 1u)));
         }
 
     private:
@@ -343,9 +355,9 @@ public:
     void vertices(std::initializer_list<Vertex> p_vertices,
                   VertexLayout p_layout = VertexLayout::of<Vertex>())
     {
-        vertices<Vertex>(std::span<const Vertex>(p_vertices.begin(),
-                                                 p_vertices.size()),
-                         std::move(p_layout));
+        vertices<Vertex>(
+            std::span<const Vertex>(p_vertices.begin(), p_vertices.size()),
+            std::move(p_layout));
     }
 
     //! \brief Same, from a std::vector.
@@ -353,7 +365,8 @@ public:
     void vertices(std::vector<Vertex> const& p_vertices,
                   VertexLayout p_layout = VertexLayout::of<Vertex>())
     {
-        vertices<Vertex>(std::span<const Vertex>(p_vertices), std::move(p_layout));
+        vertices<Vertex>(std::span<const Vertex>(p_vertices),
+                         std::move(p_layout));
     }
 
     // ------------------------------------------------------------------------
@@ -433,7 +446,8 @@ public:
     {
         if (m_type == nullptr)
         {
-            adopt(VertexLayout::of<Vertex>(), &detail::TYPE_TAG<Vertex>,
+            adopt(VertexLayout::of<Vertex>(),
+                  &detail::TYPE_TAG<Vertex>,
                   sizeof(Vertex));
         }
         assertHolds<Vertex>();
@@ -603,8 +617,8 @@ public:
     //! A compute pass that decides what survives writes the command; the CPU
     //! never learns the count:
     //! \code
-    //! compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib | compages::gpu::Barrier::Command);
-    //! m_kept_points.drawIndirect(m_command);
+    //! compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib |
+    //! compages::gpu::Barrier::Command); m_kept_points.drawIndirect(m_command);
     //! \endcode
     // ------------------------------------------------------------------------
     void drawIndirect(Buffer<DrawIndirectCommand> const& p_commands);
@@ -683,9 +697,9 @@ private:
 
     // Filling by name.
     template <typename Scalar>
-    void assignNested(
-        std::string const& p_name,
-        std::initializer_list<std::initializer_list<Scalar>> p_values);
+    void
+    assignNested(std::string const& p_name,
+                 std::initializer_list<std::initializer_list<Scalar>> p_values);
     void assignFlat(std::string const& p_name,
                     std::initializer_list<float> p_values);
     void assignTyped(std::string const& p_name,

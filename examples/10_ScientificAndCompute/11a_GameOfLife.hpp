@@ -22,8 +22,8 @@ namespace examples
 //! \code
 //! m_step["previous"] = m_field[m_current];
 //! {
-//!     compages::gpu::RenderPass into(m_target[next], { .clear_color = false });
-//!     m_step.draw(3u);
+//!     compages::gpu::RenderPass into(m_target[next], { .clear_color = false
+//!     }); m_step.draw(3u);
 //! }
 //! m_current = next;
 //! \endcode
@@ -42,8 +42,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

@@ -35,14 +35,15 @@ namespace examples
 static Gallery* g_gallery = nullptr;
 
 //! \brief The colour behind everything, and what an example starts from.
-const Vector4f BACKGROUND{ 0.1f, 0.1f, 0.12f, 1.0f };
+const compages::core::Vector4f BACKGROUND{ 0.1f, 0.1f, 0.12f, 1.0f };
 
 // ----------------------------------------------------------------------------
 //! \brief What is left over between two counts, as a sentence, or nothing at
 //! all when the two agree.
 // ----------------------------------------------------------------------------
-static std::string whatStayedBehind(compages::gpu::ResourceStatistics const& p_before,
-                                    compages::gpu::ResourceStatistics const& p_after)
+static std::string
+whatStayedBehind(compages::gpu::ResourceStatistics const& p_before,
+                 compages::gpu::ResourceStatistics const& p_after)
 {
     std::string left;
     auto note = [&left](char const* p_what,
@@ -247,7 +248,8 @@ void Gallery::onLog(compages::gpu::LogLevel p_level, std::string_view p_message)
     // while an example runs, such as a performance hint, stays in the panel.
     const bool first =
         (self == nullptr) || self->m_console.add(p_level, p_message, example);
-    if (first && ((p_level != compages::gpu::LogLevel::Info) || example.empty()))
+    if (first &&
+        ((p_level != compages::gpu::LogLevel::Info) || example.empty()))
     {
         char const* prefix = "[gpu] ";
         if (p_level == compages::gpu::LogLevel::Warning)
@@ -364,10 +366,10 @@ void Gallery::show(std::size_t p_index)
     }
 
     (void)compages::gpu::takeFrameError();
-    compages::gpu::Status ready = m_current->setUp();
+    compages::Status ready = m_current->setUp();
     if (ready && compages::gpu::hasFrameError())
     {
-        ready = compages::gpu::failure(compages::gpu::takeFrameError());
+        ready = compages::failure(compages::gpu::takeFrameError());
     }
     if (!ready)
     {
@@ -388,19 +390,22 @@ void Gallery::resizeView(std::uint32_t p_width, std::uint32_t p_height)
         return;
     }
 
-    const compages::gpu::ResourceStatistics before = compages::gpu::resourceStatistics();
+    const compages::gpu::ResourceStatistics before =
+        compages::gpu::resourceStatistics();
     m_view_width = 0u;
     m_view_height = 0u;
-    compages::gpu::Status made = m_view_color.allocate({ .format = compages::gpu::PixelFormat::RGB8,
-                                               .width = p_width,
-                                               .height = p_height });
+    compages::Status made =
+        m_view_color.allocate({ .format = compages::gpu::PixelFormat::RGB8,
+                                .width = p_width,
+                                .height = p_height });
     if (made)
     {
-        made = m_view_depth.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
-                                       .width = p_width,
-                                       .height = p_height,
-                                       .magnify = compages::gpu::Filter::Nearest,
-                                       .minify = compages::gpu::Filter::Nearest });
+        made = m_view_depth.allocate(
+            { .format = compages::gpu::PixelFormat::Depth32F,
+              .width = p_width,
+              .height = p_height,
+              .magnify = compages::gpu::Filter::Nearest,
+              .minify = compages::gpu::Filter::Nearest });
     }
     if (made)
     {
@@ -419,9 +424,10 @@ void Gallery::resizeView(std::uint32_t p_width, std::uint32_t p_height)
     m_view_height = p_height;
 }
 
-Frame Gallery::makeFrame(std::uint32_t p_width, std::uint32_t p_height)
+compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
+                                              std::uint32_t p_height)
 {
-    Frame frame;
+    compages::world::ViewFrame frame;
     frame.width = p_width;
     frame.height = p_height;
 
@@ -464,9 +470,9 @@ Frame Gallery::makeFrame(std::uint32_t p_width, std::uint32_t p_height)
     }
     if (keyboard)
     {
-        compages::world::KeyMap const map = (m_current != nullptr)
-                                      ? m_current->keyMap()
-                                      : compages::world::KeyMap::defaults();
+        compages::world::KeyMap const map =
+            (m_current != nullptr) ? m_current->keyMap()
+                                   : compages::world::KeyMap::defaults();
         map.apply(frame.input,
                   [this](int p_glfw_key)
                   { return m_window.keyDown(p_glfw_key); });
@@ -492,7 +498,7 @@ void Gallery::runExample()
     {
         return;
     }
-    const Frame frame = makeFrame(width, height);
+    const compages::world::ViewFrame frame = makeFrame(width, height);
 
     {
         // With the panels, the example draws into the texture the Viewport
@@ -501,7 +507,8 @@ void Gallery::runExample()
         std::optional<compages::gpu::RenderPass> view;
         if (m_show_overlay)
         {
-            view.emplace(m_view, compages::gpu::PassDesc{ .color = BACKGROUND });
+            view.emplace(m_view,
+                         compages::gpu::PassDesc{ .color = BACKGROUND });
         }
         compages::gpu::resetFrameStatistics();
         m_current->draw(frame);
@@ -523,7 +530,8 @@ void Gallery::runExample()
         }
         else
         {
-            m_console.add(compages::gpu::LogLevel::Error, why, m_entries[m_index].title);
+            m_console.add(
+                compages::gpu::LogLevel::Error, why, m_entries[m_index].title);
         }
     }
 }
@@ -589,7 +597,7 @@ void Gallery::handleShortcuts()
     }
 }
 
-compages::gpu::Status Gallery::run(Options const& p_options)
+compages::Status Gallery::run(Options const& p_options)
 {
     if (!m_manifest_problems.empty())
     {
@@ -598,11 +606,11 @@ compages::gpu::Status Gallery::run(Options const& p_options)
         {
             why += "\n  " + problem;
         }
-        return compages::gpu::failure(why);
+        return compages::failure(why);
     }
     if (m_entries.empty())
     {
-        return compages::gpu::failure("the gallery has no examples in it");
+        return compages::failure("the gallery has no examples in it");
     }
 
     m_show_overlay = p_options.overlay;
@@ -766,9 +774,9 @@ compages::gpu::Status Gallery::run(Options const& p_options)
         {
             why += "\n  " + problem;
         }
-        return compages::gpu::failure(why);
+        return compages::failure(why);
     }
-    return compages::gpu::success();
+    return compages::success();
 }
 
 void Gallery::saveScreenshot(std::string const& p_directory,
@@ -798,7 +806,8 @@ void Gallery::saveScreenshot(std::string const& p_directory,
         pass.emplace(keep);
     }
 
-    compages::gpu::Result<std::vector<std::byte>> picture = compages::gpu::readPixels();
+    compages::Result<std::vector<std::byte>> picture =
+        compages::gpu::readPixels();
     if (!picture)
     {
         m_console.add(compages::gpu::LogLevel::Error,
@@ -820,9 +829,12 @@ void Gallery::saveScreenshot(std::string const& p_directory,
 
     const std::string path =
         p_directory + "/" + m_entries[m_index].name + ".png";
-    compages::gpu::Status saved = writePng(path, width, height, picture.value());
+    compages::Status saved = writePng(path, width, height, picture.value());
     const std::string said = saved ? ("wrote " + path) : saved.error();
-    m_console.add(saved ? compages::gpu::LogLevel::Info : compages::gpu::LogLevel::Error, said, {});
+    m_console.add(saved ? compages::gpu::LogLevel::Info
+                        : compages::gpu::LogLevel::Error,
+                  said,
+                  {});
     std::cerr << said << std::endl;
 }
 

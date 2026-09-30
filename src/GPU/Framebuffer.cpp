@@ -6,8 +6,8 @@
 // See LICENSING.md for details.
 
 #include "Compages/GPU/Framebuffer.hpp"
-#include "GPU/Backends/Backend.hpp"
 #include "Compages/GPU/Device.hpp"
+#include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
 
 #include <algorithm>
@@ -50,11 +50,10 @@ checkedTexture(Attachment const& p_attachment, char const* p_role, bool p_depth)
 
     if (p_attachment.level >= record->desc.levels)
     {
-        return failure(std::string("the ") + p_role +
-                       " attachment asks for mip level " +
-                       std::to_string(p_attachment.level) +
-                       " and the texture only has " +
-                       std::to_string(record->desc.levels));
+        return failure(
+            std::string("the ") + p_role + " attachment asks for mip level " +
+            std::to_string(p_attachment.level) + " and the texture only has " +
+            std::to_string(record->desc.levels));
     }
 
     if (record->desc.kind != TextureKind::Texture2D)
@@ -116,7 +115,7 @@ Result<Framebuffer> Framebuffer::create(std::span<const Attachment> p_colors,
         auto record_result = checkedTexture(p_colors[i], "colour", false);
         if (!record_result)
         {
-            return compages::failure(record_result.error());
+            return failure(record_result.error());
         }
         auto record = record_result.take();
         std::uint32_t w = 0u;
@@ -145,7 +144,7 @@ Result<Framebuffer> Framebuffer::create(std::span<const Attachment> p_colors,
         auto record_result = checkedTexture(p_depth, "depth", true);
         if (!record_result)
         {
-            return compages::failure(record_result.error());
+            return failure(record_result.error());
         }
         auto record = record_result.take();
         std::uint32_t w = 0u;
@@ -158,11 +157,10 @@ Result<Framebuffer> Framebuffer::create(std::span<const Attachment> p_colors,
         }
         else if ((w != width) || (h != height))
         {
-            return failure("the depth attachment is " + std::to_string(w) +
-                           " by " + std::to_string(h) +
-                           " and the colour attachments are " +
-                           std::to_string(width) + " by " +
-                           std::to_string(height));
+            return failure(
+                "the depth attachment is " + std::to_string(w) + " by " +
+                std::to_string(h) + " and the colour attachments are " +
+                std::to_string(width) + " by " + std::to_string(height));
         }
         depth = p_depth;
     }
@@ -170,7 +168,7 @@ Result<Framebuffer> Framebuffer::create(std::span<const Attachment> p_colors,
     auto native_result = backend::createFramebuffer();
     if (!native_result)
     {
-        return compages::failure(native_result.error());
+        return failure(native_result.error());
     }
     auto native = native_result.take();
 

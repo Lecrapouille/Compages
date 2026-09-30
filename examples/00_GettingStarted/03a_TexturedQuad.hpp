@@ -13,12 +13,13 @@ namespace examples
 {
 
 // ****************************************************************************
-//! \brief A texture read by a shader, and a strip instead of separate triangles.
+//! \brief A texture read by a shader, and a strip instead of separate
+//! triangles.
 //!
-//! The texture is computed here rather than read from a file, so that the example
-//! depends on nothing outside itself and so that its content is knowable: a
-//! checkerboard, with a gradient over it. Reading a file is one call away, and
-//! Texture::fromFile() is what 09_HeightMap uses.
+//! The texture is computed here rather than read from a file, so that the
+//! example depends on nothing outside itself and so that its content is
+//! knowable: a checkerboard, with a gradient over it. Reading a file is one
+//! call away, and Texture::fromFile() is what 09_HeightMap uses.
 //!
 //! Uniforms and textures are given by name, with the same syntax as the
 //! attributes of 01b: the shader says which is which.
@@ -39,15 +40,15 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     // ------------------------------------------------------------------------
     //! \brief Build the checkerboard the example shows.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::gpu::Status makeTexture();
+    [[nodiscard]] compages::Status makeTexture();
 
     //! \brief Read by m_quad, which keeps a pointer to it: declared first so
     //! that it is destroyed last.

@@ -71,7 +71,8 @@ NodeId SpatialGraph::attach(EntityId p_entity)
     if (const std::uint32_t existing = m_entity_to_node[p_entity.index()];
         existing != NO_NODE)
     {
-        const std::uint16_t index = static_cast<std::uint16_t>(existing & 0xFFFFu);
+        const std::uint16_t index =
+            static_cast<std::uint16_t>(existing & 0xFFFFu);
         const std::uint16_t generation =
             static_cast<std::uint16_t>(existing >> 16u);
         if ((index < m_nodes.size()) && slotAlive(index) &&
@@ -264,28 +265,28 @@ bool SpatialGraph::wouldCycle(NodeId p_child, NodeId p_parent) const
     return false;
 }
 
-compages::Status SpatialGraph::setParent(NodeId p_child,
-                                    NodeId p_parent,
-                                    ReparentPolicy p_policy,
-                                    TransformStore* p_transforms)
+Status SpatialGraph::setParent(NodeId p_child,
+                               NodeId p_parent,
+                               ReparentPolicy p_policy,
+                               TransformStore* p_transforms)
 {
     if (!alive(p_child))
     {
-        return compages::failure(
+        return failure(
             "setParent was given a child node that no longer exists");
     }
     if (p_parent.valid() && !alive(p_parent))
     {
-        return compages::failure(
+        return failure(
             "setParent was given a parent node that no longer exists");
     }
     if (p_child == p_parent)
     {
-        return compages::failure("a node cannot be its own parent");
+        return failure("a node cannot be its own parent");
     }
     if (wouldCycle(p_child, p_parent))
     {
-        return compages::failure(
+        return failure(
             "setParent would make a cycle: the requested parent is already a "
             "descendant of the child, which would make the world-matrix walk "
             "never finish");
@@ -295,7 +296,7 @@ compages::Status SpatialGraph::setParent(NodeId p_child,
     // now if we want to preserve it after the reparent. Capture it before we
     // touch the graph.
     const EntityId child_entity = m_nodes[p_child.index()].entity;
-    Matrix44f preserved_world(compages::matrix::Identity);
+    compages::core::Matrix44f preserved_world(compages::core::matrix::Identity);
     const bool need_world = (p_policy == ReparentPolicy::KeepWorld) &&
                             (p_transforms != nullptr) &&
                             p_transforms->has(child_entity);
@@ -316,7 +317,8 @@ compages::Status SpatialGraph::setParent(NodeId p_child,
         // We do not have a decomposition helper handy, so we recompose by
         // treating the local as "the affine transform from parent to child",
         // pulled apart into T, R, S.
-        Matrix44f parent_world(compages::matrix::Identity);
+        compages::core::Matrix44f parent_world(
+            compages::core::matrix::Identity);
         if (p_parent.valid())
         {
             const EntityId parent_entity = m_nodes[p_parent.index()].entity;
@@ -325,45 +327,54 @@ compages::Status SpatialGraph::setParent(NodeId p_child,
                 parent_world = p_transforms->world(parent_entity);
             }
         }
-        const Matrix44f parent_inverse = compages::matrix::inverse(parent_world);
-        const Matrix44f new_local = preserved_world * parent_inverse;
+        const compages::core::Matrix44f parent_inverse =
+            compages::core::inverse(parent_world);
+        const compages::core::Matrix44f new_local =
+            parent_inverse * preserved_world;
 
-        // Decompose. Rows of the CPU matrix are the columns of the shader; the
-        // basis vectors sit in rows 0..2, and the translation in row 3.
         LocalTransformView local = p_transforms->localMutable(child_entity);
-        local.position = Vector3f(new_local[3].x,
-                                  new_local[3].y,
-                                  new_local[3].z);
-        const Vector3f col0(new_local[0].x, new_local[0].y, new_local[0].z);
-        const Vector3f col1(new_local[1].x, new_local[1].y, new_local[1].z);
-        const Vector3f col2(new_local[2].x, new_local[2].y, new_local[2].z);
-        local.scale = Vector3f(compages::vector::norm(col0),
-                               compages::vector::norm(col1),
-                               compages::vector::norm(col2));
-        Matrix44f rotation_only(compages::matrix::Identity);
+        local.position = compages::core::Vector3f(new_local(0, 3),
+                                                  new_local(1, 3),
+                                                  new_local(2, 3));
+        const compages::core::Vector3f col0(new_local(0, 0),
+                                            new_local(1, 0),
+                                            new_local(2, 0));
+        const compages::core::Vector3f col1(new_local(0, 1),
+                                            new_local(1, 1),
+                                            new_local(2, 1));
+        const compages::core::Vector3f col2(new_local(0, 2),
+                                            new_local(1, 2),
+                                            new_local(2, 2));
+        local.scale =
+            compages::core::Vector3f(compages::core::vector::norm(col0),
+                                     compages::core::vector::norm(col1),
+                                     compages::core::vector::norm(col2));
+        compages::core::Matrix44f rotation_only(
+            compages::core::matrix::Identity);
         if (local.scale.x > 1.0e-6f)
         {
-            const Vector3f n0 = col0 / local.scale.x;
-            rotation_only[0] = Vector4f(n0.x, n0.y, n0.z, 0.0f);
+            const compages::core::Vector3f n0 = col0 / local.scale.x;
+            rotation_only[0] = compages::core::Vector4f(n0.x, n0.y, n0.z, 0.0f);
         }
         if (local.scale.y > 1.0e-6f)
         {
-            const Vector3f n1 = col1 / local.scale.y;
-            rotation_only[1] = Vector4f(n1.x, n1.y, n1.z, 0.0f);
+            const compages::core::Vector3f n1 = col1 / local.scale.y;
+            rotation_only[1] = compages::core::Vector4f(n1.x, n1.y, n1.z, 0.0f);
         }
         if (local.scale.z > 1.0e-6f)
         {
-            const Vector3f n2 = col2 / local.scale.z;
-            rotation_only[2] = Vector4f(n2.x, n2.y, n2.z, 0.0f);
+            const compages::core::Vector3f n2 = col2 / local.scale.z;
+            rotation_only[2] = compages::core::Vector4f(n2.x, n2.y, n2.z, 0.0f);
         }
-        local.rotation = Quatf::fromMatrix(rotation_only);
+        local.rotation = compages::core::Quatf::fromMatrix(
+            compages::core::transpose(rotation_only));
     }
 
     if (p_transforms != nullptr)
     {
         p_transforms->markDirty(child_entity);
     }
-    return compages::success();
+    return success();
 }
 
 NodeId SpatialGraph::parent(NodeId p_node) const

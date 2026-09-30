@@ -22,10 +22,13 @@ class ComplexShader: public Example
 {
 public:
 
-    [[nodiscard]] std::string name() const override { return "06b_ComplexShader"; }
+    [[nodiscard]] std::string name() const override
+    {
+        return "06b_ComplexShader";
+    }
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

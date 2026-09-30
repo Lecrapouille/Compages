@@ -18,9 +18,9 @@ namespace
 {
 
 //! \brief The one device of the process. The public API takes no device
-//! argument, which is what makes it as short as `compages::gpu::draw(...)`; the price is
-//! one graphics context per process, which is what a game or a viewer wants
-//! anyway.
+//! argument, which is what makes it as short as `compages::gpu::draw(...)`; the
+//! price is one graphics context per process, which is what a game or a viewer
+//! wants anyway.
 struct State
 {
     DeviceInfo info;
@@ -61,14 +61,16 @@ Status init(LoadProc p_load)
 {
     if (p_load == nullptr)
     {
-        return failure("compages::gpu::init() needs a symbol loader, for instance "
-                       "glfwGetProcAddress");
+        return failure(
+            "compages::gpu::init() needs a symbol loader, for instance "
+            "glfwGetProcAddress");
     }
 
     State& s = state();
     if (s.initialized)
     {
-        return failure("compages::gpu::init() called twice without compages::gpu::shutdown()");
+        return failure("compages::gpu::init() called twice "
+                       "without compages::gpu::shutdown()");
     }
 
     s.info = DeviceInfo{};
@@ -112,7 +114,8 @@ bool initialized()
 
 DeviceInfo const& device()
 {
-    assert(state().initialized && "compages::gpu::device() before compages::gpu::init()");
+    assert(state().initialized &&
+           "compages::gpu::device() before compages::gpu::init()");
     return state().info;
 }
 

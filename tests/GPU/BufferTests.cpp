@@ -14,6 +14,9 @@
 #include <numeric>
 #include <vector>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -23,8 +26,8 @@ namespace
 //! in a single buffer.
 struct Vertex
 {
-    Vector3f position;
-    Vector2f uv;
+    compages::core::Vector3f position;
+    compages::core::Vector2f uv;
 };
 
 } // namespace

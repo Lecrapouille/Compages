@@ -102,7 +102,7 @@ std::string IndirectDraw::description() const
            "the count to zero; it never reads how many survived.";
 }
 
-compages::gpu::Status IndirectDraw::setUp()
+compages::Status IndirectDraw::setUp()
 {
     // A jittered grid of points covering the screen.
     std::vector<Dot> dots;
@@ -114,20 +114,30 @@ compages::gpu::Status IndirectDraw::setUp()
     {
         for (std::uint32_t x = 0u; x < SIDE; ++x)
         {
-            dots.emplace_back(Dot{ Vector2f(-1.0f + ((float(x) + 0.5f + jitter(rng)) * step),
-                                         -1.0f + ((float(y) + 0.5f + jitter(rng)) * step)) });
+            dots.emplace_back(Dot{ compages::core::Vector2f(
+                -1.0f + ((float(x) + 0.5f + jitter(rng)) * step),
+                -1.0f + ((float(y) + 0.5f + jitter(rng)) * step)) });
         }
     }
 
     // Every point, the survivors, and the command: all written by the compute
     // pass or read by it, so all storage.
-    COMPAGES_TRY_ASSIGN(m_all, compages::gpu::Buffer<Dot>::from(dots, compages::gpu::BufferKind::Storage,
-                                                      compages::gpu::BufferUsage::Storage));
-    COMPAGES_TRY_ASSIGN(m_kept, compages::gpu::Buffer<Dot>::create(COUNT, compages::gpu::BufferKind::Storage,
-                                                         compages::gpu::BufferUsage::Storage));
-    COMPAGES_TRY_ASSIGN(m_command, compages::gpu::Buffer<compages::gpu::DrawIndirectCommand>::create(
-                                       1u, compages::gpu::BufferKind::Storage,
-                                       compages::gpu::BufferUsage::Storage));
+    COMPAGES_TRY_ASSIGN(
+        m_all,
+        compages::gpu::Buffer<Dot>::from(dots,
+                                         compages::gpu::BufferKind::Storage,
+                                         compages::gpu::BufferUsage::Storage));
+    COMPAGES_TRY_ASSIGN(m_kept,
+                        compages::gpu::Buffer<Dot>::create(
+                            COUNT,
+                            compages::gpu::BufferKind::Storage,
+                            compages::gpu::BufferUsage::Storage));
+    COMPAGES_TRY_ASSIGN(
+        m_command,
+        compages::gpu::Buffer<compages::gpu::DrawIndirectCommand>::create(
+            1u,
+            compages::gpu::BufferKind::Storage,
+            compages::gpu::BufferUsage::Storage));
 
     COMPAGES_TRY(m_cull.load(CULL));
     COMPAGES_TRY(m_cull.bind("All", m_all));
@@ -141,14 +151,15 @@ compages::gpu::Status IndirectDraw::setUp()
     return m_kept_points.prepare();
 }
 
-void IndirectDraw::draw(Frame const& p_frame)
+void IndirectDraw::draw(compages::world::ViewFrame const& p_frame)
 {
     // The circle follows the mouse, or wanders by itself when the mouse is
     // away, so the cull shows as a moving window in the field.
-    const Vector2f center = p_frame.input.mouse_over
-                                ? mouseInClipSpace(p_frame)
-                                : Vector2f(0.55f * std::sin(p_frame.total * 0.7f),
-                                               0.40f * std::cos(p_frame.total * 0.5f));
+    const compages::core::Vector2f center =
+        p_frame.input.mouse_over
+            ? compages::world::mouseInClipSpace(p_frame)
+            : compages::core::Vector2f(0.55f * std::sin(p_frame.total * 0.7f),
+                                       0.40f * std::cos(p_frame.total * 0.5f));
 
     // No survivor yet: the compute pass counts them into vertex_count.
     m_command.write(compages::gpu::DrawIndirectCommand{ 0u, 1u, 0u, 0u }, 0u);
@@ -158,7 +169,8 @@ void IndirectDraw::draw(Frame const& p_frame)
     {
         return;
     }
-    compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib | compages::gpu::Barrier::Command);
+    compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib |
+                           compages::gpu::Barrier::Command);
 
     compages::gpu::clear({ 0.03f, 0.03f, 0.05f });
     m_kept_points.drawIndirect(m_command);

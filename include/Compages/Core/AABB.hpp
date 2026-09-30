@@ -14,6 +14,9 @@
 #include <cmath>
 #include <limits>
 
+namespace compages::core
+{
+
 // ****************************************************************************
 //! \file
 //! \brief An axis-aligned box, for culling and for nothing else.
@@ -118,8 +121,7 @@ struct AABB
     // ------------------------------------------------------------------------
     [[nodiscard]] Vector3f center() const
     {
-        return empty() ? Vector3f(0.0f, 0.0f, 0.0f)
-                       : ((min + max) * 0.5f);
+        return empty() ? Vector3f(0.0f, 0.0f, 0.0f) : ((min + max) * 0.5f);
     }
 
     // ------------------------------------------------------------------------
@@ -127,8 +129,7 @@ struct AABB
     // ------------------------------------------------------------------------
     [[nodiscard]] Vector3f extent() const
     {
-        return empty() ? Vector3f(0.0f, 0.0f, 0.0f)
-                       : ((max - min) * 0.5f);
+        return empty() ? Vector3f(0.0f, 0.0f, 0.0f) : ((max - min) * 0.5f);
     }
 
     // ------------------------------------------------------------------------
@@ -169,13 +170,8 @@ struct AABB
             {
                 for (float z : zs)
                 {
-                    // Rows of the CPU matrix are the columns the shader reads,
-                    // which is why this is a weighted sum of rows, not M * p
-                    // in the mathematical sense.
-                    Vector4f const h = (p_model[0] * x) + (p_model[1] * y) +
-                                       (p_model[2] * z) + p_model[3];
-                    const float w =
-                        (std::abs(h.w) < 1.0e-8f) ? 1.0f : h.w;
+                    Vector4f const h = p_model * Vector4f(x, y, z, 1.0f);
+                    const float w = (std::abs(h.w) < 1.0e-8f) ? 1.0f : h.w;
                     box.expand(Vector3f(h.x / w, h.y / w, h.z / w));
                 }
             }
@@ -183,3 +179,6 @@ struct AABB
         return box;
     }
 };
+
+} // namespace compages::core
+

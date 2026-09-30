@@ -21,27 +21,30 @@ namespace examples
 // ****************************************************************************
 //! \brief Two copies of the same numbers: one on the CPU, one on the GPU.
 //!
-//! The graphics card has a memory of its own. A compages::gpu::Buffer keeps a copy of
-//! its elements on the CPU, used like a std::vector, and remembers which ones
-//! were changed since they were last sent:
+//! The graphics card has a memory of its own. A compages::gpu::Buffer keeps a
+//! copy of its elements on the CPU, used like a std::vector, and remembers
+//! which ones were changed since they were last sent:
 //! \code
 //! m_values.assign({ 3, 5, 8, 13, 21 });   // on the CPU only
 //! m_values[2u] = 42;                      // still on the CPU only
 //! COMPAGES_TRY(m_values.upload());         // now on the GPU too
 //! \endcode
 //! The bars are what the GPU holds, read back from it. The buttons of the
-//! "Try it" panel change the CPU copy: the bars turn orange where the two copies
-//! disagree, and catch up when upload() is pressed. A drawable does that
+//! "Try it" panel change the CPU copy: the bars turn orange where the two
+//! copies disagree, and catch up when upload() is pressed. A drawable does that
 //! upload itself at every draw, which is why no later example calls it.
 // ****************************************************************************
-class CpuGpuSync final : public Example
+class CpuGpuSync final: public Example
 {
 public:
 
-    [[nodiscard]] std::string name() const override { return "00b_CpuGpuSync"; }
+    [[nodiscard]] std::string name() const override
+    {
+        return "00b_CpuGpuSync";
+    }
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
 
 private:

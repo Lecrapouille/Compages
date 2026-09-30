@@ -14,6 +14,8 @@
 #include <limits>
 #include <optional>
 
+namespace compages::core
+{
 // ****************************************************************************
 //! \file
 //! \brief A half-line, and the two intersections a picker needs.
@@ -24,7 +26,8 @@
 // ****************************************************************************
 
 // ****************************************************************************
-//! \brief Origin plus a unit direction. Point at \c t is \c origin + t * direction.
+//! \brief Origin plus a unit direction. Point at \c t is \c origin + t *
+//! direction.
 // ****************************************************************************
 struct Ray
 {
@@ -45,9 +48,9 @@ struct Ray
         Ray ray;
         ray.origin = p_from;
         const Vector3f delta = p_to - p_from;
-        const float length = compages::vector::norm(delta);
-        ray.direction = (length < 1.0e-8f) ? Vector3f(0.0f, 0.0f, -1.0f)
-                                           : (delta / length);
+        const float length = compages::core::vector::norm(delta);
+        ray.direction =
+            (length < 1.0e-8f) ? Vector3f(0.0f, 0.0f, -1.0f) : (delta / length);
         return ray;
     }
 };
@@ -70,7 +73,8 @@ struct Ray
     float t_max = std::numeric_limits<float>::infinity();
 
     const float origins[3] = { p_ray.origin.x, p_ray.origin.y, p_ray.origin.z };
-    const float dirs[3] = { p_ray.direction.x, p_ray.direction.y,
+    const float dirs[3] = { p_ray.direction.x,
+                            p_ray.direction.y,
                             p_ray.direction.z };
     const float mins[3] = { p_box.min.x, p_box.min.y, p_box.min.z };
     const float maxs[3] = { p_box.max.x, p_box.max.y, p_box.max.z };
@@ -103,3 +107,6 @@ struct Ray
     }
     return t_min;
 }
+
+} // namespace compages::core
+

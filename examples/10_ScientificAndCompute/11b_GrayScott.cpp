@@ -79,49 +79,55 @@ std::string GrayScott::description() const
            "a colour.";
 }
 
-compages::gpu::Status GrayScott::setUp()
+compages::Status GrayScott::setUp()
 {
     // Two float textures, each wired to a framebuffer. Nearest, because a
     // cell must not blend with its neighbour before the laplacian does.
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(m_field[i].allocate({ .format = compages::gpu::PixelFormat::RGBA32F,
-                                           .width = SIZE,
-                                           .height = SIZE,
-                                           .magnify = compages::gpu::Filter::Nearest,
-                                           .minify = compages::gpu::Filter::Nearest,
-                                           .wrap_x = compages::gpu::Wrap::Repeat,
-                                           .wrap_y = compages::gpu::Wrap::Repeat }));
+        COMPAGES_TRY(
+            m_field[i].allocate({ .format = compages::gpu::PixelFormat::RGBA32F,
+                                  .width = SIZE,
+                                  .height = SIZE,
+                                  .magnify = compages::gpu::Filter::Nearest,
+                                  .minify = compages::gpu::Filter::Nearest,
+                                  .wrap_x = compages::gpu::Wrap::Repeat,
+                                  .wrap_y = compages::gpu::Wrap::Repeat }));
         COMPAGES_TRY(m_target[i].attach(m_field[i]));
     }
 
     // U everywhere, and a square of V in the middle to start the reaction.
-    std::vector<Vector4f> cells(std::size_t{ SIZE } * SIZE, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+    std::vector<compages::core::Vector4f> cells(
+        std::size_t{ SIZE } * SIZE,
+        compages::core::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
     const std::uint32_t mid = SIZE / 2u;
     for (std::uint32_t y = mid - 12u; y < mid + 12u; ++y)
     {
         for (std::uint32_t x = mid - 12u; x < mid + 12u; ++x)
         {
-            cells[(std::size_t{ y } * SIZE) + x] = Vector4f(0.5f, 0.25f, 0.0f, 1.0f);
+            cells[(std::size_t{ y } * SIZE) + x] =
+                compages::core::Vector4f(0.5f, 0.25f, 0.0f, 1.0f);
         }
     }
-    COMPAGES_TRY(m_field[0].write(std::as_bytes(std::span<const Vector4f>(cells))));
+    COMPAGES_TRY(m_field[0].write(
+        std::as_bytes(std::span<const compages::core::Vector4f>(cells))));
 
     COMPAGES_TRY(m_step.load(SCREEN_VERTEX, STEP_FRAGMENT));
-    m_step["texel"] = Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
+    m_step["texel"] =
+        compages::core::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
     COMPAGES_TRY(m_show.load(SCREEN_VERTEX, SHOW_FRAGMENT));
-    return compages::gpu::success();
+    return compages::success();
 }
 
-void GrayScott::draw(Frame const&)
+void GrayScott::draw(compages::world::ViewFrame const&)
 {
     // Several steps per frame, so that a pattern shows within seconds.
     for (int i = 0; i < STEPS_PER_FRAME; ++i)
     {
         const int next = 1 - m_current;
         m_step["previous"] = m_field[m_current];
-        compages::gpu::RenderPass into(m_target[next], { .clear_color = false,
-                                               .clear_depth = false });
+        compages::gpu::RenderPass into(
+            m_target[next], { .clear_color = false, .clear_depth = false });
         m_step.draw(3u);
         m_current = next;
     }

@@ -14,40 +14,45 @@
 #include <string>
 #include <type_traits>
 
+using compages::failure;
+using compages::Result;
+using compages::Status;
+using compages::success;
+
 namespace
 {
 
 //! \brief A value that cannot be copied, as most resource facades will be.
 using Unique = std::unique_ptr<int>;
 
-compages::gpu::Result<int> half(int p_value)
+Result<int> half(int p_value)
 {
     if ((p_value % 2) != 0)
     {
-        return compages::gpu::failure("not an even number: " + std::to_string(p_value));
+        return failure("not an even number: " + std::to_string(p_value));
     }
     return p_value / 2;
 }
 
-compages::gpu::Status check(bool p_ok)
+Status check(bool p_ok)
 {
     if (!p_ok)
     {
-        return compages::gpu::failure("the check did not pass");
+        return failure("the check did not pass");
     }
-    return compages::gpu::success();
+    return success();
 }
 
 //! \brief Gives up as soon as one step fails, forwarding its message.
-compages::gpu::Status runSteps(bool p_first, bool p_second)
+Status runSteps(bool p_first, bool p_second)
 {
     COMPAGES_TRY(check(p_first));
     COMPAGES_TRY(check(p_second));
-    return compages::gpu::success();
+    return success();
 }
 
 //! \brief Same, but needs the value of the step that succeeded.
-compages::gpu::Result<int> quarter(int p_value)
+Result<int> quarter(int p_value)
 {
     int once = 0;
     int twice = 0;
@@ -75,8 +80,8 @@ TEST(Result, CarriesAReasonOnFailure)
     ASSERT_EQ(result.error(), "not an even number: 7");
 }
 
-// The message is what a user reads, so it must say what was wrong and with what,
-// not merely that something failed.
+// The message is what a user reads, so it must say what was wrong and with
+// what, not merely that something failed.
 TEST(Result, NamesWhatWentWrong)
 {
     ASSERT_THAT(half(3).error(), HasSubstr("3"));
@@ -92,7 +97,7 @@ TEST(Result, HandsBackAFallbackWhenItFailed)
 // to hand its value over rather than lend it.
 TEST(Result, HandsOverAValueThatCannotBeCopied)
 {
-    compages::gpu::Result<Unique> result{ std::make_unique<int>(42) };
+    Result<Unique> result{ std::make_unique<int>(42) };
 
     ASSERT_TRUE(bool(result));
     Unique taken = result.take();
@@ -102,8 +107,8 @@ TEST(Result, HandsOverAValueThatCannotBeCopied)
 
 TEST(Status, SaysNothingMoreThanWhetherItWorked)
 {
-    ASSERT_TRUE(bool(compages::gpu::success()));
-    ASSERT_TRUE(compages::gpu::success().error().empty());
+    ASSERT_TRUE(bool(success()));
+    ASSERT_TRUE(success().error().empty());
 
     auto failed = check(false);
     ASSERT_FALSE(bool(failed));
@@ -139,10 +144,10 @@ TEST(Result, ForwardsTheMessageOfTheStepThatFailed)
 // which is exactly the bug this type exists to prevent.
 TEST(Result, CannotBeIgnoredSilently)
 {
-    ASSERT_TRUE((std::is_same_v<compages::gpu::Result<int>, compages::Result<int>>));
-    ASSERT_TRUE((std::is_same_v<decltype(half(2)), compages::gpu::Result<int>>));
+    ASSERT_TRUE((std::is_same_v<Result<int>, Result<int>>));
+    ASSERT_TRUE((std::is_same_v<decltype(half(2)), Result<int>>));
     // [[nodiscard]] cannot be observed at runtime; what can be checked is that
     // reading a Result needs an explicit test, since the conversion to bool is
     // explicit and will not happen by accident in an arithmetic expression.
-    ASSERT_FALSE((std::is_convertible_v<compages::gpu::Result<int>, bool>));
+    ASSERT_FALSE((std::is_convertible_v<Result<int>, bool>));
 }

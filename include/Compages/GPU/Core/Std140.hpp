@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstring>
 #include <string>
 
 // ****************************************************************************
@@ -28,7 +29,7 @@
 //! \code
 //! struct Uniforms          // GLSL, layout(std140)
 //! {                        //
-//!     Vector3f position;   //   vec3 position;   at byte 0, occupying 12
+//!     compages::core::Vector3f position;   //   vec3 position;   at byte 0, occupying 12
 //!     float radius;        //   float radius;    at byte 12
 //! };                       //
 //! \endcode
@@ -39,7 +40,7 @@
 //! struct Uniforms
 //! {
 //!     float radius;        //   float radius;    at byte 0
-//!     Vector3f position;   //   vec3 position;   std140 puts it at byte 16,
+//!     compages::core::Vector3f position;   //   vec3 position;   std140 puts it at byte 16,
 //! };                       //                    C++ puts it at byte 4
 //! \endcode
 //!
@@ -120,7 +121,7 @@ struct Rules<std::uint32_t>
 //! one out is the vector of three: it aligns on 16 but occupies only 12, so the
 //! member after it may sit in the gap, and often does.
 template <typename T>
-struct Rules<Vector<T, 2u>>
+struct Rules<compages::core::Vector<T, 2u>>
 {
     static constexpr std::size_t alignment = 2u * Rules<T>::size;
     static constexpr std::size_t size = 2u * Rules<T>::size;
@@ -128,7 +129,7 @@ struct Rules<Vector<T, 2u>>
 };
 
 template <typename T>
-struct Rules<Vector<T, 3u>>
+struct Rules<compages::core::Vector<T, 3u>>
 {
     static constexpr std::size_t alignment = 4u * Rules<T>::size;
     static constexpr std::size_t size = 3u * Rules<T>::size;
@@ -136,7 +137,7 @@ struct Rules<Vector<T, 3u>>
 };
 
 template <typename T>
-struct Rules<Vector<T, 4u>>
+struct Rules<compages::core::Vector<T, 4u>>
 {
     static constexpr std::size_t alignment = 4u * Rules<T>::size;
     static constexpr std::size_t size = 4u * Rules<T>::size;
@@ -148,10 +149,10 @@ struct Rules<Vector<T, 4u>>
 //! three columns of 16, of which only 12 are used. That surprise is exactly what
 //! this file exists to catch.
 template <typename T, std::size_t Rows, std::size_t Cols>
-struct Rules<Matrix<T, Rows, Cols>>
+struct Rules<compages::core::Matrix<T, Rows, Cols>>
 {
     static constexpr std::size_t alignment =
-        roundUp(Rules<Vector<T, Rows>>::alignment, 16u);
+        roundUp(Rules<compages::core::Vector<T, Rows>>::alignment, 16u);
     static constexpr std::size_t size = Cols * alignment;
     static constexpr const char* name = "matrix";
 };
@@ -178,6 +179,78 @@ struct Rules<std::array<T, N>>
 
 //! \endcond
 
+//! \brief Rewrite, in place, the C++ bytes of a member into the bytes std140
+//! expects. Null when both are the same.
+using Convert = void (*)(std::byte*);
+
+// ****************************************************************************
+//! \brief How a member is converted before being copied into a block.
+//!
+//! Only matrices differ: \c Matrix is row-major while std140 stores a matrix
+//! as an array of its columns.
+// ****************************************************************************
+template <typename T>
+struct Staging
+{
+    static constexpr Convert convert = nullptr;
+};
+
+//! \cond Doxygen_Suppress
+template <typename T, std::size_t Rows, std::size_t Cols>
+struct Staging<compages::core::Matrix<T, Rows, Cols>>
+{
+    using M = compages::core::Matrix<T, Rows, Cols>;
+
+    //! \brief Write the columns one after the other, each padded to the
+    //! std140 column stride.
+    static void toColumns(std::byte* p_bytes)
+    {
+        constexpr std::size_t stride =
+            Rules<compages::core::Vector<T, Rows>>::alignment < 16u
+                ? 16u
+                : Rules<compages::core::Vector<T, Rows>>::alignment;
+        M matrix;
+        std::memcpy(&matrix, p_bytes, sizeof(M));
+        std::memset(p_bytes, 0, sizeof(M));
+        for (std::size_t c = 0u; c < Cols; ++c)
+        {
+            for (std::size_t r = 0u; r < Rows; ++r)
+            {
+                std::memcpy(p_bytes + (c * stride) + (r * sizeof(T)),
+                            &matrix(r, c),
+                            sizeof(T));
+            }
+        }
+    }
+
+    // A matrix whose std140 size differs from its C++ size is refused by
+    // GPU_STD140, so there is nothing to convert in place.
+    static constexpr Convert convert =
+        (Rules<M>::size == sizeof(M)) ? &toColumns : nullptr;
+};
+
+template <typename T, std::size_t N>
+struct Staging<T[N]>
+{
+    static void each(std::byte* p_bytes)
+    {
+        for (std::size_t i = 0u; i < N; ++i)
+        {
+            Staging<T>::convert(p_bytes + (i * sizeof(T)));
+        }
+    }
+
+    static constexpr Convert convert =
+        (Staging<T>::convert != nullptr) ? &each : nullptr;
+};
+
+template <typename T, std::size_t N>
+struct Staging<std::array<T, N>>
+{
+    static constexpr Convert convert = Staging<T[N]>::convert;
+};
+//! \endcond
+
 // ****************************************************************************
 //! \brief One member of a block, as the check sees it.
 // ****************************************************************************
@@ -191,6 +264,8 @@ struct Member
     std::size_t alignment = 0u;
     //! \brief How many bytes std140 gives it.
     std::size_t size = 0u;
+    //! \brief Conversion applied to its bytes before upload, or null.
+    Convert convert = nullptr;
 };
 
 // ----------------------------------------------------------------------------
@@ -416,7 +491,8 @@ struct Verify<T, false>
     {                                                                         \
         #member, offsetof(Type, member),                                      \
             compages::gpu::std140::Rules<decltype(Type::member)>::alignment,            \
-            compages::gpu::std140::Rules<decltype(Type::member)>::size                  \
+            compages::gpu::std140::Rules<decltype(Type::member)>::size,                 \
+            compages::gpu::std140::Staging<decltype(Type::member)>::convert             \
     }
 //! \endcond
 
@@ -428,9 +504,9 @@ struct Verify<T, false>
 //! \code
 //! struct Uniforms
 //! {
-//!     Matrix44f projection;
-//!     Matrix44f view;
-//!     Vector3f light_direction;
+//!     compages::core::Matrix44f projection;
+//!     compages::core::Matrix44f view;
+//!     compages::core::Vector3f light_direction;
 //!     float ambient;
 //! };
 //! GPU_STD140(Uniforms, projection, view, light_direction, ambient);

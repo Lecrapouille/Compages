@@ -44,7 +44,8 @@ bool sameLayout(VertexLayout const& p_left, VertexLayout const& p_right)
         FieldDesc const& a = p_left.fields()[i];
         FieldDesc const& b = p_right.fields()[i];
         if ((a.name != b.name) || (a.offset != b.offset) ||
-            (a.per_instance != b.per_instance) || !sameFormat(a.format, b.format))
+            (a.per_instance != b.per_instance) ||
+            !sameFormat(a.format, b.format))
         {
             return false;
         }
@@ -68,9 +69,10 @@ void store(std::byte* p_destination, double p_value, bool p_normalized)
             p_normalized
                 ? std::round(p_value * double(std::numeric_limits<T>::max()))
                 : p_value;
-        const double clamped = std::clamp(scaled,
-                                          double(std::numeric_limits<T>::lowest()),
-                                          double(std::numeric_limits<T>::max()));
+        const double clamped =
+            std::clamp(scaled,
+                       double(std::numeric_limits<T>::lowest()),
+                       double(std::numeric_limits<T>::max()));
         value = static_cast<T>(clamped);
     }
     std::memcpy(p_destination, &value, sizeof(T));
@@ -145,7 +147,9 @@ void Drawable::indices(std::span<const std::uint16_t> p_indices)
     m_indices_changed = true;
 }
 
-void Drawable::adopt(VertexLayout p_layout, const void* p_type, std::size_t p_stride)
+void Drawable::adopt(VertexLayout p_layout,
+                     const void* p_type,
+                     std::size_t p_stride)
 {
     assert((p_layout.empty() || (p_layout.stride() == p_stride)) &&
            "the layout given does not describe the struct given");
@@ -159,7 +163,8 @@ void Drawable::adopt(VertexLayout p_layout, const void* p_type, std::size_t p_st
     m_filled.clear();
 }
 
-void Drawable::replaceBytes(std::span<const std::byte> p_bytes, std::size_t p_count)
+void Drawable::replaceBytes(std::span<const std::byte> p_bytes,
+                            std::size_t p_count)
 {
     m_borrowing = false;
     m_bytes.assign(p_bytes.begin(), p_bytes.end());
@@ -200,8 +205,10 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
 {
     if (!m_program.valid())
     {
-        reportError("drawable[\"" + p_name + "\"] before load(): the shader "
-                    "is what says what '" + p_name + "' is");
+        reportError("drawable[\"" + p_name +
+                    "\"] before load(): the shader "
+                    "is what says what '" +
+                    p_name + "' is");
         return nullptr;
     }
 
@@ -210,7 +217,8 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
     {
         if (reflection.uniform(p_name) != nullptr)
         {
-            reportError("'" + p_name + "' is a uniform, which holds one value "
+            reportError("'" + p_name +
+                        "' is a uniform, which holds one value "
                         "for the whole draw, not one per vertex");
         }
         else
@@ -232,17 +240,17 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
                 attributes.emplace_back(&attribute);
             }
         }
-        std::sort(attributes.begin(), attributes.end(),
-                  [](AttributeInfo const* p_a, AttributeInfo const* p_b) {
-                      return p_a->location < p_b->location;
-                  });
+        std::sort(attributes.begin(),
+                  attributes.end(),
+                  [](AttributeInfo const* p_a, AttributeInfo const* p_b)
+                  { return p_a->location < p_b->location; });
 
         std::vector<FieldDesc> fields;
         std::uint32_t offset = 0u;
         for (AttributeInfo const* attribute : attributes)
         {
-            fields.emplace_back(FieldDesc{ attribute->name, attribute->format,
-                                        offset, false });
+            fields.emplace_back(
+                FieldDesc{ attribute->name, attribute->format, offset, false });
             offset += static_cast<std::uint32_t>(attribute->format.size());
         }
         m_layout = VertexLayout(std::move(fields), offset);
@@ -254,7 +262,8 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
     {
         reportError("the shader reads the attribute '" + p_name +
                     "' but the vertex struct has no field of that name. "
-                    "The layout is:\n" + m_layout.toString());
+                    "The layout is:\n" +
+                    m_layout.toString());
         return nullptr;
     }
 
@@ -262,8 +271,9 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
     {
         if (m_type != nullptr)
         {
-            reportError("'" + p_name + "' was given " + std::to_string(p_count) +
-                        " values, but there are " + std::to_string(m_count) +
+            reportError("'" + p_name + "' was given " +
+                        std::to_string(p_count) + " values, but there are " +
+                        std::to_string(m_count) +
                         " vertices: to change their number, give the vertices "
                         "again with vertices<Vertex>()");
             return nullptr;
@@ -332,10 +342,10 @@ void Drawable::markFilled(std::string const& p_name, std::size_t p_count)
     {
         return;
     }
-    auto it = std::find_if(m_filled.begin(), m_filled.end(),
-                           [&](Filled const& p_filled) {
-                               return p_filled.name == p_name;
-                           });
+    auto it = std::find_if(m_filled.begin(),
+                           m_filled.end(),
+                           [&](Filled const& p_filled)
+                           { return p_filled.name == p_name; });
     if (it == m_filled.end())
     {
         m_filled.emplace_back(Filled{ p_name, p_count });
@@ -379,9 +389,11 @@ void Drawable::assignNested(
 }
 
 template void Drawable::assignNested<float>(
-    std::string const&, std::initializer_list<std::initializer_list<float>>);
-template void Drawable::assignNested<int>(
-    std::string const&, std::initializer_list<std::initializer_list<int>>);
+    std::string const&,
+    std::initializer_list<std::initializer_list<float>>);
+template void
+Drawable::assignNested<int>(std::string const&,
+                            std::initializer_list<std::initializer_list<int>>);
 
 void Drawable::assignFlat(std::string const& p_name,
                           std::initializer_list<float> p_values)
@@ -396,13 +408,15 @@ void Drawable::assignFlat(std::string const& p_name,
                 m_program.set(p_name, v[0]);
                 return;
             case 2u:
-                m_program.set(p_name, Vector2f(v[0], v[1]));
+                m_program.set(p_name, compages::core::Vector2f(v[0], v[1]));
                 return;
             case 3u:
-                m_program.set(p_name, Vector3f(v[0], v[1], v[2]));
+                m_program.set(p_name,
+                              compages::core::Vector3f(v[0], v[1], v[2]));
                 return;
             case 4u:
-                m_program.set(p_name, Vector4f(v[0], v[1], v[2], v[3]));
+                m_program.set(p_name,
+                              compages::core::Vector4f(v[0], v[1], v[2], v[3]));
                 return;
             default:
                 reportError("the uniform '" + p_name + "' was given " +
@@ -419,8 +433,9 @@ void Drawable::assignFlat(std::string const& p_name,
     }
     if (valuesPerVertex(field->format) != 1u)
     {
-        reportError("'" + p_name + "' is a " + field->format.glslType() +
-                    ", so each vertex needs its own braces: { {x, y}, {x, y} }");
+        reportError(
+            "'" + p_name + "' is a " + field->format.glslType() +
+            ", so each vertex needs its own braces: { {x, y}, {x, y} }");
         return;
     }
     std::size_t vertex = 0u;
@@ -439,12 +454,15 @@ void Drawable::assignTyped(std::string const& p_name,
 {
     if (m_program.valid())
     {
-        AttributeInfo const* attribute = m_program.reflection().attribute(p_name);
+        AttributeInfo const* attribute =
+            m_program.reflection().attribute(p_name);
         if ((attribute != nullptr) && (attribute->type != p_type))
         {
             reportError(std::string("'") + p_name + "' is a " +
-                        toString(attribute->type) + " in the shader, but was "
-                        "given values of type " + toString(p_type));
+                        toString(attribute->type) +
+                        " in the shader, but was "
+                        "given values of type " +
+                        toString(p_type));
             return;
         }
     }
@@ -509,8 +527,10 @@ bool Drawable::expectUniform(std::string const& p_name)
 {
     if (!m_program.valid())
     {
-        reportError("drawable[\"" + p_name + "\"] before load(): the shader "
-                    "is what says what '" + p_name + "' is");
+        reportError("drawable[\"" + p_name +
+                    "\"] before load(): the shader "
+                    "is what says what '" +
+                    p_name + "' is");
         return false;
     }
     ProgramReflection const& reflection = m_program.reflection();
@@ -520,7 +540,8 @@ bool Drawable::expectUniform(std::string const& p_name)
     }
     if (reflection.attribute(p_name) != nullptr)
     {
-        reportError("'" + p_name + "' is an attribute, which takes one value "
+        reportError("'" + p_name +
+                    "' is an attribute, which takes one value "
                     "per vertex: { {...}, {...}, ... }");
     }
     else
@@ -530,7 +551,8 @@ bool Drawable::expectUniform(std::string const& p_name)
     return false;
 }
 
-void Drawable::assignTexture(std::string const& p_name, Texture const& p_texture)
+void Drawable::assignTexture(std::string const& p_name,
+                             Texture const& p_texture)
 {
     if (!m_program.valid())
     {
@@ -547,10 +569,10 @@ void Drawable::assignTexture(std::string const& p_name, Texture const& p_texture
         return;
     }
 
-    auto it = std::find_if(m_samplers.begin(), m_samplers.end(),
-                           [&](Sampler const& p_sampler) {
-                               return p_sampler.name == p_name;
-                           });
+    auto it = std::find_if(m_samplers.begin(),
+                           m_samplers.end(),
+                           [&](Sampler const& p_sampler)
+                           { return p_sampler.name == p_name; });
     if (it == m_samplers.end())
     {
         const auto unit = static_cast<std::uint32_t>(m_samplers.size());
@@ -573,11 +595,11 @@ Status Drawable::sendVertices()
     {
         if (!m_device.valid())
         {
-            COMPAGES_TRY_ASSIGN(m_device,
-                                Buffer<std::byte>::from(
-                                    std::span<const std::byte>(m_bytes),
-                                    BufferKind::Vertex,
-                                    BufferUsage::Immutable));
+            COMPAGES_TRY_ASSIGN(
+                m_device,
+                Buffer<std::byte>::from(std::span<const std::byte>(m_bytes),
+                                        BufferKind::Vertex,
+                                        BufferUsage::Immutable));
             m_dirty.clear();
         }
         else if (!m_dirty.empty() || (m_device.count() != m_bytes.size()))
@@ -585,15 +607,16 @@ Status Drawable::sendVertices()
             m_dirty.clear();
             return failure(
                 "the vertices of a drawable whose usage is Immutable changed "
-                "after its first draw. Say usage(compages::gpu::BufferUsage::Dynamic) for "
+                "after its first draw. Say "
+                "usage(compages::gpu::BufferUsage::Dynamic) for "
                 "vertices meant to change");
         }
         return success();
     }
     if (!m_device.valid() || (m_device.count() < m_bytes.size()))
     {
-        // Growing by doubling keeps emplace_back cheap: the buffer is recreated a
-        // logarithmic number of times, not once per vertex.
+        // Growing by doubling keeps emplace_back cheap: the buffer is recreated
+        // a logarithmic number of times, not once per vertex.
         const std::size_t capacity =
             std::max(m_bytes.size(), 2u * m_device.count());
         COMPAGES_TRY_ASSIGN(m_device,
@@ -626,11 +649,11 @@ Status Drawable::sendIndices()
         m_index_device.release();
         return success();
     }
-    COMPAGES_TRY_ASSIGN(m_index_device,
-                        Buffer<std::uint32_t>::from(
-                            std::span<const std::uint32_t>(m_indices),
-                            BufferKind::Index,
-                            BufferUsage::Dynamic));
+    COMPAGES_TRY_ASSIGN(
+        m_index_device,
+        Buffer<std::uint32_t>::from(std::span<const std::uint32_t>(m_indices),
+                                    BufferKind::Index,
+                                    BufferUsage::Dynamic));
     return success();
 }
 
@@ -649,16 +672,17 @@ Status Drawable::ready()
             {
                 continue;
             }
-            auto it = std::find_if(m_filled.begin(), m_filled.end(),
-                                   [&](Filled const& p_filled) {
-                                       return p_filled.name == attribute.name;
-                                   });
+            auto it = std::find_if(m_filled.begin(),
+                                   m_filled.end(),
+                                   [&](Filled const& p_filled)
+                                   { return p_filled.name == attribute.name; });
             if (it == m_filled.end())
             {
                 return failure("the shader reads the attribute '" +
-                               attribute.name + "', which was never given "
-                               "values: drawable[\"" + attribute.name +
-                               "\"] = { ... }");
+                               attribute.name +
+                               "', which was never given "
+                               "values: drawable[\"" +
+                               attribute.name + "\"] = { ... }");
             }
             if (it->count != m_count)
             {
@@ -735,8 +759,12 @@ void Drawable::drawRange(std::size_t p_first, std::size_t p_count)
 
     if (!m_indices.empty())
     {
-        drawIndexed(m_pipeline, vertexBuffer(), m_index_device.handle(),
-                    IndexType::UInt32, p_count, p_first);
+        drawIndexed(m_pipeline,
+                    vertexBuffer(),
+                    m_index_device.handle(),
+                    IndexType::UInt32,
+                    p_count,
+                    p_first);
     }
     else if (!m_borrowing && m_bytes.empty())
     {
@@ -763,7 +791,8 @@ void Drawable::drawInstanced(std::size_t p_instances, std::size_t p_vertices)
     }
     bindTextures();
     const std::size_t vertices = (p_vertices == 0u) ? m_count : p_vertices;
-    compages::gpu::drawInstanced(m_pipeline, vertexBuffer(), vertices, p_instances);
+    compages::gpu::drawInstanced(
+        m_pipeline, vertexBuffer(), vertices, p_instances);
 }
 
 void Drawable::drawIndirect(Buffer<DrawIndirectCommand> const& p_commands)
@@ -773,7 +802,8 @@ void Drawable::drawIndirect(Buffer<DrawIndirectCommand> const& p_commands)
         return;
     }
     bindTextures();
-    compages::gpu::drawIndirect(m_pipeline, vertexBuffer(), p_commands.handle());
+    compages::gpu::drawIndirect(
+        m_pipeline, vertexBuffer(), p_commands.handle());
 }
 
 std::string Drawable::describe() const

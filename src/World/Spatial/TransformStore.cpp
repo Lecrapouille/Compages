@@ -12,9 +12,9 @@ namespace compages::world
 
 namespace
 {
-const Matrix44f IDENTITY(compages::matrix::Identity);
-const Vector3f ZERO_POSITION(0.0f, 0.0f, 0.0f);
-const Vector3f UNIT_SCALE(1.0f, 1.0f, 1.0f);
+const compages::core::Matrix44f IDENTITY(compages::core::matrix::Identity);
+const compages::core::Vector3f ZERO_POSITION(0.0f, 0.0f, 0.0f);
+const compages::core::Vector3f UNIT_SCALE(1.0f, 1.0f, 1.0f);
 } // namespace
 
 void TransformStore::ensureCapacity(std::size_t p_index)
@@ -58,7 +58,7 @@ void TransformStore::allocate(EntityId p_entity)
         ((m_flags[index] & FLAG_PRESENT) == 0u))
     {
         m_position[index] = ZERO_POSITION;
-        m_rotation[index] = Quatf{};
+        m_rotation[index] = compages::core::Quatf{};
         m_scale[index] = UNIT_SCALE;
         m_world[index] = IDENTITY;
     }
@@ -85,7 +85,7 @@ void TransformStore::release(EntityId p_entity)
     m_flags[index] = 0u;
     m_generation[index] = 0u;
     m_position[index] = ZERO_POSITION;
-    m_rotation[index] = Quatf{};
+    m_rotation[index] = compages::core::Quatf{};
     m_scale[index] = UNIT_SCALE;
     m_world[index] = IDENTITY;
 }
@@ -111,25 +111,25 @@ LocalTransformView TransformStore::localMutable(EntityId p_entity)
         m_position[index], m_rotation[index], m_scale[index]);
 }
 
-Vector3f const& TransformStore::position(EntityId p_entity) const
+compages::core::Vector3f const& TransformStore::position(EntityId p_entity) const
 {
     assert(has(p_entity) && "TransformStore::position on an entity without one");
     return m_position[p_entity.index()];
 }
 
-Quatf const& TransformStore::rotation(EntityId p_entity) const
+compages::core::Quatf const& TransformStore::rotation(EntityId p_entity) const
 {
     assert(has(p_entity) && "TransformStore::rotation on an entity without one");
     return m_rotation[p_entity.index()];
 }
 
-Vector3f const& TransformStore::scale(EntityId p_entity) const
+compages::core::Vector3f const& TransformStore::scale(EntityId p_entity) const
 {
     assert(has(p_entity) && "TransformStore::scale on an entity without one");
     return m_scale[p_entity.index()];
 }
 
-Matrix44f TransformStore::localMatrix(EntityId p_entity) const
+compages::core::Matrix44f TransformStore::localMatrix(EntityId p_entity) const
 {
     assert(has(p_entity) &&
            "TransformStore::localMatrix on an entity without one");
@@ -138,13 +138,13 @@ Matrix44f TransformStore::localMatrix(EntityId p_entity) const
         m_position[index], m_rotation[index], m_scale[index]);
 }
 
-Matrix44f const& TransformStore::world(EntityId p_entity) const
+compages::core::Matrix44f const& TransformStore::world(EntityId p_entity) const
 {
     assert(has(p_entity) && "TransformStore::world on an entity without one");
     return m_world[p_entity.index()];
 }
 
-void TransformStore::setWorld(EntityId p_entity, Matrix44f const& p_matrix)
+void TransformStore::setWorld(EntityId p_entity, compages::core::Matrix44f const& p_matrix)
 {
     assert(has(p_entity) && "TransformStore::setWorld on an entity without one");
     m_world[p_entity.index()] = p_matrix;

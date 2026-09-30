@@ -19,7 +19,7 @@ std::string ManyCubes::description() const
            "counter of the overlay shows the survivors as the camera turns.";
 }
 
-compages::gpu::Status ManyCubes::setUp()
+compages::Status ManyCubes::setUp()
 {
     // The camera turns by itself, so the culling has something to drop as the
     // view sweeps past the grid.
@@ -66,7 +66,7 @@ compages::gpu::Status ManyCubes::setUp()
     return m_scene.prepare();
 }
 
-void ManyCubes::draw(Frame const& p_frame)
+void ManyCubes::draw(compages::world::ViewFrame const& p_frame)
 {
     // Sorting and frustum culling happen inside the draw, from the camera
     // the orbit behavior just moved.

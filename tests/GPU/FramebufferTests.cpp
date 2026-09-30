@@ -11,6 +11,9 @@
 
 #include <vector>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -21,7 +24,7 @@ constexpr int HEIGHT = 32;
 
 struct Corner
 {
-    Vector2f position;
+    compages::core::Vector2f position;
 };
 
 const std::vector<Corner> BIG_TRIANGLE{ { { -1.0f, -1.0f } },
@@ -200,7 +203,7 @@ TEST_F(FramebufferTest, APassDrawsIntoTheTexture)
     desc.width = WIDTH;
     desc.height = HEIGHT;
     desc.target = framebuffer.handle();
-    desc.color = Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+    desc.color = compages::core::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));

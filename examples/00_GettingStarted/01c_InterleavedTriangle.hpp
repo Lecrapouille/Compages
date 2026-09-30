@@ -21,17 +21,19 @@ namespace examples
 //! by name. A field named otherwise than the attribute it feeds is renamed:
 //! \code
 //! m_triangle.vertices<Vertex>(corners,
-//!     compages::gpu::VertexLayout::of<Vertex>().rename("position", "aPosition"));
+//!     compages::gpu::VertexLayout::of<Vertex>().rename("position",
+//!     "aPosition"));
 //! \endcode
 //!
 //! These vertices never change, so they go straight into a buffer made
-//! with compages::gpu::BufferUsage::Immutable: filled once when it is created, which
-//! lets the driver keep it where the GPU reads fastest, and never written
+//! with compages::gpu::BufferUsage::Immutable: filled once when it is created,
+//! which lets the driver keep it where the GPU reads fastest, and never written
 //! again. The drawable reads that buffer where it is rather than keeping a
 //! copy of its own:
 //! \code
 //! COMPAGES_TRY_ASSIGN(m_vertices, compages::gpu::Buffer<Vertex>::from(corners,
-//!     { .usage = compages::gpu::BufferUsage::Immutable, .cpu_mirror = false }));
+//!     { .usage = compages::gpu::BufferUsage::Immutable, .cpu_mirror = false
+//!     }));
 //! m_triangle.vertices(m_vertices);
 //! \endcode
 //! 02_DynamicGeometry does the opposite: vertices that change every frame.
@@ -46,16 +48,16 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     //! \brief One corner: the field names are the names the shader declares.
     struct Vertex
     {
-        Vector2f position;
-        Vector3f color;
+        compages::core::Vector2f position;
+        compages::core::Vector3f color;
     };
 
     //! \brief Read by m_triangle, which does not own it: declared first so

@@ -7,9 +7,9 @@
 
 #include "Compages/Renderer/Assets/Primitives.hpp"
 
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
-#include "Compages/GPU/Core/Layout.hpp"
 #include "Compages/Core/Maths.hpp"
+#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/Renderer/Assets/ShaderLib.hpp"
 
 #include <array>
 #include <cmath>
@@ -66,31 +66,40 @@ void addGridCell(std::vector<std::uint16_t>& p_indices,
     addTriangle(p_indices, i1, i2, i3);
 }
 
-[[nodiscard]] Vector3f scaled(Vector3f const& p_unit, Vector3f const& p_half)
+[[nodiscard]] compages::core::Vector3f
+scaled(compages::core::Vector3f const& p_unit,
+       compages::core::Vector3f const& p_half)
 {
-    return Vector3f(
+    return compages::core::Vector3f(
         p_unit.x * p_half.x, p_unit.y * p_half.y, p_unit.z * p_half.z);
 }
 
 void addBoxFace(std::vector<MeshVertex>& p_corners,
                 std::vector<std::uint16_t>& p_indices,
-                Vector3f const& p_normal,
-                Vector3f const& p_half)
+                compages::core::Vector3f const& p_normal,
+                compages::core::Vector3f const& p_half)
 {
-    const Vector3f up = (std::abs(p_normal.y) > 0.5f)
-                            ? Vector3f(0.0f, 0.0f, 1.0f)
-                            : Vector3f(0.0f, 1.0f, 0.0f);
-    const Vector3f right = compages::vector::cross(up, p_normal);
-    const Vector3f top = compages::vector::cross(p_normal, right);
+    const compages::core::Vector3f up =
+        (std::abs(p_normal.y) > 0.5f)
+            ? compages::core::Vector3f(0.0f, 0.0f, 1.0f)
+            : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+    const compages::core::Vector3f right =
+        compages::core::vector::cross(up, p_normal);
+    const compages::core::Vector3f top =
+        compages::core::vector::cross(p_normal, right);
     const std::uint16_t first = u16(p_corners.size());
-    p_corners.emplace_back(
-        scaled(p_normal - right - top, p_half), p_normal, Vector2f(0.0f, 0.0f));
-    p_corners.emplace_back(
-        scaled(p_normal + right - top, p_half), p_normal, Vector2f(1.0f, 0.0f));
-    p_corners.emplace_back(
-        scaled(p_normal + right + top, p_half), p_normal, Vector2f(1.0f, 1.0f));
-    p_corners.emplace_back(
-        scaled(p_normal - right + top, p_half), p_normal, Vector2f(0.0f, 1.0f));
+    p_corners.emplace_back(scaled(p_normal - right - top, p_half),
+                           p_normal,
+                           compages::core::Vector2f(0.0f, 0.0f));
+    p_corners.emplace_back(scaled(p_normal + right - top, p_half),
+                           p_normal,
+                           compages::core::Vector2f(1.0f, 0.0f));
+    p_corners.emplace_back(scaled(p_normal + right + top, p_half),
+                           p_normal,
+                           compages::core::Vector2f(1.0f, 1.0f));
+    p_corners.emplace_back(scaled(p_normal - right + top, p_half),
+                           p_normal,
+                           compages::core::Vector2f(0.0f, 1.0f));
     addQuad(
         p_indices, first, u16(first + 1u), u16(first + 2u), u16(first + 3u));
 }
@@ -108,9 +117,10 @@ void addTubeRing(std::vector<MeshVertex>& p_corners,
     {
         const float c = std::cos(p_angle[i]);
         const float s = std::sin(p_angle[i]);
-        p_corners.emplace_back(Vector3f(p_radius * c, p_radius * s, p_z),
-                               Vector3f(p_side_xy * c, p_side_xy * s, p_side_z),
-                               Vector2f(p_u[i], p_v));
+        p_corners.emplace_back(
+            compages::core::Vector3f(p_radius * c, p_radius * s, p_z),
+            compages::core::Vector3f(p_side_xy * c, p_side_xy * s, p_side_z),
+            compages::core::Vector2f(p_u[i], p_v));
     }
 }
 
@@ -120,7 +130,7 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
                 std::uint32_t p_slices,
                 float p_radius,
                 float p_z,
-                Vector3f const& p_normal,
+                compages::core::Vector3f const& p_normal,
                 bool p_ccw_from_outside)
 {
     const std::uint16_t ring_start = u16(p_corners.size());
@@ -128,13 +138,15 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
     {
         const float c = std::cos(a);
         const float s = std::sin(a);
-        p_corners.emplace_back(Vector3f(p_radius * c, p_radius * s, p_z),
-                               p_normal,
-                               Vector2f(0.5f + (0.5f * c), 0.5f + (0.5f * s)));
+        p_corners.emplace_back(
+            compages::core::Vector3f(p_radius * c, p_radius * s, p_z),
+            p_normal,
+            compages::core::Vector2f(0.5f + (0.5f * c), 0.5f + (0.5f * s)));
     }
     const std::uint16_t center = u16(p_corners.size());
-    p_corners.emplace_back(
-        Vector3f(0.0f, 0.0f, p_z), p_normal, Vector2f(0.5f, 0.5f));
+    p_corners.emplace_back(compages::core::Vector3f(0.0f, 0.0f, p_z),
+                           p_normal,
+                           compages::core::Vector2f(0.5f, 0.5f));
     for (std::uint32_t i = 0u; i < p_slices; ++i)
     {
         const std::uint16_t a = u16(ring_start + i);
@@ -150,10 +162,10 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
     }
 }
 
-compages::Result<MeshAsset> uploadMesh(std::vector<MeshVertex> p_corners,
-                                    std::vector<std::uint16_t> p_indices)
+Result<MeshAsset> uploadMesh(std::vector<MeshVertex> p_corners,
+                             std::vector<std::uint16_t> p_indices)
 {
-    AABB bounds;
+    compages::core::AABB bounds;
     for (MeshVertex const& corner : p_corners)
     {
         bounds.expand(corner.position);
@@ -167,29 +179,32 @@ compages::Result<MeshAsset> uploadMesh(std::vector<MeshVertex> p_corners,
     return mesh;
 }
 
-compages::Result<Material> makeMaterial(std::string_view p_name,
-                                     ShaderFamily p_family,
-                                     std::string_view p_vertex,
-                                     std::string_view p_fragment,
-                                     bool p_with_uv)
+Result<Material> makeMaterial(std::string_view p_name,
+                              ShaderFamily p_family,
+                              std::string_view p_vertex,
+                              std::string_view p_fragment,
+                              bool p_with_uv)
 {
-    auto program_result = compages::gpu::Program::fromSources(p_vertex, p_fragment);
+    auto program_result =
+        compages::gpu::Program::fromSources(p_vertex, p_fragment);
     if (!program_result)
     {
-        return compages::failure(program_result.error());
+        return failure(program_result.error());
     }
     auto program = program_result.take();
     // A shader that reads no uv is fine: a field the shader does not read is
     // simply not sent.
     (void)p_with_uv;
-    const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<MeshVertex>();
+    const compages::gpu::VertexLayout layout =
+        compages::gpu::VertexLayout::of<MeshVertex>();
     compages::gpu::RenderState state;
     state.depth_test = true;
     state.cull = compages::gpu::CullMode::Back;
-    auto pipeline_result = compages::gpu::Pipeline::create<MeshVertex>(program, layout, state);
+    auto pipeline_result =
+        compages::gpu::Pipeline::create<MeshVertex>(program, layout, state);
     if (!pipeline_result)
     {
-        return compages::failure(pipeline_result.error());
+        return failure(pipeline_result.error());
     }
     auto pipeline = pipeline_result.take();
 
@@ -203,12 +218,12 @@ compages::Result<Material> makeMaterial(std::string_view p_name,
 
 } // namespace
 
-compages::Result<MeshAsset> makeCube()
+Result<MeshAsset> makeCube()
 {
     return makeBox(1.0f, 1.0f, 1.0f);
 }
 
-compages::Result<MeshAsset> makePrimitive(PrimitiveShape p_shape)
+Result<MeshAsset> makePrimitive(PrimitiveShape p_shape)
 {
     using enum PrimitiveShape;
     switch (p_shape)
@@ -220,50 +235,53 @@ compages::Result<MeshAsset> makePrimitive(PrimitiveShape p_shape)
         case Plane:
             return makePlane();
     }
-    return compages::failure("unknown primitive shape");
+    return failure("unknown primitive shape");
 }
 
-compages::Result<MeshAsset> makeBox(float p_width, float p_height, float p_depth)
+Result<MeshAsset> makeBox(float p_width, float p_height, float p_depth)
 {
     if ((p_width <= 0.0f) || (p_height <= 0.0f) || (p_depth <= 0.0f))
     {
-        return compages::failure("makeBox needs positive width, height and depth");
+        return failure("makeBox needs positive width, height and depth");
     }
 
-    const Vector3f half(p_width * 0.5f, p_height * 0.5f, p_depth * 0.5f);
-    const std::array<Vector3f, 6u> normals{
-        Vector3f(0.0f, 0.0f, 1.0f), Vector3f(0.0f, 0.0f, -1.0f),
-        Vector3f(1.0f, 0.0f, 0.0f), Vector3f(-1.0f, 0.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, 0.0f), Vector3f(0.0f, -1.0f, 0.0f)
+    const compages::core::Vector3f half(
+        p_width * 0.5f, p_height * 0.5f, p_depth * 0.5f);
+    const std::array<compages::core::Vector3f, 6u> normals{
+        compages::core::Vector3f(0.0f, 0.0f, 1.0f),
+        compages::core::Vector3f(0.0f, 0.0f, -1.0f),
+        compages::core::Vector3f(1.0f, 0.0f, 0.0f),
+        compages::core::Vector3f(-1.0f, 0.0f, 0.0f),
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f),
+        compages::core::Vector3f(0.0f, -1.0f, 0.0f)
     };
 
     std::vector<MeshVertex> corners;
     std::vector<std::uint16_t> indices;
     corners.reserve(24u);
     indices.reserve(36u);
-    for (Vector3f const& normal : normals)
+    for (compages::core::Vector3f const& normal : normals)
     {
         addBoxFace(corners, indices, normal, half);
     }
     return uploadMesh(std::move(corners), std::move(indices));
 }
 
-compages::Result<MeshAsset>
+Result<MeshAsset>
 makeSphere(float p_radius, std::uint32_t p_stacks, std::uint32_t p_slices)
 {
     if ((p_radius <= 0.0f) || (p_stacks < 2u) || (p_slices < 3u))
     {
-        return compages::failure(
-            "makeSphere needs a positive radius, at least two "
-            "stacks and three slices");
+        return failure("makeSphere needs a positive radius, at least two "
+                       "stacks and three slices");
     }
 
     const std::uint32_t stride = p_slices + 1u;
     const std::uint32_t vertex_count = (p_stacks + 1u) * stride;
     if (vertex_count > kMaxVertices)
     {
-        return compages::failure("makeSphere would exceed 65535 vertices; reduce "
-                              "stacks or slices");
+        return failure("makeSphere would exceed 65535 vertices; reduce "
+                       "stacks or slices");
     }
 
     std::vector<MeshVertex> corners;
@@ -275,18 +293,20 @@ makeSphere(float p_radius, std::uint32_t p_stacks, std::uint32_t p_slices)
     {
         const float v =
             static_cast<float>(stack) / static_cast<float>(p_stacks);
-        const float phi = (v * compages::maths::PI<float>)-compages::maths::HALF_PI<float>;
+        const float phi =
+            (v * compages::core::PI<float>)-compages::core::HALF_PI<float>;
         const float cos_phi = std::cos(phi);
         const float sin_phi = std::sin(phi);
         for (std::uint32_t slice = 0u; slice <= p_slices; ++slice)
         {
             const float u =
                 static_cast<float>(slice) / static_cast<float>(p_slices);
-            const float theta = u * compages::maths::TWO_PI<float>;
-            const Vector3f normal(
+            const float theta = u * compages::core::TWO_PI<float>;
+            const compages::core::Vector3f normal(
                 cos_phi * std::cos(theta), sin_phi, cos_phi * std::sin(theta));
-            corners.emplace_back(
-                normal * p_radius, normal, Vector2f(u, 1.0f - v));
+            corners.emplace_back(normal * p_radius,
+                                 normal,
+                                 compages::core::Vector2f(u, 1.0f - v));
         }
     }
 
@@ -306,15 +326,15 @@ makeSphere(float p_radius, std::uint32_t p_stacks, std::uint32_t p_slices)
     return uploadMesh(std::move(corners), std::move(indices));
 }
 
-compages::Result<MeshAsset> makePlane(float p_width,
-                                   float p_height,
-                                   std::uint32_t p_x_segments,
-                                   std::uint32_t p_y_segments)
+Result<MeshAsset> makePlane(float p_width,
+                            float p_height,
+                            std::uint32_t p_x_segments,
+                            std::uint32_t p_y_segments)
 {
     if ((p_width <= 0.0f) || (p_height <= 0.0f) || (p_x_segments < 1u) ||
         (p_y_segments < 1u))
     {
-        return compages::failure(
+        return failure(
             "makePlane needs positive size and at least one segment per axis");
     }
 
@@ -322,12 +342,12 @@ compages::Result<MeshAsset> makePlane(float p_width,
     const std::uint32_t rows = p_y_segments + 1u;
     if ((cols * rows) > kMaxVertices)
     {
-        return compages::failure("makePlane would exceed 65535 vertices");
+        return failure("makePlane would exceed 65535 vertices");
     }
 
     const float half_w = p_width * 0.5f;
     const float half_h = p_height * 0.5f;
-    const Vector3f normal(0.0f, 0.0f, 1.0f);
+    const compages::core::Vector3f normal(0.0f, 0.0f, 1.0f);
 
     std::vector<MeshVertex> corners;
     std::vector<std::uint16_t> indices;
@@ -343,9 +363,10 @@ compages::Result<MeshAsset> makePlane(float p_width,
         {
             const float u =
                 static_cast<float>(x) / static_cast<float>(p_x_segments);
-            corners.emplace_back(Vector3f((u * p_width) - half_w, py, 0.0f),
-                                 normal,
-                                 Vector2f(u, v));
+            corners.emplace_back(
+                compages::core::Vector3f((u * p_width) - half_w, py, 0.0f),
+                normal,
+                compages::core::Vector2f(u, v));
         }
     }
 
@@ -363,20 +384,20 @@ compages::Result<MeshAsset> makePlane(float p_width,
     return uploadMesh(std::move(corners), std::move(indices));
 }
 
-compages::Result<MeshAsset> makeTube(float p_top_radius,
-                                  float p_bottom_radius,
-                                  float p_height,
-                                  std::uint32_t p_slices,
-                                  bool p_tip_along_negative_z)
+Result<MeshAsset> makeTube(float p_top_radius,
+                           float p_bottom_radius,
+                           float p_height,
+                           std::uint32_t p_slices,
+                           bool p_tip_along_negative_z)
 {
     if ((p_height <= 0.0f) || (p_slices < 3u))
     {
-        return compages::failure(
+        return failure(
             "makeTube needs a positive height and at least three slices");
     }
     if ((p_bottom_radius < 0.0f) || (p_top_radius < 0.0f))
     {
-        return compages::failure("makeTube radii must be non-negative");
+        return failure("makeTube radii must be non-negative");
     }
 
     const float abs_top = std::abs(p_top_radius);
@@ -396,13 +417,14 @@ compages::Result<MeshAsset> makeTube(float p_top_radius,
     }
     if (vertex_count > kMaxVertices)
     {
-        return compages::failure("makeTube would exceed 65535 vertices");
+        return failure("makeTube would exceed 65535 vertices");
     }
 
     std::vector<float> angle;
     std::vector<float> tex_u;
-    compages::maths::linspace(0.0f, compages::maths::TWO_PI<float>, ring, angle, true);
-    compages::maths::linspace(0.0f, 1.0f, ring, tex_u, true);
+    compages::core::linspace(
+        0.0f, compages::core::TWO_PI<float>, ring, angle, true);
+    compages::core::linspace(0.0f, 1.0f, ring, tex_u, true);
 
     const float half_h = p_height * 0.5f;
     const float top_z = p_tip_along_negative_z ? -half_h : half_h;
@@ -446,7 +468,7 @@ compages::Result<MeshAsset> makeTube(float p_top_radius,
 
     if (top_cap)
     {
-        const Vector3f normal(
+        const compages::core::Vector3f normal(
             0.0f, 0.0f, p_tip_along_negative_z ? -1.0f : 1.0f);
         addDiskCap(corners,
                    indices,
@@ -459,7 +481,7 @@ compages::Result<MeshAsset> makeTube(float p_top_radius,
     }
     if (base_cap)
     {
-        const Vector3f normal(
+        const compages::core::Vector3f normal(
             0.0f, 0.0f, p_tip_along_negative_z ? 1.0f : -1.0f);
         addDiskCap(corners,
                    indices,
@@ -474,26 +496,26 @@ compages::Result<MeshAsset> makeTube(float p_top_radius,
     return uploadMesh(std::move(corners), std::move(indices));
 }
 
-compages::Result<MeshAsset> makeCone(float p_bottom_radius,
-                                  float p_top_radius,
-                                  float p_height,
-                                  std::uint32_t p_slices)
+Result<MeshAsset> makeCone(float p_bottom_radius,
+                           float p_top_radius,
+                           float p_height,
+                           std::uint32_t p_slices)
 {
     return makeTube(p_top_radius, p_bottom_radius, p_height, p_slices, true);
 }
 
-compages::Result<MeshAsset>
+Result<MeshAsset>
 makeCylinder(float p_radius, float p_height, std::uint32_t p_slices)
 {
     return makeTube(p_radius, p_radius, p_height, p_slices, false);
 }
 
-compages::Result<MeshAsset> makePyramid(float p_radius, float p_height)
+Result<MeshAsset> makePyramid(float p_radius, float p_height)
 {
     return makeCone(p_radius, 0.0f, p_height, 4u);
 }
 
-compages::Result<Material> makeLitMaterial()
+Result<Material> makeLitMaterial()
 {
     return makeMaterial("Lit",
                         ShaderFamily::Lit,
@@ -502,7 +524,7 @@ compages::Result<Material> makeLitMaterial()
                         false);
 }
 
-compages::Result<Material> makePbrMaterial()
+Result<Material> makePbrMaterial()
 {
     return makeMaterial("PBR",
                         ShaderFamily::PbrMinimal,
@@ -511,7 +533,7 @@ compages::Result<Material> makePbrMaterial()
                         true);
 }
 
-compages::Result<Material> makeDepthMaterial()
+Result<Material> makeDepthMaterial()
 {
     return makeMaterial("Depth",
                         ShaderFamily::Depth,
@@ -520,7 +542,7 @@ compages::Result<Material> makeDepthMaterial()
                         false);
 }
 
-compages::Result<Material> makeNormalsMaterial()
+Result<Material> makeNormalsMaterial()
 {
     return makeMaterial("Normals",
                         ShaderFamily::Normals,

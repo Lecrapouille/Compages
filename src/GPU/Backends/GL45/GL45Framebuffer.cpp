@@ -83,28 +83,29 @@ Status checkFramebuffer(NativeId p_framebuffer)
     const char* why = "for a reason the driver did not name";
     switch (status)
     {
-    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-        why = "an attachment is missing, is the wrong format, or is incomplete "
-              "itself";
-        break;
-    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-        why = "nothing is attached";
-        break;
-    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-        why = "a draw buffer points at an attachment that is not there";
-        break;
-    case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-        why = "the read buffer points at an attachment that is not there";
-        break;
-    case GL_FRAMEBUFFER_UNSUPPORTED:
-        why = "this combination of attachments is a combination the driver "
-              "refuses";
-        break;
-    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-        why = "the attachments do not agree on how many samples they hold";
-        break;
-    default:
-        break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+            why = "an attachment is missing, is the wrong format, or is "
+                  "incomplete "
+                  "itself";
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+            why = "nothing is attached";
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+            why = "a draw buffer points at an attachment that is not there";
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+            why = "the read buffer points at an attachment that is not there";
+            break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:
+            why = "this combination of attachments is a combination the driver "
+                  "refuses";
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+            why = "the attachments do not agree on how many samples they hold";
+            break;
+        default:
+            break;
     }
 
     return failure("the framebuffer is incomplete: " + std::string(why));

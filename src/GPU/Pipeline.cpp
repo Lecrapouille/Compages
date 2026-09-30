@@ -17,8 +17,8 @@ namespace compages::gpu
 namespace
 {
 
-//! \brief The names of every field of a layout, for an error that has to say what
-//! was on offer.
+//! \brief The names of every field of a layout, for an error that has to say
+//! what was on offer.
 std::string namesOf(VertexLayout const& p_layout)
 {
     if (p_layout.fields().empty())
@@ -40,28 +40,31 @@ std::string namesOf(VertexLayout const& p_layout)
 
 //! \brief Can a field stored like this feed an attribute declared like that?
 //!
-//! Both sides are an AttributeFormat by the time they get here, one from the C++
-//! struct and one from what the driver says the shader declared, which is the
-//! whole reason the two are described in the same words.
+//! Both sides are an AttributeFormat by the time they get here, one from the
+//! C++ struct and one from what the driver says the shader declared, which is
+//! the whole reason the two are described in the same words.
 //!
 //! \return empty when they agree, otherwise what to tell the caller.
 std::string whyIncompatible(AttributeFormat const& p_field,
                             AttributeFormat const& p_wanted)
 {
-    // Whether the shader sees whole numbers or fractions is the one mismatch that
-    // silently produces nonsense rather than nothing: the same bytes read as an
-    // integer and as a float have no relation to each other.
+    // Whether the shader sees whole numbers or fractions is the one mismatch
+    // that silently produces nonsense rather than nothing: the same bytes read
+    // as an integer and as a float have no relation to each other.
     if (p_field.as_integer != p_wanted.as_integer)
     {
         if (p_wanted.as_integer)
         {
             return "the shader reads whole numbers but the field is stored as "
                    "floating point, or was marked normalized(), which turns "
-                   "whole numbers into fractions. Drop normalized(), or declare "
+                   "whole numbers into fractions. Drop normalized(), or "
+                   "declare "
                    "the attribute as a float type in the shader";
         }
-        return "the shader reads floating point but the field is stored as whole "
-               "numbers, which would arrive as unrelated values. Either mark the "
+        return "the shader reads floating point but the field is stored as "
+               "whole "
+               "numbers, which would arrive as unrelated values. Either mark "
+               "the "
                "field normalized() to turn it into a fraction between 0 and 1, "
                "or declare the attribute as an integer type in the shader";
     }
@@ -71,7 +74,8 @@ std::string whyIncompatible(AttributeFormat const& p_field,
         return "the shader wants " + std::to_string(p_wanted.components) +
                " components per slot and the field holds " +
                std::to_string(p_field.components) +
-               ". The missing ones would be filled in with zeroes, and the extra "
+               ". The missing ones would be filled in with zeroes, and the "
+               "extra "
                "ones dropped, so this is refused rather than half done";
     }
 
@@ -85,13 +89,15 @@ std::string whyIncompatible(AttributeFormat const& p_field,
 
     // Everything else about the kind of number is left alone on purpose. The
     // hardware converts a half or a short into a float on the way in, and that
-    // conversion is the reason half precision and normalized fields exist. Double
-    // precision is the exception: nothing is converted up to it.
+    // conversion is the reason half precision and normalized fields exist.
+    // Double precision is the exception: nothing is converted up to it.
     if ((p_wanted.scalar == ScalarType::Double) &&
         (p_field.scalar != ScalarType::Double))
     {
-        return "the shader declares this as a double precision attribute, which "
-               "the hardware reads only from double precision data, but the field "
+        return "the shader declares this as a double precision attribute, "
+               "which "
+               "the hardware reads only from double precision data, but the "
+               "field "
                "is stored as " +
                std::string(toString(p_field.scalar));
     }
@@ -101,13 +107,14 @@ std::string whyIncompatible(AttributeFormat const& p_field,
 
 //! \brief Match every attribute the shader declares to a field of the layout.
 //!
-//! This is the check the whole file exists for, so it is worth being clear about
-//! its direction. The shader is the one asking: every attribute it declares must
-//! be found. Fields the shader ignores are fine and simply not sent, which is
-//! precisely what lets one vertex buffer feed a pass reading three fields and
-//! another reading one.
-Result<std::vector<backend::VertexAttribute>> matchAttributes(
-    ProgramReflection const& p_reflection, VertexLayout const& p_layout)
+//! This is the check the whole file exists for, so it is worth being clear
+//! about its direction. The shader is the one asking: every attribute it
+//! declares must be found. Fields the shader ignores are fine and simply not
+//! sent, which is precisely what lets one vertex buffer feed a pass reading
+//! three fields and another reading one.
+Result<std::vector<backend::VertexAttribute>>
+matchAttributes(ProgramReflection const& p_reflection,
+                VertexLayout const& p_layout)
 {
     std::vector<backend::VertexAttribute> matched;
     matched.reserve(p_reflection.attributes.size());
@@ -133,7 +140,8 @@ Result<std::vector<backend::VertexAttribute>> matchAttributes(
                 namesOf(p_layout) +
                 ".\nThe name of a field is the name of the attribute it feeds. "
                 "Either rename one of them, or say which field feeds it, as in "
-                "compages::gpu::VertexLayout::of<Vertex>().rename(\"position\", \"" +
+                "compages::gpu::VertexLayout::of<Vertex>().rename(\"position\","
+                " \"" +
                 wanted.name + "\")");
         }
 
@@ -143,8 +151,9 @@ Result<std::vector<backend::VertexAttribute>> matchAttributes(
         {
             return failure("the field '" + field->name + "', stored as " +
                            field->format.glslType() +
-                           ", cannot feed the shader attribute '" + wanted.name +
-                           "' declared as " + toString(wanted.type) + ": " + why);
+                           ", cannot feed the shader attribute '" +
+                           wanted.name + "' declared as " +
+                           toString(wanted.type) + ": " + why);
         }
 
         if (wanted.elements > 1)
@@ -152,18 +161,20 @@ Result<std::vector<backend::VertexAttribute>> matchAttributes(
             return failure(
                 "the shader declares '" + wanted.name + "' as an array of " +
                 std::to_string(wanted.elements) +
-                " attributes. One field of a vertex struct feeds one attribute, "
+                " attributes. One field of a vertex struct feeds one "
+                "attribute, "
                 "so declare them separately in the shader");
         }
 
         matched.emplace_back(backend::VertexAttribute{ wanted.location,
-                                                    field->format,
-                                                    field->offset,
-                                                    field->per_instance });
+                                                       field->format,
+                                                       field->offset,
+                                                       field->per_instance });
         slots_used += field->format.slots;
     }
 
-    const auto allowed = static_cast<std::size_t>(device().max_vertex_attributes);
+    const auto allowed =
+        static_cast<std::size_t>(device().max_vertex_attributes);
     if (slots_used > allowed)
     {
         return failure("this shader reads " + std::to_string(slots_used) +
@@ -172,12 +183,12 @@ Result<std::vector<backend::VertexAttribute>> matchAttributes(
                        ". Note that a mat4 attribute takes four of them");
     }
 
-    // A slot the driver assigned beyond what it says it has would be its own bug,
-    // but the symptom lands on the caller, so it is worth naming.
+    // A slot the driver assigned beyond what it says it has would be its own
+    // bug, but the symptom lands on the caller, so it is worth naming.
     for (backend::VertexAttribute const& one : matched)
     {
-        const auto last = static_cast<std::size_t>(one.location) +
-                          one.format.slots;
+        const auto last =
+            static_cast<std::size_t>(one.location) + one.format.slots;
         if (last > allowed)
         {
             return failure(
@@ -196,7 +207,8 @@ Result<std::vector<backend::VertexAttribute>> matchAttributes(
 std::string stalePipelineMessage()
 {
     return "this pipeline no longer exists. Either it was released while "
-           "something still referred to it, or the Pipeline object was moved from "
+           "something still referred to it, or the Pipeline object was moved "
+           "from "
            "and the old one is being used";
 }
 
@@ -208,8 +220,9 @@ Result<Pipeline> Pipeline::create(Program const& p_program,
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to make a pipeline on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to make a pipeline on");
     }
 
     detail::ProgramRecord const* program =
@@ -227,12 +240,13 @@ Result<Pipeline> Pipeline::create(Program const& p_program,
 
     ProgramReflection const& reflection = program->reflection;
 
-    // A compute program has no vertices at all, so pairing one with a layout is a
-    // mistake about which kind of program it is.
+    // A compute program has no vertices at all, so pairing one with a layout is
+    // a mistake about which kind of program it is.
     if (reflection.work_group_size[0] != 0)
     {
         return failure(
-            "this is a compute program, which is dispatched over a grid of work "
+            "this is a compute program, which is dispatched over a grid of "
+            "work "
             "groups rather than fed with vertices, so it cannot be put in a "
             "pipeline. Use compages::gpu::ComputeProgram for it");
     }
@@ -243,19 +257,21 @@ Result<Pipeline> Pipeline::create(Program const& p_program,
             "this shader reads no vertex attributes at all, but a layout "
             "describing " +
             std::to_string(p_layout.fields().size()) +
-            " fields was given. A pass that generates its own vertices, such as "
-            "a full screen quad, takes a default constructed compages::gpu::VertexLayout");
+            " fields was given. A pass that generates its own vertices, such "
+            "as "
+            "a full screen quad, takes a default constructed "
+            "compages::gpu::VertexLayout");
     }
 
     auto attributes_result = matchAttributes(reflection, p_layout);
     if (!attributes_result)
     {
-        return compages::failure(attributes_result.error());
+        return failure(attributes_result.error());
     }
     auto attributes = attributes_result.take();
 
-    // Wireframe of a primitive that has no faces to outline draws the same thing
-    // either way, which is confusing enough to be worth saying.
+    // Wireframe of a primitive that has no faces to outline draws the same
+    // thing either way, which is confusing enough to be worth saying.
     if ((p_state.polygon != PolygonMode::Fill) &&
         (verticesPerPrimitive(p_state.primitive) == 1u))
     {
@@ -264,10 +280,11 @@ Result<Pipeline> Pipeline::create(Program const& p_program,
                        " means nothing: a point has no edges and no faces");
     }
 
-    auto reader_result = backend::acquireVertexReader(attributes, p_layout.stride());
+    auto reader_result =
+        backend::acquireVertexReader(attributes, p_layout.stride());
     if (!reader_result)
     {
-        return compages::failure(reader_result.error());
+        return failure(reader_result.error());
     }
     auto reader = reader_result.take();
 
@@ -342,12 +359,14 @@ Status Pipeline::bind() const
     // in the meantime.
     if (!detail::pools().programs.valid(record->program))
     {
-        return failure("the program this pipeline draws with has been released. "
-                       "A pipeline does not own its program, so the program has "
-                       "to outlive it");
+        return failure(
+            "the program this pipeline draws with has been released. "
+            "A pipeline does not own its program, so the program has "
+            "to outlive it");
     }
 
-    backend::bindPipeline(record->native_program, record->reader, record->state);
+    backend::bindPipeline(
+        record->native_program, record->reader, record->state);
     return success();
 }
 
@@ -389,9 +408,8 @@ bool Pipeline::instanced() const
     }
     return std::any_of(record->attributes.begin(),
                        record->attributes.end(),
-                       [](backend::VertexAttribute const& p_attribute) {
-                           return p_attribute.per_instance;
-                       });
+                       [](backend::VertexAttribute const& p_attribute)
+                       { return p_attribute.per_instance; });
 }
 
 std::string Pipeline::describeAttributes() const
@@ -438,13 +456,12 @@ std::string Pipeline::describeAttributes() const
         const bool matched =
             std::any_of(record->attributes.begin(),
                         record->attributes.end(),
-                        [&field](backend::VertexAttribute const& p_attribute) {
-                            return p_attribute.offset == field.offset;
-                        });
+                        [&field](backend::VertexAttribute const& p_attribute)
+                        { return p_attribute.offset == field.offset; });
         if (!matched)
         {
-            text += "not read by this shader: " + field.format.glslType() + " " +
-                    field.name + "\n";
+            text += "not read by this shader: " + field.format.glslType() +
+                    " " + field.name + "\n";
         }
     }
     return text;

@@ -11,6 +11,9 @@
 
 #include <vector>
 
+
+
+
 using namespace tests;
 using ::testing::HasSubstr;
 
@@ -65,8 +68,8 @@ void main() { oColor = texture(image, vec2(0.5)); }
 //! \brief The vertex the colored shader reads, as a struct.
 struct Vertex
 {
-    Vector2f position;
-    Vector3f color;
+    compages::core::Vector2f position;
+    compages::core::Vector3f color;
 };
 
 //! \brief The red, green, blue of the pixel in the middle of the target.
@@ -170,7 +173,7 @@ TEST_F(DrawableTest, SendsWhatChangedAtTheNextDraw)
 
     for (Vertex& vertex : triangle.vertices<Vertex>())
     {
-        vertex.color = Vector3f(0.0f, 1.0f, 0.0f);
+        vertex.color = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
     }
     ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 
@@ -190,7 +193,7 @@ TEST_F(DrawableTest, RefusesToChangeImmutableVerticesOnceDrawn)
     ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
     ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
 
-    triangle.vertex<Vertex>(0u).color = Vector3f(0.0f, 1.0f, 0.0f);
+    triangle.vertex<Vertex>(0u).color = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
     auto pass = compages::gpu::RenderPass::begin(
         compages::gpu::PassDesc{ .width = WIDTH, .height = HEIGHT, .target = {} });
     ASSERT_TRUE(bool(pass)) << pass.error();
@@ -205,7 +208,7 @@ TEST_F(DrawableTest, SetsUniformsByName)
     compages::gpu::Drawable triangle;
     ASSERT_TRUE(bool(triangle.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
     triangle["position"] = { { -1.0f, -1.0f }, { 3.0f, -1.0f }, { -1.0f, 3.0f } };
-    triangle["tint"] = Vector3f(0.0f, 1.0f, 0.0f);
+    triangle["tint"] = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
     triangle["strength"] = 1.0;
     ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 
@@ -219,7 +222,7 @@ TEST_F(DrawableTest, DrawsThroughIndices)
     compages::gpu::Drawable square;
     ASSERT_TRUE(bool(square.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
     square["position"] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
-    square["tint"] = Vector3f(1.0f, 0.0f, 0.0f);
+    square["tint"] = compages::core::Vector3f(1.0f, 0.0f, 0.0f);
     square["strength"] = 1.0f;
     square.indices({ 0, 1, 2, 2, 3, 0 });
     ASSERT_EQ(drawn([&] { square.draw(); }), RED);
@@ -291,7 +294,7 @@ TEST_F(DrawableTest, TellsAnAttributeFromAUniform)
 {
     compages::gpu::Drawable triangle;
     ASSERT_TRUE(bool(triangle.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
-    triangle["position"] = Vector2f(0.0f, 0.0f);
+    triangle["position"] = compages::core::Vector2f(0.0f, 0.0f);
     EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("attribute"));
     triangle["tint"] = { { 1, 0, 0 } };
     EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("uniform"));

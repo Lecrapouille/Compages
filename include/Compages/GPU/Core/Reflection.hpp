@@ -35,8 +35,15 @@
 //! difference can be spelled out.
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
+
+
 
 // ----------------------------------------------------------------------------
 //! \brief A type as a shader declares it.
@@ -350,7 +357,7 @@ struct TypeOf<bool>
 //! onto its size, which is the whole of the naming scheme: vec3, ivec3, uvec3
 //! and bvec3 differ only in where they start.
 template <typename T, std::size_t N>
-struct TypeOf<Vector<T, N>>
+struct TypeOf<compages::core::Vector<T, N>>
 {
     static_assert((N >= 2u) && (N <= 4u),
                   "a shader knows vectors of two, three and four");
@@ -364,7 +371,7 @@ struct TypeOf<Vector<T, N>>
 //! named the other way round, rows first, which is the one place the two
 //! conventions have to be crossed.
 template <std::size_t Rows, std::size_t Cols>
-struct TypeOf<Matrix<float, Rows, Cols>>
+struct TypeOf<compages::core::Matrix<float, Rows, Cols>>
 {
     static_assert((Rows >= 2u) && (Rows <= 4u) && (Cols >= 2u) && (Cols <= 4u),
                   "a shader knows matrices from two to four in each direction");

@@ -27,8 +27,8 @@ namespace examples
 //! m_points.draw();
 //! \endcode
 //!
-//! compages::gpu::barrier() is what makes the writes visible to the draw. Forgetting it
-//! is a race, not a compile error.
+//! compages::gpu::barrier() is what makes the writes visible to the draw.
+//! Forgetting it is a race, not a compile error.
 // ****************************************************************************
 class ComputeParticles: public Example
 {
@@ -40,17 +40,17 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     //! \brief The same bytes as the GLSL struct, std430 rules.
     struct Particle
     {
-        Vector2f position;
-        Vector2f velocity;
-        Vector4f color;
+        compages::core::Vector2f position;
+        compages::core::Vector2f velocity;
+        compages::core::Vector4f color;
     };
 
     compages::gpu::Buffer<Particle> m_particles;

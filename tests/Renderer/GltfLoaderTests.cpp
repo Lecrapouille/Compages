@@ -26,6 +26,9 @@
 #include <algorithm>
 #include <cmath>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -39,14 +42,14 @@ std::string dataPath(std::string const& p_name)
            "external/Compages-data/",
            "../external/Compages-data/" })
     {
-        if (File::exist(root + p_name))
+        if (compages::core::File::exist(root + p_name))
         {
             return root + p_name;
         }
     }
     const std::string three_js =
         "/home/qq/three.js/examples/models/gltf/" + p_name;
-    if (File::exist(three_js))
+    if (compages::core::File::exist(three_js))
     {
         return three_js;
     }
@@ -166,7 +169,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
             << "the PBR Material was never registered with the AssetManager";
     }
 
-    AABB bounds;
+    compages::core::AABB bounds;
     std::size_t mesh_index = 0u;
     world.each<compages::renderer::MeshRenderer>(
         [&](compages::world::EntityId p_entity, compages::renderer::MeshRenderer const& p_renderer) {
@@ -178,7 +181,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
         ++mesh_index;
     });
     ASSERT_FALSE(bounds.empty());
-    const Vector3f extent = bounds.extent();
+    const compages::core::Vector3f extent = bounds.extent();
     EXPECT_TRUE(std::isfinite(bounds.center().x));
     EXPECT_TRUE(std::isfinite(bounds.center().y));
     EXPECT_TRUE(std::isfinite(bounds.center().z));
@@ -195,7 +198,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
     lens.far_plane = 50.0f;
     world.add(camera, lens);
     world.transform(camera).position =
-        bounds.center() + Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
+        bounds.center() + compages::core::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
     world.update();
 
     view.activeCamera(camera);
@@ -226,7 +229,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     auto imported = view.load(path);
     ASSERT_TRUE(bool(imported)) << imported.error();
 
-    AABB bounds;
+    compages::core::AABB bounds;
     auto const renderers = world.view<compages::renderer::MeshRenderer>();
     ASSERT_GT(renderers.size(), 0u);
     auto const first = *renderers.begin();
@@ -242,8 +245,8 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
             one->local_bounds.transformed(world.worldMatrix(p_entity)));
     });
 
-    const Vector3f center = bounds.center();
-    const Vector3f extent = bounds.extent();
+    const compages::core::Vector3f center = bounds.center();
+    const compages::core::Vector3f extent = bounds.extent();
 
     compages::world::EntityId camera = world.create("Camera");
     compages::world::Camera lens;
@@ -253,12 +256,12 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     lens.far_plane = std::max(extent.y * 40.0f, 20.0f);
     world.add(camera, lens);
     world.transform(camera).position =
-        center + Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
+        center + compages::core::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
     world.update();
 
     view.activeCamera(camera);
     view.renderSettings().frustum_culling = false;
-    view.environment().ambient = Vector3f(0.4f, 0.4f, 0.4f);
+    view.environment().ambient = compages::core::Vector3f(0.4f, 0.4f, 0.4f);
 
     constexpr std::uint32_t width = 128u;
     constexpr std::uint32_t height = 128u;
@@ -269,7 +272,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     compages::gpu::PassDesc desc;
     desc.width = width;
     desc.height = height;
-    desc.color = Vector4f(0.12f, 0.14f, 0.18f, 1.0f);
+    desc.color = compages::core::Vector4f(0.12f, 0.14f, 0.18f, 1.0f);
     desc.clear_depth = true;
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();
@@ -304,7 +307,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
         }
     }
 
-    const Vector3f cam_pos = world.transform(camera).position;
+    const compages::core::Vector3f cam_pos = world.transform(camera).position;
     ASSERT_GT(lit, 80u)
         << "Duck produced a draw but almost no visible pixels"
         << " items=" << snapshot.value().items.size()

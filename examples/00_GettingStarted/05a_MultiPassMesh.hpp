@@ -18,14 +18,15 @@
 //! the driver keeps.
 //!
 //! GPU_STD140 is at file scope on purpose. It specialises a template in
-//! compages::gpu::std140, which a type hidden in a class or an anonymous namespace cannot
-//! do, and the compiler would then treat the struct as never described.
+//! compages::gpu::std140, which a type hidden in a class or an anonymous
+//! namespace cannot do, and the compiler would then treat the struct as never
+//! described.
 // ****************************************************************************
 struct Transforms
 {
-    Matrix44f projection;
-    Matrix44f view;
-    Matrix44f model;
+    compages::core::Matrix44f projection;
+    compages::core::Matrix44f view;
+    compages::core::Matrix44f model;
 };
 GPU_STD140(Transforms, projection, view, model);
 
@@ -42,7 +43,8 @@ namespace examples
 //! set up that the vertex can feed that shader:
 //! \code
 //! COMPAGES_TRY(m_lit_program.load(LIT_VERTEX, LIT_FRAGMENT));
-//! COMPAGES_TRY_ASSIGN(m_lit, compages::gpu::Pipeline::create<Vertex>(m_lit_program, solid));
+//! COMPAGES_TRY_ASSIGN(m_lit,
+//! compages::gpu::Pipeline::create<Vertex>(m_lit_program, solid));
 //! ...
 //! compages::gpu::drawIndexed(m_lit, m_vertices, m_indices);
 //! \endcode
@@ -63,8 +65,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
@@ -75,11 +77,12 @@ private:
     //! \brief Load one of the three programs and build its pipeline, which
     //! checks the vertex can feed it. The program must outlive the pipeline.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::gpu::Status makePipeline(compages::gpu::Program& p_program,
-                                           compages::gpu::Pipeline& p_pipeline,
-                                           char const* p_vertex,
-                                           char const* p_fragment,
-                                           compages::gpu::RenderState const& p_state);
+    [[nodiscard]] compages::Status
+    makePipeline(compages::gpu::Program& p_program,
+                 compages::gpu::Pipeline& p_pipeline,
+                 char const* p_vertex,
+                 char const* p_fragment,
+                 compages::gpu::RenderState const& p_state);
 
     compages::gpu::Program m_lit_program;
     compages::gpu::Program m_normals_program;

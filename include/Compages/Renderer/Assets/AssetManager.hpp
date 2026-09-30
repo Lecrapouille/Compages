@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/Result.hpp"
 #include "Compages/Renderer/Assets/AnimationClip.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/Renderer/Assets/Material.hpp"
@@ -14,7 +15,6 @@
 #include "Compages/Renderer/Assets/Prefab.hpp"
 #include "Compages/Renderer/Assets/Skin.hpp"
 #include "Compages/Renderer/Assets/TextureAsset.hpp"
-#include "Compages/Core/Result.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,7 +33,7 @@ namespace compages::renderer
 //! MaterialId names a material family, a MaterialInstanceId names one
 //! parameterisation. The AssetManager owns the actual data: the GPU buffers
 //! of a mesh, the program and pipeline of a material, the parameters of an
-//! instance. World components store only ids.
+//! instance. compages::world::World components store only ids.
 //!
 //! The manager is not a scene: it does not know which entities use a given
 //! asset. It is what would eventually cache the results of loading a glTF file
@@ -60,41 +60,41 @@ public:
     //! \param[in] p_asset the mesh, moved from.
     //! \return a stable id or a failure if the pool is full.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Result<MeshAssetId> addMesh(std::string p_name,
-                                                   MeshAsset p_asset);
+    [[nodiscard]] Result<MeshAssetId> addMesh(std::string p_name,
+                                              MeshAsset p_asset);
 
     // ------------------------------------------------------------------------
     //! \brief Register a material and return its id.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Result<MaterialId> addMaterial(std::string p_name,
-                                                      Material p_material);
+    [[nodiscard]] Result<MaterialId> addMaterial(std::string p_name,
+                                                 Material p_material);
 
     // ------------------------------------------------------------------------
     //! \brief Register a material instance and return its id.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Result<MaterialInstanceId>
+    [[nodiscard]] Result<MaterialInstanceId>
     addMaterialInstance(std::string p_name, MaterialInstance p_instance);
 
     // ------------------------------------------------------------------------
     //! \brief Register a texture and return its id.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Result<TextureAssetId> addTexture(std::string p_name,
-                                                         TextureAsset p_texture);
+    [[nodiscard]] Result<TextureAssetId> addTexture(std::string p_name,
+                                                    TextureAsset p_texture);
 
     // ------------------------------------------------------------------------
     //! \brief Register a prefab template and return its id.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Result<PrefabId> addPrefab(std::string p_name,
-                                                  Prefab p_prefab);
+    [[nodiscard]] Result<PrefabId> addPrefab(std::string p_name,
+                                             Prefab p_prefab);
 
     //! \brief Load a reusable asset without creating entities.
-    [[nodiscard]] compages::Result<PrefabId> load(std::string const& p_path);
+    [[nodiscard]] Result<PrefabId> load(std::string const& p_path);
 
-    [[nodiscard]] compages::Result<AnimationClipId>
-    addAnimation(std::string p_name, AnimationClip p_clip);
+    [[nodiscard]] Result<AnimationClipId> addAnimation(std::string p_name,
+                                                       AnimationClip p_clip);
 
-    [[nodiscard]] compages::Result<SkinAssetId> addSkin(std::string p_name,
-                                                   SkinAsset p_skin);
+    [[nodiscard]] Result<SkinAssetId> addSkin(std::string p_name,
+                                              SkinAsset p_skin);
 
     // ------------------------------------------------------------------------
     //! \brief Look up a mesh, or nullptr when the id is empty or stale.
@@ -129,9 +129,9 @@ public:
     [[nodiscard]] SkinAsset const* skin(SkinAssetId p_id) const;
 
     //! \brief Materialize deferred CPU assets on the current GPU device.
-    [[nodiscard]] compages::Status prepare(MeshAssetId p_id);
-    [[nodiscard]] compages::Status prepare(TextureAssetId p_id);
-    [[nodiscard]] compages::Status prepare(MaterialId p_id);
+    [[nodiscard]] Status prepare(MeshAssetId p_id);
+    [[nodiscard]] Status prepare(TextureAssetId p_id);
+    [[nodiscard]] Status prepare(MaterialId p_id);
 
     // ------------------------------------------------------------------------
     //! \brief Look up a mesh by its registered name.
@@ -149,8 +149,8 @@ public:
     //! \brief Reverse lookup: registered name for a live asset id, or empty.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string meshName(MeshAssetId p_id) const;
-    [[nodiscard]] std::string materialInstanceName(
-        MaterialInstanceId p_id) const;
+    [[nodiscard]] std::string
+    materialInstanceName(MaterialInstanceId p_id) const;
     [[nodiscard]] std::string textureName(TextureAssetId p_id) const;
     [[nodiscard]] std::string prefabName(PrefabId p_id) const;
 
@@ -165,19 +165,34 @@ public:
     void removeAnimation(AnimationClipId p_id);
     void removeSkin(SkinAssetId p_id);
 
-    [[nodiscard]] std::size_t meshCount() const { return m_mesh_living; }
-    [[nodiscard]] std::size_t materialCount() const { return m_material_living; }
+    [[nodiscard]] std::size_t meshCount() const
+    {
+        return m_mesh_living;
+    }
+    [[nodiscard]] std::size_t materialCount() const
+    {
+        return m_material_living;
+    }
     [[nodiscard]] std::size_t materialInstanceCount() const
     {
         return m_instance_living;
     }
-    [[nodiscard]] std::size_t textureCount() const { return m_texture_living; }
-    [[nodiscard]] std::size_t prefabCount() const { return m_prefab_living; }
+    [[nodiscard]] std::size_t textureCount() const
+    {
+        return m_texture_living;
+    }
+    [[nodiscard]] std::size_t prefabCount() const
+    {
+        return m_prefab_living;
+    }
     [[nodiscard]] std::size_t animationCount() const
     {
         return m_animation_living;
     }
-    [[nodiscard]] std::size_t skinCount() const { return m_skin_living; }
+    [[nodiscard]] std::size_t skinCount() const
+    {
+        return m_skin_living;
+    }
 
 private:
 
@@ -193,8 +208,11 @@ private:
     };
 
     template <typename Id, typename T>
-    compages::Result<Id> insert(Pool<T>& p_pool, std::string p_name, T p_value,
-                           std::size_t& p_living, const char* p_kind);
+    Result<Id> insert(Pool<T>& p_pool,
+                      std::string p_name,
+                      T p_value,
+                      std::size_t& p_living,
+                      const char* p_kind);
 
     template <typename Id, typename T>
     void erase(Pool<T>& p_pool, Id p_id, std::size_t& p_living);

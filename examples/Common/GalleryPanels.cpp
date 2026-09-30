@@ -387,7 +387,7 @@ void Gallery::drawViewport()
         draw->AddImage(ImTextureRef(static_cast<ImTextureID>(m_view_color.nativeId())),
                        at, end, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
     }
-    m_view_mouse = Vector2f((io.MousePos.x - at.x) * scale.x,
+    m_view_mouse = compages::core::Vector2f((io.MousePos.x - at.x) * scale.x,
                             static_cast<float>(m_view_height) -
                                 ((io.MousePos.y - at.y) * scale.y));
 

@@ -11,8 +11,12 @@
 #include "Compages/World/Controllers/CameraInput.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 class World;
 
@@ -35,7 +39,7 @@ class ThirdPersonController
 public:
 
     EntityId target{};
-    Vector3f look_offset{ 0.0f, 1.6f, 0.0f };
+    compages::core::Vector3f look_offset{ 0.0f, 1.6f, 0.0f };
     float yaw = 0.0f;
     float pitch = -0.25f;
     float distance = 8.0f;

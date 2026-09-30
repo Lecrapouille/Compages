@@ -33,8 +33,8 @@ constexpr std::size_t BINARY_FACET_BYTES = 50u;
 // ****************************************************************************
 struct Corner
 {
-    Vector3f position;
-    Vector3f normal;
+    compages::core::Vector3f position;
+    compages::core::Vector3f normal;
 };
 
 // ****************************************************************************
@@ -63,7 +63,8 @@ struct CornerHash
         std::size_t seed = 0u;
         for (std::uint32_t const word : p_key.bits)
         {
-            seed ^= std::size_t(word) + 0x9e3779b9u + (seed << 6u) + (seed >> 2u);
+            seed ^=
+                std::size_t(word) + 0x9e3779b9u + (seed << 6u) + (seed >> 2u);
         }
         return seed;
     }
@@ -71,41 +72,43 @@ struct CornerHash
 
 //! \brief The normal of the facet, or that of its triangle when the file
 //! stored a null one.
-Vector3f facetNormal(Vector3f const& p_stored,
-                     Vector3f const& p_a,
-                     Vector3f const& p_b,
-                     Vector3f const& p_c)
+compages::core::Vector3f facetNormal(compages::core::Vector3f const& p_stored,
+                                     compages::core::Vector3f const& p_a,
+                                     compages::core::Vector3f const& p_b,
+                                     compages::core::Vector3f const& p_c)
 {
     constexpr float TINY = 1e-12f;
-    if (compages::vector::squaredNorm(p_stored) > TINY)
+    if (compages::core::vector::squaredNorm(p_stored) > TINY)
     {
-        return compages::vector::normalize(p_stored);
+        return compages::core::vector::normalize(p_stored);
     }
-    const Vector3f computed = compages::vector::cross(p_b - p_a, p_c - p_a);
-    if (compages::vector::squaredNorm(computed) > TINY)
+    const compages::core::Vector3f computed =
+        compages::core::vector::cross(p_b - p_a, p_c - p_a);
+    if (compages::core::vector::squaredNorm(computed) > TINY)
     {
-        return compages::vector::normalize(computed);
+        return compages::core::vector::normalize(computed);
     }
-    return Vector3f(0.0f, 0.0f, 1.0f);
+    return compages::core::Vector3f(0.0f, 0.0f, 1.0f);
 }
 
 void addFacet(std::vector<Corner>& p_corners,
-              Vector3f const& p_normal,
-              Vector3f const& p_a,
-              Vector3f const& p_b,
-              Vector3f const& p_c)
+              compages::core::Vector3f const& p_normal,
+              compages::core::Vector3f const& p_a,
+              compages::core::Vector3f const& p_b,
+              compages::core::Vector3f const& p_c)
 {
-    const Vector3f normal = facetNormal(p_normal, p_a, p_b, p_c);
+    const compages::core::Vector3f normal =
+        facetNormal(p_normal, p_a, p_b, p_c);
     p_corners.push_back(Corner{ p_a, normal });
     p_corners.push_back(Corner{ p_b, normal });
     p_corners.push_back(Corner{ p_c, normal });
 }
 
-Vector3f readVector(std::byte const* p_at)
+compages::core::Vector3f readVector(std::byte const* p_at)
 {
     std::array<float, 3u> xyz;
     std::memcpy(xyz.data(), p_at, sizeof(xyz));
-    return Vector3f(xyz[0], xyz[1], xyz[2]);
+    return compages::core::Vector3f(xyz[0], xyz[1], xyz[2]);
 }
 
 //! \brief A binary STL is an 80-byte header, a facet count, then 50 bytes per
@@ -142,8 +145,7 @@ std::vector<Corner> readBinary(std::span<const std::byte> p_bytes)
     return corners;
 }
 
-compages::Result<std::vector<Corner>>
-readAscii(std::span<const std::byte> p_bytes)
+Result<std::vector<Corner>> readAscii(std::span<const std::byte> p_bytes)
 {
     const std::string_view text(reinterpret_cast<char const*>(p_bytes.data()),
                                 p_bytes.size());
@@ -151,14 +153,14 @@ readAscii(std::span<const std::byte> p_bytes)
     std::string word;
     if (!(in >> word) || (word != "solid"))
     {
-        return compages::failure(
+        return failure(
             "neither a binary STL (wrong size for its facet count) nor an "
             "ASCII one (no 'solid' keyword)");
     }
 
     std::vector<Corner> corners;
-    Vector3f normal(0.0f, 0.0f, 0.0f);
-    std::array<Vector3f, 3u> triangle;
+    compages::core::Vector3f normal(0.0f, 0.0f, 0.0f);
+    std::array<compages::core::Vector3f, 3u> triangle;
     std::size_t in_triangle = 0u;
     while (in >> word)
     {
@@ -167,33 +169,34 @@ readAscii(std::span<const std::byte> p_bytes)
             if (!(in >> word) || (word != "normal") ||
                 !(in >> normal.x >> normal.y >> normal.z))
             {
-                return compages::failure("malformed 'facet normal' in STL");
+                return failure("malformed 'facet normal' in STL");
             }
             in_triangle = 0u;
         }
         else if (word == "vertex")
         {
-            Vector3f& corner = triangle[in_triangle % 3u];
+            compages::core::Vector3f& corner = triangle[in_triangle % 3u];
             if (!(in >> corner.x >> corner.y >> corner.z))
             {
-                return compages::failure("malformed 'vertex' in STL");
+                return failure("malformed 'vertex' in STL");
             }
             if (++in_triangle == 3u)
             {
-                addFacet(corners, normal, triangle[0], triangle[1], triangle[2]);
+                addFacet(
+                    corners, normal, triangle[0], triangle[1], triangle[2]);
             }
             else if (in_triangle > 3u)
             {
-                return compages::failure("an STL facet has more than three "
-                                         "vertices");
+                return failure("an STL facet has more than three "
+                               "vertices");
             }
         }
         else if (word == "endfacet")
         {
             if (in_triangle != 3u)
             {
-                return compages::failure("an STL facet has fewer than three "
-                                         "vertices");
+                return failure("an STL facet has fewer than three "
+                               "vertices");
             }
         }
     }
@@ -206,7 +209,7 @@ MeshAsset merge(std::vector<Corner> const& p_corners)
     std::unordered_map<CornerKey, std::uint32_t, CornerHash> seen;
     seen.reserve(p_corners.size());
     mesh.source_indices.reserve(p_corners.size());
-    AABB bounds;
+    compages::core::AABB bounds;
     for (Corner const& corner : p_corners)
     {
         const auto [slot, added] = seen.try_emplace(
@@ -229,7 +232,7 @@ MeshAsset merge(std::vector<Corner> const& p_corners)
 
 } // namespace
 
-compages::Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes)
+Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes)
 {
     std::vector<Corner> corners;
     if (isBinary(p_bytes))
@@ -241,13 +244,13 @@ compages::Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes)
         auto ascii = readAscii(p_bytes);
         if (!ascii)
         {
-            return compages::failure(ascii.error());
+            return failure(ascii.error());
         }
         corners = ascii.take();
     }
     if (corners.empty())
     {
-        return compages::failure("the STL holds no triangle");
+        return failure("the STL holds no triangle");
     }
 
     MeshAsset mesh = merge(corners);
@@ -258,19 +261,19 @@ compages::Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes)
     return mesh;
 }
 
-compages::Result<MeshAsset> loadStl(std::string const& p_path)
+Result<MeshAsset> loadStl(std::string const& p_path)
 {
     std::ifstream file(p_path, std::ios::binary);
     if (!file)
     {
-        return compages::failure("cannot open the STL file '" + p_path + "'");
+        return failure("cannot open the STL file '" + p_path + "'");
     }
     const std::vector<char> content((std::istreambuf_iterator<char>(file)),
                                     std::istreambuf_iterator<char>());
     auto mesh = parseStl(std::as_bytes(std::span<const char>(content)));
     if (!mesh)
     {
-        return compages::failure("'" + p_path + "': " + mesh.error());
+        return failure("'" + p_path + "': " + mesh.error());
     }
     return mesh;
 }

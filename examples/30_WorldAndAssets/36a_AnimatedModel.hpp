@@ -9,8 +9,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -27,7 +27,7 @@ namespace examples
 //! makeWalker("B", red).add<Walk>(2.2f, 1.7f);
 //! \endcode
 // ****************************************************************************
-class AnimatedModel final : public Example
+class AnimatedModel final: public Example
 {
 public:
 
@@ -37,14 +37,15 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Walk;
 
-    compages::world::Entity makeWalker(char const* p_name, compages::renderer::Look const& p_shirt);
+    compages::world::Entity makeWalker(char const* p_name,
+                                       compages::renderer::Look const& p_shirt);
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };

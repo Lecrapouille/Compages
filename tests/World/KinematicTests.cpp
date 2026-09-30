@@ -8,10 +8,13 @@
 #include "Compages/World/Entity.hpp"
 #include "main.hpp"
 
+
 #include "Compages/World/World.hpp"
 
 #include <cmath>
 #include <limits>
+
+
 
 using namespace units::literals;
 
@@ -20,7 +23,7 @@ namespace
 
 constexpr float EPSILON = 1.0e-5f;
 
-void expectNear(Vector3f const& p_actual, Vector3f const& p_expected)
+void expectNear(compages::core::Vector3f const& p_actual, compages::core::Vector3f const& p_expected)
 {
     EXPECT_NEAR(p_actual.x, p_expected.x, EPSILON);
     EXPECT_NEAR(p_actual.y, p_expected.y, EPSILON);
@@ -58,11 +61,11 @@ TEST(Kinematics, RevoluteJointTurnsItsLink)
     compages::world::Entity tip = arm.child("Tip").position(1, 0, 0);
 
     world.update();
-    expectNear(tip.worldPosition(), Vector3f(1, 0, 1));
+    expectNear(tip.worldPosition(), compages::core::Vector3f(1, 0, 1));
 
     arm.angle(90.0_deg);
     world.update();
-    expectNear(tip.worldPosition(), Vector3f(0, 1, 1));
+    expectNear(tip.worldPosition(), compages::core::Vector3f(0, 1, 1));
     EXPECT_NEAR(arm.angle().to<double>(), M_PI / 2.0, 1.0e-9);
 }
 
@@ -75,7 +78,7 @@ TEST(Kinematics, RevoluteJointStaysWithinItsLimits)
     arm.angle(90.0_deg);
     world.update();
     const float half = std::sqrt(0.5f);
-    expectNear(tip.worldPosition(), Vector3f(half, half, 0));
+    expectNear(tip.worldPosition(), compages::core::Vector3f(half, half, 0));
     // The value kept is the one set; only its effect is clamped.
     EXPECT_NEAR(units::angle::degree_t(arm.angle()).to<double>(), 90.0, 1.0e-9);
 }
@@ -88,22 +91,22 @@ TEST(Kinematics, PrismaticJointSlidesItsLink)
 
     slider.offset(0.3_m);
     world.update();
-    expectNear(slider.worldPosition(), Vector3f(1, 0, 0.3f));
+    expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0.3f));
 
     slider.offset(2.0_m);
     world.update();
-    expectNear(slider.worldPosition(), Vector3f(1, 0, 0.5f));
+    expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0.5f));
 }
 
 TEST(Kinematics, PrismaticAxisFollowsTheJointOrientation)
 {
     compages::world::World world;
     compages::world::Entity slider = world.entity("Slider")
-                               .rotation(0.5f * float(M_PI), Vector3f(0, 0, 1))
+                               .rotation(0.5f * float(M_PI), compages::core::Vector3f(0, 0, 1))
                                .prismatic({ 1, 0, 0 });
     slider.offset(2.0_m);
     world.update();
-    expectNear(slider.worldPosition(), Vector3f(0, 2, 0));
+    expectNear(slider.worldPosition(), compages::core::Vector3f(0, 2, 0));
 }
 
 TEST(Kinematics, PositionSetsTheJointOriginWhateverTheOrder)
@@ -114,15 +117,15 @@ TEST(Kinematics, PositionSetsTheJointOriginWhateverTheOrder)
 
     ASSERT_TRUE(before.has<compages::world::RevoluteJoint>());
     ASSERT_TRUE(after.has<compages::world::RevoluteJoint>());
-    expectNear(before.get<compages::world::RevoluteJoint>().origin.position, Vector3f(0, 2, 0));
-    expectNear(after.get<compages::world::RevoluteJoint>().origin.position, Vector3f(0, 2, 0));
-    expectNear(after.position(), Vector3f(0, 2, 0));
+    expectNear(before.get<compages::world::RevoluteJoint>().origin.position, compages::core::Vector3f(0, 2, 0));
+    expectNear(after.get<compages::world::RevoluteJoint>().origin.position, compages::core::Vector3f(0, 2, 0));
+    expectNear(after.position(), compages::core::Vector3f(0, 2, 0));
 
     before.angle(30.0_deg);
     after.angle(30.0_deg);
     world.update();
-    expectNear(before.worldPosition(), Vector3f(0, 2, 0));
-    expectNear(after.worldPosition(), Vector3f(0, 2, 0));
+    expectNear(before.worldPosition(), compages::core::Vector3f(0, 2, 0));
+    expectNear(after.worldPosition(), compages::core::Vector3f(0, 2, 0));
 }
 
 TEST(Kinematics, ReplacingAJointKeepsItsOrigin)
@@ -132,7 +135,7 @@ TEST(Kinematics, ReplacingAJointKeepsItsOrigin)
     link.prismatic({ 0, 1, 0 });
     EXPECT_FALSE(link.has<compages::world::RevoluteJoint>());
     ASSERT_TRUE(link.has<compages::world::PrismaticJoint>());
-    expectNear(link.get<compages::world::PrismaticJoint>().origin.position, Vector3f(3, 0, 0));
+    expectNear(link.get<compages::world::PrismaticJoint>().origin.position, compages::core::Vector3f(3, 0, 0));
 }
 
 TEST(Kinematics, TwoLinkChainForwardKinematics)
@@ -146,8 +149,8 @@ TEST(Kinematics, TwoLinkChainForwardKinematics)
     shoulder.angle(90.0_deg);
     elbow.angle(90.0_deg);
     world.update();
-    expectNear(elbow.worldPosition(), Vector3f(0, 1, 0));
-    expectNear(hand.worldPosition(), Vector3f(-1, 1, 0));
+    expectNear(elbow.worldPosition(), compages::core::Vector3f(0, 1, 0));
+    expectNear(hand.worldPosition(), compages::core::Vector3f(-1, 1, 0));
 
     // Any angles: the classic x = cos(a) + cos(a + b), y = sin(a) + sin(a + b).
     const double a = 0.3;
@@ -156,7 +159,7 @@ TEST(Kinematics, TwoLinkChainForwardKinematics)
     elbow.angle(units::angle::radian_t(b));
     world.update();
     expectNear(hand.worldPosition(),
-               Vector3f(float(std::cos(a) + std::cos(a + b)),
+               compages::core::Vector3f(float(std::cos(a) + std::cos(a + b)),
                         float(std::sin(a) + std::sin(a + b)), 0.0f));
 }
 

@@ -6,8 +6,9 @@
 // See LICENSING.md for details.
 
 #include "Compages/GPU/UniformBlock.hpp"
-#include "GPU/Backends/Backend.hpp"
+#include "Compages/Core/Matrix.hpp"
 #include "Compages/GPU/Device.hpp"
+#include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
 
 #include <cstring>
@@ -18,18 +19,19 @@
 //!
 //! \note On matrices, and on why they are copied one column at a time. The
 //! std140 rules treat a matrix as an array of its columns, and every element of
-//! an array is padded up to 16 bytes. A mat4 is therefore 4 columns of 16 bytes,
-//! which is what four vectors of four floats already are, so it can be copied
-//! whole. A mat3 is 3 columns of 16 bytes of which only 12 are used, that is 48
-//! bytes where C++ gives the same matrix 36. Copying those 36 bytes puts the
-//! second column where the shader expects the padding of the first: the shader
-//! then reads a matrix that is not far off, which is worse than one that is
-//! obviously wrong. The stride is never assumed here, it is the one the driver
-//! reported, so a driver packing differently is followed rather than fought.
+//! an array is padded up to 16 bytes. A mat4 is therefore 4 columns of 16
+//! bytes, which is what four vectors of four floats already are, so it can be
+//! copied whole. A mat3 is 3 columns of 16 bytes of which only 12 are used,
+//! that is 48 bytes where C++ gives the same matrix 36. Copying those 36 bytes
+//! puts the second column where the shader expects the padding of the first:
+//! the shader then reads a matrix that is not far off, which is worse than one
+//! that is obviously wrong. The stride is never assumed here, it is the one the
+//! driver reported, so a driver packing differently is followed rather than
+//! fought.
 //!
-//! \note On the order of the numbers within a matrix, see Shader.cpp: the
-//! matrices of src/Math are already in the order OpenGL reads, so nothing is
-//! transposed here either.
+//! \note On the order of the numbers within a matrix: std140 stores a \c mat4
+//! column by column. C++ holds row-major Scilab layout, so \c set() transposes
+//! before staging (see \c matrixForStd140).
 // ****************************************************************************
 
 namespace compages::gpu
@@ -44,6 +46,13 @@ namespace
 //! written as four bytes, so a shader declaring `bool enabled` may be given a
 //! bool, an int or an unsigned int without any of them being a mistake worth
 //! stopping for.
+template <typename T, std::size_t Rows, std::size_t Cols>
+compages::core::Matrix<T, Rows, Cols> matrixForStd140(
+    compages::core::Matrix<T, Rows, Cols> const& p_matrix)
+{
+    return compages::core::transpose(p_matrix);
+}
+
 bool interchangeable(DataType p_declared, DataType p_offered)
 {
     if (p_declared == p_offered)
@@ -69,8 +78,8 @@ bool interchangeable(DataType p_declared, DataType p_offered)
 //! \brief How many bytes C++ hands over for a value of this type.
 //!
 //! What the caller's pointer points at, which is not what the block will hold:
-//! the padding of a matrix and of a vector of three is added afterwards, here we
-//! are only measuring what may be read from the argument.
+//! the padding of a matrix and of a vector of three is added afterwards, here
+//! we are only measuring what may be read from the argument.
 std::size_t suppliedBytes(DataType p_type)
 {
     return sizeOf(scalarOf(p_type)) * rowsOf(p_type) * columnsOf(p_type);
@@ -87,21 +96,22 @@ UniformBlock::UniformBlock(Buffer<std::byte>&& p_buffer,
 {
     m_bytes.assign(m_buffer.count(), std::byte{ 0 });
 
-    // The whole block is marked from the start, so that a block bound after only
-    // some of its members were written sends zeroes for the others rather than
-    // whatever the device had in that memory. Uninitialised uniform data is the
-    // kind of bug that behaves differently on two machines.
+    // The whole block is marked from the start, so that a block bound after
+    // only some of its members were written sends zeroes for the others rather
+    // than whatever the device had in that memory. Uninitialised uniform data
+    // is the kind of bug that behaves differently on two machines.
     m_dirty.addAll(m_bytes.size());
 }
 
 Result<UniformBlock> UniformBlock::create(Program& p_program,
-                                         std::string const& p_name,
-                                         int p_binding)
+                                          std::string const& p_name,
+                                          int p_binding)
 {
     if (!p_program.valid())
     {
-        return failure("cannot make a uniform block from a program that did not "
-                       "link");
+        return failure(
+            "cannot make a uniform block from a program that did not "
+            "link");
     }
 
     BlockInfo const* found = p_program.reflection().uniformBlock(p_name);
@@ -131,14 +141,15 @@ Result<UniformBlock> UniformBlock::create(Program& p_program,
         binding = p_binding;
     }
 
-    // Dynamic rather than Immutable: a block whose contents never change would be
-    // better made immutable, but it is not what a block is for, and the cost of
-    // being wrong the other way round is a buffer that cannot be written at all.
-    auto buffer_result = Buffer<std::byte>::create(info.bytes, BufferKind::Uniform,
-                                  BufferUsage::Dynamic);
+    // Dynamic rather than Immutable: a block whose contents never change would
+    // be better made immutable, but it is not what a block is for, and the cost
+    // of being wrong the other way round is a buffer that cannot be written at
+    // all.
+    auto buffer_result = Buffer<std::byte>::create(
+        info.bytes, BufferKind::Uniform, BufferUsage::Dynamic);
     if (!buffer_result)
     {
-        return compages::failure(buffer_result.error());
+        return failure(buffer_result.error());
     }
     auto buffer = buffer_result.take();
 
@@ -179,8 +190,8 @@ Status UniformBlock::writeMember(std::string_view p_name,
                        toString(p_wanted));
     }
 
-    const std::size_t elements = static_cast<std::size_t>(
-        (member->elements > 0) ? member->elements : 1);
+    const std::size_t elements =
+        static_cast<std::size_t>((member->elements > 0) ? member->elements : 1);
     if (p_index >= elements)
     {
         return failure("'" + std::string(p_name) + "' in the block '" +
@@ -205,23 +216,29 @@ Status UniformBlock::writeMember(std::string_view p_name,
     const std::size_t columns = columnsOf(member->type);
     const std::size_t row_bytes = sizeOf(scalarOf(member->type)) * rows;
 
-    // A matrix whose columns the driver spaced further apart than their contents,
-    // which is a mat3 in nearly every case, has to be copied a column at a time.
-    const bool padded_columns =
-        isMatrix(member->type) && (member->matrix_stride != 0u) &&
-        (member->matrix_stride != row_bytes);
+    // A matrix whose columns the driver spaced further apart than their
+    // contents, which is a mat3 in nearly every case, has to be copied a column
+    // at a time.
+    const bool padded_columns = isMatrix(member->type) &&
+                                (member->matrix_stride != 0u) &&
+                                (member->matrix_stride != row_bytes);
 
     const std::size_t needed =
         padded_columns ? (member->matrix_stride * (columns - 1u)) + row_bytes
                        : suppliedBytes(member->type);
     if ((start + needed) > m_bytes.size())
     {
-        return failure("writing '" + std::string(p_name) + "' would go past the "
-                       "end of the block '" + m_info.name + "', which the driver "
-                       "says is " + std::to_string(m_bytes.size()) +
-                       " bytes. This is a bug in the library rather than in the "
-                       "caller: what it was told about the block does not fit "
-                       "the block");
+        return failure(
+            "writing '" + std::string(p_name) +
+            "' would go past the "
+            "end of the block '" +
+            m_info.name +
+            "', which the driver "
+            "says is " +
+            std::to_string(m_bytes.size()) +
+            " bytes. This is a bug in the library rather than in the "
+            "caller: what it was told about the block does not fit "
+            "the block");
     }
 
     if (padded_columns)
@@ -266,17 +283,20 @@ Status UniformBlock::set(std::string_view p_name, float p_value)
     return writeMember(p_name, 0u, DataType::Float, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector2f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector2f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec2, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector3f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector3f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec3, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector4f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector4f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec4, &p_value);
 }
@@ -299,34 +319,43 @@ Status UniformBlock::set(std::string_view p_name, bool p_value)
     return writeMember(p_name, 0u, DataType::Bool, &widened);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector2i const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector2i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec2, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector3i const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector3i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec3, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Vector4i const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Vector4i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec4, &p_value);
 }
 
-Status UniformBlock::set(std::string_view p_name, Matrix22f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Matrix22f const& p_value)
 {
-    return writeMember(p_name, 0u, DataType::Mat2, &p_value);
+    const compages::core::Matrix22f staged = matrixForStd140(p_value);
+    return writeMember(p_name, 0u, DataType::Mat2, &staged);
 }
 
-Status UniformBlock::set(std::string_view p_name, Matrix33f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Matrix33f const& p_value)
 {
-    return writeMember(p_name, 0u, DataType::Mat3, &p_value);
+    const compages::core::Matrix33f staged = matrixForStd140(p_value);
+    return writeMember(p_name, 0u, DataType::Mat3, &staged);
 }
 
-Status UniformBlock::set(std::string_view p_name, Matrix44f const& p_value)
+Status UniformBlock::set(std::string_view p_name,
+                         compages::core::Matrix44f const& p_value)
 {
-    return writeMember(p_name, 0u, DataType::Mat4, &p_value);
+    const compages::core::Matrix44f staged = matrixForStd140(p_value);
+    return writeMember(p_name, 0u, DataType::Mat4, &staged);
 }
 
 Status UniformBlock::update()
@@ -373,8 +402,9 @@ std::string UniformBlock::describe() const
 
     if (m_info.members.empty())
     {
-        text += "\n  (the driver reports no members, which means the linker kept "
-                "none of them)";
+        text +=
+            "\n  (the driver reports no members, which means the linker kept "
+            "none of them)";
         return text;
     }
 
@@ -388,8 +418,8 @@ std::string UniformBlock::describe() const
         text += " at byte " + std::to_string(member.offset);
         if (member.elements > 1)
         {
-            text += ", one element every " + std::to_string(member.array_stride) +
-                    " bytes";
+            text += ", one element every " +
+                    std::to_string(member.array_stride) + " bytes";
         }
         if (isMatrix(member.type) && (member.matrix_stride != 0u))
         {
@@ -404,13 +434,13 @@ std::string UniformBlock::describe() const
 namespace detail
 {
 
-// Only the members the driver reports are checked, and this is the whole subtlety
-// of the function. A member of a block that no shader stage reads may be left out
-// of what the driver reports, while the offsets of those that remain are unchanged
-// because the layout of a block is fixed by its declaration. Requiring the two
-// lists to match would therefore refuse a perfectly good struct as soon as a
-// shader stopped using one of its members, which is the sort of check people learn
-// to switch off.
+// Only the members the driver reports are checked, and this is the whole
+// subtlety of the function. A member of a block that no shader stage reads may
+// be left out of what the driver reports, while the offsets of those that
+// remain are unchanged because the layout of a block is fixed by its
+// declaration. Requiring the two lists to match would therefore refuse a
+// perfectly good struct as soon as a shader stopped using one of its members,
+// which is the sort of check people learn to switch off.
 //
 // The other direction is a real error: a member the shader reads and the struct
 // does not provide means the shader is reading whatever happens to be at that
@@ -423,12 +453,11 @@ Status checkAgainstDriver(UniformBlock const& p_block,
 
     if (p_size < info.bytes)
     {
-        return failure(
-            "the struct is " + std::to_string(p_size) +
-            " bytes and the driver wants the block '" + info.name + "' to be " +
-            std::to_string(info.bytes) +
-            " bytes, so the shader would read past the end of it. " +
-            p_block.describe());
+        return failure("the struct is " + std::to_string(p_size) +
+                       " bytes and the driver wants the block '" + info.name +
+                       "' to be " + std::to_string(info.bytes) +
+                       " bytes, so the shader would read past the end of it. " +
+                       p_block.describe());
     }
 
     for (BlockMember const& wanted : info.members)
@@ -450,9 +479,12 @@ Status checkAgainstDriver(UniformBlock const& p_block,
                 info.name +
                 "' and the struct has no member of that name. The two are "
                 "matched by name, because a name is the only thing the two "
-                "sides share; rename the C++ member to '" + wanted.name +
-                "', or fill the block member by member with compages::gpu::UniformBlock "
-                "instead. " + p_block.describe());
+                "sides share; rename the C++ member to '" +
+                wanted.name +
+                "', or fill the block member by member with "
+                "compages::gpu::UniformBlock "
+                "instead. " +
+                p_block.describe());
         }
 
         if (given->offset != wanted.offset)
@@ -461,8 +493,10 @@ Status checkAgainstDriver(UniformBlock const& p_block,
                 "the driver puts '" + wanted.name + "' at byte " +
                 std::to_string(wanted.offset) + " of the block '" + info.name +
                 "' and C++ puts it at byte " + std::to_string(given->offset) +
-                ". The struct follows the std140 rules, since it would not have "
-                "compiled otherwise, so this driver is laying the block out some "
+                ". The struct follows the std140 rules, since it would not "
+                "have "
+                "compiled otherwise, so this driver is laying the block out "
+                "some "
                 "other way: check the shader for a layout qualifier other than "
                 "std140, and otherwise fill the block member by member with "
                 "compages::gpu::UniformBlock. " +

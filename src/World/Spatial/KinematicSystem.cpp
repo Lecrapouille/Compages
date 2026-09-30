@@ -56,7 +56,7 @@ LocalTransform jointTransform(RevoluteJoint const& p_joint)
     const units::angle::radian_t angle = p_joint.state.position.clamped();
     LocalTransform local = p_joint.origin;
     local.rotation = p_joint.origin.rotation *
-                     Quatf::fromAngleAxis(angle, compages::vector::normalize(p_joint.axis));
+                     compages::core::Quatf::fromAngleAxis(angle, compages::core::vector::normalize(p_joint.axis));
     local.rotation.normalize();
     return local;
 }
@@ -64,8 +64,8 @@ LocalTransform jointTransform(RevoluteJoint const& p_joint)
 LocalTransform jointTransform(PrismaticJoint const& p_joint)
 {
     const float offset = p_joint.state.position.clamped().to<float>();
-    const Vector3f axis = compages::vector::normalize(p_joint.axis);
-    const Vector3f slide(axis.x * offset * p_joint.origin.scale.x,
+    const compages::core::Vector3f axis = compages::core::vector::normalize(p_joint.axis);
+    const compages::core::Vector3f slide(axis.x * offset * p_joint.origin.scale.x,
                          axis.y * offset * p_joint.origin.scale.y,
                          axis.z * offset * p_joint.origin.scale.z);
     LocalTransform local = p_joint.origin;

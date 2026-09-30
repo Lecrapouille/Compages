@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include "Compages/Core/Vector.hpp"
 #include "Compages/GPU/Core/Handle.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
-#include "Compages/Core/Vector.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -36,8 +36,8 @@
 //! one below is suspended meanwhile and resumed, not cleared, at the end:
 //! \code
 //! {
-//!     compages::gpu::RenderPass offscreen(m_framebuffer, { .color = { 0, 0, 0, 1 } });
-//!     m_scene.draw();
+//!     compages::gpu::RenderPass offscreen(m_framebuffer, { .color = { 0, 0, 0,
+//!     1 } }); m_scene.draw();
 //! }                          // back to the window
 //! m_screen["image"] = m_color;
 //! m_screen.draw(3u);
@@ -48,6 +48,8 @@
 //! early.
 // ****************************************************************************
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -78,7 +80,7 @@ struct PassDesc
     bool clear_color = true;
     //! \brief The colour to start from, as red, green, blue and alpha between 0
     //! and 1.
-    Vector4f color{ 0.0f, 0.0f, 0.0f, 1.0f };
+    compages::core::Vector4f color{ 0.0f, 0.0f, 0.0f, 1.0f };
 
     //! \brief Should the recorded distances be forgotten before anything is
     //! drawn?
@@ -126,7 +128,8 @@ public:
     //! which part.
     //!
     //! \code
-    //! compages::gpu::RenderPass pass(m_framebuffer, { .color = { 1, 1, 1, 1 } });
+    //! compages::gpu::RenderPass pass(m_framebuffer, { .color = { 1, 1, 1, 1 }
+    //! });
     //! \endcode
     // ------------------------------------------------------------------------
     explicit RenderPass(Framebuffer const& p_target, PassDesc p_desc = {});
@@ -186,10 +189,10 @@ private:
 //! compages::gpu::clear({ 0.1f, 0.1f, 0.15f });
 //! \endcode
 // ----------------------------------------------------------------------------
-void clear(Vector4f const& p_color);
+void clear(compages::core::Vector4f const& p_color);
 
 //! \brief Same, fully opaque.
-void clear(Vector3f const& p_color);
+void clear(compages::core::Vector3f const& p_color);
 
 //! \brief Same, from braces: three numbers are opaque, four give the alpha.
 void clear(std::initializer_list<float> p_color);
@@ -203,7 +206,7 @@ void clearDepth(float p_depth = 1.0f);
 // ----------------------------------------------------------------------------
 //! \brief Clear both colour and depth at once, what a 3D frame starts with.
 // ----------------------------------------------------------------------------
-void clear(Vector3f const& p_color, float p_depth);
+void clear(compages::core::Vector3f const& p_color, float p_depth);
 
 // ----------------------------------------------------------------------------
 //! \brief Is a pass open right now?

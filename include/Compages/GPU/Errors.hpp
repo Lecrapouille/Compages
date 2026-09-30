@@ -21,8 +21,8 @@
 //!
 //! - **What can fail for a reason outside the program**: compiling a shader,
 //!   reading a file, asking the driver for something it does not have. These
-//!   return a Status, checked once with COMPAGES_TRY, because the caller has to
-//!   decide what to do about them.
+//!   return a Status, checked once with COMPAGES_TRY, because
+//!   the caller has to decide what to do about them.
 //!
 //! - **What happens every frame**: setting a uniform, binding a texture,
 //!   drawing. A failure there is a programming mistake (a uniform misspelled,
@@ -31,13 +31,13 @@
 //!   the frame here, and the window shows it and stops the example.
 //!
 //! \code
-//! compages::gpu::Status Demo::setUp()
+//! compages::Status Demo::setUp()
 //! {
-//!     COMPAGES_TRY(m_quad.load(VERTEX, FRAGMENT));  // may fail: a Status
-//!     return compages::gpu::success();
+//!     COMPAGES_TRY(m_quad.load(VERTEX, FRAGMENT));  // may fail: a
+//!     Status return success();
 //! }
 //!
-//! void Demo::draw(Frame const& p_frame)
+//! void Demo::draw(compages::core::Frame const& p_frame)
 //! {
 //!     m_quad["time"] = p_frame.total;               // cannot fail loudly
 //!     m_quad.draw();                                // recorded, if it fails
@@ -68,7 +68,8 @@ void reportError(std::string p_message);
 //! \brief Record a failed Status, and say whether it succeeded.
 //!
 //! The bridge from the first channel to the second: code that must keep
-//! going, such as a draw loop, turns a Status into a recorded error.
+//! going, such as a draw loop, turns a Status into a recorded
+//! error.
 //!
 //! \code
 //! if (!compages::gpu::check(m_texture.load("missing.png")))
@@ -117,15 +118,15 @@ void setBreakOnError(bool p_enabled);
 //! \brief Run something that records its failures, and return the first one
 //! as a Status.
 //!
-//! The bridge in the other direction: code that wants a Status from a function
-//! returning nothing, typically a test or a setup step drawing once.
-//! Whatever was recorded before is kept aside and put back afterwards, so
+//! The bridge in the other direction: code that wants a Status
+//! from a function returning nothing, typically a test or a setup step drawing
+//! once. Whatever was recorded before is kept aside and put back afterwards, so
 //! calling this in the middle of a frame does not swallow an earlier error.
 //! setBreakOnError() is suspended meanwhile, since a failure here is expected
 //! to be looked at rather than stopped on.
 //!
 //! \code
-//! compages::gpu::Status drawn = compages::gpu::attempt([&] { quad.draw(); });
+//! compages::Status drawn = compages::gpu::attempt([&] { quad.draw(); });
 //! EXPECT_FALSE(drawn);
 //! EXPECT_THAT(drawn.error(), HasSubstr("no pass is open"));
 //! \endcode

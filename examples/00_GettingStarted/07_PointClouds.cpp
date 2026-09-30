@@ -44,7 +44,7 @@ std::string PointSphere::description() const
            "instead of triangles. Orbit is automatic so --check sees motion.";
 }
 
-compages::gpu::Status PointSphere::setUp()
+compages::Status PointSphere::setUp()
 {
     constexpr std::uint32_t lon = 80u;
     constexpr std::uint32_t lat = 40u;
@@ -62,10 +62,10 @@ compages::gpu::Status PointSphere::setUp()
         {
             const float u = static_cast<float>(j) / static_cast<float>(lon);
             const float theta = u * 2.0f * M_PIf;
-            points.emplace_back(PointVertex{
-                Vector3f(radius * std::cos(phi) * std::cos(theta),
-                         radius * std::sin(phi),
-                         radius * std::cos(phi) * std::sin(theta)) });
+            points.emplace_back(PointVertex{ compages::core::Vector3f(
+                radius * std::cos(phi) * std::cos(theta),
+                radius * std::sin(phi),
+                radius * std::cos(phi) * std::sin(theta)) });
         }
     }
 
@@ -76,20 +76,21 @@ compages::gpu::Status PointSphere::setUp()
     return m_points.prepare();
 }
 
-void PointSphere::draw(Frame const& p_frame)
+void PointSphere::draw(compages::world::ViewFrame const& p_frame)
 {
     // One matrix, because a point cloud has no per-object state beyond where
     // it sits. The rotation is what makes the sphere read as a solid.
-    const Matrix44f projection = compages::matrix::perspective(
+    const compages::core::Matrix44f projection = compages::core::perspective(
         units::angle::degree_t(60.0), aspect(p_frame), 0.1f, 10.0f);
-    const Matrix44f view = compages::matrix::lookAt(Vector3f(0.0f, 0.0f, 2.5f),
-                                          Vector3f(0.0f, 0.0f, 0.0f),
-                                          Vector3f(0.0f, 1.0f, 0.0f));
-    const Matrix44f model =
-        compages::matrix::rotate(Matrix44f(compages::matrix::Identity),
-                       units::angle::radian_t(p_frame.total * 0.6f),
-                       Vector3f(0.0f, 1.0f, 0.0f));
-    m_points["mvp"] = model * view * projection;
+    const compages::core::Matrix44f view =
+        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 2.5f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Matrix44f model = compages::core::rotate(
+        compages::core::Matrix44f(compages::core::matrix::Identity),
+        units::angle::radian_t(p_frame.total * 0.6f),
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    m_points["mvp"] = projection * view * model;
 
     compages::gpu::clear({ 0.05f, 0.07f, 0.10f });
     m_points.draw();

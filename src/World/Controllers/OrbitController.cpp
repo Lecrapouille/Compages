@@ -20,14 +20,14 @@ namespace compages::world
 namespace
 {
 
-Quatf yawPitch(float p_yaw, float p_pitch)
+compages::core::Quatf yawPitch(float p_yaw, float p_pitch)
 {
-    const Quatf q_yaw = Quatf::fromAngleAxis(
+    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(p_yaw)),
-        Vector3f(0.0f, 1.0f, 0.0f));
-    const Quatf q_pitch = Quatf::fromAngleAxis(
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(p_pitch)),
-        Vector3f(1.0f, 0.0f, 0.0f));
+        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
     return q_yaw * q_pitch;
 }
 
@@ -51,8 +51,8 @@ void OrbitController::apply(World& p_world,
 
 void OrbitController::writePose(World& p_world, EntityId p_camera) const
 {
-    const Quatf rotation = yawPitch(yaw, pitch);
-    const Vector3f forward = rotation * Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::core::Quatf rotation = yawPitch(yaw, pitch);
+    const compages::core::Vector3f forward = rotation * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
     LocalTransformView local = p_world.transform(p_camera);
     local.position = target - (forward * distance);
     local.rotation = rotation;

@@ -9,20 +9,19 @@
 
 #include <cstdint>
 
-namespace compages::world
+namespace compages::core
 {
-
-struct ViewFrame;
 
 // ****************************************************************************
 //! \brief Timing and viewport size for one simulation step (no input).
 //!
 //! Headless tests and server-side simulation pass a \c Frame to
-//! \c World::update(Frame). Interactive apps use \c ViewFrame, which extends
-//! \c Frame with input; slice to \c Frame or use \c Frame(viewFrame).
+//! \c World::update(Frame). Interactive apps use \c compages::world::ViewFrame,
+//! which publicly inherits \c Frame; pass it to \c World::update(ViewFrame) or
+//! slice with \c static_cast<Frame const&>(viewFrame) when only timing/size matter.
 //!
 //! \code
-//! compages::world::Frame step;
+//! compages::core::Frame step;
 //! step.elapsed = 1.0f / 60.0f;
 //! step.width = 800;
 //! step.height = 600;
@@ -32,9 +31,6 @@ struct ViewFrame;
 struct Frame
 {
     Frame() = default;
-
-    //! \brief Copy timing and size from an interactive frame (drops input).
-    explicit Frame(ViewFrame const& p_view);
 
     //! \brief Viewport width in pixels (projection, aspect ratio).
     std::uint32_t width = 0u;
@@ -52,7 +48,8 @@ struct Frame
 //! Accepts \c ViewFrame through the \c Frame base subobject.
 //!
 //! \code
-//! compages::matrix::perspective(60.0_deg, compages::world::aspect(frame), 0.1f, 100.0f);
+//! compages::core::perspective(60.0_deg, compages::world::aspect(frame),
+//! 0.1f, 100.0f);
 //! \endcode
 // ****************************************************************************
 [[nodiscard]] inline float aspect(Frame const& p_frame)
@@ -62,4 +59,5 @@ struct Frame
                : float(p_frame.width) / float(p_frame.height);
 }
 
-} // namespace compages::world
+} // namespace compages::core
+

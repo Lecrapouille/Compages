@@ -6,8 +6,8 @@
 // See LICENSING.md for details.
 
 #include "Compages/GPU/Texture.hpp"
-#include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/Device.hpp"
+#include "Compages/GPU/Errors.hpp"
 #include "GPU/Internal/Pools.hpp"
 
 #include <stb_image.h>
@@ -29,8 +29,8 @@ struct Extent
 {
     std::uint32_t width = 0u;
     std::uint32_t height = 0u;
-    //! \brief How many images the level holds along the third axis: the depth of
-    //! a volume, the number of layers of an array, or six for a cube map.
+    //! \brief How many images the level holds along the third axis: the depth
+    //! of a volume, the number of layers of an array, or six for a cube map.
     std::uint32_t depth = 0u;
 
     [[nodiscard]] std::size_t pixels() const
@@ -42,15 +42,14 @@ struct Extent
 //! \brief How large a given level of detail is.
 //!
 //! Each level is half the size of the one before, but only along the axes that
-//! really shrink. The depth of a volume halves; the number of layers of an array
-//! does not, because the layers are separate images that happen to share a size.
-//! Treating the two alike is a mistake that shows as a write refused for the
-//! wrong reason, or worse, accepted.
+//! really shrink. The depth of a volume halves; the number of layers of an
+//! array does not, because the layers are separate images that happen to share
+//! a size. Treating the two alike is a mistake that shows as a write refused
+//! for the wrong reason, or worse, accepted.
 Extent extentOf(TextureDesc const& p_desc, std::uint32_t p_level)
 {
-    const auto halve = [p_level](std::uint32_t p_size) {
-        return std::max(1u, p_size >> p_level);
-    };
+    const auto halve = [p_level](std::uint32_t p_size)
+    { return std::max(1u, p_size >> p_level); };
 
     Extent extent;
     extent.width = halve(p_desc.width);
@@ -113,8 +112,8 @@ std::uint32_t fullMipChain(TextureDesc const& p_desc)
 
 //! \brief Fill in what the caller left implied, and refuse what cannot work.
 //!
-//! Everything checked here is something the driver would either refuse in its own
-//! words or, worse, accept and then read wrongly.
+//! Everything checked here is something the driver would either refuse in its
+//! own words or, worse, accept and then read wrongly.
 Result<TextureDesc> settle(TextureDesc p_desc)
 {
     if (p_desc.width == 0u)
@@ -140,10 +139,11 @@ Result<TextureDesc> settle(TextureDesc p_desc)
             }
             if (p_desc.depth != 1u)
             {
-                return failure("a 2D texture holds one image, so its depth must "
-                               "be left at one. For several images of the same "
-                               "size use TextureKind::Texture2DArray, and for a "
-                               "volume use Texture3D");
+                return failure(
+                    "a 2D texture holds one image, so its depth must "
+                    "be left at one. For several images of the same "
+                    "size use TextureKind::Texture2DArray, and for a "
+                    "volume use Texture3D");
             }
             break;
 
@@ -151,9 +151,8 @@ Result<TextureDesc> settle(TextureDesc p_desc)
         case TextureKind::Texture2DArray:
             if ((p_desc.height == 0u) || (p_desc.depth == 0u))
             {
-                return failure(
-                    std::string("a ") + toString(p_desc.kind) +
-                    " needs a height and a depth of at least one");
+                return failure(std::string("a ") + toString(p_desc.kind) +
+                               " needs a height and a depth of at least one");
             }
             break;
 
@@ -162,7 +161,8 @@ Result<TextureDesc> settle(TextureDesc p_desc)
             {
                 return failure("the faces of a cube map are square, but " +
                                std::to_string(p_desc.width) + " by " +
-                               std::to_string(p_desc.height) + " was asked for");
+                               std::to_string(p_desc.height) +
+                               " was asked for");
             }
             // Six faces, always, whatever was put in the depth.
             p_desc.depth = 6u;
@@ -190,7 +190,8 @@ Result<TextureDesc> settle(TextureDesc p_desc)
 
     // The driver's own ceilings, named so that a size can be brought under them
     // rather than guessed at.
-    const auto largest_2d = static_cast<std::uint32_t>(device().max_texture_size);
+    const auto largest_2d =
+        static_cast<std::uint32_t>(device().max_texture_size);
     const auto largest_3d =
         static_cast<std::uint32_t>(device().max_texture_size_3d);
 
@@ -244,19 +245,19 @@ public:
     {
         int channels = 0;
 
-        // A file holding values beyond one, as a photograph of a bright sky does,
-        // is read as floats: squeezing it into bytes would throw away exactly what
-        // it was saved for.
+        // A file holding values beyond one, as a photograph of a bright sky
+        // does, is read as floats: squeezing it into bytes would throw away
+        // exactly what it was saved for.
         if (stbi_is_hdr(p_path.c_str()) != 0)
         {
-            m_pixels = stbi_loadf(p_path.c_str(), &m_width, &m_height,
-                                  &channels, 4);
+            m_pixels =
+                stbi_loadf(p_path.c_str(), &m_width, &m_height, &channels, 4);
             m_format = PixelFormat::RGBA32F;
         }
         else
         {
-            m_pixels = stbi_load(p_path.c_str(), &m_width, &m_height, &channels,
-                                 0);
+            m_pixels =
+                stbi_load(p_path.c_str(), &m_width, &m_height, &channels, 0);
             switch (channels)
             {
                 case 1:
@@ -277,11 +278,11 @@ public:
 
         if (m_pixels == nullptr)
         {
-            // stb_image says what is wrong in a sentence, which is more use than
-            // anything this layer could add.
+            // stb_image says what is wrong in a sentence, which is more use
+            // than anything this layer could add.
             const char* why = stbi_failure_reason();
-            return failure("cannot read the image '" + p_path + "': " +
-                           ((why == nullptr) ? "unknown reason" : why));
+            return failure("cannot read the image '" + p_path +
+                           "': " + ((why == nullptr) ? "unknown reason" : why));
         }
         if ((m_width <= 0) || (m_height <= 0))
         {
@@ -326,7 +327,8 @@ private:
 std::string staleTextureMessage()
 {
     return "this texture no longer exists. Either it was released while "
-           "something still referred to it, or the Texture object was moved from "
+           "something still referred to it, or the Texture object was moved "
+           "from "
            "and the old one is being used";
 }
 
@@ -336,20 +338,21 @@ Result<Texture> Texture::create(TextureDesc const& p_desc)
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to put a texture on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to put a texture on");
     }
 
     auto settled_result = settle(p_desc);
     if (!settled_result)
     {
-        return compages::failure(settled_result.error());
+        return failure(settled_result.error());
     }
     auto settled = settled_result.take();
     auto native_result = backend::createTexture(settled);
     if (!native_result)
     {
-        return compages::failure(native_result.error());
+        return failure(native_result.error());
     }
     auto native = native_result.take();
 
@@ -368,8 +371,9 @@ Result<Texture> Texture::fromFile(std::string const& p_path,
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to put a texture on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to put a texture on");
     }
 
     // Image files begin at their top row, while a texture coordinate of zero is
@@ -393,7 +397,7 @@ Result<Texture> Texture::fromFile(std::string const& p_path,
     auto texture_result = create(desc);
     if (!texture_result)
     {
-        return compages::failure(texture_result.error());
+        return failure(texture_result.error());
     }
     auto texture = texture_result.take();
     COMPAGES_TRY(texture.write(image.pixels()));
@@ -404,19 +408,22 @@ Result<Texture> Texture::fromFile(std::string const& p_path,
     return texture;
 }
 
-Result<Texture> Texture::cubeFromFiles(
-    std::array<std::string, 6u> const& p_paths, LoadOptions const& p_options)
+Result<Texture>
+Texture::cubeFromFiles(std::array<std::string, 6u> const& p_paths,
+                       LoadOptions const& p_options)
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to put a texture on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to put a texture on");
     }
 
     stbi_set_flip_vertically_on_load(p_options.flip_vertically ? 1 : 0);
 
-    // The six faces are read before anything is set aside on the device, so that
-    // a missing file is reported without having reserved memory for nothing.
+    // The six faces are read before anything is set aside on the device, so
+    // that a missing file is reported without having reserved memory for
+    // nothing.
     std::array<LoadedImage, 6u> faces;
     for (std::size_t i = 0u; i < 6u; ++i)
     {
@@ -431,11 +438,11 @@ Result<Texture> Texture::cubeFromFiles(
         {
             return failure(
                 "the six faces of a cube map must be the same size and format, "
-                "but '" + p_paths[i] + "' is " +
-                std::to_string(faces[i].width()) + " by " +
-                std::to_string(faces[i].height()) + " " +
-                toString(faces[i].format()) + " while '" + p_paths[0] + "' is " +
-                std::to_string(faces[0].width()) + " by " +
+                "but '" +
+                p_paths[i] + "' is " + std::to_string(faces[i].width()) +
+                " by " + std::to_string(faces[i].height()) + " " +
+                toString(faces[i].format()) + " while '" + p_paths[0] +
+                "' is " + std::to_string(faces[0].width()) + " by " +
                 std::to_string(faces[0].height()) + " " +
                 toString(faces[0].format()));
         }
@@ -456,7 +463,7 @@ Result<Texture> Texture::cubeFromFiles(
     auto texture_result = create(desc);
     if (!texture_result)
     {
-        return compages::failure(texture_result.error());
+        return failure(texture_result.error());
     }
     auto texture = texture_result.take();
     for (std::uint32_t face = 0u; face < 6u; ++face)
@@ -470,13 +477,15 @@ Result<Texture> Texture::cubeFromFiles(
     return texture;
 }
 
-Result<Texture> Texture::volumeFromFiles(std::vector<std::string> const& p_paths,
-                                         LoadOptions const& p_options)
+Result<Texture>
+Texture::volumeFromFiles(std::vector<std::string> const& p_paths,
+                         LoadOptions const& p_options)
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to put a texture on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to put a texture on");
     }
     if (p_paths.empty())
     {
@@ -492,13 +501,14 @@ Result<Texture> Texture::volumeFromFiles(std::vector<std::string> const& p_paths
         COMPAGES_TRY(layers.back()->load(path, p_options.srgb));
         LoadedImage const& first = *layers.front();
         LoadedImage const& last = *layers.back();
-        if ((last.width() != first.width()) || (last.height() != first.height()) ||
+        if ((last.width() != first.width()) ||
+            (last.height() != first.height()) ||
             (last.format() != first.format()))
         {
             return failure("the layers of a volume must be the same size and "
-                           "format, but '" + path + "' is " +
-                           std::to_string(last.width()) + " by " +
-                           std::to_string(last.height()) + " " +
+                           "format, but '" +
+                           path + "' is " + std::to_string(last.width()) +
+                           " by " + std::to_string(last.height()) + " " +
                            toString(last.format()) + " while '" + p_paths[0] +
                            "' is " + std::to_string(first.width()) + " by " +
                            std::to_string(first.height()) + " " +
@@ -522,7 +532,7 @@ Result<Texture> Texture::volumeFromFiles(std::vector<std::string> const& p_paths
     auto texture_result = create(desc);
     if (!texture_result)
     {
-        return compages::failure(texture_result.error());
+        return failure(texture_result.error());
     }
     auto texture = texture_result.take();
     for (std::uint32_t z = 0u; z < desc.depth; ++z)
@@ -597,9 +607,11 @@ void Texture::release()
     m_handle = TextureHandle{};
 }
 
-Status Texture::write(std::span<const std::byte> p_pixels, std::uint32_t p_level)
+Status Texture::write(std::span<const std::byte> p_pixels,
+                      std::uint32_t p_level)
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
@@ -631,7 +643,8 @@ Status Texture::write(std::uint32_t p_x,
                       std::span<const std::byte> p_pixels,
                       std::uint32_t p_level)
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
@@ -657,19 +670,19 @@ Status Texture::write(std::uint32_t p_x,
             std::to_string(extent.depth));
     }
 
-    // The check the previous layer never made. Handing over fewer pixels than the
-    // region needs makes the driver read past the end of the caller's memory,
-    // which is undefined behaviour with no message at all.
+    // The check the previous layer never made. Handing over fewer pixels than
+    // the region needs makes the driver read past the end of the caller's
+    // memory, which is undefined behaviour with no message at all.
     const std::size_t needed = static_cast<std::size_t>(p_width) * p_height *
                                p_depth * bytesPerPixel(record->desc.format);
     if (p_pixels.size() != needed)
     {
-        return failure(
-            "a region of " + std::to_string(p_width) + " by " +
-            std::to_string(p_height) + " by " + std::to_string(p_depth) +
-            " pixels of " + toString(record->desc.format) + " needs " +
-            std::to_string(needed) + " bytes, but " +
-            std::to_string(p_pixels.size()) + " were given");
+        return failure("a region of " + std::to_string(p_width) + " by " +
+                       std::to_string(p_height) + " by " +
+                       std::to_string(p_depth) + " pixels of " +
+                       toString(record->desc.format) + " needs " +
+                       std::to_string(needed) + " bytes, but " +
+                       std::to_string(p_pixels.size()) + " were given");
     }
 
     backend::writeTexture(record->native,
@@ -689,7 +702,8 @@ Status Texture::writeLayer(std::uint32_t p_layer,
                            std::span<const std::byte> p_pixels,
                            std::uint32_t p_level)
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
@@ -715,7 +729,8 @@ Status Texture::writeLayer(std::uint32_t p_layer,
 
 Result<std::vector<std::byte>> Texture::read(std::uint32_t p_level) const
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
@@ -728,26 +743,25 @@ Result<std::vector<std::byte>> Texture::read(std::uint32_t p_level) const
     }
 
     std::vector<std::byte> pixels(bytesOfLevel(record->desc, p_level));
-    backend::readTexture(record->native,
-                         record->desc,
-                         p_level,
-                         pixels.size(),
-                         pixels.data());
+    backend::readTexture(
+        record->native, record->desc, p_level, pixels.size(), pixels.data());
     return pixels;
 }
 
 Status Texture::generateMipmaps()
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
     }
     if (record->desc.levels <= 1u)
     {
-        return failure("this texture was created with a single level of detail, "
-                       "so there are no smaller ones to build. Ask for levels = "
-                       "0 when creating it to get the whole chain");
+        return failure(
+            "this texture was created with a single level of detail, "
+            "so there are no smaller ones to build. Ask for levels = "
+            "0 when creating it to get the whole chain");
     }
 
     backend::generateMipmaps(record->native);
@@ -786,7 +800,8 @@ Status Texture::setWrap(Wrap p_x, Wrap p_y, Wrap p_z)
 
 void Texture::bind(std::uint32_t p_unit) const
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return reportError(staleTextureMessage());
@@ -796,8 +811,8 @@ void Texture::bind(std::uint32_t p_unit) const
     if (p_unit >= units)
     {
         return reportError("texture unit " + std::to_string(p_unit) +
-                       " does not exist: this driver offers " +
-                       std::to_string(units));
+                           " does not exist: this driver offers " +
+                           std::to_string(units));
     }
 
     backend::bindTexture(record->native, p_unit);
@@ -807,7 +822,8 @@ Status Texture::bindAsImage(std::uint32_t p_unit,
                             ImageAccess p_access,
                             std::uint32_t p_level) const
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     if (record == nullptr)
     {
         return failure(staleTextureMessage());
@@ -844,7 +860,8 @@ Status Texture::bindAsImage(std::uint32_t p_unit,
 TextureDesc const& Texture::description() const
 {
     static const TextureDesc nothing;
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     return (record == nullptr) ? nothing : record->desc;
 }
 
@@ -880,7 +897,8 @@ std::uint32_t Texture::levels() const
 
 std::size_t Texture::bytes() const
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
     return (record == nullptr) ? 0u : record->bytes;
 }
 
@@ -891,8 +909,10 @@ bool Texture::valid() const
 
 std::uintptr_t Texture::nativeId() const
 {
-    detail::TextureRecord const* record = detail::pools().textures.get(m_handle);
-    return (record == nullptr) ? 0u : static_cast<std::uintptr_t>(record->native);
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
+    return (record == nullptr) ? 0u
+                               : static_cast<std::uintptr_t>(record->native);
 }
 
 std::size_t liveTextures()
@@ -904,9 +924,8 @@ std::size_t textureMemory()
 {
     std::size_t total = 0u;
     detail::pools().textures.forEach(
-        [&total](TextureHandle, detail::TextureRecord const& p_record) {
-            total += p_record.bytes;
-        });
+        [&total](TextureHandle, detail::TextureRecord const& p_record)
+        { total += p_record.bytes; });
     return total;
 }
 

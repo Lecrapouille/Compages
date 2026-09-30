@@ -21,11 +21,11 @@ constexpr std::uint32_t MAX_ASSETS = 0xFFFFu;
 } // namespace
 
 template <typename Id, typename T>
-compages::Result<Id> AssetManager::insert(Pool<T>& p_pool,
-                                     std::string p_name,
-                                     T p_value,
-                                     std::size_t& p_living,
-                                     const char* p_kind)
+Result<Id> AssetManager::insert(Pool<T>& p_pool,
+                                std::string p_name,
+                                T p_value,
+                                std::size_t& p_living,
+                                const char* p_kind)
 {
     // Replace when a name is already used, so hot-reloading a mesh is one
     // call and does not leak an id.
@@ -52,8 +52,7 @@ compages::Result<Id> AssetManager::insert(Pool<T>& p_pool,
     {
         if (p_pool.data.size() >= MAX_ASSETS)
         {
-            return compages::failure(std::string("the ") + p_kind +
-                                " pool is full");
+            return failure(std::string("the ") + p_kind + " pool is full");
         }
         index = static_cast<std::uint16_t>(p_pool.data.size());
         p_pool.data.emplace_back(std::move(p_value));
@@ -176,27 +175,30 @@ std::string AssetManager::nameOf(Pool<T> const& p_pool, Id p_id) const
     return p_pool.names[index];
 }
 
-compages::Result<MeshAssetId> AssetManager::addMesh(std::string p_name,
-                                               MeshAsset p_asset)
+Result<MeshAssetId> AssetManager::addMesh(std::string p_name, MeshAsset p_asset)
 {
-    return insert<MeshAssetId>(m_meshes, std::move(p_name), std::move(p_asset),
-                               m_mesh_living, "mesh");
+    return insert<MeshAssetId>(
+        m_meshes, std::move(p_name), std::move(p_asset), m_mesh_living, "mesh");
 }
 
-compages::Result<MaterialId> AssetManager::addMaterial(std::string p_name,
-                                                  Material p_material)
+Result<MaterialId> AssetManager::addMaterial(std::string p_name,
+                                             Material p_material)
 {
-    return insert<MaterialId>(m_materials, std::move(p_name),
-                              std::move(p_material), m_material_living,
+    return insert<MaterialId>(m_materials,
+                              std::move(p_name),
+                              std::move(p_material),
+                              m_material_living,
                               "material");
 }
 
-compages::Result<MaterialInstanceId>
+Result<MaterialInstanceId>
 AssetManager::addMaterialInstance(std::string p_name,
                                   MaterialInstance p_instance)
 {
-    return insert<MaterialInstanceId>(m_instances, std::move(p_name),
-                                      std::move(p_instance), m_instance_living,
+    return insert<MaterialInstanceId>(m_instances,
+                                      std::move(p_name),
+                                      std::move(p_instance),
+                                      m_instance_living,
                                       "material instance");
 }
 
@@ -263,11 +265,13 @@ void AssetManager::removeMaterialInstance(MaterialInstanceId p_id)
     erase(m_instances, p_id, m_instance_living);
 }
 
-compages::Result<TextureAssetId> AssetManager::addTexture(std::string p_name,
-                                                     TextureAsset p_texture)
+Result<TextureAssetId> AssetManager::addTexture(std::string p_name,
+                                                TextureAsset p_texture)
 {
-    return insert<TextureAssetId>(m_textures, std::move(p_name),
-                                  std::move(p_texture), m_texture_living,
+    return insert<TextureAssetId>(m_textures,
+                                  std::move(p_name),
+                                  std::move(p_texture),
+                                  m_texture_living,
                                   "texture");
 }
 
@@ -286,13 +290,16 @@ void AssetManager::removeTexture(TextureAssetId p_id)
     erase(m_textures, p_id, m_texture_living);
 }
 
-compages::Result<PrefabId> AssetManager::addPrefab(std::string p_name, Prefab p_prefab)
+Result<PrefabId> AssetManager::addPrefab(std::string p_name, Prefab p_prefab)
 {
-    return insert<PrefabId>(m_prefabs, std::move(p_name), std::move(p_prefab),
-                            m_prefab_living, "prefab");
+    return insert<PrefabId>(m_prefabs,
+                            std::move(p_name),
+                            std::move(p_prefab),
+                            m_prefab_living,
+                            "prefab");
 }
 
-compages::Result<PrefabId> AssetManager::load(std::string const& p_path)
+Result<PrefabId> AssetManager::load(std::string const& p_path)
 {
     return loadGltf(p_path, *this);
 }
@@ -312,8 +319,7 @@ std::string AssetManager::meshName(MeshAssetId p_id) const
     return nameOf<MeshAssetId>(m_meshes, p_id);
 }
 
-std::string AssetManager::materialInstanceName(
-    MaterialInstanceId p_id) const
+std::string AssetManager::materialInstanceName(MaterialInstanceId p_id) const
 {
     return nameOf<MaterialInstanceId>(m_instances, p_id);
 }
@@ -333,11 +339,13 @@ void AssetManager::removePrefab(PrefabId p_id)
     erase(m_prefabs, p_id, m_prefab_living);
 }
 
-compages::Result<AnimationClipId>
-AssetManager::addAnimation(std::string p_name, AnimationClip p_clip)
+Result<AnimationClipId> AssetManager::addAnimation(std::string p_name,
+                                                   AnimationClip p_clip)
 {
-    return insert<AnimationClipId>(m_animations, std::move(p_name),
-                                   std::move(p_clip), m_animation_living,
+    return insert<AnimationClipId>(m_animations,
+                                   std::move(p_name),
+                                   std::move(p_clip),
+                                   m_animation_living,
                                    "animation");
 }
 
@@ -356,11 +364,10 @@ void AssetManager::removeAnimation(AnimationClipId p_id)
     erase(m_animations, p_id, m_animation_living);
 }
 
-compages::Result<SkinAssetId> AssetManager::addSkin(std::string p_name,
-                                               SkinAsset p_skin)
+Result<SkinAssetId> AssetManager::addSkin(std::string p_name, SkinAsset p_skin)
 {
-    return insert<SkinAssetId>(m_skins, std::move(p_name), std::move(p_skin),
-                               m_skin_living, "skin");
+    return insert<SkinAssetId>(
+        m_skins, std::move(p_name), std::move(p_skin), m_skin_living, "skin");
 }
 
 SkinAsset const* AssetManager::skin(SkinAssetId p_id) const
@@ -378,41 +385,40 @@ void AssetManager::removeSkin(SkinAssetId p_id)
     erase(m_skins, p_id, m_skin_living);
 }
 
-compages::Status AssetManager::prepare(MeshAssetId p_id)
+Status AssetManager::prepare(MeshAssetId p_id)
 {
     MeshAsset* value = mesh(p_id);
     if (value == nullptr)
     {
-        return compages::failure("cannot prepare a stale mesh asset");
+        return failure("cannot prepare a stale mesh asset");
     }
     return value->upload();
 }
 
-compages::Status AssetManager::prepare(TextureAssetId p_id)
+Status AssetManager::prepare(TextureAssetId p_id)
 {
     TextureAsset* value =
         lookupMutable<TextureAssetId, TextureAsset>(m_textures, p_id);
     if (value == nullptr)
     {
-        return compages::failure("cannot prepare a stale texture asset");
+        return failure("cannot prepare a stale texture asset");
     }
     return value->upload();
 }
 
-compages::Status AssetManager::prepare(MaterialId p_id)
+Status AssetManager::prepare(MaterialId p_id)
 {
     Material* value = material(p_id);
     if (value == nullptr)
     {
-        return compages::failure("cannot prepare a stale material asset");
+        return failure("cannot prepare a stale material asset");
     }
     if (value->program.valid() && value->pipeline.valid())
     {
-        return compages::success();
+        return success();
     }
 
-    compages::Result<Material> prepared =
-        compages::failure("unknown material family");
+    Result<Material> prepared = failure("unknown material family");
     switch (value->family)
     {
         case ShaderFamily::Lit:
@@ -430,7 +436,7 @@ compages::Status AssetManager::prepare(MaterialId p_id)
     }
     if (!prepared)
     {
-        return compages::failure(prepared.error());
+        return failure(prepared.error());
     }
     std::string const name = value->name;
     *value = prepared.take();
@@ -438,7 +444,7 @@ compages::Status AssetManager::prepare(MaterialId p_id)
     {
         value->name = name;
     }
-    return compages::success();
+    return success();
 }
 
 } // namespace compages::renderer

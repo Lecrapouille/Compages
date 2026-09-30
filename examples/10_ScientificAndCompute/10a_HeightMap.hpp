@@ -40,15 +40,15 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Vertex
     {
-        Vector3f position;
-        Vector3f normal;
+        compages::core::Vector3f position;
+        compages::core::Vector3f normal;
     };
 
     compages::gpu::Drawable m_surface;

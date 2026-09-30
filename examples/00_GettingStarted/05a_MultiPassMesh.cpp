@@ -120,7 +120,8 @@ constexpr float H = 0.55f;
 
 std::string MultiPassMesh::description() const
 {
-    return "The level beneath compages::gpu::Drawable: one Buffer<Vertex>, three "
+    return "The level beneath compages::gpu::Drawable: one Buffer<Vertex>, "
+           "three "
            "programs and their pipelines, one uniform block. The left "
            "pass lights the mesh, the middle paints its normals, the right "
            "draws only the edges. They share the vertices and the matrices; "
@@ -130,27 +131,31 @@ std::string MultiPassMesh::description() const
            "reader, and three buffers: vertices, indices, and the block.";
 }
 
-compages::gpu::Status MultiPassMesh::makePipeline(compages::gpu::Program& p_program,
-                                        compages::gpu::Pipeline& p_pipeline,
-                                        char const* p_vertex,
-                                        char const* p_fragment,
-                                        compages::gpu::RenderState const& p_state)
+compages::Status
+MultiPassMesh::makePipeline(compages::gpu::Program& p_program,
+                            compages::gpu::Pipeline& p_pipeline,
+                            char const* p_vertex,
+                            char const* p_fragment,
+                            compages::gpu::RenderState const& p_state)
 {
     // The program is the shader. The pipeline is how that shader reads a
     // Vertex, and which state it draws with. The three passes share the type.
     COMPAGES_TRY(p_program.load(p_vertex, p_fragment));
-    COMPAGES_TRY_ASSIGN(p_pipeline, compages::gpu::Pipeline::create<Vertex>(p_program, p_state));
-    return compages::gpu::success();
+    COMPAGES_TRY_ASSIGN(
+        p_pipeline,
+        compages::gpu::Pipeline::create<Vertex>(p_program, p_state));
+    return compages::success();
 }
 
-compages::gpu::Status MultiPassMesh::setUp()
+compages::Status MultiPassMesh::setUp()
 {
     // The cube of 04_DepthAndTransforms, from Common/ColoredCube.hpp. The
     // vertices wait on the CPU and travel at the first draw. The indices never
     // change, so they go straight to an immutable buffer.
     const CubeMesh cube = createCube(2.0f * H);
     m_vertices.assign(cube.vertices);
-    COMPAGES_TRY_ASSIGN(m_indices, compages::gpu::Buffer<std::uint16_t>::indices(cube.indices));
+    COMPAGES_TRY_ASSIGN(
+        m_indices, compages::gpu::Buffer<std::uint16_t>::indices(cube.indices));
 
     compages::gpu::RenderState solid;
     solid.depth_test = true;
@@ -163,36 +168,39 @@ compages::gpu::Status MultiPassMesh::setUp()
     // back of a filled solid would be.
     wire.cull = compages::gpu::CullMode::None;
 
-    COMPAGES_TRY(makePipeline(m_lit_program, m_lit, LIT_VERTEX, LIT_FRAGMENT, solid));
+    COMPAGES_TRY(
+        makePipeline(m_lit_program, m_lit, LIT_VERTEX, LIT_FRAGMENT, solid));
     COMPAGES_TRY(makePipeline(
         m_normals_program, m_normals, NORMALS_VERTEX, NORMALS_FRAGMENT, solid));
-    COMPAGES_TRY(makePipeline(
-        m_wire_program, m_wire, WIRE_VERTEX, WIRE_FRAGMENT, wire));
+    COMPAGES_TRY(
+        makePipeline(m_wire_program, m_wire, WIRE_VERTEX, WIRE_FRAGMENT, wire));
 
-    // Any of the three programs will do: they declare the same block on the same
-    // point. The other two are told nothing, because a binding point belongs to
-    // the device, not to a program.
-    COMPAGES_TRY_ASSIGN(m_transforms, compages::gpu::TypedUniformBlock<Transforms>::create(m_lit_program,
-                                                              "Transforms"));
+    // Any of the three programs will do: they declare the same block on the
+    // same point. The other two are told nothing, because a binding point
+    // belongs to the device, not to a program.
+    COMPAGES_TRY_ASSIGN(m_transforms,
+                        compages::gpu::TypedUniformBlock<Transforms>::create(
+                            m_lit_program, "Transforms"));
 
-    return compages::gpu::success();
+    return compages::success();
 }
 
-void MultiPassMesh::draw(Frame const& p_frame)
+void MultiPassMesh::draw(compages::world::ViewFrame const& p_frame)
 {
-    const Matrix44f identity(compages::matrix::Identity);
+    const compages::core::Matrix44f identity(compages::core::matrix::Identity);
 
     Transforms transforms;
-    transforms.model = compages::matrix::rotate(
-        identity,
-        units::angle::radian_t(p_frame.total * 0.6f),
-        Vector3f(0.35f, 1.0f, 0.15f));
-    transforms.view = compages::matrix::lookAt(Vector3f(0.0f, 0.0f, 2.6f),
-                                     Vector3f(0.0f, 0.0f, 0.0f),
-                                     Vector3f(0.0f, 1.0f, 0.0f));
+    transforms.model =
+        compages::core::rotate(identity,
+                               units::angle::radian_t(p_frame.total * 0.6f),
+                               compages::core::Vector3f(0.35f, 1.0f, 0.15f));
+    transforms.view =
+        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 2.6f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     // Each third of the window is a camera of its own, so the aspect is that of
     // one third rather than of the whole, or the cube would look like a brick.
-    transforms.projection = compages::matrix::perspective(
+    transforms.projection = compages::core::perspective(
         55.0_deg, aspect(p_frame) / 3.0f, 0.1f, 20.0f);
 
     m_transforms.assign(transforms);
@@ -204,14 +212,18 @@ void MultiPassMesh::draw(Frame const& p_frame)
     // Three passes side by side, each opened over the window pass the gallery
     // holds, each clearing its own third.
     const std::uint32_t third = p_frame.width / 3u;
-    compages::gpu::Pipeline const* pipelines[3] = { &m_lit, &m_normals, &m_wire };
+    compages::gpu::Pipeline const* pipelines[3] = { &m_lit,
+                                                    &m_normals,
+                                                    &m_wire };
     for (std::uint32_t i = 0u; i < 3u; ++i)
     {
-        const std::uint32_t width = (i == 2u) ? (p_frame.width - 2u * third) : third;
-        compages::gpu::RenderPass pass({ .x = i * third,
-                               .width = width,
-                               .height = p_frame.height,
-                               .color = { 0.07f, 0.07f, 0.1f, 1.0f } });
+        const std::uint32_t width =
+            (i == 2u) ? (p_frame.width - 2u * third) : third;
+        compages::gpu::RenderPass pass(
+            { .x = i * third,
+              .width = width,
+              .height = p_frame.height,
+              .color = { 0.07f, 0.07f, 0.1f, 1.0f } });
         compages::gpu::drawIndexed(*pipelines[i], m_vertices, m_indices);
     }
 }

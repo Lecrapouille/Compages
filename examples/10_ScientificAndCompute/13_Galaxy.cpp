@@ -121,7 +121,7 @@ std::string Galaxy::description() const
            "what the drawable reads.";
 }
 
-compages::gpu::Status Galaxy::setUp()
+compages::Status Galaxy::setUp()
 {
     // Two spiral arms, each star on a rough circular orbit so that the galaxy
     // does not collapse in its first frames.
@@ -136,12 +136,16 @@ compages::gpu::Status Galaxy::setUp()
         const float x = radius * std::cos(angle);
         const float y = radius * std::sin(angle) * 0.62f;
         const float speed = 0.22f / std::sqrt(radius + 0.08f);
-        seed[i].position = Vector2f(x, y);
-        seed[i].velocity = Vector2f(-y * speed, x * speed);
-        seed[i].color = Vector4f(0.55f + (0.45f * unit(rng)),
-                                 0.55f + (0.25f * unit(rng)), 0.95f, 0.85f);
+        seed[i].position = compages::core::Vector2f(x, y);
+        seed[i].velocity = compages::core::Vector2f(-y * speed, x * speed);
+        seed[i].color = compages::core::Vector4f(0.55f + (0.45f * unit(rng)),
+                                                 0.55f + (0.25f * unit(rng)),
+                                                 0.95f,
+                                                 0.85f);
     }
-    COMPAGES_TRY_ASSIGN(m_stars, compages::gpu::PingPong<Star>::from(std::span<const Star>(seed)));
+    COMPAGES_TRY_ASSIGN(
+        m_stars,
+        compages::gpu::PingPong<Star>::from(std::span<const Star>(seed)));
 
     COMPAGES_TRY(m_step.load(STEP));
     // Gravity and softening stay put; only the time step changes per frame.
@@ -151,11 +155,12 @@ compages::gpu::Status Galaxy::setUp()
 
     COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
     m_points.vertices(m_stars.input());
-    m_points.primitive(compages::gpu::Primitive::Points).blend(compages::gpu::Blend::additive());
+    m_points.primitive(compages::gpu::Primitive::Points)
+        .blend(compages::gpu::Blend::additive());
     return m_points.prepare();
 }
 
-void Galaxy::draw(Frame const& p_frame)
+void Galaxy::draw(compages::world::ViewFrame const& p_frame)
 {
     // Read one buffer, write the other, then swap: what was written is read
     // by the draw and by the next step.
@@ -166,7 +171,8 @@ void Galaxy::draw(Frame const& p_frame)
     {
         return;
     }
-    compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib | compages::gpu::Barrier::Storage);
+    compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib |
+                           compages::gpu::Barrier::Storage);
     m_stars.swap();
 
     compages::gpu::clear({ 0.01f, 0.01f, 0.03f });

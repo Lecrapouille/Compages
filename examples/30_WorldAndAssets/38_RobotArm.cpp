@@ -46,12 +46,12 @@ std::string RobotArm::description() const
            "external/Compages-data/.";
 }
 
-compages::gpu::Status RobotArm::setUp()
+compages::Status RobotArm::setUp()
 {
     const std::string path = dataPath("irb2400.urdf");
     if (path.empty())
     {
-        return compages::gpu::failure(
+        return compages::failure(
             "irb2400.urdf is missing: run make download in "
             "external/, or set COMPAGES_DATA_PATH");
     }
@@ -59,7 +59,7 @@ compages::gpu::Status RobotArm::setUp()
     auto robot = m_scene.load(path);
     if (!robot)
     {
-        return compages::gpu::failure(robot.error());
+        return compages::failure(robot.error());
     }
 
     // The joints in the order of the chain, for the sliders.
@@ -79,12 +79,12 @@ compages::gpu::Status RobotArm::setUp()
     };
     collect(robot.value());
 
-    const Vector3f middle = m_scene.frameAll();
+    const compages::core::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
 }
 
-void RobotArm::draw(Frame const& p_frame)
+void RobotArm::draw(compages::world::ViewFrame const& p_frame)
 {
     m_scene.draw(p_frame);
 }
@@ -144,7 +144,7 @@ void RobotArm::controls()
 
     if (m_tool)
     {
-        const Vector3f tool = m_tool.worldPosition();
+        const compages::core::Vector3f tool = m_tool.worldPosition();
         ImGui::Text("tool0 in the world: %.3f %.3f %.3f",
                     double(tool.x),
                     double(tool.y),

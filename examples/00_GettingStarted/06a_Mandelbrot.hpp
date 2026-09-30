@@ -34,8 +34,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
@@ -45,7 +45,7 @@ private:
 
     //! \brief Where the view is looking in the complex plane. Updated so that
     //! the point under the mouse stays there as the scale shrinks.
-    Vector2f m_center{ -0.5f, 0.0f };
+    compages::core::Vector2f m_center{ -0.5f, 0.0f };
     float m_scale = 1.5f;
 };
 

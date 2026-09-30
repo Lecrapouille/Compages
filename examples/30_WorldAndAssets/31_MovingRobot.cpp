@@ -5,8 +5,8 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/World/Entity.hpp"
 #include "30_WorldAndAssets/31_MovingRobot.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include <cmath>
 
@@ -53,15 +53,21 @@ std::string MovingRobot::description() const
 
 void MovingRobot::makeRobot(char const* p_name, float p_x, float p_phase)
 {
-    const compages::renderer::Look wood = compages::renderer::color(0.62f, 0.42f, 0.24f);
-    const compages::renderer::Look dark = compages::renderer::color(0.35f, 0.24f, 0.14f);
-    const compages::renderer::Look light = compages::renderer::color(0.85f, 0.66f, 0.42f);
+    const compages::renderer::Look wood =
+        compages::renderer::color(0.62f, 0.42f, 0.24f);
+    const compages::renderer::Look dark =
+        compages::renderer::color(0.35f, 0.24f, 0.14f);
+    const compages::renderer::Look light =
+        compages::renderer::color(0.85f, 0.66f, 0.42f);
 
     // The joints: empty entities where the parts turn. The body sits on the
     // legs, so that the feet touch the ground.
-    compages::world::Entity robot = m_world.entity(p_name).position(p_x, 0.0f, 0.0f);
-    compages::world::Entity body = robot.child("Body").position(0.0f, 41.0f, 0.0f);
-    compages::world::Entity head = body.child("Head").position(0.0f, 20.0f, 0.0f);
+    compages::world::Entity robot =
+        m_world.entity(p_name).position(p_x, 0.0f, 0.0f);
+    compages::world::Entity body =
+        robot.child("Body").position(0.0f, 41.0f, 0.0f);
+    compages::world::Entity head =
+        body.child("Head").position(0.0f, 20.0f, 0.0f);
     compages::world::Entity left =
         body.child("LeftShoulder").position(-13.0f, 15.0f, 0.0f);
     compages::world::Entity right =
@@ -91,7 +97,7 @@ void MovingRobot::makeRobot(char const* p_name, float p_x, float p_phase)
     robot.add<Walk>(p_phase);
 }
 
-compages::gpu::Status MovingRobot::setUp()
+compages::Status MovingRobot::setUp()
 {
     // The orbit looks at the robots' chests, not at the origin under their
     // feet.
@@ -99,7 +105,8 @@ compages::gpu::Status MovingRobot::setUp()
     m_scene.camera()
         .position(0.0f, 45.0f, 120.0f)
         .lookAt(0.0f, 30.0f, 0.0f)
-        .add<compages::world::Orbit>(Vector3f(0.0f, 30.0f, 0.0f));
+        .add<compages::world::Orbit>(
+            compages::core::Vector3f(0.0f, 30.0f, 0.0f));
     m_scene.sun();
 
     makeRobot("Robot1", -34.0f, 0.0f);
@@ -108,7 +115,7 @@ compages::gpu::Status MovingRobot::setUp()
     return m_scene.prepare();
 }
 
-void MovingRobot::draw(Frame const& p_frame)
+void MovingRobot::draw(compages::world::ViewFrame const& p_frame)
 {
     // update() of the Walk behaviors runs inside the draw.
     m_scene.draw(p_frame);

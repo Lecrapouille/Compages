@@ -7,13 +7,17 @@
 
 #pragma once
 
+#include "Compages/Core/Frame.hpp"
+#include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/NotCopiable.hpp"
+#include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Result.hpp"
+#include "Compages/Core/Transformation.hpp"
+#include "Compages/Core/Vector.hpp"
 #include "Compages/World/Behavior.hpp"
+#include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 #include "Compages/World/Entt.hpp"
-#include "Compages/World/Controllers/Input.hpp"
-#include "Compages/Core/Frame.hpp"
 #include "Compages/World/Spatial/KinematicSystem.hpp"
 #include "Compages/World/Spatial/LocalTransform.hpp"
 #include "Compages/World/Spatial/SpatialGraph.hpp"
@@ -43,8 +47,8 @@
 //! compages::world::World world;
 //! world.entity("player").set(Position{ 0, 0 }).set(Velocity{ 1, 0 });
 //!
-//! world.each<Position, Velocity>([](compages::world::Entity, Position& p, Velocity
-//! const& v) {
+//! world.each<Position, Velocity>([](compages::world::Entity, Position& p,
+//! Velocity const& v) {
 //!     p.x += v.x;
 //!     p.y += v.y;
 //! });
@@ -78,9 +82,10 @@ struct ViewFrame;
 //!
 //! A World never touches the GPU. It never opens a window and never draws: a
 //! test, a tool or a server runs the same simulation without a device. What
-//! is drawn, and how, is the business of a compages::renderer::Scene looking at the World.
+//! is drawn, and how, is the business of a compages::renderer::Scene looking at
+//! the World.
 // ****************************************************************************
-class World : private NotCopiable
+class World: private compages::core::NotCopiable
 {
 public:
 
@@ -115,8 +120,8 @@ public:
     //! with the entity and a reference to each component.
     //!
     //! \code
-    //! world.each<Position, Velocity>([](compages::world::Entity e, Position& p,
-    //! Velocity& v) { ... });
+    //! world.each<Position, Velocity>([](compages::world::Entity e, Position&
+    //! p, Velocity& v) { ... });
     //! \endcode
     // ------------------------------------------------------------------------
     // Defined in Entity.hpp, once the handle type is complete.
@@ -133,9 +138,10 @@ public:
     }
 
     //! \brief Headless step: run behaviors, then propagate transforms.
-    void update(Frame const& p_frame);
+    void update(compages::core::Frame const& p_frame);
 
-    //! \brief Interactive step: timing plus input for behaviors and controllers.
+    //! \brief Interactive step: timing plus input for behaviors and
+    //! controllers.
     //!
     //! \code
     //! world.update(viewFrame);   // gallery / Scene path
@@ -145,12 +151,13 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Only compute the places in the world of the entities that moved,
     //! parents before children. Joints are turned into local places first.
-    //! Run by update(Frame).
+    //! Run by update(compages::core::Frame).
     // ------------------------------------------------------------------------
     void update();
 
-    //! \brief Timing from the last update(Frame) or update(ViewFrame).
-    [[nodiscard]] Frame const& frame() const
+    //! \brief Timing from the last update(compages::core::Frame) or
+    //! update(ViewFrame).
+    [[nodiscard]] compages::core::Frame const& frame() const
     {
         return m_frame;
     }
@@ -207,7 +214,7 @@ public:
 
     //! \brief Change or clear the parent of an entity. Refused when either is
     //! dead or when it would make a cycle.
-    [[nodiscard]] compages::Status
+    [[nodiscard]] Status
     setParent(EntityId p_child,
               EntityId p_parent,
               ReparentPolicy p_policy = ReparentPolicy::KeepLocal);
@@ -245,7 +252,8 @@ public:
     [[nodiscard]] LocalTransform transform(EntityId p_entity) const;
 
     //! \brief The place of an entity in the world, as of the last update().
-    [[nodiscard]] Matrix44f const& worldMatrix(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Matrix44f const&
+    worldMatrix(EntityId p_entity) const;
 
     //! \brief The EnTT view of the entities having all the components T.
     template <typename... T>
@@ -372,7 +380,7 @@ private:
     };
 
     //! \brief The behaviors of one entity, as a component.
-    struct Behaviors : NotCopiable
+    struct Behaviors: compages::core::NotCopiable
     {
         Behaviors() = default;
         Behaviors(Behaviors&&) = default;
@@ -387,7 +395,7 @@ private:
     TransformStore m_transforms;
     KinematicSystem m_kinematic_system;
     TransformSystem m_transform_system;
-    Frame m_frame{};
+    compages::core::Frame m_frame{};
     Input m_input{};
 
     static const std::string s_empty_name;

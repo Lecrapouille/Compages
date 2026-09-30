@@ -27,9 +27,9 @@ namespace compages::gpu
 //! matching.
 //!
 //! That last point is the reason this exists. In the previous design a resource
-//! was a std::unique_ptr inside a std::map keyed by a std::string name, and using
-//! a released object was undefined behaviour. Here it is a question the pool can
-//! answer, and get() simply returns nullptr.
+//! was a std::unique_ptr inside a std::map keyed by a std::string name, and
+//! using a released object was undefined behaviour. Here it is a question the
+//! pool can answer, and get() simply returns nullptr.
 //!
 //! \tparam T what is stored per resource. Must be default constructible, since
 //! a free slot has to hold something.
@@ -40,8 +40,6 @@ class Pool
 {
 public:
 
-    using Handle = compages::gpu::Handle<Tag>;
-
     static_assert(std::is_default_constructible_v<T>,
                   "Pool<T> needs T to be default constructible: a free slot "
                   "still holds a T");
@@ -51,10 +49,10 @@ public:
     //!
     //! \param[in] p_value the record to store, moved in.
     //! \return the handle, or a failure when the pool is full. Full means
-    //! Handle::MAX_COUNT live resources of this kind, which in practice means a
-    //! leak rather than a legitimate need.
+    //! compages::gpu::Handle<Tag>::MAX_COUNT live resources of this kind, which
+    //! in practice means a leak rather than a legitimate need.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Result<Handle> add(T p_value)
+    [[nodiscard]] Result<compages::gpu::Handle<Tag>> add(T p_value)
     {
         std::uint16_t index = 0u;
 
@@ -65,12 +63,13 @@ public:
         }
         else
         {
-            if (m_slots.size() >= Handle::MAX_COUNT)
+            if (m_slots.size() >= compages::gpu::Handle<Tag>::MAX_COUNT)
             {
-                return failure("too many live resources of this kind (" +
-                               std::to_string(Handle::MAX_COUNT) +
-                               "), which usually means they are created every "
-                               "frame and never released");
+                return failure(
+                    "too many live resources of this kind (" +
+                    std::to_string(compages::gpu::Handle<Tag>::MAX_COUNT) +
+                    "), which usually means they are created every "
+                    "frame and never released");
             }
             index = static_cast<std::uint16_t>(m_slots.size());
             m_slots.emplace_back();
@@ -83,16 +82,17 @@ public:
         slot.generation = nextGeneration(slot.generation);
         ++m_live_count;
 
-        return Handle(index, slot.generation);
+        return compages::gpu::Handle<Tag>(index, slot.generation);
     }
 
     // ------------------------------------------------------------------------
     //! \brief Is this handle still naming a live resource?
     //!
-    //! False for an empty handle, for a handle whose resource has been released,
-    //! and for a handle whose slot has since been given to somebody else.
+    //! False for an empty handle, for a handle whose resource has been
+    //! released, and for a handle whose slot has since been given to somebody
+    //! else.
     // ------------------------------------------------------------------------
-    [[nodiscard]] bool valid(Handle p_handle) const
+    [[nodiscard]] bool valid(compages::gpu::Handle<Tag> p_handle) const
     {
         if (!p_handle.valid())
         {
@@ -110,7 +110,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief The record behind a handle, or nullptr when the handle is stale.
     // ------------------------------------------------------------------------
-    [[nodiscard]] T* get(Handle p_handle)
+    [[nodiscard]] T* get(compages::gpu::Handle<Tag> p_handle)
     {
         return valid(p_handle) ? &m_slots[p_handle.index()].value : nullptr;
     }
@@ -118,7 +118,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief The record behind a handle, or nullptr when the handle is stale.
     // ------------------------------------------------------------------------
-    [[nodiscard]] T const* get(Handle p_handle) const
+    [[nodiscard]] T const* get(compages::gpu::Handle<Tag> p_handle) const
     {
         return valid(p_handle) ? &m_slots[p_handle.index()].value : nullptr;
     }
@@ -130,7 +130,7 @@ public:
     //! already stale, which lets a double release be reported rather than
     //! silently corrupting the pool.
     // ------------------------------------------------------------------------
-    bool remove(Handle p_handle)
+    bool remove(compages::gpu::Handle<Tag> p_handle)
     {
         if (!valid(p_handle))
         {
@@ -162,8 +162,8 @@ public:
             Slot& slot = m_slots[i];
             if (slot.live)
             {
-                p_visitor(Handle(static_cast<std::uint16_t>(i),
-                                 slot.generation),
+                p_visitor(compages::gpu::Handle<Tag>(
+                              static_cast<std::uint16_t>(i), slot.generation),
                           slot.value);
             }
         }

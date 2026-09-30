@@ -20,8 +20,9 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief A texture owned by the AssetManager.
 //!
-//! World and Scene never hold a \c compages::gpu::Texture directly: they store a
-//! TextureAssetId and ask the manager when a draw needs a binding.
+//! compages::world::World and Scene never hold a \c compages::gpu::Texture
+//! directly: they store a TextureAssetId and ask the manager when a draw needs
+//! a binding.
 // ****************************************************************************
 struct TextureAsset
 {
@@ -32,17 +33,18 @@ struct TextureAsset
     compages::gpu::TextureDesc description;
     std::vector<std::byte> pixels;
 
-    [[nodiscard]] compages::Status upload()
+    [[nodiscard]] Status upload()
     {
         if (texture.valid())
         {
-            return compages::success();
+            return success();
         }
         if (pixels.empty())
         {
-            return compages::failure("texture has no CPU pixels to upload");
+            return failure("texture has no CPU pixels to upload");
         }
-        COMPAGES_TRY_ASSIGN(texture, compages::gpu::Texture::create(description));
+        COMPAGES_TRY_ASSIGN(texture,
+                            compages::gpu::Texture::create(description));
         COMPAGES_TRY(texture.write(pixels));
         return texture.generateMipmaps();
     }

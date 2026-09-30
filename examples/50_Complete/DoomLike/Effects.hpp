@@ -43,34 +43,51 @@ class Effects
 public:
 
     //! \brief The shaders. Once, when the game is set up.
-    [[nodiscard]] compages::gpu::Status setUp();
+    [[nodiscard]] compages::Status setUp();
 
     //! \brief Forget the previous level and make the marks of this one.
     void reset(compages::renderer::Scene& p_scene);
 
     //! \brief A spurt of blood leaving \c p_at toward \c p_direction.
-    void blood(Vector3f p_at, Vector3f p_direction, int p_count);
+    void blood(compages::core::Vector3f p_at,
+               compages::core::Vector3f p_direction,
+               int p_count);
     //! \brief Sparks off a hard surface, and a puff of dust.
-    void sparks(Vector3f p_at, Vector3f p_normal, int p_count);
+    void sparks(compages::core::Vector3f p_at,
+                compages::core::Vector3f p_normal,
+                int p_count);
     //! \brief The flash of a shot at the muzzle, toward \c p_direction.
-    void muzzle(Vector3f p_at, Vector3f p_direction);
+    void muzzle(compages::core::Vector3f p_at,
+                compages::core::Vector3f p_direction);
     //! \brief A spent shell thrown to the right of the gun.
-    void casing(Vector3f p_at, Vector3f p_right);
+    void casing(compages::core::Vector3f p_at,
+                compages::core::Vector3f p_right);
     //! \brief Fire, smoke and sparks in every direction.
-    void explosion(Vector3f p_at);
+    void explosion(compages::core::Vector3f p_at);
     //! \brief A glowing ball, what a projectile looks like as it flies.
-    void glow(Vector3f p_at, Vector3f p_color, float p_size);
+    void glow(compages::core::Vector3f p_at,
+              compages::core::Vector3f p_color,
+              float p_size);
     //! \brief The streak of a shot, fading in \c p_life seconds.
-    void tracer(Vector3f p_from, Vector3f p_to, Vector3f p_color, float p_life);
+    void tracer(compages::core::Vector3f p_from,
+                compages::core::Vector3f p_to,
+                compages::core::Vector3f p_color,
+                float p_life);
 
     //! \brief A mark on a wall, the floor or the ceiling. \c p_normal leaves
     //! the surface.
-    void mark(Mark p_mark, Vector3f p_point, Vector3f p_normal, float p_size);
+    void mark(Mark p_mark,
+              compages::core::Vector3f p_point,
+              compages::core::Vector3f p_normal,
+              float p_size);
     //! \brief A pool spreading on the floor under a body.
-    void pool(Mark p_mark, Vector3f p_at, float p_size);
+    void pool(Mark p_mark, compages::core::Vector3f p_at, float p_size);
     //! \brief A splash on a body, held by the bone nearest to \c p_point so
     //! that it follows the animation.
-    void markBody(Mark p_mark, compages::world::EntityId p_body, Vector3f p_point, float p_size);
+    void markBody(Mark p_mark,
+                  compages::world::EntityId p_body,
+                  compages::core::Vector3f p_point,
+                  float p_size);
 
     //! \brief Move the particles, fade the streaks, spread the pools.
     void update(float p_dt);
@@ -80,7 +97,9 @@ public:
 
     //! \brief The particles: after render(), in the same pass, with the
     //! camera it used.
-    void draw(compages::renderer::CameraFrame const& p_camera, float p_fov_degrees, float p_height);
+    void draw(compages::renderer::CameraFrame const& p_camera,
+              float p_fov_degrees,
+              float p_height);
 
     //! \brief A number between the two, from the generator of the effects.
     [[nodiscard]] float random(float p_low, float p_high);
@@ -89,9 +108,9 @@ private:
 
     struct Particle
     {
-        Vector3f position;
-        Vector3f velocity;
-        Vector3f color;
+        compages::core::Vector3f position;
+        compages::core::Vector3f velocity;
+        compages::core::Vector3f color;
         float size;
         float life;
         float age = 0.0f;
@@ -103,9 +122,9 @@ private:
 
     struct Tracer
     {
-        Vector3f from;
-        Vector3f to;
-        Vector3f color;
+        compages::core::Vector3f from;
+        compages::core::Vector3f to;
+        compages::core::Vector3f color;
         float life;
         float age = 0.0f;
     };
@@ -120,13 +139,13 @@ private:
     //! \brief One vertex per particle, what the shader reads.
     struct Point
     {
-        Vector3f position;
-        Vector4f color;
+        compages::core::Vector3f position;
+        compages::core::Vector4f color;
         float size;
     };
 
     void emit(Particle p_particle);
-    [[nodiscard]] Vector3f randomDirection();
+    [[nodiscard]] compages::core::Vector3f randomDirection();
     [[nodiscard]] compages::world::Entity takeMark(Mark p_mark);
 
     static constexpr std::size_t MARKS = 4u;

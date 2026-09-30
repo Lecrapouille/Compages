@@ -5,16 +5,18 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/World/Entity.hpp"
 #include "30_WorldAndAssets/36a_AnimatedModel.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include <cmath>
 
 namespace examples
 {
 
-const compages::renderer::Look LIMB = compages::renderer::color(0.28f, 0.30f, 0.36f);
-const compages::renderer::Look SKIN = compages::renderer::color(0.92f, 0.74f, 0.58f);
+const compages::renderer::Look LIMB =
+    compages::renderer::color(0.28f, 0.30f, 0.36f);
+const compages::renderer::Look SKIN =
+    compages::renderer::color(0.92f, 0.74f, 0.58f);
 
 //! \brief Walks its entity around a circle, swinging legs and arms in
 //! opposite phase.
@@ -66,17 +68,20 @@ std::string AnimatedModel::description() const
            "camera turns slowly by itself.";
 }
 
-compages::world::Entity AnimatedModel::makeWalker(char const* p_name,
-                                        compages::renderer::Look const& p_shirt)
+compages::world::Entity
+AnimatedModel::makeWalker(char const* p_name,
+                          compages::renderer::Look const& p_shirt)
 {
     // Joints first, meshes hung under them. Turning a joint turns the limb.
     compages::world::Entity walker = m_world.entity(p_name);
-    compages::world::Entity torso = walker.child("Torso").position(0.0f, 0.5f, 0.0f);
+    compages::world::Entity torso =
+        walker.child("Torso").position(0.0f, 0.5f, 0.0f);
     m_scene.box("TorsoMesh", p_shirt)
         .parent(torso)
         .position(0.0f, 0.23f, 0.0f)
         .scale(0.34f, 0.46f, 0.20f);
-    compages::world::Entity head = torso.child("Head").position(0.0f, 0.62f, 0.0f);
+    compages::world::Entity head =
+        torso.child("Head").position(0.0f, 0.62f, 0.0f);
     m_scene.sphere("HeadMesh", SKIN).parent(head).scale(0.28f);
 
     // A limb hangs half its length under its joint, so that it swings from
@@ -91,8 +96,9 @@ compages::world::Entity AnimatedModel::makeWalker(char const* p_name,
             .position(0.0f, -0.2f, 0.0f)
             .scale(0.1f, 0.4f, 0.1f);
 
-        compages::world::Entity hip = torso.child(side < 0.0f ? "LeftHip" : "RightHip")
-                                .position(0.1f * side, 0.0f, 0.0f);
+        compages::world::Entity hip =
+            torso.child(side < 0.0f ? "LeftHip" : "RightHip")
+                .position(0.1f * side, 0.0f, 0.0f);
         m_scene.cylinder("Leg", LIMB)
             .parent(hip)
             .position(0.0f, -0.25f, 0.0f)
@@ -105,13 +111,14 @@ compages::world::Entity AnimatedModel::makeWalker(char const* p_name,
     return walker;
 }
 
-compages::gpu::Status AnimatedModel::setUp()
+compages::Status AnimatedModel::setUp()
 {
     // The camera turns by itself, around the walkers' height.
     m_scene.background(0.08f, 0.10f, 0.13f).ambient(0.20f, 0.20f, 0.22f);
     m_scene.camera()
         .position(0.0f, 3.6f, 8.5f)
-        .add<compages::world::Orbit>(Vector3f(0.0f, 0.6f, 0.0f));
+        .add<compages::world::Orbit>(
+            compages::core::Vector3f(0.0f, 0.6f, 0.0f));
     m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.22f;
     m_scene.sun();
 
@@ -126,7 +133,7 @@ compages::gpu::Status AnimatedModel::setUp()
     return m_scene.prepare();
 }
 
-void AnimatedModel::draw(Frame const& p_frame)
+void AnimatedModel::draw(compages::world::ViewFrame const& p_frame)
 {
     // The Walk behaviors run inside the draw.
     m_scene.draw(p_frame);

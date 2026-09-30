@@ -26,8 +26,8 @@
 //! This file declares free functions and never defines them. Exactly one
 //! backend implements them, chosen when the project is compiled through the
 //! GPU_BACKEND variable of Makefile.common. There is no virtual method and no
-//! function pointer anywhere: a call from the compages::gpu:: layer into the backend is a
-//! plain direct call, resolved at link time.
+//! function pointer anywhere: a call from the compages::gpu:: layer into the
+//! backend is a plain direct call, resolved at link time.
 //!
 //! The consequence for anyone adding a backend is pleasant: the compiler lists
 //! precisely what is missing. The consequence for the public API is that it
@@ -59,8 +59,8 @@ namespace compages::gpu::backend
 //! \brief What a backend calls one of its own objects.
 //!
 //! Wide enough for the name OpenGL gives an object and for the pointer sized
-//! handle other graphics APIs use. The compages::gpu:: layer never looks inside one: it
-//! stores it in a pool and hands it back to the backend.
+//! handle other graphics APIs use. The compages::gpu:: layer never looks inside
+//! one: it stores it in a pool and hands it back to the backend.
 // ----------------------------------------------------------------------------
 using NativeId = std::uint64_t;
 
@@ -70,7 +70,8 @@ constexpr NativeId NO_OBJECT = 0u;
 // ----------------------------------------------------------------------------
 //! \brief Load the driver entry points and check the device is usable.
 //!
-//! Called by compages::gpu::init(), which has already made sure it is not called twice.
+//! Called by compages::gpu::init(), which has already made sure it is not
+//! called twice.
 //!
 //! \param[in] p_load the symbol loader given by the caller.
 //! \param[out] p_info filled with what the driver is and allows.
@@ -81,7 +82,8 @@ constexpr NativeId NO_OBJECT = 0u;
 // ----------------------------------------------------------------------------
 //! \brief Drop whatever the backend holds globally.
 //!
-//! Called by compages::gpu::shutdown() once the resource pools are already empty.
+//! Called by compages::gpu::shutdown() once the resource pools are already
+//! empty.
 // ----------------------------------------------------------------------------
 void shutdown();
 
@@ -96,14 +98,14 @@ void shutdown();
 //! \param[in] p_bytes how much memory, never zero.
 //! \param[in] p_data what to put in it, or nullptr to leave it uninitialized.
 //! \param[in] p_kind what the memory is for.
-//! \param[in] p_usage how often it will be written from the CPU. Immutable means
-//! never again, and the backend is expected to tell the driver so.
+//! \param[in] p_usage how often it will be written from the CPU. Immutable
+//! means never again, and the backend is expected to tell the driver so.
 //! \return what the backend calls the new object, or why it could not be made.
 // ----------------------------------------------------------------------------
 [[nodiscard]] Result<NativeId> createBuffer(std::size_t p_bytes,
-                                           const void* p_data,
-                                           BufferKind p_kind,
-                                           BufferUsage p_usage);
+                                            const void* p_data,
+                                            BufferKind p_kind,
+                                            BufferUsage p_usage);
 
 // ----------------------------------------------------------------------------
 //! \brief Give the memory back to the device.
@@ -113,8 +115,8 @@ void destroyBuffer(NativeId p_buffer);
 // ----------------------------------------------------------------------------
 //! \brief Overwrite part of a buffer from the CPU.
 //!
-//! The caller has already checked that the range fits and that the buffer was not
-//! created immutable.
+//! The caller has already checked that the range fits and that the buffer was
+//! not created immutable.
 // ----------------------------------------------------------------------------
 void writeBuffer(NativeId p_buffer,
                  std::size_t p_offset,
@@ -124,8 +126,8 @@ void writeBuffer(NativeId p_buffer,
 // ----------------------------------------------------------------------------
 //! \brief Read part of a buffer back into CPU memory.
 //!
-//! Waits for the device to finish whatever it was doing with that memory, so this
-//! is for tests, screenshots and debugging rather than for every frame.
+//! Waits for the device to finish whatever it was doing with that memory, so
+//! this is for tests, screenshots and debugging rather than for every frame.
 // ----------------------------------------------------------------------------
 void readBuffer(NativeId p_buffer,
                 std::size_t p_offset,
@@ -142,7 +144,7 @@ void readBuffer(NativeId p_buffer,
 //! reason anybody reads it.
 // ----------------------------------------------------------------------------
 [[nodiscard]] Result<NativeId> compileShader(ShaderStage p_stage,
-                                            std::string_view p_source);
+                                             std::string_view p_source);
 
 // ----------------------------------------------------------------------------
 //! \brief Drop a compiled stage.
@@ -153,8 +155,7 @@ void destroyShader(NativeId p_shader);
 //! \brief Link compiled stages into a program.
 //! \return the program, or the log the linker produced.
 // ----------------------------------------------------------------------------
-[[nodiscard]] Result<NativeId> linkProgram(
-    std::span<const NativeId> p_shaders);
+[[nodiscard]] Result<NativeId> linkProgram(std::span<const NativeId> p_shaders);
 
 // ----------------------------------------------------------------------------
 //! \brief Drop a linked program.
@@ -236,16 +237,18 @@ void memoryBarrier(Barrier p_what);
 //! declare a block on that number will read it.
 //!
 //! The other half of bindUniformBlock(): that one says which number a program
-//! reads a block from, this one says what is on that number. Neither mentions the
-//! other, which is the point of numbered points: a buffer bound once is read by
-//! every program that has been told the same number, however many passes later.
+//! reads a block from, this one says what is on that number. Neither mentions
+//! the other, which is the point of numbered points: a buffer bound once is
+//! read by every program that has been told the same number, however many
+//! passes later.
 //!
 //! \param[in] p_kind Uniform or Storage. Anything else is a mistake in the
 //! caller.
 //! \param[in] p_buffer the memory to be read, or zero to leave the point empty.
 //! \param[in] p_binding which numbered point.
 //! \param[in] p_offset, p_bytes which part of the buffer, so that one large
-//! buffer can hold the blocks of many objects. Zero bytes means the whole of it.
+//! buffer can hold the blocks of many objects. Zero bytes means the whole of
+//! it.
 // ----------------------------------------------------------------------------
 void bindBufferToPoint(BufferKind p_kind,
                        NativeId p_buffer,
@@ -273,8 +276,8 @@ void destroyTexture(NativeId p_texture);
 // ----------------------------------------------------------------------------
 //! \brief Fill part of a texture from CPU memory.
 //!
-//! The caller has already checked that the region fits and that the pixels handed
-//! over are the right number of bytes for it.
+//! The caller has already checked that the region fits and that the pixels
+//! handed over are the right number of bytes for it.
 // ----------------------------------------------------------------------------
 void writeTexture(NativeId p_texture,
                   TextureDesc const& p_desc,
@@ -338,7 +341,8 @@ void bindTextureAsImage(NativeId p_texture,
 // ****************************************************************************
 struct VertexAttribute
 {
-    //! \brief The attribute slot the driver assigned, as reflection reported it.
+    //! \brief The attribute slot the driver assigned, as reflection reported
+    //! it.
     int location = -1;
     //! \brief How the field is stored and how the shader is to read it.
     AttributeFormat format;
@@ -354,20 +358,23 @@ struct VertexAttribute
 //!
 //! Two pipelines that read a vertex identically are given the same object, so a
 //! mesh drawn by three passes that all read position, normal and texture
-//! coordinates costs one of these rather than three. The backend keeps the count
-//! of how many pipelines asked for each, and only lets go of one when the last of
-//! them does.
+//! coordinates costs one of these rather than three. The backend keeps the
+//! count of how many pipelines asked for each, and only lets go of one when the
+//! last of them does.
 //!
-//! What is deliberately *not* part of it is which buffer the vertices come from.
-//! That is bound at draw time, which is exactly what lets one description serve
-//! every mesh laid out the same way, and what the previous design could not do.
+//! What is deliberately *not* part of it is which buffer the vertices come
+//! from. That is bound at draw time, which is exactly what lets one description
+//! serve every mesh laid out the same way, and what the previous design could
+//! not do.
 //!
-//! \param[in] p_attributes the fields the shader reads, already matched to slots.
+//! \param[in] p_attributes the fields the shader reads, already matched to
+//! slots.
 //! \param[in] p_stride distance in bytes from one vertex to the next.
 //! \return what the backend calls it, or why it could not be made.
 // ----------------------------------------------------------------------------
-[[nodiscard]] Result<NativeId> acquireVertexReader(
-    std::span<const VertexAttribute> p_attributes, std::uint32_t p_stride);
+[[nodiscard]] Result<NativeId>
+acquireVertexReader(std::span<const VertexAttribute> p_attributes,
+                    std::uint32_t p_stride);
 
 // ----------------------------------------------------------------------------
 //! \brief Say that one fewer pipeline needs this way of reading vertices.
@@ -382,8 +389,8 @@ void releaseVertexReader(NativeId p_reader);
 [[nodiscard]] std::size_t vertexReadersHeld();
 
 // ----------------------------------------------------------------------------
-//! \brief Choose the program, the way of reading vertices, and the state, all at
-//! once.
+//! \brief Choose the program, the way of reading vertices, and the state, all
+//! at once.
 //!
 //! One call rather than three so that a backend may skip whatever is already
 //! set, which it can only know if it is told everything together.
@@ -396,9 +403,9 @@ void bindPipeline(NativeId p_program,
 //! \brief Throw away whatever the backend remembers about the state of the
 //! device.
 //!
-//! Because bindPipeline() is allowed to send only differences, it has to be told
-//! when its record of the device stops being true, which is whenever code outside
-//! this library has talked to the same context.
+//! Because bindPipeline() is allowed to send only differences, it has to be
+//! told when its record of the device stops being true, which is whenever code
+//! outside this library has talked to the same context.
 // ----------------------------------------------------------------------------
 void forgetRenderState();
 
@@ -412,8 +419,8 @@ void showWireframe(bool p_enabled);
 //! \brief Say where the vertices are.
 //!
 //! Kept apart from the way of reading them on purpose: this is the half that
-//! changes per mesh, while the other half changes per layout. Separating them is
-//! what lets one description serve every mesh laid out the same way.
+//! changes per mesh, while the other half changes per layout. Separating them
+//! is what lets one description serve every mesh laid out the same way.
 // ----------------------------------------------------------------------------
 void bindVertexBuffer(NativeId p_reader,
                       NativeId p_buffer,
@@ -462,7 +469,8 @@ void attachDepth(NativeId p_framebuffer,
 void setColorCount(NativeId p_framebuffer, std::uint32_t p_count);
 
 // ----------------------------------------------------------------------------
-//! \brief Ask the driver whether the attachments make a target it can draw into.
+//! \brief Ask the driver whether the attachments make a target it can draw
+//! into.
 //!
 //! \return why not, in the driver's words, or success.
 // ----------------------------------------------------------------------------

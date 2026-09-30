@@ -23,7 +23,7 @@ namespace compages::renderer
 class AssetManager;
 
 // ****************************************************************************
-//! \brief Spawn a prefab hierarchy into a World.
+//! \brief Spawn a prefab hierarchy into a compages::world::World.
 //!
 //! \param[in,out] p_world where entities are created.
 //! \param[in] p_assets used to resolve mesh and material names.
@@ -33,11 +33,11 @@ class AssetManager;
 //! \return the root entity of the instance, tagged with PrefabInstance.
 //!
 //! \code
-//! auto root = COMPAGES_TRY(compages::renderer::instantiate(world, assets, robotPrefab));
-//! world.entity(root).position(0, 0, 3);
+//! auto root = COMPAGES_TRY(compages::renderer::instantiate(world, assets,
+//! robotPrefab)); world.entity(root).position(0, 0, 3);
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] compages::Result<compages::world::EntityId>
+[[nodiscard]] Result<compages::world::EntityId>
 instantiate(compages::world::World& p_world,
             AssetManager& p_assets,
             PrefabId p_prefab,

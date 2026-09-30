@@ -11,6 +11,9 @@
 
 #include <vector>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -103,8 +106,8 @@ void main()
 
 struct Particle
 {
-    Vector2f position;
-    Vector2f velocity;
+    compages::core::Vector2f position;
+    compages::core::Vector2f velocity;
 };
 
 } // namespace
@@ -254,7 +257,7 @@ TEST_F(ComputeTest, AStorageBufferCanThenBeDrawnAsVertices)
     compages::gpu::PassDesc desc;
     desc.width = WIDTH;
     desc.height = HEIGHT;
-    desc.color = Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+    desc.color = compages::core::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
     desc.target = {};
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();

@@ -8,7 +8,10 @@
 #include "Compages/World/Entity.hpp"
 #include "main.hpp"
 
+
 #include "Compages/World/World.hpp"
+
+
 
 namespace
 {
@@ -64,9 +67,9 @@ TEST(WorldEcs, EntityRefProvidesTheErgonomicApi)
     object.add<Payload>(42);
     ASSERT_EQ(object.get<Payload>().value, 42);
 
-    object.transform().position = Vector3f(1.0f, 2.0f, 3.0f);
+    object.transform().position = compages::core::Vector3f(1.0f, 2.0f, 3.0f);
     world.update();
-    Vector3f const position = world.transform(object.id()).position;
+    compages::core::Vector3f const position = world.transform(object.id()).position;
     ASSERT_FLOAT_EQ(position.x, 1.0f);
     ASSERT_FLOAT_EQ(position.y, 2.0f);
     ASSERT_FLOAT_EQ(position.z, 3.0f);

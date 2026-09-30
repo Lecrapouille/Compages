@@ -7,7 +7,6 @@
 
 #pragma once
 
-
 // *****************************************************************************
 // Inspired by https://github.com/Reedbeta/reed-util and its
 // blog http://www.reedbeta.com/blog/on-vector-math-libraries/
@@ -15,7 +14,9 @@
 
 #include "Compages/Core/Vector.hpp"
 
-namespace compages::matrix
+namespace compages::core
+{
+namespace matrix
 {
 //! \brief Enum used by the constructor for initializing matrices.
 enum Type
@@ -27,7 +28,7 @@ enum Type
     //! \brief Create a matrix filled with ones.
     One,
 };
-} // namespace compages::matrix
+} // namespace matrix
 
 // *****************************************************************************
 //! \brief Class for small and dense matrices (up to 4x4). Elements are
@@ -38,11 +39,17 @@ enum Type
 //!     | a9  a10 a11 a12 |
 //!     | a13 a14 a15 a16 |
 //!
-//! \note Beware OpenGL uses column-major order and therefore uses transposed
-//!   matrices to store data but operations follow non-transposed matrices.
-//!   Therefore, classic A * B will be made in OpenGL as tr(tr(B) * tr(A)) to
-//!   make the final transpose inplicit the * is inversed (glm library). This
-//!   class does not follow glm but follows Scilab.
+//! \note **Canonical convention (Scilab):** vectors are columns, transforms
+//!   compose as \c y = M * x and \c M3 * (M2 * (M1 * x)) = (M3 * M2 * M1) * x
+//!   ( \c M1 applies first ). Matrix-matrix and matrix-vector \c operator*
+//!   implement that product on row-major storage. OpenGL expects column-major
+//!   memory: transpose once at upload (\c glUniformMatrix4fv(..., GL_TRUE,
+//!   ...)) or call \c transpose() before \c GL_FALSE — do not bake GL layout
+//!   into every transform helper.
+//!
+//! \note \c Vector is always a column vector: only \c M * x is defined, there
+//!   is no \c x * M. Use \c castToRowVector() or \c transpose() explicitly when
+//!   a row is needed.
 //!
 //! \warning do not use big matrices since this class hold a static array and
 //!   therefore not store in the heap but stored in the stack of called
@@ -81,7 +88,7 @@ public:
     //--------------------------------------------------------------------------
     template <typename U = T>
     Matrix(std::initializer_list<U> initList,
-           T const remainder = compages::maths::zero<T>())
+           T const remainder = zero<T>())
     {
         size_t m = std::min(rows * cols, size_t(initList.size()));
         auto iter = initList.begin();
@@ -116,36 +123,36 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Constructor for identity matrix.
     //--------------------------------------------------------------------------
-    explicit Matrix(compages::matrix::Type const type)
+    explicit Matrix(matrix::Type const type)
     {
         size_t i = rows * cols;
 
         switch (type)
         {
-            case compages::matrix::Type::Identity:
+            case matrix::Type::Identity:
                 static_assert(
                     rows == cols,
                     "Can't construct identity for a non-square matrix");
                 while (i--)
                 {
-                    m_data[i] = compages::maths::zero<T>();
+                    m_data[i] = zero<T>();
                 }
                 i = cols;
                 while (i--)
                 {
-                    m_data[cols * i + i] = compages::maths::one<T>();
+                    m_data[cols * i + i] = one<T>();
                 }
                 break;
-            case compages::matrix::Type::Zero:
+            case matrix::Type::Zero:
                 while (i--)
                 {
-                    m_data[i] = compages::maths::zero<T>();
+                    m_data[i] = zero<T>();
                 }
                 break;
-            case compages::matrix::Type::One:
+            case matrix::Type::One:
                 while (i--)
                 {
-                    m_data[i] = compages::maths::one<T>();
+                    m_data[i] = one<T>();
                 }
                 break;
             default:
@@ -170,13 +177,13 @@ public:
             // Zero-fill any remaining cols
             for (size_t j = c; j < cols; ++j)
             {
-                m_data[cols * i + j] = compages::maths::zero<T>();
+                m_data[cols * i + j] = zero<T>();
             }
         }
         // Zero-fill any remaining rows
         for (size_t i = r * cols; i < rows * cols; ++i)
         {
-            m_data[i] = compages::maths::zero<T>();
+            m_data[i] = zero<T>();
         }
     }
 
@@ -484,7 +491,7 @@ template <typename T, size_t rows, size_t inner, size_t cols>
 Matrix<T, rows, cols> operator*(Matrix<T, rows, inner> const& a,
                                 Matrix<T, inner, cols> const& b)
 {
-    Matrix<T, rows, cols> result(compages::maths::zero<T>());
+    Matrix<T, rows, cols> result(zero<T>());
 
     for (size_t i = 0u; i < rows; ++i)
         for (size_t j = 0u; j < cols; ++j)
@@ -503,14 +510,14 @@ Matrix<T, rows, cols> operator*(Matrix<T, rows, inner> const& a,
 //! B = |3 4| * |7| = |46|
 //! \endcode
 //! \param[in] a the matrix (dimension MxN).
-//! \param[in] b the column vector (dimension N).
-//! \return a (column) vector (dimension N).
+//! \param[in] b the column vector (dimension \c cols).
+//! \return a column vector (dimension \c rows).
 // *****************************************************************************
 template <typename T, size_t rows, size_t cols>
 Vector<T, rows> operator*(Matrix<T, rows, cols> const& a,
                           Vector<T, cols> const& b)
 {
-    Vector<T, rows> result(compages::maths::zero<T>());
+    Vector<T, rows> result(zero<T>());
     size_t i = rows;
     while (i--)
     {
@@ -522,22 +529,16 @@ Vector<T, rows> operator*(Matrix<T, rows, cols> const& a,
 }
 
 // *****************************************************************************
-//! \brief Vector-Matrix multiplication.
-//!
-//! Example:
-//! \code
-//!             |1 2|
-//! C = |6 7| * |3 4| = |27 40|
-//! \endcode
-//! \param[in] a the row vector (dimension N).
-//! \param[in] b the matrix (dimension MxN).
-//! \return a (row) vector (dimension N).
+// Vector-Matrix multiplication (x^T * M) is disabled: Vector is a column
+// vector, so x * M has no meaning and silently applied the transposed
+// transform. Write transpose(M) * x when x^T * M is really wanted.
 // *****************************************************************************
+#if 0
 template <typename T, size_t rows, size_t cols>
 Vector<T, cols> operator*(Vector<T, rows> const& a,
                           Matrix<T, rows, cols> const& b)
 {
-    Vector<T, cols> result(compages::maths::zero<T>());
+    Vector<T, cols> result(zero<T>());
     size_t i = rows;
 
     while (i--)
@@ -549,15 +550,13 @@ Vector<T, cols> operator*(Vector<T, rows> const& a,
     return result;
 }
 
-// *****************************************************************************
-//! \brief Self Matrix-Vector multiplication: vector = vector * matrix
-// *****************************************************************************
 template <typename T, size_t n>
 Vector<T, n>& operator*=(Vector<T, n>& a, Matrix<T, n, n> const& b)
 {
     a = a * b;
     return a;
 }
+#endif
 
 // *****************************************************************************
 //! \brief Matrix-Vector multiplication: matrix = matrix * vector
@@ -589,17 +588,19 @@ std::ostream& operator<<(std::ostream& os, Matrix<T, rows, cols> const& m)
     return os;
 }
 
-namespace compages::matrix
-{
 // *************************************************************************
-//! \brief Convert a generic vector to a row vector.
+//! \brief Convert a generic vector to a row matrix (shape 1 x N).
+//!
+//! A previous version returned an N x 1 matrix and wrote result(0, i), which
+//! is past the only column. That swaps the two orientations and reads as a
+//! transposition.
 // *************************************************************************
-template <typename T, size_t rows>
-Matrix<T, rows, 1u> castToRowVector(Vector<T, rows> const& v)
+template <typename T, size_t cols>
+Matrix<T, 1u, cols> castToRowVector(Vector<T, cols> const& v)
 {
-    Matrix<T, rows, 1u> result;
+    Matrix<T, 1u, cols> result;
 
-    size_t i = rows;
+    size_t i = cols;
     while (i--)
         result(0, i) = v[i];
 
@@ -607,14 +608,14 @@ Matrix<T, rows, 1u> castToRowVector(Vector<T, rows> const& v)
 }
 
 // *************************************************************************
-//! \brief Convert a generic vector to a column vector.
+//! \brief Convert a generic vector to a column matrix (shape N x 1).
 // *************************************************************************
-template <typename T, size_t cols>
-Matrix<T, 1u, cols> castToColumnVector(Vector<T, cols> const& v)
+template <typename T, size_t rows>
+Matrix<T, rows, 1u> castToColumnVector(Vector<T, rows> const& v)
 {
-    Matrix<T, 1u, cols> result;
+    Matrix<T, rows, 1u> result;
 
-    size_t i = cols;
+    size_t i = rows;
     while (i--)
         result(i, 0) = v[i];
 
@@ -630,7 +631,7 @@ void identity(Matrix<T, rows, cols>& a)
 {
     static_assert(rows == cols,
                   "Can't construct identity for a non-square matrix");
-    a = Matrix<T, rows, cols>(compages::matrix::Identity);
+    a = Matrix<T, rows, cols>(matrix::Identity);
 }
 
 // *************************************************************************
@@ -639,7 +640,7 @@ void identity(Matrix<T, rows, cols>& a)
 template <typename T, size_t rows, size_t cols>
 void zero(Matrix<T, rows, cols>& a)
 {
-    a = Matrix<T, rows, cols>(compages::matrix::Zero);
+    a = Matrix<T, rows, cols>(matrix::Zero);
 }
 
 // *************************************************************************
@@ -648,7 +649,7 @@ void zero(Matrix<T, rows, cols>& a)
 template <typename T, size_t rows, size_t cols>
 void one(Matrix<T, rows, cols>& a)
 {
-    a = Matrix<T, rows, cols>(compages::matrix::One);
+    a = Matrix<T, rows, cols>(matrix::One);
 }
 
 // *************************************************************************
@@ -691,7 +692,7 @@ compare(Matrix<T, rows, cols> const& a,
 
     while (i--)
     {
-        result.m_data[i] = compages::maths::almostEqual(a.m_data[i], b.m_data[i]);
+        result.m_data[i] = almostEqual(a.m_data[i], b.m_data[i]);
     }
 
     return result;
@@ -744,7 +745,7 @@ T trace(Matrix<T, rows, cols> const& a)
     static_assert(rows == cols,
                   "Can't compute the trace of a non-square matrix");
 
-    T result = compages::maths::zero<T>();
+    T result = zero<T>();
     size_t i = rows;
 
     while (i--)
@@ -772,7 +773,7 @@ bool isDiagonal(Matrix<T, rows, cols> const& a)
         {
             if (i != j)
             {
-                if (!compages::maths::almostZero(a(i, j)))
+                if (!almostZero(a(i, j)))
                     return false;
             }
         }
@@ -799,7 +800,7 @@ bool isSymmetric(Matrix<T, rows, cols> const& a)
         {
             if (i != j)
             {
-                if (!compages::maths::almostEqual(a(i, j), a(j, i)))
+                if (!almostEqual(a(i, j), a(j, i)))
                     return false;
             }
         }
@@ -921,8 +922,9 @@ Matrix<T, 4u, 4u> inverse(Matrix<T, 4u, 4u> const& m)
     T t30 = -(v3 * m10 - v1 * m11 + v0 * m12);
 
     T invDet =
-        compages::maths::one<T>() / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
-    // assert(invDet != compages::maths::zero<T>() && "The matrix cannot be inversed");
+        one<T>() / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
+    // assert(invDet != zero<T>() && "The matrix cannot be
+    // inversed");
 
     Matrix<T, 4u, 4u> inv;
     inv[0][0] = t00 * invDet;
@@ -977,37 +979,37 @@ void LUdecomposition(Matrix<T, rows, cols> const& AA,
     size_t i, j;
 
     // Set matrices to 0
-    L *= compages::maths::zero<T>();
-    U *= compages::maths::zero<T>();
+    L *= zero<T>();
+    U *= zero<T>();
 
     // FIXME: Copy not necessary
     Matrix<T, rows, cols> A(AA);
 
     for (i = 0; i < rows - 1; ++i)
     {
-        double max = compages::maths::abs(A(i, i));
+        double max = abs(A(i, i));
         size_t pivot = i;
 
         for (j = i + 1u; j < rows; ++j)
         {
-            if (compages::maths::abs(A(j, i)) > max)
+            if (abs(A(j, i)) > max)
             {
-                max = compages::maths::abs(A(j, i));
+                max = abs(A(j, i));
                 pivot = j;
             }
         }
 
         if (pivot != i)
         {
-            compages::matrix::swapRows(A, i, pivot);
-            compages::matrix::swapRows(P, i, pivot);
+            swapRows(A, i, pivot);
+            swapRows(P, i, pivot);
         }
 
         // ERROR:
         // -- original code:  if (A(i, i) != 0.0)
         // -- new code which seems to give less good results: if (fabs(A(i, i))
         // > 0.00001) we cannot use == with floats or double !!!!
-        if (A(i, i) != compages::maths::zero<T>())
+        if (A(i, i) != zero<T>())
         {
             for (j = i + 1u; j < rows; ++j)
             {
@@ -1021,7 +1023,7 @@ void LUdecomposition(Matrix<T, rows, cols> const& AA,
     }
     for (i = 0u; i < rows; ++i)
     {
-        L(i, i) = compages::maths::one<T>();
+        L(i, i) = one<T>();
         for (j = 0u; j < rows; ++j)
         {
             if (j < i)
@@ -1089,16 +1091,16 @@ Vector<T, rows> LUsolve(Matrix<T, rows, cols> const& A,
 {
     Matrix<T, rows, cols> L;
     Matrix<T, rows, cols> U;
-    Matrix<T, rows, cols> P(compages::matrix::Identity);
+    Matrix<T, rows, cols> P(matrix::Type::Identity);
 
-    compages::matrix::LUdecomposition(A, L, U, P);
-    return compages::matrix::LUsolve(L, U, P, b);
+    LUdecomposition(A, L, U, P);
+    return LUsolve(L, U, P, b);
 }
 
 template <typename T>
 Matrix<T, 4u, 4u> translationMatrix(Vector<T, 3u> const& trans)
 {
-    Matrix<T, 4u, 4u> m(compages::matrix::Type::Identity);
+    Matrix<T, 4u, 4u> m(matrix::Type::Identity);
     m[0][3] = trans[0];
     m[1][3] = trans[1];
     m[2][3] = trans[2];
@@ -1109,12 +1111,12 @@ Matrix<T, 4u, 4u> translationMatrix(Vector<T, 3u> const& trans)
 template <typename T>
 Matrix<T, 4u, 4u> scalingMatrix(Vector<T, 3u> const& scal)
 {
-    Matrix<T, 4u, 4u> m(compages::matrix::Type::Zero);
+    Matrix<T, 4u, 4u> m(matrix::Type::Zero);
     m[0][0] = scal[0];
     m[1][1] = scal[1];
     m[2][2] = scal[2];
     m[3][3] = T(1);
     return m;
 }
-} // namespace compages::matrix
+} // namespace compages::core
 

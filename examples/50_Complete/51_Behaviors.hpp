@@ -9,8 +9,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -18,8 +18,8 @@ namespace examples
 // ****************************************************************************
 //! \brief Code attached to an entity, the Unity way.
 //!
-//! A behavior is a small class deriving from compages::world::Behavior. Added to an
-//! entity, it is started once, then updated every frame the entity is
+//! A behavior is a small class deriving from compages::world::Behavior. Added
+//! to an entity, it is started once, then updated every frame the entity is
 //! enabled, and it reaches its entity, its transform and the input:
 //! \code
 //! struct Spin : compages::world::Behavior
@@ -34,7 +34,7 @@ namespace examples
 //!
 //! The camera control is a behavior too: add<compages::world::Orbit>().
 // ****************************************************************************
-class Behaviors final : public Example
+class Behaviors final: public Example
 {
 public:
 
@@ -44,8 +44,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
 
 private:

@@ -24,15 +24,22 @@
 //! first and adding the control after keeps the placement.
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief Turn around a target with the right mouse button, zoom with the
 //! wheel.
 //!
 //! \code
-//! scene.camera().add<compages::world::Orbit>(Vector3f{ 0, 1, 0 });
+//! scene.camera().add<compages::world::Orbit>(compages::core::Vector3f{ 0, 1, 0 });
 //! \endcode
 // ****************************************************************************
 struct Orbit : Behavior
@@ -41,7 +48,7 @@ struct Orbit : Behavior
     OrbitController controller;
 
     Orbit() = default;
-    explicit Orbit(Vector3f p_target) { controller.target = p_target; }
+    explicit Orbit(compages::core::Vector3f p_target) { controller.target = p_target; }
 
     //! \brief Seed distance, zoom limits and yaw/pitch from the camera pose.
     void start() override;

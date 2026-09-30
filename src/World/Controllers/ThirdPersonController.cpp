@@ -8,6 +8,7 @@
 #include "Compages/World/Controllers/ThirdPersonController.hpp"
 
 #include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 #include "Compages/Core/Units.hpp"
 #include "Compages/World/World.hpp"
 
@@ -20,20 +21,20 @@ namespace compages::world
 namespace
 {
 
-Quatf yawPitch(float p_yaw, float p_pitch)
+compages::core::Quatf yawPitch(float p_yaw, float p_pitch)
 {
-    const Quatf q_yaw = Quatf::fromAngleAxis(
+    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(p_yaw)),
-        Vector3f(0.0f, 1.0f, 0.0f));
-    const Quatf q_pitch = Quatf::fromAngleAxis(
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(p_pitch)),
-        Vector3f(1.0f, 0.0f, 0.0f));
+        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
     return q_yaw * q_pitch;
 }
 
-Vector3f targetPoint(World const& p_world,
+compages::core::Vector3f targetPoint(World const& p_world,
                      EntityId p_target,
-                     Vector3f const& p_offset)
+                     compages::core::Vector3f const& p_offset)
 {
     if (!p_world.alive(p_target))
     {
@@ -41,8 +42,8 @@ Vector3f targetPoint(World const& p_world,
     }
     if (p_world.parent(p_target).valid())
     {
-        const Matrix44f& world = p_world.worldMatrix(p_target);
-        return Vector3f(world[3].x, world[3].y, world[3].z) + p_offset;
+        const compages::core::Matrix44f& world = p_world.worldMatrix(p_target);
+        return compages::core::translation(world) + p_offset;
     }
     return p_world.transform(p_target).position + p_offset;
 }
@@ -67,9 +68,9 @@ void ThirdPersonController::apply(World& p_world,
 
 void ThirdPersonController::writePose(World& p_world, EntityId p_camera) const
 {
-    const Vector3f focus = targetPoint(p_world, target, look_offset);
-    const Quatf rotation = yawPitch(yaw, pitch);
-    const Vector3f forward = rotation * Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::core::Vector3f focus = targetPoint(p_world, target, look_offset);
+    const compages::core::Quatf rotation = yawPitch(yaw, pitch);
+    const compages::core::Vector3f forward = rotation * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
     LocalTransformView local = p_world.transform(p_camera);
     local.position = focus - (forward * distance);
     local.rotation = rotation;

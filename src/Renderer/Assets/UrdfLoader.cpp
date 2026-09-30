@@ -5,10 +5,10 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/World/Entity.hpp"
 #include "Compages/Renderer/Assets/UrdfLoader.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include <pugixml.hpp>
 
@@ -26,10 +26,6 @@
 namespace compages::renderer
 {
 
-using compages::world::LocalTransform;
-using compages::world::PrismaticJoint;
-using compages::world::RevoluteJoint;
-
 namespace
 {
 
@@ -45,13 +41,13 @@ enum class GeometryKind
 
 struct UrdfVisual
 {
-    LocalTransform origin{};
+    compages::world::LocalTransform origin{};
     GeometryKind kind = GeometryKind::Box;
     std::string filename;
-    Vector3f size{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f size{ 1.0f, 1.0f, 1.0f };
     float radius = 0.5f;
     float length = 1.0f;
-    std::optional<Vector4f> rgba;
+    std::optional<compages::core::Vector4f> rgba;
 };
 
 struct UrdfLink
@@ -74,8 +70,8 @@ struct UrdfJoint
     JointKind kind = JointKind::Fixed;
     std::string parent;
     std::string child;
-    LocalTransform origin{};
-    Vector3f axis{ 1.0f, 0.0f, 0.0f };
+    compages::world::LocalTransform origin{};
+    compages::core::Vector3f axis{ 1.0f, 0.0f, 0.0f };
     std::optional<double> lower;
     std::optional<double> upper;
     double velocity = 0.0;
@@ -100,9 +96,9 @@ std::vector<float> numbers(char const* p_text)
     return values;
 }
 
-compages::Result<Vector3f> triple(pugi::xml_node p_node,
-                                  char const* p_attribute,
-                                  Vector3f p_default)
+Result<compages::core::Vector3f> triple(pugi::xml_node p_node,
+                                        char const* p_attribute,
+                                        compages::core::Vector3f p_default)
 {
     pugi::xml_attribute attribute = p_node.attribute(p_attribute);
     if (!attribute)
@@ -112,43 +108,48 @@ compages::Result<Vector3f> triple(pugi::xml_node p_node,
     const std::vector<float> values = numbers(attribute.value());
     if (values.size() != 3u)
     {
-        return compages::failure(std::string("<") + p_node.name() + " " +
-                                 p_attribute + "> needs three numbers, not '" +
-                                 attribute.value() + "'");
+        return failure(std::string("<") + p_node.name() + " " + p_attribute +
+                       "> needs three numbers, not '" + attribute.value() +
+                       "'");
     }
-    return Vector3f(values[0], values[1], values[2]);
+    return compages::core::Vector3f(values[0], values[1], values[2]);
 }
 
 //! \brief URDF roll, pitch, yaw are turns around the fixed X, Y then Z axes:
 //! R = Rz(yaw) * Ry(pitch) * Rx(roll).
-Quatf fromRpy(Vector3f const& p_rpy)
+compages::core::Quatf fromRpy(compages::core::Vector3f const& p_rpy)
 {
     using units::angle::radian_t;
-    const Quatf roll = Quatf::fromAngleAxis(radian_t(p_rpy.x), Vector3f(1.0f, 0.0f, 0.0f));
-    const Quatf pitch = Quatf::fromAngleAxis(radian_t(p_rpy.y), Vector3f(0.0f, 1.0f, 0.0f));
-    const Quatf yaw = Quatf::fromAngleAxis(radian_t(p_rpy.z), Vector3f(0.0f, 0.0f, 1.0f));
-    Quatf rotation = yaw * pitch * roll;
+    const compages::core::Quatf roll = compages::core::Quatf::fromAngleAxis(
+        radian_t(p_rpy.x), compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+    const compages::core::Quatf pitch = compages::core::Quatf::fromAngleAxis(
+        radian_t(p_rpy.y), compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Quatf yaw = compages::core::Quatf::fromAngleAxis(
+        radian_t(p_rpy.z), compages::core::Vector3f(0.0f, 0.0f, 1.0f));
+    compages::core::Quatf rotation = yaw * pitch * roll;
     rotation.normalize();
     return rotation;
 }
 
-compages::Result<LocalTransform> parseOrigin(pugi::xml_node p_parent)
+Result<compages::world::LocalTransform> parseOrigin(pugi::xml_node p_parent)
 {
-    LocalTransform origin;
+    compages::world::LocalTransform origin;
     pugi::xml_node node = p_parent.child("origin");
     if (!node)
     {
         return origin;
     }
-    COMPAGES_TRY_ASSIGN(origin.position,
-                        triple(node, "xyz", Vector3f(0.0f, 0.0f, 0.0f)));
-    Vector3f rpy;
-    COMPAGES_TRY_ASSIGN(rpy, triple(node, "rpy", Vector3f(0.0f, 0.0f, 0.0f)));
+    COMPAGES_TRY_ASSIGN(
+        origin.position,
+        triple(node, "xyz", compages::core::Vector3f(0.0f, 0.0f, 0.0f)));
+    compages::core::Vector3f rpy;
+    COMPAGES_TRY_ASSIGN(
+        rpy, triple(node, "rpy", compages::core::Vector3f(0.0f, 0.0f, 0.0f)));
     origin.rotation = fromRpy(rpy);
     return origin;
 }
 
-std::optional<Vector4f> parseColor(pugi::xml_node p_material)
+std::optional<compages::core::Vector4f> parseColor(pugi::xml_node p_material)
 {
     pugi::xml_node color = p_material.child("color");
     if (!color)
@@ -160,18 +161,19 @@ std::optional<Vector4f> parseColor(pugi::xml_node p_material)
     {
         return std::nullopt;
     }
-    return Vector4f(values[0], values[1], values[2], values[3]);
+    return compages::core::Vector4f(values[0], values[1], values[2], values[3]);
 }
 
 //! \brief Materials are defined once, at the top of the file or inside the
 //! first visual using them, then referred to by name.
-std::unordered_map<std::string, Vector4f> namedColors(pugi::xml_node p_robot)
+std::unordered_map<std::string, compages::core::Vector4f>
+namedColors(pugi::xml_node p_robot)
 {
-    std::unordered_map<std::string, Vector4f> colors;
+    std::unordered_map<std::string, compages::core::Vector4f> colors;
     for (pugi::xpath_node found : p_robot.select_nodes("//material[@name]"))
     {
         pugi::xml_node material = found.node();
-        if (std::optional<Vector4f> rgba = parseColor(material))
+        if (std::optional<compages::core::Vector4f> rgba = parseColor(material))
         {
             colors.try_emplace(material.attribute("name").value(), *rgba);
         }
@@ -179,9 +181,9 @@ std::unordered_map<std::string, Vector4f> namedColors(pugi::xml_node p_robot)
     return colors;
 }
 
-compages::Result<UrdfVisual>
-parseVisual(pugi::xml_node p_visual,
-            std::unordered_map<std::string, Vector4f> const& p_colors)
+Result<UrdfVisual> parseVisual(
+    pugi::xml_node p_visual,
+    std::unordered_map<std::string, compages::core::Vector4f> const& p_colors)
 {
     UrdfVisual visual;
     COMPAGES_TRY_ASSIGN(visual.origin, parseOrigin(p_visual));
@@ -191,14 +193,16 @@ parseVisual(pugi::xml_node p_visual,
     {
         visual.kind = GeometryKind::Mesh;
         visual.filename = mesh.attribute("filename").value();
-        COMPAGES_TRY_ASSIGN(visual.origin.scale,
-                            triple(mesh, "scale", Vector3f(1.0f, 1.0f, 1.0f)));
+        COMPAGES_TRY_ASSIGN(
+            visual.origin.scale,
+            triple(mesh, "scale", compages::core::Vector3f(1.0f, 1.0f, 1.0f)));
     }
     else if (pugi::xml_node box = geometry.child("box"))
     {
         visual.kind = GeometryKind::Box;
-        COMPAGES_TRY_ASSIGN(visual.size,
-                            triple(box, "size", Vector3f(1.0f, 1.0f, 1.0f)));
+        COMPAGES_TRY_ASSIGN(
+            visual.size,
+            triple(box, "size", compages::core::Vector3f(1.0f, 1.0f, 1.0f)));
     }
     else if (pugi::xml_node cylinder = geometry.child("cylinder"))
     {
@@ -213,8 +217,8 @@ parseVisual(pugi::xml_node p_visual,
     }
     else
     {
-        return compages::failure("a <visual> without a mesh, box, cylinder "
-                                 "or sphere geometry");
+        return failure("a <visual> without a mesh, box, cylinder "
+                       "or sphere geometry");
     }
 
     if (pugi::xml_node material = p_visual.child("material"))
@@ -232,7 +236,7 @@ parseVisual(pugi::xml_node p_visual,
     return visual;
 }
 
-compages::Result<JointKind> parseJointKind(std::string_view p_type)
+Result<JointKind> parseJointKind(std::string_view p_type)
 {
     if (p_type == "fixed")
     {
@@ -250,13 +254,12 @@ compages::Result<JointKind> parseJointKind(std::string_view p_type)
     {
         return JointKind::Prismatic;
     }
-    return compages::failure("unsupported URDF joint type '" +
-                             std::string(p_type) +
-                             "': only fixed, revolute, continuous and "
-                             "prismatic are");
+    return failure("unsupported URDF joint type '" + std::string(p_type) +
+                   "': only fixed, revolute, continuous and "
+                   "prismatic are");
 }
 
-compages::Result<UrdfJoint> parseJoint(pugi::xml_node p_joint)
+Result<UrdfJoint> parseJoint(pugi::xml_node p_joint)
 {
     UrdfJoint joint;
     joint.name = p_joint.attribute("name").value();
@@ -266,15 +269,17 @@ compages::Result<UrdfJoint> parseJoint(pugi::xml_node p_joint)
     joint.child = p_joint.child("child").attribute("link").value();
     if (joint.parent.empty() || joint.child.empty())
     {
-        return compages::failure("joint '" + joint.name +
-                                 "' lacks its parent or child link");
+        return failure("joint '" + joint.name +
+                       "' lacks its parent or child link");
     }
     COMPAGES_TRY_ASSIGN(joint.origin, parseOrigin(p_joint));
-    COMPAGES_TRY_ASSIGN(joint.axis, triple(p_joint.child("axis"), "xyz",
-                                           Vector3f(1.0f, 0.0f, 0.0f)));
-    if (compages::vector::squaredNorm(joint.axis) <= 0.0f)
+    COMPAGES_TRY_ASSIGN(joint.axis,
+                        triple(p_joint.child("axis"),
+                               "xyz",
+                               compages::core::Vector3f(1.0f, 0.0f, 0.0f)));
+    if (compages::core::vector::squaredNorm(joint.axis) <= 0.0f)
     {
-        return compages::failure("joint '" + joint.name + "' has a null axis");
+        return failure("joint '" + joint.name + "' has a null axis");
     }
     if (pugi::xml_node limit = p_joint.child("limit"))
     {
@@ -291,19 +296,19 @@ compages::Result<UrdfJoint> parseJoint(pugi::xml_node p_joint)
     return joint;
 }
 
-compages::Result<UrdfRobot> parseUrdf(std::string const& p_path)
+Result<UrdfRobot> parseUrdf(std::string const& p_path)
 {
     pugi::xml_document document;
     const pugi::xml_parse_result parsed = document.load_file(p_path.c_str());
     if (!parsed)
     {
-        return compages::failure("cannot read the URDF file '" + p_path +
-                                 "': " + parsed.description());
+        return failure("cannot read the URDF file '" + p_path +
+                       "': " + parsed.description());
     }
     pugi::xml_node root = document.child("robot");
     if (!root)
     {
-        return compages::failure("'" + p_path + "' has no <robot> element");
+        return failure("'" + p_path + "' has no <robot> element");
     }
 
     UrdfRobot robot;
@@ -318,8 +323,7 @@ compages::Result<UrdfRobot> parseUrdf(std::string const& p_path)
             auto visual = parseVisual(visual_node, colors);
             if (!visual)
             {
-                return compages::failure("link '" + link.name +
-                                         "': " + visual.error());
+                return failure("link '" + link.name + "': " + visual.error());
             }
             link.visuals.push_back(visual.take());
         }
@@ -330,7 +334,7 @@ compages::Result<UrdfRobot> parseUrdf(std::string const& p_path)
         auto joint = parseJoint(node);
         if (!joint)
         {
-            return compages::failure(joint.error());
+            return failure(joint.error());
         }
         robot.joints.push_back(joint.take());
     }
@@ -355,7 +359,8 @@ std::string resolveMesh(fs::path const& p_folder, std::string p_filename)
         candidates.push_back(p_folder / inside);
         candidates.push_back(p_folder.parent_path() / inside);
         fs::path without_package;
-        for (auto part = std::next(inside.begin()); part != inside.end(); ++part)
+        for (auto part = std::next(inside.begin()); part != inside.end();
+             ++part)
         {
             without_package /= *part;
         }
@@ -379,7 +384,9 @@ std::string resolveMesh(fs::path const& p_folder, std::string p_filename)
 std::string lowerExtension(std::string const& p_path)
 {
     std::string extension = fs::path(p_path).extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(),
+    std::transform(extension.begin(),
+                   extension.end(),
+                   extension.begin(),
                    [](unsigned char c) { return char(std::tolower(c)); });
     return extension;
 }
@@ -391,12 +398,13 @@ class Builder
 {
 public:
 
-    Builder(World& p_world, Scene* p_scene, fs::path p_folder)
+    Builder(compages::world::World& p_world, Scene* p_scene, fs::path p_folder)
         : m_world(p_world), m_scene(p_scene), m_folder(std::move(p_folder))
     {
     }
 
-    compages::Result<Entity> build(UrdfRobot const& p_robot, EntityId p_parent)
+    Result<compages::world::Entity> build(UrdfRobot const& p_robot,
+                                          compages::world::EntityId p_parent)
     {
         for (UrdfLink const& link : p_robot.links)
         {
@@ -408,13 +416,13 @@ public:
             if ((m_links.count(joint.parent) == 0u) ||
                 (m_links.count(joint.child) == 0u))
             {
-                return compages::failure("joint '" + joint.name +
-                                         "' refers to an unknown link");
+                return failure("joint '" + joint.name +
+                               "' refers to an unknown link");
             }
             if (is_child[joint.child])
             {
-                return compages::failure("link '" + joint.child +
-                                         "' is the child of two joints");
+                return failure("link '" + joint.child +
+                               "' is the child of two joints");
             }
             is_child[joint.child] = true;
             m_children[joint.parent].push_back(&joint);
@@ -427,37 +435,37 @@ public:
             {
                 if (root_link != nullptr)
                 {
-                    return compages::failure(
-                        "the URDF has several root links: '" +
-                        root_link->name + "' and '" + link.name + "'");
+                    return failure("the URDF has several root links: '" +
+                                   root_link->name + "' and '" + link.name +
+                                   "'");
                 }
                 root_link = &link;
             }
         }
         if (root_link == nullptr)
         {
-            return compages::failure("the URDF has no root link");
+            return failure("the URDF has no root link");
         }
 
-        Entity robot = m_world.entity(p_robot.name);
+        compages::world::Entity robot = m_world.entity(p_robot.name);
         if (m_world.alive(p_parent))
         {
-            robot.parent(Entity(m_world, p_parent));
+            robot.parent(compages::world::Entity(m_world, p_parent));
         }
         robot.rotation(-0.5f * std::numbers::pi_v<float>,
-                       Vector3f(1.0f, 0.0f, 0.0f));
-        compages::Status built = addLink(*root_link, robot.child(root_link->name));
+                       compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+        Status built = addLink(*root_link, robot.child(root_link->name));
         if (!built)
         {
             robot.destroy();
-            return compages::failure(built.error());
+            return failure(built.error());
         }
         return robot;
     }
 
 private:
 
-    compages::Status addLink(UrdfLink const& p_link, Entity p_entity)
+    Status addLink(UrdfLink const& p_link, compages::world::Entity p_entity)
     {
         for (UrdfVisual const& visual : p_link.visuals)
         {
@@ -466,20 +474,21 @@ private:
         auto children = m_children.find(p_link.name);
         if (children == m_children.end())
         {
-            return compages::success();
+            return success();
         }
         for (UrdfJoint const* joint : children->second)
         {
-            Entity child = p_entity.child(joint->child);
+            compages::world::Entity child = p_entity.child(joint->child);
             child.position(joint->origin.position)
                 .rotation(joint->origin.rotation);
             addJoint(*joint, child);
             COMPAGES_TRY(addLink(*m_links.at(joint->child), child));
         }
-        return compages::success();
+        return success();
     }
 
-    static void addJoint(UrdfJoint const& p_joint, Entity p_entity)
+    static void addJoint(UrdfJoint const& p_joint,
+                         compages::world::Entity p_entity)
     {
         const double infinity = std::numeric_limits<double>::infinity();
         switch (p_joint.kind)
@@ -504,14 +513,18 @@ private:
         }
         if (p_joint.velocity > 0.0)
         {
-            if (auto* revolute = p_entity.find<RevoluteJoint>())
+            if (auto* revolute =
+                    p_entity.find<compages::world::RevoluteJoint>())
             {
                 revolute->state.velocity.min =
-                    units::angular_velocity::radians_per_second_t(-p_joint.velocity);
+                    units::angular_velocity::radians_per_second_t(
+                        -p_joint.velocity);
                 revolute->state.velocity.max =
-                    units::angular_velocity::radians_per_second_t(p_joint.velocity);
+                    units::angular_velocity::radians_per_second_t(
+                        p_joint.velocity);
             }
-            else if (auto* prismatic = p_entity.find<PrismaticJoint>())
+            else if (auto* prismatic =
+                         p_entity.find<compages::world::PrismaticJoint>())
             {
                 prismatic->state.velocity.min =
                     units::velocity::meters_per_second_t(-p_joint.velocity);
@@ -521,11 +534,11 @@ private:
         }
     }
 
-    compages::Status addVisual(UrdfVisual const& p_visual, Entity p_link)
+    Status addVisual(UrdfVisual const& p_visual, compages::world::Entity p_link)
     {
         if (m_scene == nullptr)
         {
-            return compages::success();
+            return success();
         }
         Look look;
         if (p_visual.rgba)
@@ -534,14 +547,15 @@ private:
             look.opacity = p_visual.rgba->w;
         }
 
-        Entity visual;
-        Vector3f scale = p_visual.origin.scale;
-        Quatf rotation = p_visual.origin.rotation;
+        compages::world::Entity visual;
+        compages::core::Vector3f scale = p_visual.origin.scale;
+        compages::core::Quatf rotation = p_visual.origin.rotation;
         switch (p_visual.kind)
         {
             case GeometryKind::Mesh:
             {
-                COMPAGES_TRY_ASSIGN(visual, meshVisual(p_visual.filename, look));
+                COMPAGES_TRY_ASSIGN(visual,
+                                    meshVisual(p_visual.filename, look));
                 break;
             }
             case GeometryKind::Box:
@@ -550,48 +564,51 @@ private:
                 break;
             case GeometryKind::Sphere:
                 visual = m_scene->sphere("visual", look);
-                scale = Vector3f(2.0f * p_visual.radius, 2.0f * p_visual.radius,
-                                 2.0f * p_visual.radius);
+                scale = compages::core::Vector3f(2.0f * p_visual.radius,
+                                                 2.0f * p_visual.radius,
+                                                 2.0f * p_visual.radius);
                 break;
             case GeometryKind::Cylinder:
                 // The shapes of the Scene stand along Y, a URDF cylinder
                 // along Z.
                 visual = m_scene->cylinder("visual", look);
-                scale = Vector3f(2.0f * p_visual.radius, p_visual.length,
-                                 2.0f * p_visual.radius);
+                scale = compages::core::Vector3f(2.0f * p_visual.radius,
+                                                 p_visual.length,
+                                                 2.0f * p_visual.radius);
                 rotation = rotation *
-                           Quatf::fromAngleAxis(
+                           compages::core::Quatf::fromAngleAxis(
                                units::angle::radian_t(0.5 * std::numbers::pi),
-                               Vector3f(1.0f, 0.0f, 0.0f));
+                               compages::core::Vector3f(1.0f, 0.0f, 0.0f));
                 break;
         }
         visual.parent(p_link)
             .position(p_visual.origin.position)
             .rotation(rotation)
             .scale(scale);
-        return compages::success();
+        return success();
     }
 
-    compages::Result<Entity> meshVisual(std::string const& p_filename,
-                                        Look const& p_look)
+    Result<compages::world::Entity> meshVisual(std::string const& p_filename,
+                                               Look const& p_look)
     {
         const std::string path = resolveMesh(m_folder, p_filename);
         auto drawn = m_meshes.find(path);
         if (drawn != m_meshes.end())
         {
-            Entity copy = m_scene->copy(drawn->second, "visual");
+            compages::world::Entity copy =
+                m_scene->copy(drawn->second, "visual");
             m_scene->look(copy, p_look);
             return copy;
         }
 
         const std::string extension = lowerExtension(path);
-        Entity visual;
+        compages::world::Entity visual;
         if (extension == ".stl")
         {
             auto mesh = loadStl(path);
             if (!mesh)
             {
-                return compages::failure(mesh.error());
+                return failure(mesh.error());
             }
             visual = m_scene->mesh(mesh.take(), "visual", p_look);
         }
@@ -603,50 +620,52 @@ private:
         }
         else
         {
-            return compages::failure("mesh '" + p_filename +
-                                     "': only STL and glTF meshes are read");
+            return failure("mesh '" + p_filename +
+                           "': only STL and glTF meshes are read");
         }
         m_meshes.try_emplace(path, visual.id());
         return visual;
     }
 
-    World& m_world;
+    compages::world::World& m_world;
     Scene* m_scene;
     fs::path m_folder;
     std::unordered_map<std::string, UrdfLink const*> m_links;
     std::unordered_map<std::string, std::vector<UrdfJoint const*>> m_children;
-    std::unordered_map<std::string, EntityId> m_meshes;
+    std::unordered_map<std::string, compages::world::EntityId> m_meshes;
 };
 
-compages::Result<Entity> load(World& p_world,
-                              Scene* p_scene,
-                              std::string const& p_path,
-                              EntityId p_parent)
+Result<compages::world::Entity> load(compages::world::World& p_world,
+                                     Scene* p_scene,
+                                     std::string const& p_path,
+                                     compages::world::EntityId p_parent)
 {
     auto robot = parseUrdf(p_path);
     if (!robot)
     {
-        return compages::failure(robot.error());
+        return failure(robot.error());
     }
     Builder builder(p_world, p_scene, fs::path(p_path).parent_path());
     auto root = builder.build(robot.value(), p_parent);
     if (!root)
     {
-        return compages::failure("'" + p_path + "': " + root.error());
+        return failure("'" + p_path + "': " + root.error());
     }
     return root;
 }
 
 } // namespace
 
-compages::Result<Entity>
-loadUrdf(World& p_world, std::string const& p_path, EntityId p_parent)
+Result<compages::world::Entity> loadUrdf(compages::world::World& p_world,
+                                         std::string const& p_path,
+                                         compages::world::EntityId p_parent)
 {
     return load(p_world, nullptr, p_path, p_parent);
 }
 
-compages::Result<Entity>
-loadUrdf(Scene& p_scene, std::string const& p_path, EntityId p_parent)
+Result<compages::world::Entity> loadUrdf(Scene& p_scene,
+                                         std::string const& p_path,
+                                         compages::world::EntityId p_parent)
 {
     return load(p_scene.world(), &p_scene, p_path, p_parent);
 }

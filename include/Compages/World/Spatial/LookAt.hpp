@@ -23,14 +23,19 @@
 //! \endcode
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
 namespace compages::world
 {
+
+
 
 // ------------------------------------------------------------------------
 //! \brief Set \c p_rotation so local \c -Z points from \c p_position at
 //! \c p_target.
 //!
-//! Builds a view matrix with \c compages::matrix::lookAt(), then stores the inverse as
+//! Builds a view matrix with \c compages::core::lookAt(), then stores the inverse as
 //! a quaternion — the same convention as \c Object3D.lookAt() in three.js.
 //! \c p_position is read only; on a degenerate direction the rotation is left
 //! unchanged.
@@ -40,19 +45,19 @@ namespace compages::world
 //! \param[in] p_target Point to face in the same space as \c p_position.
 //! \param[in] p_up Hint axis to resolve roll (usually world or parent up).
 // ------------------------------------------------------------------------
-inline void applyLookAt(Vector3f const& p_position,
-                        Quatf& p_rotation,
-                        Vector3f const& p_target,
-                        Vector3f const& p_up)
+inline void applyLookAt(compages::core::Vector3f const& p_position,
+                        compages::core::Quatf& p_rotation,
+                        compages::core::Vector3f const& p_target,
+                        compages::core::Vector3f const& p_up)
 {
-    const Vector3f delta = p_target - p_position;
-    if (compages::vector::norm(delta) < 1.0e-6f)
+    const compages::core::Vector3f delta = p_target - p_position;
+    if (compages::core::vector::norm(delta) < 1.0e-6f)
     {
         return;
     }
 
-    const Matrix44f view = compages::matrix::lookAt(p_position, p_target, p_up);
-    p_rotation = Quatf::fromMatrix(compages::matrix::inverse(view));
+    const compages::core::Matrix44f view = compages::core::lookAt(p_position, p_target, p_up);
+    p_rotation = compages::core::Quatf::fromMatrix(compages::core::inverse(view));
 }
 
 // ------------------------------------------------------------------------
@@ -62,8 +67,8 @@ inline void applyLookAt(Vector3f const& p_position,
 //! \param[in] p_up Up vector for the lookAt basis (default +Y).
 // ------------------------------------------------------------------------
 inline void lookAt(LocalTransform& p_transform,
-                   Vector3f const& p_target,
-                   Vector3f const& p_up = Vector3f(0.0f, 1.0f, 0.0f))
+                   compages::core::Vector3f const& p_target,
+                   compages::core::Vector3f const& p_up = compages::core::Vector3f(0.0f, 1.0f, 0.0f))
 {
     applyLookAt(p_transform.position, p_transform.rotation, p_target, p_up);
 }
@@ -75,8 +80,8 @@ inline void lookAt(LocalTransform& p_transform,
 //! \param[in] p_up Up vector for the lookAt basis (default +Y).
 // ------------------------------------------------------------------------
 inline void lookAt(LocalTransformView p_transform,
-                   Vector3f const& p_target,
-                   Vector3f const& p_up = Vector3f(0.0f, 1.0f, 0.0f))
+                   compages::core::Vector3f const& p_target,
+                   compages::core::Vector3f const& p_up = compages::core::Vector3f(0.0f, 1.0f, 0.0f))
 {
     applyLookAt(p_transform.position, p_transform.rotation, p_target, p_up);
 }

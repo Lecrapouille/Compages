@@ -35,9 +35,6 @@ namespace examples
 
 //! \brief What the gallery tells an example about the frame it draws: the
 //! size, the time and the input. \c total restarts when the example is chosen.
-using Frame = compages::world::ViewFrame;
-using compages::world::aspect;
-using compages::world::mouseInClipSpace;
 
 // ****************************************************************************
 //! \brief One demonstration, of one idea.
@@ -75,20 +72,20 @@ public:
     //! \return why the example cannot run. A frame error recorded during the
     //! set up (a misspelled attribute, say) counts as a failure too.
     // ------------------------------------------------------------------------
-    [[nodiscard]] virtual compages::gpu::Status setUp() = 0;
+    [[nodiscard]] virtual compages::Status setUp() = 0;
 
     // ------------------------------------------------------------------------
     //! \brief Draw one frame.
     //!
     //! The gallery has already opened a pass over the whole window, so drawing
-    //! to the screen needs no pass of its own: compages::gpu::clear() then draw.
-    //! Whatever goes wrong is the frame error (see gpu/Errors.hpp), which the
-    //! gallery reads after the frame: it stops the example and shows the
+    //! to the screen needs no pass of its own: compages::gpu::clear() then
+    //! draw. Whatever goes wrong is the frame error (see gpu/Errors.hpp), which
+    //! the gallery reads after the frame: it stops the example and shows the
     //! reason rather than repeating the same failure sixty times a second.
     //!
     //! \param[in] p_frame the size of the window and how much time has passed.
     // ------------------------------------------------------------------------
-    virtual void draw(Frame const& p_frame) = 0;
+    virtual void draw(compages::world::ViewFrame const& p_frame) = 0;
 
     // ------------------------------------------------------------------------
     //! \brief Draw a few Dear ImGui widgets of its own: a choice of animation,
@@ -101,8 +98,8 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Which physical keys fill \c Frame::input. The gallery asks for
-    //! this every frame; override to remap from Try it.
+    //! \brief Which physical keys fill \c compages::world::ViewFrame::input. The
+    //! gallery asks for this every frame; override to remap from Try it.
     // ------------------------------------------------------------------------
     [[nodiscard]] virtual compages::world::KeyMap keyMap() const
     {

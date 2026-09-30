@@ -24,9 +24,9 @@
 //!
 //! The previous design derived the vertex layout from the shader. A program was
 //! introspected, a buffer was created for each attribute it declared, and a VAO
-//! belonged to one program forever: `GLProgram::bind(vao)` refused a VAO that had
-//! been used with another program. So a mesh could not be drawn twice with two
-//! different shaders, which is what a second material, a shadow pass or a
+//! belonged to one program forever: `GLProgram::bind(vao)` refused a VAO that
+//! had been used with another program. So a mesh could not be drawn twice with
+//! two different shaders, which is what a second material, a shadow pass or a
 //! wireframe overlay all need.
 //!
 //! Here the layout is declared in C++, and the shader is only asked to confirm
@@ -36,12 +36,17 @@
 //! position, and neither pass knows about the other. That is example
 //! 06_MultiPassMesh.
 //!
-//! And the confirmation is a real one. A layout offering "aPosition" to a shader
-//! declaring "position" used to draw nothing, silently; it is now an error naming
-//! both lists. Same for a vec2 field feeding a vec3 attribute, and for whole
-//! numbers feeding a float attribute.
+//! And the confirmation is a real one. A layout offering "aPosition" to a
+//! shader declaring "position" used to draw nothing, silently; it is now an
+//! error naming both lists. Same for a vec2 field feeding a vec3 attribute, and
+//! for whole numbers feeding a float attribute.
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -52,28 +57,29 @@ using PipelineHandle = Handle<struct PipelineTag>;
 //! \brief A program, a vertex layout and a render state, checked against each
 //! other once and then never again.
 //!
-//! Immutable on purpose. Everything that could be wrong about a way of drawing is
-//! found out when the pipeline is created, which is at load time, where a message
-//! can be read and acted on. Nothing is checked per draw, and nothing can be
-//! changed behind a caller's back between two draws.
+//! Immutable on purpose. Everything that could be wrong about a way of drawing
+//! is found out when the pipeline is created, which is at load time, where a
+//! message can be read and acted on. Nothing is checked per draw, and nothing
+//! can be changed behind a caller's back between two draws.
 //!
 //! \code
 //! struct Vertex
 //! {
-//!     Vector3f position;
-//!     Vector3f normal;
-//!     Vector2f uv;
+//!     compages::core::Vector3f position;
+//!     compages::core::Vector3f normal;
+//!     compages::core::Vector2f uv;
 //! };
 //!
 //! // The layout is read off the struct: position, normal and uv feed the
 //! // shader attributes of the same names.
 //! COMPAGES_TRY_ASSIGN(m_forward, compages::gpu::Pipeline::create<Vertex>(
-//!     m_program, { .depth_test = true, .cull = compages::gpu::CullMode::Back }));
+//!     m_program, { .depth_test = true, .cull = compages::gpu::CullMode::Back
+//!     }));
 //! \endcode
 //!
-//! Most code never builds one: compages::gpu::Drawable makes the pipeline it needs from
-//! its shader and its vertices. A Pipeline written by hand is for sharing one
-//! program between several vertex layouts or render states.
+//! Most code never builds one: compages::gpu::Drawable makes the pipeline it
+//! needs from its shader and its vertices. A Pipeline written by hand is for
+//! sharing one program between several vertex layouts or render states.
 //!
 //! \note A pipeline does not own its program: it names it. The program has to
 //! outlive it. Releasing the program first is caught rather than crashed on, as
@@ -102,29 +108,32 @@ public:
     //! \return the pipeline, or what the shader wants that the layout does not
     //! offer, with both lists printed.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Pipeline> create(Program const& p_program,
-                                                 VertexLayout const& p_layout,
-                                                 RenderState const& p_state = {});
+    [[nodiscard]] static Result<Pipeline>
+    create(Program const& p_program,
+           VertexLayout const& p_layout,
+           RenderState const& p_state = {});
 
     // ------------------------------------------------------------------------
     //! \brief The same thing, saying which C++ struct the layout describes.
     //!
     //! Worth preferring: it checks that the layout really is the layout of that
-    //! struct, which catches the mistake of passing the layout of one vertex type
-    //! while drawing from a buffer of another. That mistake reads the right
-    //! number of bytes from the wrong places, so it draws something, which is why
-    //! it is worth refusing here.
+    //! struct, which catches the mistake of passing the layout of one vertex
+    //! type while drawing from a buffer of another. That mistake reads the
+    //! right number of bytes from the wrong places, so it draws something,
+    //! which is why it is worth refusing here.
     //!
     //! \tparam Vertex the struct one element of the vertex buffer holds.
     // ------------------------------------------------------------------------
     template <typename Vertex>
-    [[nodiscard]] static Result<Pipeline> create(Program const& p_program,
-                                                 VertexLayout const& p_layout,
-                                                 RenderState const& p_state = {})
+    [[nodiscard]] static Result<Pipeline>
+    create(Program const& p_program,
+           VertexLayout const& p_layout,
+           RenderState const& p_state = {})
     {
-        static_assert(std::is_standard_layout_v<Vertex>,
-                      "a vertex struct must be standard layout, otherwise where "
-                      "its members sit is not something the GPU can be told");
+        static_assert(
+            std::is_standard_layout_v<Vertex>,
+            "a vertex struct must be standard layout, otherwise where "
+            "its members sit is not something the GPU can be told");
         static_assert(std::is_trivially_copyable_v<Vertex>,
                       "a vertex struct must be trivially copyable, since it is "
                       "sent to the device as the bytes it already is");
@@ -134,8 +143,10 @@ public:
             return failure(
                 "this layout describes a vertex of " +
                 std::to_string(p_layout.stride()) +
-                " bytes, but the type given is " + std::to_string(sizeof(Vertex)) +
-                " bytes. Either the layout belongs to another vertex struct, or "
+                " bytes, but the type given is " +
+                std::to_string(sizeof(Vertex)) +
+                " bytes. Either the layout belongs to another vertex struct, "
+                "or "
                 "a field was added to the struct and not described");
         }
         return create(p_program, p_layout, p_state);
@@ -146,8 +157,8 @@ public:
     //! VertexLayout::of<Vertex>().
     // ------------------------------------------------------------------------
     template <typename Vertex>
-    [[nodiscard]] static Result<Pipeline> create(Program const& p_program,
-                                                 RenderState const& p_state = {})
+    [[nodiscard]] static Result<Pipeline>
+    create(Program const& p_program, RenderState const& p_state = {})
     {
         return create<Vertex>(p_program, VertexLayout::of<Vertex>(), p_state);
     }
@@ -198,8 +209,8 @@ public:
     [[nodiscard]] RenderState const& state() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Distance in bytes from one vertex to the next, which is the size of
-    //! the struct the vertex buffer holds.
+    //! \brief Distance in bytes from one vertex to the next, which is the size
+    //! of the struct the vertex buffer holds.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uint32_t stride() const;
 
@@ -210,12 +221,12 @@ public:
     [[nodiscard]] bool instanced() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Which fields of the layout the shader actually reads, and at which
-    //! attribute slot the driver put each one.
+    //! \brief Which fields of the layout the shader actually reads, and at
+    //! which attribute slot the driver put each one.
     //!
-    //! The result of the check, kept because it is also the answer to "why is my
-    //! attribute not arriving": a field absent from this list is one the shader
-    //! never declared, and is not being sent anywhere.
+    //! The result of the check, kept because it is also the answer to "why is
+    //! my attribute not arriving": a field absent from this list is one the
+    //! shader never declared, and is not being sent anywhere.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string describeAttributes() const;
 
@@ -244,9 +255,9 @@ private:
 //!
 //! Pipelines that read a vertex the same way share one, so this is at most the
 //! number of live pipelines and usually far less: the three passes of
-//! 06_MultiPassMesh read the same vertex, so they cost one between them. Watching
-//! this number stay put while pipelines come and go is what says the sharing
-//! works.
+//! 06_MultiPassMesh read the same vertex, so they cost one between them.
+//! Watching this number stay put while pipelines come and go is what says the
+//! sharing works.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t vertexReadersHeld();
 
@@ -255,14 +266,14 @@ private:
 //! something.
 //!
 //! Binding a pipeline sends only what changed since the previous one, which is
-//! what makes many small draws affordable. That is a bet on nobody else touching
-//! the context, and it is off the moment a library sharing the context issues
-//! calls of its own: a user interface toolkit, a video player, a profiler overlay,
-//! a piece of code from before this library existed.
+//! what makes many small draws affordable. That is a bet on nobody else
+//! touching the context, and it is off the moment a library sharing the context
+//! issues calls of its own: a user interface toolkit, a video player, a
+//! profiler overlay, a piece of code from before this library existed.
 //!
 //! Called after such code has run, this makes the next pipeline send everything
-//! again. Cheap, and once per frame it costs nothing measurable; the alternative
-//! is a frame drawn with somebody else's blending still on.
+//! again. Cheap, and once per frame it costs nothing measurable; the
+//! alternative is a frame drawn with somebody else's blending still on.
 // ----------------------------------------------------------------------------
 void forgetRenderState();
 

@@ -7,13 +7,16 @@
 
 #include "main.hpp"
 
+
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/World.hpp"
 
-// The camera is a component attached to an EntityId. Its pose is the entity's
+
+
+// The camera is a component attached to an compages::world::EntityId. Its pose is the entity's
 // transform. Extraction turns that into a CameraFrame.
 TEST(WorldCamera, ExtractsAViewFromTheEntityTransform)
 {
@@ -22,7 +25,7 @@ TEST(WorldCamera, ExtractsAViewFromTheEntityTransform)
     compages::renderer::Scene scene(world, assets);
 
     compages::world::EntityId cam = world.create("camera");
-    world.transform(cam).position = Vector3f(0.0f, 0.0f, 3.0f);
+    world.transform(cam).position = compages::core::Vector3f(0.0f, 0.0f, 3.0f);
     world.add(cam, compages::world::Camera{});
     scene.activeCamera(cam);
     world.update();
@@ -32,7 +35,7 @@ TEST(WorldCamera, ExtractsAViewFromTheEntityTransform)
     ASSERT_NEAR(snapshot.value().camera.position.z, 3.0f, 1.0e-4f);
     // The view is the inverse of the entity's world matrix, so its z
     // translation is -3.
-    ASSERT_NEAR(snapshot.value().camera.view[3].z, -3.0f, 1.0e-4f);
+    ASSERT_NEAR(snapshot.value().camera.view(2, 3), -3.0f, 1.0e-4f);
 }
 
 TEST(WorldCamera, RefusesWithoutAnActiveCamera)

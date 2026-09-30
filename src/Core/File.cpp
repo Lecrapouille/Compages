@@ -16,6 +16,9 @@
 #include <iostream>
 #include <string>
 
+namespace compages::core
+{
+
 bool File::readAllFile(std::string const& p_filename, std::string& p_buffer)
 {
     std::ifstream infile(p_filename, std::ifstream::in);
@@ -115,3 +118,6 @@ bool File::mkdir(std::string_view const& p_path, mode_t p_mode)
     }
     return true;
 }
+
+} // namespace compages::core
+

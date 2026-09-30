@@ -21,7 +21,7 @@ namespace compages::world
 //! \param[in] p_forward Direction in world or parent space (need not be unit).
 //! \param[out] p_yaw Horizontal angle; unchanged if \c p_forward is null.
 //! \param[out] p_pitch Vertical angle; unchanged if \c p_forward is null.
-static void yawPitchOf(Vector3f p_forward, float& p_yaw, float& p_pitch)
+static void yawPitchOf(compages::core::Vector3f p_forward, float& p_yaw, float& p_pitch)
 {
     const float length =
         std::sqrt(p_forward.x * p_forward.x + p_forward.y * p_forward.y +
@@ -36,7 +36,7 @@ static void yawPitchOf(Vector3f p_forward, float& p_yaw, float& p_pitch)
 
 void Orbit::start()
 {
-    const Vector3f offset = entity().position() - controller.target;
+    const compages::core::Vector3f offset = entity().position() - controller.target;
     const float distance = std::sqrt(offset.x * offset.x + offset.y * offset.y +
                                      offset.z * offset.z);
     // The zoom limits follow the size of the scene the camera was placed
@@ -66,7 +66,7 @@ void Orbit::update(float p_dt)
 
 void Fly::start()
 {
-    yawPitchOf(entity().rotation() * Vector3f(0.0f, 0.0f, -1.0f),
+    yawPitchOf(entity().rotation() * compages::core::Vector3f(0.0f, 0.0f, -1.0f),
                controller.yaw,
                controller.pitch);
 }

@@ -17,16 +17,16 @@ namespace compages::world
 namespace
 {
 
-const Matrix44f IDENTITY(compages::matrix::Identity);
+const compages::core::Matrix44f IDENTITY(compages::core::matrix::Identity);
 
 void updateNode(SpatialGraph const& p_graph,
                 TransformStore& p_transforms,
                 NodeId p_node,
-                Matrix44f const& p_parent_world,
+                compages::core::Matrix44f const& p_parent_world,
                 bool p_parent_was_dirty)
 {
     const EntityId entity = p_graph.entityOf(p_node);
-    Matrix44f world_matrix = p_parent_world;
+    compages::core::Matrix44f world_matrix = p_parent_world;
     const bool has_transform = entity.valid() && p_transforms.has(entity);
     const bool node_dirty = has_transform && p_transforms.isDirty(entity);
     const bool dirty = p_parent_was_dirty || node_dirty;
@@ -35,9 +35,7 @@ void updateNode(SpatialGraph const& p_graph,
     {
         if (dirty)
         {
-            // CPU rows are shader columns, so what a mathematician writes as
-            // ParentWorld * Local becomes Local * ParentWorld in this storage.
-            world_matrix = p_transforms.localMatrix(entity) * p_parent_world;
+            world_matrix = p_parent_world * p_transforms.localMatrix(entity);
             p_transforms.setWorld(entity, world_matrix);
             p_transforms.markClean(entity);
         }

@@ -13,6 +13,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+namespace compages::core
+{
 // ****************************************************************************
 //! \brief Static helpers for paths, filesystem checks, and file I/O.
 // ****************************************************************************
@@ -180,3 +182,6 @@ public:
                                     mode_t p_mode = S_IRWXU | S_IRWXG |
                                                     S_IRWXO);
 };
+
+} // namespace compages::core
+

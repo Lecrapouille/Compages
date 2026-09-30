@@ -35,8 +35,15 @@
 //! A fixed joint needs no component: it is the plain LocalTransform.
 // ****************************************************************************
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief A value and the interval it must stay in. Unbounded by default.
@@ -109,7 +116,7 @@ struct RevoluteJoint
     //! angle is zero.
     LocalTransform origin{};
     //! \brief Unit axis of rotation, in the joint frame.
-    Vector3f axis{ 0.0f, 0.0f, 1.0f };
+    compages::core::Vector3f axis{ 0.0f, 0.0f, 1.0f };
     RevoluteState state{};
 };
 
@@ -126,7 +133,7 @@ struct PrismaticJoint
     //! offset is zero.
     LocalTransform origin{};
     //! \brief Unit axis of translation, in the joint frame.
-    Vector3f axis{ 0.0f, 0.0f, 1.0f };
+    compages::core::Vector3f axis{ 0.0f, 0.0f, 1.0f };
     PrismaticState state{};
 };
 

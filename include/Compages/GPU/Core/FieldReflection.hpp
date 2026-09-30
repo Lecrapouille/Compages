@@ -25,8 +25,8 @@
 //! \code
 //! struct Vertex
 //! {
-//!     Vector3f position;
-//!     Vector2f uv;
+//!     compages::core::Vector3f position;
+//!     compages::core::Vector2f uv;
 //! };
 //!
 //! static_assert(compages::gpu::reflect::fieldCount<Vertex>() == 2u);
@@ -305,7 +305,7 @@ using FieldType = std::remove_cvref_t<std::tuple_element_t<
 //! \brief The name of field I of T, as written in the struct.
 //!
 //! \code
-//! struct Vertex { Vector3f position; Vector2f uv; };
+//! struct Vertex { compages::core::Vector3f position; compages::core::Vector2f uv; };
 //! static_assert(compages::gpu::reflect::fieldName<Vertex, 1u>() == "uv");
 //! \endcode
 // ----------------------------------------------------------------------------

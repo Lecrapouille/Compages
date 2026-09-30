@@ -9,8 +9,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -33,7 +33,7 @@ namespace examples
 //! The map is a second Scene over the same World, for its own background; it
 //! shares the assets of the first, so nothing is built twice.
 // ****************************************************************************
-class SplitViews final : public Example
+class SplitViews final: public Example
 {
 public:
 
@@ -43,8 +43,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

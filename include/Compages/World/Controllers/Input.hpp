@@ -13,8 +13,12 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \file
@@ -87,9 +91,9 @@ inline constexpr int glfwRightShift = 344;
 struct Input
 {
     //! \brief Cursor in pixels, origin bottom-left (OpenGL convention).
-    Vector2f mouse{ 0.0f, 0.0f };
+    compages::core::Vector2f mouse{ 0.0f, 0.0f };
     //! \brief Pointer motion this frame.
-    Vector2f mouse_delta{ 0.0f, 0.0f };
+    compages::core::Vector2f mouse_delta{ 0.0f, 0.0f };
     //! \brief Scroll wheel delta (positive = zoom out in orbit controls).
     float scroll = 0.0f;
     //! \brief Pointer is over the render viewport.

@@ -48,8 +48,8 @@ struct LevelData
     char const* title;
     char const* wall;
     char const* floor;
-    Vector3f wall_tint;
-    Vector3f fog;
+    compages::core::Vector3f wall_tint;
+    compages::core::Vector3f fog;
     std::vector<std::string> rows;
 };
 
@@ -61,9 +61,9 @@ struct LevelData
 // ****************************************************************************
 struct Hit
 {
-    Vector3f point;
+    compages::core::Vector3f point;
     //! \brief Out of the surface met, toward where the ray came from.
-    Vector3f normal;
+    compages::core::Vector3f normal;
     float distance;
 };
 
@@ -82,9 +82,9 @@ public:
     [[nodiscard]] char at(long p_column, long p_row) const;
 
     //! \brief The middle of a cell, on the floor.
-    [[nodiscard]] static Vector3f center(std::size_t p_column, std::size_t p_row)
+    [[nodiscard]] static compages::core::Vector3f center(std::size_t p_column, std::size_t p_row)
     {
-        return Vector3f(float(p_column) * CELL, 0.0f, float(p_row) * CELL);
+        return compages::core::Vector3f(float(p_column) * CELL, 0.0f, float(p_row) * CELL);
     }
 
     //! \brief Is this point of the floor inside a wall or a crate?
@@ -92,20 +92,20 @@ public:
 
     //! \brief Move a body of radius \c p_radius by \c p_step, sliding along
     //! what it meets rather than stopping dead.
-    [[nodiscard]] Vector3f slide(Vector3f p_from, Vector3f p_step, float p_radius) const;
+    [[nodiscard]] compages::core::Vector3f slide(compages::core::Vector3f p_from, compages::core::Vector3f p_step, float p_radius) const;
 
     //! \brief Nothing solid between two points of the floor?
-    [[nodiscard]] bool clearLine(Vector3f p_from, Vector3f p_to) const;
+    [[nodiscard]] bool clearLine(compages::core::Vector3f p_from, compages::core::Vector3f p_to) const;
 
     //! \brief The first wall, crate, floor or ceiling a ray meets before
     //! \c p_max metres. \c p_direction is of length one.
-    [[nodiscard]] std::optional<Hit> cast(Vector3f p_origin, Vector3f p_direction,
+    [[nodiscard]] std::optional<Hit> cast(compages::core::Vector3f p_origin, compages::core::Vector3f p_direction,
                                           float p_max) const;
 
 private:
 
     //! \brief Inside a wall, or inside the box of a crate.
-    [[nodiscard]] bool blocks(Vector3f const& p_point) const;
+    [[nodiscard]] bool blocks(compages::core::Vector3f const& p_point) const;
 
     std::vector<std::string> m_rows;
 };

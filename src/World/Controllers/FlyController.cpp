@@ -28,43 +28,43 @@ void FlyController::apply(World& p_world,
         pitch = std::clamp(pitch, min_pitch, max_pitch);
     }
 
-    const Quatf q_yaw = Quatf::fromAngleAxis(
+    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(yaw)),
-        Vector3f(0.0f, 1.0f, 0.0f));
-    const Quatf q_pitch = Quatf::fromAngleAxis(
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(pitch)),
-        Vector3f(1.0f, 0.0f, 0.0f));
-    const Quatf rotation = q_yaw * q_pitch;
+        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+    const compages::core::Quatf rotation = q_yaw * q_pitch;
 
-    Vector3f motion(0.0f);
+    compages::core::Vector3f motion(0.0f);
     if (p_input.forward)
     {
-        motion += Vector3f(0.0f, 0.0f, -1.0f);
+        motion += compages::core::Vector3f(0.0f, 0.0f, -1.0f);
     }
     if (p_input.back)
     {
-        motion += Vector3f(0.0f, 0.0f, 1.0f);
+        motion += compages::core::Vector3f(0.0f, 0.0f, 1.0f);
     }
     if (p_input.left)
     {
-        motion += Vector3f(-1.0f, 0.0f, 0.0f);
+        motion += compages::core::Vector3f(-1.0f, 0.0f, 0.0f);
     }
     if (p_input.right)
     {
-        motion += Vector3f(1.0f, 0.0f, 0.0f);
+        motion += compages::core::Vector3f(1.0f, 0.0f, 0.0f);
     }
     if (p_input.up)
     {
-        motion += Vector3f(0.0f, 1.0f, 0.0f);
+        motion += compages::core::Vector3f(0.0f, 1.0f, 0.0f);
     }
     if (p_input.down)
     {
-        motion += Vector3f(0.0f, -1.0f, 0.0f);
+        motion += compages::core::Vector3f(0.0f, -1.0f, 0.0f);
     }
 
     LocalTransformView local = p_world.transform(p_camera);
     local.rotation = rotation;
-    const float length = compages::vector::norm(motion);
+    const float length = compages::core::vector::norm(motion);
     if (length > 1.0e-6f)
     {
         const float speed =
