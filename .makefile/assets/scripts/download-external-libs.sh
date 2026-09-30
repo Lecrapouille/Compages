@@ -48,6 +48,20 @@ function fatal()
     exit 1
 }
 
+function normalize_github_remote()
+{
+    local url="${1%.git}"
+    if [[ "$url" =~ ^git@github\.com:(.+)$ ]]; then
+        echo "https://github.com/${BASH_REMATCH[1]}"
+        return
+    fi
+    if [[ "$url" =~ ^ssh://git@github\.com/(.+)$ ]]; then
+        echo "https://github.com/${BASH_REMATCH[1]}"
+        return
+    fi
+    echo "$url"
+}
+
 ###############################################################################
 # Force git to be completely silent
 ###############################################################################
@@ -133,8 +147,13 @@ function clone_repo()
         local current_remote
         current_remote=$(git -C "$repo_path" remote get-url origin 2>/dev/null || echo "")
 
-        if [ -n "$current_remote" ] && [ "$current_remote" != "$expected_remote" ]; then
-            fatal "Existing repository remote '$current_remote' differs from expected '$expected_remote'"
+        if [ -n "$current_remote" ]; then
+            local normalized_current normalized_expected
+            normalized_current=$(normalize_github_remote "$current_remote")
+            normalized_expected=$(normalize_github_remote "$expected_remote")
+            if [ "$normalized_current" != "$normalized_expected" ]; then
+                fatal "Existing repository remote '$current_remote' differs from expected '$expected_remote'"
+            fi
         fi
 
         (
