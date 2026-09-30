@@ -46,6 +46,21 @@ function fatal()
     exit 1
 }
 
+# Compare remotes after normalizing SSH/HTTPS GitHub URLs (e.g. git url.insteadOf).
+function normalize_github_remote()
+{
+    local url="${1%.git}"
+    if [[ "$url" =~ ^git@github\.com:(.+)$ ]]; then
+        echo "https://github.com/${BASH_REMATCH[1]}"
+        return
+    fi
+    if [[ "$url" =~ ^ssh://git@github\.com/(.+)$ ]]; then
+        echo "https://github.com/${BASH_REMATCH[1]}"
+        return
+    fi
+    echo "$url"
+}
+
 CLONE_ARGS=("$@")
 
 # Check if repository should be cloned recursively
@@ -87,8 +102,12 @@ if [ -d "$REPO_PATH" ]; then
 
     CURRENT_REMOTE=$(git -C "$REPO_PATH" remote get-url origin 2>/dev/null || echo "")
 
-    if [ -n "$CURRENT_REMOTE" ] && [ "$CURRENT_REMOTE" != "$EXPECTED_REMOTE" ]; then
-        fatal "Existing repository remote '$CURRENT_REMOTE' differs from expected '$EXPECTED_REMOTE'"
+    if [ -n "$CURRENT_REMOTE" ]; then
+        normalized_current=$(normalize_github_remote "$CURRENT_REMOTE")
+        normalized_expected=$(normalize_github_remote "$EXPECTED_REMOTE")
+        if [ "$normalized_current" != "$normalized_expected" ]; then
+            fatal "Existing repository remote '$CURRENT_REMOTE' differs from expected '$EXPECTED_REMOTE'"
+        fi
     fi
 
     (
