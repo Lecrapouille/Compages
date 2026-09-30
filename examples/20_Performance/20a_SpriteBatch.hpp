@@ -34,7 +34,8 @@ namespace examples
 //! the four corners from gl_VertexID, and each record of the buffer is one
 //! sprite, read once per instance:
 //! \code
-//! m_sprites.vertices(sprites, compages::gpu::VertexLayout::of<Sprite>().perInstance());
+//! m_sprites.vertices(sprites,
+//! compages::gpu::VertexLayout::of<Sprite>().perInstance());
 //! m_sprites.drawInstanced(m_sprites.count(), 4u);   // 4 corners per sprite
 //! \endcode
 //!
@@ -52,20 +53,20 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Sprite
     {
-        Vector2f center;
-        Vector2f extent;
+        compages::core::Vector2f center;
+        compages::core::Vector2f extent;
         float tile = 0.0f;
         float phase = 0.0f;
     };
 
-    [[nodiscard]] compages::gpu::Status makeAtlas();
+    [[nodiscard]] compages::Status makeAtlas();
 
     compages::gpu::Texture m_atlas;
     compages::gpu::Drawable m_sprites;

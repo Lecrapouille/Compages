@@ -35,4 +35,3 @@ using radians_per_second_squared = units::compound_unit<
     units::inverse<units::squared<units::time::seconds>>>;
 using radians_per_second_squared_t = units::unit_t<radians_per_second_squared>;
 } // namespace units::angular_acceleration
-

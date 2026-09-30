@@ -29,11 +29,11 @@ namespace examples
 // ****************************************************************************
 //! \brief A picture drawn into textures, then read as a picture.
 //!
-//! The window is one target. A framebuffer is another: colour and depth textures
-//! wired together so that a pass writes into them instead of onto the screen.
-//! The cube of 05 is drawn only there. The window never sees it as a mesh; it
-//! sees the texture that pass produced, once as it is and once through a
-//! fullscreen effect.
+//! The window is one target. A framebuffer is another: colour and depth
+//! textures wired together so that a pass writes into them instead of onto the
+//! screen. The cube of 05 is drawn only there. The window never sees it as a
+//! mesh; it sees the texture that pass produced, once as it is and once through
+//! a fullscreen effect.
 //!
 //! \code
 //! {
@@ -57,16 +57,16 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     //! \brief The corner of the cube of Common/ColoredCube.hpp.
     using Vertex = CubeVertex;
 
-    [[nodiscard]] compages::gpu::Status makeCube();
-    [[nodiscard]] compages::gpu::Status makeTarget();
+    [[nodiscard]] compages::Status makeCube();
+    [[nodiscard]] compages::Status makeTarget();
 
     //! \brief Declared before the drawables sampling them, so destroyed after.
     compages::gpu::Texture m_color;

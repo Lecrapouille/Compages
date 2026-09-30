@@ -82,12 +82,15 @@ static float heightAt(float p_x, float p_z, float p_time)
 //------------------------------------------------------------------------------
 //! \brief The normal of the surface, from the function itself: the lighting
 //! follows the waves without a second pass over the neighbours.
-static Vector3f normalAt(float p_x, float p_z, float p_time)
+static compages::core::Vector3f normalAt(float p_x, float p_z, float p_time)
 {
     const float y = heightAt(p_x, p_z, p_time);
-    const Vector3f dx(STEP, heightAt(p_x + STEP, p_z, p_time) - y, 0.0f);
-    const Vector3f dz(0.0f, heightAt(p_x, p_z + STEP, p_time) - y, STEP);
-    return compages::vector::normalize(compages::vector::cross(dz, dx));
+    const compages::core::Vector3f dx(
+        STEP, heightAt(p_x + STEP, p_z, p_time) - y, 0.0f);
+    const compages::core::Vector3f dz(
+        0.0f, heightAt(p_x, p_z + STEP, p_time) - y, STEP);
+    return compages::core::vector::normalize(
+        compages::core::vector::cross(dz, dx));
 }
 
 //------------------------------------------------------------------------------
@@ -102,7 +105,7 @@ std::string HeightMap::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status HeightMap::setUp()
+compages::Status HeightMap::setUp()
 {
     COMPAGES_TRY(m_surface.load(VERTEX, FRAGMENT));
 
@@ -113,10 +116,11 @@ compages::gpu::Status HeightMap::setUp()
     {
         for (std::uint32_t x = 0u; x < SIDE; ++x)
         {
-            grid.emplace_back(Vertex{ Vector3f(-EXTENT + (float(x) * STEP),
-                                            0.0f,
-                                            -EXTENT + (float(z) * STEP)),
-                                   Vector3f(0.0f, 1.0f, 0.0f) });
+            grid.emplace_back(
+                Vertex{ compages::core::Vector3f(-EXTENT + (float(x) * STEP),
+                                                 0.0f,
+                                                 -EXTENT + (float(z) * STEP)),
+                        compages::core::Vector3f(0.0f, 1.0f, 0.0f) });
         }
     }
 
@@ -141,14 +145,15 @@ compages::gpu::Status HeightMap::setUp()
     m_surface.vertices(grid);
     m_surface.indices(indices);
     m_surface.depthTest();
-    m_surface["view"] = compages::matrix::lookAt(Vector3f(0.0f, 1.8f, 3.2f),
-                                       Vector3f(0.0f, 0.0f, 0.0f),
-                                       Vector3f(0.0f, 1.0f, 0.0f));
+    m_surface["view"] =
+        compages::core::lookAt(compages::core::Vector3f(0.0f, 1.8f, 3.2f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     return m_surface.prepare();
 }
 
 //------------------------------------------------------------------------------
-void HeightMap::draw(Frame const& p_frame)
+void HeightMap::draw(compages::world::ViewFrame const& p_frame)
 {
     // Every vertex, in place. Taking the span is what marks the whole range
     // dirty, so the next draw sends all of them and none of the indices.
@@ -159,11 +164,12 @@ void HeightMap::draw(Frame const& p_frame)
         v.normal = normalAt(v.position.x, v.position.z, t);
     }
 
-    m_surface["model"] = compages::matrix::rotate(Matrix44f(compages::matrix::Identity),
-                                        units::angle::radian_t(t * 0.25f),
-                                        Vector3f(0.0f, 1.0f, 0.0f));
+    m_surface["model"] = compages::core::rotate(
+        compages::core::Matrix44f(compages::core::matrix::Identity),
+        units::angle::radian_t(t * 0.25f),
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     m_surface["projection"] =
-        compages::matrix::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);
+        compages::core::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);
 
     compages::gpu::clear({ 0.06f, 0.07f, 0.1f });
     compages::gpu::clearDepth();

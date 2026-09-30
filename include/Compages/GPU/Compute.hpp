@@ -44,9 +44,9 @@
 //! writes and the vertices a later draw reads: there is no conversion and no
 //! copy, which is the reason 13_ComputeParticles exists.
 //!
-//! The device is allowed to run ahead. compages::gpu::barrier() is what says the writes
-//! are visible before the next pass reads them. Forgetting it is a race, not a
-//! compile error.
+//! The device is allowed to run ahead. compages::gpu::barrier() is what says
+//! the writes are visible before the next pass reads them. Forgetting it is a
+//! race, not a compile error.
 // ****************************************************************************
 
 namespace compages::gpu
@@ -64,14 +64,14 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Compile and link a compute program from source.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<ComputeProgram> fromSource(
-        std::string_view p_source);
+    [[nodiscard]] static Result<ComputeProgram>
+    fromSource(std::string_view p_source);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a compute program from a file.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<ComputeProgram> fromFile(
-        std::string const& p_path);
+    [[nodiscard]] static Result<ComputeProgram>
+    fromFile(std::string const& p_path);
 
     // ------------------------------------------------------------------------
     //! \brief Same as fromSource(), into this object.
@@ -134,7 +134,8 @@ public:
     [[nodiscard]] Status bind(std::string_view p_block, BufferHandle p_buffer);
 
     template <typename T>
-    [[nodiscard]] Status bind(std::string_view p_block, Buffer<T> const& p_buffer)
+    [[nodiscard]] Status bind(std::string_view p_block,
+                              Buffer<T> const& p_buffer)
     {
         return bind(p_block, p_buffer.handle());
     }
@@ -190,7 +191,8 @@ template <typename T>
     if (blocks.size() != 1u)
     {
         return failure(
-            "compages::gpu::dispatch(program, buffer) requires exactly one reflected "
+            "compages::gpu::dispatch(program, buffer) requires exactly one "
+            "reflected "
             "storage block, but the program declares " +
             std::to_string(blocks.size()));
     }
@@ -198,12 +200,12 @@ template <typename T>
     COMPAGES_TRY(p_program.bind(blocks.front().name, p_buffer));
     if (p_buffer.count() > std::numeric_limits<std::uint32_t>::max())
     {
-        return failure(
-            "compages::gpu::dispatch(program, buffer) cannot dispatch more than "
-            "2^32-1 buffer elements");
+        return failure("compages::gpu::dispatch(program, "
+                       "buffer) cannot dispatch more than "
+                       "2^32-1 buffer elements");
     }
-    COMPAGES_TRY(p_program.dispatchItems(
-        static_cast<std::uint32_t>(p_buffer.count())));
+    COMPAGES_TRY(
+        p_program.dispatchItems(static_cast<std::uint32_t>(p_buffer.count())));
     barrier(Barrier::Storage);
     return success();
 }
@@ -226,17 +228,17 @@ public:
     [[nodiscard]] static Result<PingPong> create(std::size_t p_count)
     {
         auto first_result = Buffer<T>::create(
-                           p_count, BufferKind::Storage, BufferUsage::Storage);
+            p_count, BufferKind::Storage, BufferUsage::Storage);
         if (!first_result)
         {
-            return compages::failure(first_result.error());
+            return failure(first_result.error());
         }
         auto first = first_result.take();
         auto second_result = Buffer<T>::create(
-                           p_count, BufferKind::Storage, BufferUsage::Storage);
+            p_count, BufferKind::Storage, BufferUsage::Storage);
         if (!second_result)
         {
-            return compages::failure(second_result.error());
+            return failure(second_result.error());
         }
         auto second = second_result.take();
         PingPong pair;
@@ -248,18 +250,18 @@ public:
 
     [[nodiscard]] static Result<PingPong> from(std::span<const T> p_data)
     {
-        auto first_result = Buffer<T>::from(
-                           p_data, BufferKind::Storage, BufferUsage::Storage);
+        auto first_result =
+            Buffer<T>::from(p_data, BufferKind::Storage, BufferUsage::Storage);
         if (!first_result)
         {
-            return compages::failure(first_result.error());
+            return failure(first_result.error());
         }
         auto first = first_result.take();
-        auto second_result = Buffer<T>::from(
-                           p_data, BufferKind::Storage, BufferUsage::Storage);
+        auto second_result =
+            Buffer<T>::from(p_data, BufferKind::Storage, BufferUsage::Storage);
         if (!second_result)
         {
-            return compages::failure(second_result.error());
+            return failure(second_result.error());
         }
         auto second = second_result.take();
         PingPong pair;

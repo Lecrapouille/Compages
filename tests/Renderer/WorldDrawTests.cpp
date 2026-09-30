@@ -31,6 +31,9 @@
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/World.hpp"
 
+
+
+
 using namespace tests;
 
 constexpr int WIDTH = 32;
@@ -87,7 +90,7 @@ TEST_F(WorldDrawTest, RendersACubeThroughTheWholePipeline)
     auto instance_id = assets.addMaterialInstance(
         "red",
         compages::renderer::MaterialInstance{ lit_id.value(),
-                                    Vector3f(1.0f, 0.0f, 0.0f) });
+                                    compages::core::Vector3f(1.0f, 0.0f, 0.0f) });
     ASSERT_TRUE(bool(instance_id)) << instance_id.error();
 
     compages::world::World world;
@@ -98,7 +101,7 @@ TEST_F(WorldDrawTest, RendersACubeThroughTheWholePipeline)
               compages::renderer::MeshRenderer{ mesh_id.value(), instance_id.value() });
 
     compages::world::EntityId cam = world.create("camera");
-    world.transform(cam).position = Vector3f(0.0f, 0.0f, 3.0f);
+    world.transform(cam).position = compages::core::Vector3f(0.0f, 0.0f, 3.0f);
     world.add(
         cam,
         compages::world::Camera{
@@ -119,7 +122,7 @@ TEST_F(WorldDrawTest, RendersACubeThroughTheWholePipeline)
     compages::gpu::PassDesc desc;
     desc.width = WIDTH;
     desc.height = HEIGHT;
-    desc.color = Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
+    desc.color = compages::core::Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
     desc.clear_depth = true;
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();
@@ -152,7 +155,7 @@ TEST_F(WorldDrawTest, PicksTheCubeUnderTheCentrePixel)
     world.add(box, compages::renderer::MeshRenderer{ mesh_id.value(), {} });
 
     compages::world::EntityId cam = world.create("cam");
-    world.transform(cam).position = Vector3f(0.0f, 0.0f, 6.0f);
+    world.transform(cam).position = compages::core::Vector3f(0.0f, 0.0f, 6.0f);
     world.add(cam, compages::world::Camera{});
     scene.activeCamera(cam);
     world.update();

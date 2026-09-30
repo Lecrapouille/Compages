@@ -32,6 +32,12 @@
 #include <type_traits>
 #include <utility>
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
+
 namespace compages::world
 {
 
@@ -274,6 +280,20 @@ public:
         return *this;
     }
 
+    //! \brief Same as parent(Entity), but reports a
+    //! failure(dead entity, or a cycle) instead of only
+    //! asserting, so that release builds can react.
+    //!
+    //! \code
+    //! if (!child.setParent(newParent)) { /* refused */ }
+    //! \endcode
+    [[nodiscard]] Status
+    setParent(Entity const& p_parent,
+              ReparentPolicy p_policy = ReparentPolicy::KeepLocal) const
+    {
+        return world().setParent(m_id, p_parent.m_id, p_policy);
+    }
+
     //! \brief The entity this one hangs from, or an empty handle.
     [[nodiscard]] Entity parent() const
     {
@@ -307,16 +327,16 @@ public:
 
     Entity& position(float p_x, float p_y, float p_z)
     {
-        return position(Vector3f(p_x, p_y, p_z));
+        return position(compages::core::Vector3f(p_x, p_y, p_z));
     }
 
-    Entity& position(Vector3f const& p_position)
+    Entity& position(compages::core::Vector3f const& p_position)
     {
         place().position = p_position;
         return *this;
     }
 
-    [[nodiscard]] Vector3f position() const
+    [[nodiscard]] compages::core::Vector3f position() const
     {
         if (LocalTransform const* origin = jointOrigin())
         {
@@ -325,20 +345,21 @@ public:
         return world().transforms().position(m_id);
     }
 
-    Entity& rotation(Quatf const& p_rotation)
+    Entity& rotation(compages::core::Quatf const& p_rotation)
     {
         place().rotation = p_rotation;
         return *this;
     }
 
     //! \brief Set the orientation to an angle, in radians, around an axis.
-    Entity& rotation(float p_radians, Vector3f const& p_axis)
+    Entity& rotation(float p_radians, compages::core::Vector3f const& p_axis)
     {
-        return rotation(Quatf::fromAngleAxis(units::angle::radian_t(p_radians),
-                                             compages::vector::normalize(p_axis)));
+        return rotation(compages::core::Quatf::fromAngleAxis(
+            units::angle::radian_t(p_radians),
+            compages::core::vector::normalize(p_axis)));
     }
 
-    [[nodiscard]] Quatf rotation() const
+    [[nodiscard]] compages::core::Quatf rotation() const
     {
         if (LocalTransform const* origin = jointOrigin())
         {
@@ -348,7 +369,7 @@ public:
     }
 
     //! \brief Turn by an angle, in radians, around an axis of the entity.
-    Entity& rotate(float p_radians, Vector3f const& p_axis)
+    Entity& rotate(float p_radians, compages::core::Vector3f const& p_axis)
     {
         place().rotate(p_radians, p_axis);
         return *this;
@@ -356,21 +377,21 @@ public:
 
     Entity& scale(float p_scale)
     {
-        return scale(Vector3f(p_scale, p_scale, p_scale));
+        return scale(compages::core::Vector3f(p_scale, p_scale, p_scale));
     }
 
     Entity& scale(float p_x, float p_y, float p_z)
     {
-        return scale(Vector3f(p_x, p_y, p_z));
+        return scale(compages::core::Vector3f(p_x, p_y, p_z));
     }
 
-    Entity& scale(Vector3f const& p_scale)
+    Entity& scale(compages::core::Vector3f const& p_scale)
     {
         place().scale = p_scale;
         return *this;
     }
 
-    [[nodiscard]] Vector3f scale() const
+    [[nodiscard]] compages::core::Vector3f scale() const
     {
         if (LocalTransform const* origin = jointOrigin())
         {
@@ -381,8 +402,9 @@ public:
 
     //! \brief Turn so as to face a point, given in the parent's axes: the
     //! entity's -z axis points at it, as a camera looks.
-    Entity& lookAt(Vector3f const& p_target,
-                   Vector3f const& p_up = Vector3f(0.0f, 1.0f, 0.0f))
+    Entity& lookAt(compages::core::Vector3f const& p_target,
+                   compages::core::Vector3f const& p_up =
+                       compages::core::Vector3f(0.0f, 1.0f, 0.0f))
     {
         compages::world::lookAt(place(), p_target, p_up);
         return *this;
@@ -390,7 +412,7 @@ public:
 
     Entity& lookAt(float p_x, float p_y, float p_z)
     {
-        return lookAt(Vector3f(p_x, p_y, p_z));
+        return lookAt(compages::core::Vector3f(p_x, p_y, p_z));
     }
 
     // ------------------------------------------------------------------------
@@ -406,14 +428,15 @@ public:
     //! wheel.revolute({ 1, 0, 0 });    // no bounds: a continuous joint
     //! \endcode
     // ------------------------------------------------------------------------
-    Entity& revolute(Vector3f const& p_axis,
+    Entity& revolute(compages::core::Vector3f const& p_axis,
                      units::angle::radian_t p_min = units::angle::radian_t(
                          -std::numeric_limits<double>::infinity()),
                      units::angle::radian_t p_max = units::angle::radian_t(
                          std::numeric_limits<double>::infinity()))
     {
         RevoluteJoint joint{ .origin = takeOrigin(),
-                             .axis = compages::vector::normalize(p_axis) };
+                             .axis =
+                                 compages::core::vector::normalize(p_axis) };
         joint.state.position.min = p_min;
         joint.state.position.max = p_max;
         world().add(m_id, std::move(joint));
@@ -428,14 +451,15 @@ public:
     //! slider.prismatic({ 0, 0, 1 }, 0.0_m, 0.3_m).offset(0.1_m);
     //! \endcode
     // ------------------------------------------------------------------------
-    Entity& prismatic(Vector3f const& p_axis,
+    Entity& prismatic(compages::core::Vector3f const& p_axis,
                       units::length::meter_t p_min = units::length::meter_t(
                           -std::numeric_limits<double>::infinity()),
                       units::length::meter_t p_max = units::length::meter_t(
                           std::numeric_limits<double>::infinity()))
     {
         PrismaticJoint joint{ .origin = takeOrigin(),
-                              .axis = compages::vector::normalize(p_axis) };
+                              .axis =
+                                  compages::core::vector::normalize(p_axis) };
         joint.state.position.min = p_min;
         joint.state.position.max = p_max;
         world().add(m_id, std::move(joint));
@@ -481,16 +505,16 @@ public:
     }
 
     //! \brief The place in the world, as of the last update of the World.
-    [[nodiscard]] Matrix44f const& worldMatrix() const
+    [[nodiscard]] compages::core::Matrix44f const& worldMatrix() const
     {
         return world().worldMatrix(m_id);
     }
 
     //! \brief Where the entity is in the world, as of the last update.
-    [[nodiscard]] Vector3f worldPosition() const
+    [[nodiscard]] compages::core::Vector3f worldPosition() const
     {
-        Matrix44f const& m = worldMatrix();
-        return Vector3f(m[3].x, m[3].y, m[3].z);
+        compages::core::Matrix44f const& m = worldMatrix();
+        return compages::core::translation(m);
     }
 
 private:
@@ -558,7 +582,7 @@ inline Input const& Behavior::input() const
     return m_world->input();
 }
 
-inline Frame const& Behavior::frame() const
+inline compages::core::Frame const& Behavior::frame() const
 {
     return m_world->frame();
 }

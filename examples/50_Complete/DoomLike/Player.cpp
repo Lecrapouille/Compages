@@ -42,18 +42,22 @@ constexpr int PELLETS = 8;
 constexpr float SPREAD = 0.06f;
 
 //! \brief The length of a vector lying on the floor.
-static float flatLength(Vector3f const& p_v)
+static float flatLength(compages::core::Vector3f const& p_v)
 {
     return std::sqrt((p_v.x * p_v.x) + (p_v.z * p_v.z));
 }
 
 //! \brief How far along a ray it enters a standing cylinder, if it does.
-static std::optional<float> enterCylinder(Vector3f p_origin, Vector3f p_direction,
-                                          Vector3f p_base, float p_radius, float p_height)
+static std::optional<float> enterCylinder(compages::core::Vector3f p_origin,
+                                          compages::core::Vector3f p_direction,
+                                          compages::core::Vector3f p_base,
+                                          float p_radius,
+                                          float p_height)
 {
     const float ox = p_origin.x - p_base.x;
     const float oz = p_origin.z - p_base.z;
-    const float a = (p_direction.x * p_direction.x) + (p_direction.z * p_direction.z);
+    const float a =
+        (p_direction.x * p_direction.x) + (p_direction.z * p_direction.z);
     const float b = 2.0f * ((ox * p_direction.x) + (oz * p_direction.z));
     const float c = (ox * ox) + (oz * oz) - (p_radius * p_radius);
     const float discriminant = (b * b) - (4.0f * a * c);
@@ -71,22 +75,27 @@ static std::optional<float> enterCylinder(Vector3f p_origin, Vector3f p_directio
 }
 
 //------------------------------------------------------------------------------
-Vector3f DoomLike::eye() const
+compages::core::Vector3f DoomLike::eye() const
 {
     // On the floor when dead.
-    return Vector3f(m_player.position.x, (m_session.state == State::Dead) ? 0.4f : EYE, m_player.position.z);
+    return compages::core::Vector3f(m_player.position.x,
+                                    (m_session.state == State::Dead) ? 0.4f
+                                                                     : EYE,
+                                    m_player.position.z);
 }
 
 //------------------------------------------------------------------------------
-Vector3f DoomLike::aim() const
+compages::core::Vector3f DoomLike::aim() const
 {
     // At a yaw of zero the eye looks down -Z; the pitch raises it.
-    return Vector3f(-std::sin(m_player.yaw) * std::cos(m_player.pitch), std::sin(m_player.pitch),
-                    -std::cos(m_player.yaw) * std::cos(m_player.pitch));
+    return compages::core::Vector3f(
+        -std::sin(m_player.yaw) * std::cos(m_player.pitch),
+        std::sin(m_player.pitch),
+        -std::cos(m_player.yaw) * std::cos(m_player.pitch));
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::movePlayer(Frame const& p_frame)
+void DoomLike::movePlayer(compages::world::ViewFrame const& p_frame)
 {
     compages::world::Input const& input = p_frame.input;
     const float dt = p_frame.elapsed;
@@ -94,27 +103,54 @@ void DoomLike::movePlayer(Frame const& p_frame)
 
     // Looking: the mouse alone once it is held by the picture, a right drag
     // otherwise, Q and E always.
-    if (input.down(compages::world::Key::Q)) { m_player.yaw += 2.2f * dt; }
-    if (input.down(compages::world::Key::E)) { m_player.yaw -= 2.2f * dt; }
-    const float sensitivity = input.mouse_captured ? 0.0025f : (input.mouse_right ? 0.004f : 0.0f);
+    if (input.down(compages::world::Key::Q))
+    {
+        m_player.yaw += 2.2f * dt;
+    }
+    if (input.down(compages::world::Key::E))
+    {
+        m_player.yaw -= 2.2f * dt;
+    }
+    const float sensitivity =
+        input.mouse_captured ? 0.0025f : (input.mouse_right ? 0.004f : 0.0f);
     m_player.yaw -= input.mouse_delta.x * sensitivity;
-    m_player.pitch = std::clamp(m_player.pitch + (input.mouse_delta.y * sensitivity), -1.2f, 1.2f);
+    m_player.pitch = std::clamp(
+        m_player.pitch + (input.mouse_delta.y * sensitivity), -1.2f, 1.2f);
 
     // Walking on the floor whatever the pitch.
-    const Vector3f forward(-std::sin(m_player.yaw), 0.0f, -std::cos(m_player.yaw));
-    const Vector3f right(std::cos(m_player.yaw), 0.0f, -std::sin(m_player.yaw));
-    Vector3f walk(0.0f, 0.0f, 0.0f);
-    if (input.down(compages::world::Key::W) || input.down(compages::world::Key::Up)) { walk += forward; }
-    if (input.down(compages::world::Key::S) || input.down(compages::world::Key::Down)) { walk -= forward; }
-    if (input.down(compages::world::Key::D) || input.down(compages::world::Key::Right)) { walk += right; }
-    if (input.down(compages::world::Key::A) || input.down(compages::world::Key::Left)) { walk -= right; }
+    const compages::core::Vector3f forward(
+        -std::sin(m_player.yaw), 0.0f, -std::cos(m_player.yaw));
+    const compages::core::Vector3f right(
+        std::cos(m_player.yaw), 0.0f, -std::sin(m_player.yaw));
+    compages::core::Vector3f walk(0.0f, 0.0f, 0.0f);
+    if (input.down(compages::world::Key::W) ||
+        input.down(compages::world::Key::Up))
+    {
+        walk += forward;
+    }
+    if (input.down(compages::world::Key::S) ||
+        input.down(compages::world::Key::Down))
+    {
+        walk -= forward;
+    }
+    if (input.down(compages::world::Key::D) ||
+        input.down(compages::world::Key::Right))
+    {
+        walk += right;
+    }
+    if (input.down(compages::world::Key::A) ||
+        input.down(compages::world::Key::Left))
+    {
+        walk -= right;
+    }
     const float length = flatLength(walk);
     m_player.walking = 0.0f;
     if (length > 1.0e-4f)
     {
-        const float speed = input.down(compages::world::Key::Shift) ? 7.0f : 4.0f;
-        m_player.position =
-            m_content.map.slide(m_player.position, walk * (speed * dt / length), PLAYER_RADIUS);
+        const float speed =
+            input.down(compages::world::Key::Shift) ? 7.0f : 4.0f;
+        m_player.position = m_content.map.slide(
+            m_player.position, walk * (speed * dt / length), PLAYER_RADIUS);
         m_player.walking = speed / 4.0f;
         m_player.bob += dt * speed * 2.0f;
     }
@@ -124,7 +160,7 @@ void DoomLike::movePlayer(Frame const& p_frame)
     {
         if (m_session.level + 1u < levels().size())
         {
-            const compages::gpu::Status built = buildLevel(m_session.level + 1u);
+            const compages::Status built = buildLevel(m_session.level + 1u);
             if (!built)
             {
                 compages::gpu::reportError(built.error());
@@ -139,31 +175,41 @@ void DoomLike::movePlayer(Frame const& p_frame)
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::placeView(Frame const& p_frame)
+void DoomLike::placeView(compages::world::ViewFrame const& p_frame)
 {
     (void)p_frame;
     // The eye, shaken for a moment by a blast.
-    Vector3f at = eye();
+    compages::core::Vector3f at = eye();
     if (m_player.shake > 0.0f)
     {
         const float amount = m_player.shake * 0.12f;
-        at += Vector3f(m_content.effects.random(-amount, amount), m_content.effects.random(-amount, amount),
-                       m_content.effects.random(-amount, amount));
+        at +=
+            compages::core::Vector3f(m_content.effects.random(-amount, amount),
+                                     m_content.effects.random(-amount, amount),
+                                     m_content.effects.random(-amount, amount));
     }
     m_rig.camera.position(at).rotation(
-        Quatf::fromAngleAxis(units::angle::radian_t(double(m_player.yaw)), Vector3f(0.0f, 1.0f, 0.0f)) *
-        Quatf::fromAngleAxis(units::angle::radian_t(double(m_player.pitch)), Vector3f(1.0f, 0.0f, 0.0f)));
+        compages::core::Quatf::fromAngleAxis(
+            units::angle::radian_t(double(m_player.yaw)),
+            compages::core::Vector3f(0.0f, 1.0f, 0.0f)) *
+        compages::core::Quatf::fromAngleAxis(
+            units::angle::radian_t(double(m_player.pitch)),
+            compages::core::Vector3f(1.0f, 0.0f, 0.0f)));
 
     // The gun low on the right, swinging with the steps. Its clips kick it
     // and rack it; this only carries it.
     const float swing = std::min(m_player.walking, 1.5f);
-    const Vector3f bob(std::sin(m_player.bob) * 0.012f * swing, -std::abs(std::cos(m_player.bob)) * 0.012f * swing, 0.0f);
+    const compages::core::Vector3f bob(std::sin(m_player.bob) * 0.012f * swing,
+                                       -std::abs(std::cos(m_player.bob)) *
+                                           0.012f * swing,
+                                       0.0f);
     const float lowered = (m_session.state == State::Playing) ? 0.0f : -0.4f;
-    m_rig.weapon.position(Vector3f(0.17f, -0.19f + lowered, -0.26f) + bob);
+    m_rig.weapon.position(
+        compages::core::Vector3f(0.17f, -0.19f + lowered, -0.26f) + bob);
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::useWeapon(Frame const& p_frame)
+void DoomLike::useWeapon(compages::world::ViewFrame const& p_frame)
 {
     compages::world::Input const& input = p_frame.input;
     m_player.gun_time += p_frame.elapsed;
@@ -171,12 +217,15 @@ void DoomLike::useWeapon(Frame const& p_frame)
     // The end of a clip is the end of what the gun was doing.
     if (m_player.gun == Gun::Firing)
     {
-        if (!m_player.casing_thrown && (m_player.gun_time > 0.3f) && bool(m_rig.muzzle))
+        if (!m_player.casing_thrown && (m_player.gun_time > 0.3f) &&
+            bool(m_rig.muzzle))
         {
             // The pump throws the spent shell out, to the right.
             m_player.casing_thrown = true;
-            const Vector3f right(std::cos(m_player.yaw), 0.0f, -std::sin(m_player.yaw));
-            m_content.effects.casing(m_rig.weapon.worldPosition() + (aim() * 0.15f), right);
+            const compages::core::Vector3f right(
+                std::cos(m_player.yaw), 0.0f, -std::sin(m_player.yaw));
+            m_content.effects.casing(
+                m_rig.weapon.worldPosition() + (aim() * 0.15f), right);
         }
         if (m_player.gun_time >= clipLength(m_rig.weapon.id(), "Fire"))
         {
@@ -184,7 +233,8 @@ void DoomLike::useWeapon(Frame const& p_frame)
             playLoop(m_rig.weapon.id(), "Idle");
         }
     }
-    else if ((m_player.gun == Gun::Reloading) && (m_player.gun_time >= clipLength(m_rig.weapon.id(), "Reload")))
+    else if ((m_player.gun == Gun::Reloading) &&
+             (m_player.gun_time >= clipLength(m_rig.weapon.id(), "Reload")))
     {
         const int added = std::min(LOAD - m_player.shells, m_player.reserve);
         m_player.shells += added;
@@ -207,7 +257,8 @@ void DoomLike::useWeapon(Frame const& p_frame)
     {
         m_player.trigger = false;
     }
-    if ((input.mouse_left_pressed || m_player.trigger) && (m_player.gun == Gun::Idle))
+    if ((input.mouse_left_pressed || m_player.trigger) &&
+        (m_player.gun == Gun::Idle))
     {
         if (m_player.shells > 0)
         {
@@ -236,22 +287,29 @@ void DoomLike::fire()
 
     // The pellets leave the eye, where the crosshair is; their streaks leave
     // the muzzle, where the eye expects them.
-    const Vector3f from = eye();
-    const Vector3f forward = aim();
-    const Vector3f muzzle = bool(m_rig.muzzle) ? m_rig.muzzle.worldPosition() : (from + (forward * 0.6f));
+    const compages::core::Vector3f from = eye();
+    const compages::core::Vector3f forward = aim();
+    const compages::core::Vector3f muzzle = bool(m_rig.muzzle)
+                                                ? m_rig.muzzle.worldPosition()
+                                                : (from + (forward * 0.6f));
     m_content.effects.muzzle(muzzle, forward);
-    Vector3f right = compages::vector::cross(forward, Vector3f(0.0f, 1.0f, 0.0f));
+    compages::core::Vector3f right = compages::core::vector::cross(
+        forward, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     right.normalize();
-    const Vector3f up = compages::vector::cross(right, forward);
+    const compages::core::Vector3f up =
+        compages::core::vector::cross(right, forward);
 
     for (int i = 0; i < PELLETS; ++i)
     {
-        Vector3f direction = forward + (right * m_content.effects.random(-SPREAD, SPREAD)) +
-                             (up * m_content.effects.random(-SPREAD, SPREAD));
+        compages::core::Vector3f direction =
+            forward + (right * m_content.effects.random(-SPREAD, SPREAD)) +
+            (up * m_content.effects.random(-SPREAD, SPREAD));
         direction.normalize();
         const std::optional<Target> target = shootRay(from, direction);
-        const Vector3f end = target ? target->point : (from + (direction * 40.0f));
-        m_content.effects.tracer(muzzle, end, Vector3f(1.0f, 0.85f, 0.45f), 0.06f);
+        const compages::core::Vector3f end =
+            target ? target->point : (from + (direction * 40.0f));
+        m_content.effects.tracer(
+            muzzle, end, compages::core::Vector3f(1.0f, 0.85f, 0.45f), 0.06f);
         if (!target)
         {
             continue;
@@ -272,18 +330,24 @@ void DoomLike::fire()
         else
         {
             // A hole where it landed, and what flies off the stone.
-            m_content.effects.mark(Mark::Hole, target->point, target->normal, m_content.effects.random(0.06f, 0.1f));
+            m_content.effects.mark(Mark::Hole,
+                                   target->point,
+                                   target->normal,
+                                   m_content.effects.random(0.06f, 0.1f));
             m_content.effects.sparks(target->point, target->normal, 3);
         }
     }
 }
 
 //------------------------------------------------------------------------------
-std::optional<DoomLike::Target> DoomLike::shootRay(Vector3f p_origin, Vector3f p_direction)
+std::optional<DoomLike::Target>
+DoomLike::shootRay(compages::core::Vector3f p_origin,
+                   compages::core::Vector3f p_direction)
 {
     // The nearest of the wall, the enemies standing and the barrels.
     std::optional<Target> best;
-    if (const std::optional<Hit> wall = m_content.map.cast(p_origin, p_direction, 40.0f))
+    if (const std::optional<Hit> wall =
+            m_content.map.cast(p_origin, p_direction, 40.0f))
     {
         best = Target{ wall->distance, wall->point, wall->normal };
     }
@@ -295,12 +359,17 @@ std::optional<DoomLike::Target> DoomLike::shootRay(Vector3f p_origin, Vector3f p
             continue;
         }
         const bool soldier = (enemy.kind == Kind::Soldier);
-        const std::optional<float> t = enterCylinder(
-            p_origin, p_direction, enemy.root.position(), soldier ? SOLDIER_RADIUS : ROBOT_RADIUS,
-            soldier ? SOLDIER_HEIGHT : ROBOT_HEIGHT);
+        const std::optional<float> t =
+            enterCylinder(p_origin,
+                          p_direction,
+                          enemy.root.position(),
+                          soldier ? SOLDIER_RADIUS : ROBOT_RADIUS,
+                          soldier ? SOLDIER_HEIGHT : ROBOT_HEIGHT);
         if (t && closer(*t))
         {
-            best = Target{ *t, p_origin + (p_direction * *t), p_direction * -1.0f, &enemy };
+            best = Target{
+                *t, p_origin + (p_direction * *t), p_direction * -1.0f, &enemy
+            };
         }
     }
     for (Barrel& barrel : m_cast.barrels)
@@ -309,10 +378,15 @@ std::optional<DoomLike::Target> DoomLike::shootRay(Vector3f p_origin, Vector3f p
         {
             continue;
         }
-        const std::optional<float> t = enterCylinder(p_origin, p_direction, barrel.at, 0.4f, 1.1f);
+        const std::optional<float> t =
+            enterCylinder(p_origin, p_direction, barrel.at, 0.4f, 1.1f);
         if (t && closer(*t))
         {
-            best = Target{ *t, p_origin + (p_direction * *t), p_direction * -1.0f, nullptr, &barrel };
+            best = Target{ *t,
+                           p_origin + (p_direction * *t),
+                           p_direction * -1.0f,
+                           nullptr,
+                           &barrel };
         }
     }
     return best;
@@ -321,7 +395,8 @@ std::optional<DoomLike::Target> DoomLike::shootRay(Vector3f p_origin, Vector3f p
 //------------------------------------------------------------------------------
 void DoomLike::reload()
 {
-    if ((m_player.gun != Gun::Idle) || (m_player.shells >= LOAD) || (m_player.reserve <= 0))
+    if ((m_player.gun != Gun::Idle) || (m_player.shells >= LOAD) ||
+        (m_player.reserve <= 0))
     {
         return;
     }
@@ -336,18 +411,19 @@ std::optional<std::size_t> DoomLike::torchAimedAt() const
     // Within reach, near the line of the crosshair, not behind a wall.
     std::optional<std::size_t> chosen;
     float nearest = 0.8f;
-    const Vector3f from = eye();
-    const Vector3f forward = aim();
+    const compages::core::Vector3f from = eye();
+    const compages::core::Vector3f forward = aim();
     for (std::size_t i = 0u; i < m_cast.torches.size(); ++i)
     {
-        const Vector3f to = m_cast.torches[i].at - from;
-        const float along = compages::vector::dot(to, forward);
+        const compages::core::Vector3f to = m_cast.torches[i].at - from;
+        const float along = compages::core::vector::dot(to, forward);
         if ((along < 0.0f) || (along > 4.5f))
         {
             continue;
         }
         const float off = (to - (forward * along)).norm();
-        if ((off < nearest) && m_content.map.clearLine(m_player.position, m_cast.torches[i].at))
+        if ((off < nearest) &&
+            m_content.map.clearLine(m_player.position, m_cast.torches[i].at))
         {
             nearest = off;
             chosen = i;
@@ -368,7 +444,9 @@ void DoomLike::useTorch()
     torch.lit = !torch.lit;
     torch.light.enable(torch.lit);
     torch.flame.enable(torch.lit);
-    m_content.effects.sparks(torch.at, Vector3f(0.0f, 1.0f, 0.0f), torch.lit ? 12 : 2);
+    m_content.effects.sparks(torch.at,
+                             compages::core::Vector3f(0.0f, 1.0f, 0.0f),
+                             torch.lit ? 12 : 2);
     say(torch.lit ? "Torch lit" : "Torch put out");
 }
 
@@ -383,8 +461,13 @@ void DoomLike::pickUp(float p_dt)
             continue;
         }
         // Turning and floating, so that it is seen from afar.
-        pickup.body.position(pickup.at.x, 0.4f + (0.08f * std::sin((m_player.clock * 2.5f) + pickup.at.x)), pickup.at.z)
-            .rotation(m_player.clock * 1.5f, Vector3f(0.0f, 1.0f, 0.0f));
+        pickup.body
+            .position(pickup.at.x,
+                      0.4f + (0.08f *
+                              std::sin((m_player.clock * 2.5f) + pickup.at.x)),
+                      pickup.at.z)
+            .rotation(m_player.clock * 1.5f,
+                      compages::core::Vector3f(0.0f, 1.0f, 0.0f));
         if (flatLength(m_player.position - pickup.at) > 1.0f)
         {
             continue;

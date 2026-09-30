@@ -20,8 +20,8 @@
 
 #include "GPUContext.hpp"
 
-#include "Compages/Renderer/Assets/Primitives.hpp"
 #include "Compages/GPU/GPU.hpp"
+#include "Compages/Renderer/Assets/Primitives.hpp"
 
 using namespace tests;
 
@@ -50,7 +50,7 @@ TEST_F(PrimitivesTest, SphereFitsInsideItsBounds)
     ASSERT_TRUE(bool(mesh)) << mesh.error();
     const compages::renderer::MeshAsset built = mesh.take();
     ASSERT_FALSE(built.local_bounds.empty());
-    const Vector3f extent = built.local_bounds.extent();
+    const compages::core::Vector3f extent = built.local_bounds.extent();
     ASSERT_NEAR(extent.x, 0.5f, 1.0e-3f);
     ASSERT_NEAR(extent.y, 0.5f, 1.0e-3f);
     ASSERT_NEAR(extent.z, 0.5f, 1.0e-3f);
@@ -73,7 +73,7 @@ TEST_F(PrimitivesTest, CylinderHasClosedSidesAndTwoCaps)
     const compages::renderer::MeshAsset built = mesh.take();
     // 2 triangles per side + 1 triangle per slice on each cap.
     ASSERT_EQ(built.index_count, (6u * slices) + (2u * 3u * slices));
-    const Vector3f extent = built.local_bounds.extent();
+    const compages::core::Vector3f extent = built.local_bounds.extent();
     EXPECT_NEAR(extent.x, 0.5f, 1.0e-3f);
     EXPECT_NEAR(extent.y, 0.5f, 1.0e-3f);
     EXPECT_NEAR(extent.z, 1.0f, 1.0e-3f);
@@ -114,29 +114,37 @@ TEST_F(PrimitivesTest, TrianglesFaceTheirNormals)
     };
     for (Named& shape : shapes)
     {
-        ASSERT_TRUE(bool(shape.mesh)) << shape.name << ": " << shape.mesh.error();
+        ASSERT_TRUE(bool(shape.mesh))
+            << shape.name << ": " << shape.mesh.error();
         compages::renderer::MeshAsset const& mesh = shape.mesh.value();
         std::size_t wrong = 0u;
         for (std::size_t i = 0u; i + 2u < mesh.source_indices.size(); i += 3u)
         {
-            compages::renderer::MeshVertex const& a = mesh.source_vertices[mesh.source_indices[i]];
-            compages::renderer::MeshVertex const& b = mesh.source_vertices[mesh.source_indices[i + 1u]];
-            compages::renderer::MeshVertex const& c = mesh.source_vertices[mesh.source_indices[i + 2u]];
-            const Vector3f face = compages::vector::cross(b.position - a.position,
-                                                c.position - a.position);
-            const Vector3f normal = a.normal + b.normal + c.normal;
+            compages::renderer::MeshVertex const& a =
+                mesh.source_vertices[mesh.source_indices[i]];
+            compages::renderer::MeshVertex const& b =
+                mesh.source_vertices[mesh.source_indices[i + 1u]];
+            compages::renderer::MeshVertex const& c =
+                mesh.source_vertices[mesh.source_indices[i + 2u]];
+            const compages::core::Vector3f face = compages::core::vector::cross(
+                b.position - a.position, c.position - a.position);
+            const compages::core::Vector3f normal =
+                a.normal + b.normal + c.normal;
             // The pole of a sphere folds whole triangles onto a point: no area,
             // no side, nothing drawn.
-            if (compages::vector::dot(face, face) < 1.0e-10f)
+            if (compages::core::vector::dot(face, face) < 1.0e-10f)
             {
                 continue;
             }
-            if (compages::vector::dot(face, normal) < 0.0f)
+            if (compages::core::vector::dot(face, normal) < 0.0f)
             {
                 ++wrong;
             }
         }
-        EXPECT_EQ(wrong, 0u) << shape.name << " has triangles facing away from its normals, out of " << (mesh.source_indices.size() / 3u);
+        EXPECT_EQ(wrong, 0u)
+            << shape.name
+            << " has triangles facing away from its normals, out of "
+            << (mesh.source_indices.size() / 3u);
     }
 }
 
@@ -145,7 +153,8 @@ TEST_F(PrimitivesTest, TrianglesFaceTheirNormals)
 //! above, from the same 32-bit CPU indices.
 TEST_F(PrimitivesTest, UploadPicksTheIndexSizeFromTheVertexCount)
 {
-    auto meshOf = [](std::size_t p_vertices) {
+    auto meshOf = [](std::size_t p_vertices)
+    {
         compages::renderer::MeshAsset mesh;
         mesh.source_vertices.resize(p_vertices);
         const auto last = static_cast<std::uint32_t>(p_vertices - 1u);

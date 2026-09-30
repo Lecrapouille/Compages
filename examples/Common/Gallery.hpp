@@ -140,10 +140,10 @@ public:
     //! leaked, so that a run through the whole list is worth something to a
     //! build script.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::gpu::Status run(Options const& p_options);
+    [[nodiscard]] compages::Status run(Options const& p_options);
 
     //! \brief Same, starting at the first example.
-    [[nodiscard]] compages::gpu::Status run()
+    [[nodiscard]] compages::Status run()
     {
         return run(Options{});
     }
@@ -169,7 +169,8 @@ private:
         //! "00a_Dummy". The name itself stays what --start and the files use.
         std::string title;
         std::string source;
-        //! \brief The folder of the source, spelled for people: "Getting Started".
+        //! \brief The folder of the source, spelled for people: "Getting
+        //! Started".
         std::string chapter;
         Factory factory;
         Outcome outcome = Outcome::NotRun;
@@ -202,7 +203,8 @@ private:
 
     // One frame.
     void runExample();
-    [[nodiscard]] Frame makeFrame(std::uint32_t p_width, std::uint32_t p_height);
+    [[nodiscard]] compages::world::ViewFrame makeFrame(std::uint32_t p_width,
+                                                       std::uint32_t p_height);
     void handleShortcuts();
     //! \brief Write a picture of the example, or of the whole window.
     void saveScreenshot(std::string const& p_directory, bool p_whole_window);
@@ -242,7 +244,8 @@ private:
     [[nodiscard]] SourceFile const& sourceFile(std::string const& p_relative);
 
     //! \brief What the library logs, through the one gallery alive.
-    static void onLog(compages::gpu::LogLevel p_level, std::string_view p_message);
+    static void onLog(compages::gpu::LogLevel p_level,
+                      std::string_view p_message);
 
     std::vector<Entry> m_entries;
     std::vector<std::string> m_manifest_problems;
@@ -275,7 +278,7 @@ private:
     std::uint32_t m_view_width = 0u;
     std::uint32_t m_view_height = 0u;
     //! \brief Where the mouse is over the viewport, in its pixels, y up.
-    Vector2f m_view_mouse{ 0.0f, 0.0f };
+    compages::core::Vector2f m_view_mouse{ 0.0f, 0.0f };
     bool m_view_hovered = false;
     bool m_view_focused = false;
     //! \brief A drag started on the viewport goes on to the example even when

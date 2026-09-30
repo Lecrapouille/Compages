@@ -20,11 +20,14 @@
 
 #include "main.hpp"
 
+
 #include "Compages/World/Controllers/FPSController.hpp"
 #include "Compages/World/Controllers/FlyController.hpp"
 #include "Compages/World/Controllers/OrbitController.hpp"
 #include "Compages/World/Controllers/ThirdPersonController.hpp"
 #include "Compages/World/World.hpp"
+
+
 
 //------------------------------------------------------------------------------
 TEST(OrbitController, PlacesTheCameraOppositeTheForwardAxis)
@@ -32,7 +35,7 @@ TEST(OrbitController, PlacesTheCameraOppositeTheForwardAxis)
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
-    orbit.target = Vector3f(0.0f, 0.0f, 0.0f);
+    orbit.target = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
     orbit.yaw = 0.0f;
     orbit.pitch = 0.0f;
     orbit.distance = 10.0f;
@@ -63,7 +66,7 @@ TEST(FlyController, ForwardMovesAlongLook)
 {
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(camera).position = Vector3f(0.0f, 0.0f, 0.0f);
+    world.transform(camera).position = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
     compages::world::FlyController fly;
     fly.yaw = 0.0f;
     fly.pitch = 0.0f;
@@ -80,7 +83,7 @@ TEST(FPSController, WalksOnTheGroundWithoutClimbing)
 {
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(camera).position = Vector3f(0.0f, 1.7f, 0.0f);
+    world.transform(camera).position = compages::core::Vector3f(0.0f, 1.7f, 0.0f);
     compages::world::FPSController fps;
     fps.yaw = 0.0f;
     fps.pitch = -0.4f;
@@ -99,10 +102,10 @@ TEST(ThirdPersonController, FollowsTheTargetEntity)
     compages::world::World world;
     const compages::world::EntityId target = world.create("hero");
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(target).position = Vector3f(10.0f, 0.0f, 0.0f);
+    world.transform(target).position = compages::core::Vector3f(10.0f, 0.0f, 0.0f);
     compages::world::ThirdPersonController follow;
     follow.target = target;
-    follow.look_offset = Vector3f(0.0f, 0.0f, 0.0f);
+    follow.look_offset = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
     follow.yaw = 0.0f;
     follow.pitch = 0.0f;
     follow.distance = 6.0f;

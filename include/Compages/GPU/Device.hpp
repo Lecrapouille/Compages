@@ -35,8 +35,8 @@ namespace compages::gpu
 //! The library never creates a window and never opens the driver itself: the
 //! caller does, then hands over the loader its windowing library provides. With
 //! GLFW that is glfwGetProcAddress, with SDL it is SDL_GL_GetProcAddress. This
-//! is what keeps compages::gpu:: usable with any windowing system, and testable with an
-//! invisible window.
+//! is what keeps compages::gpu:: usable with any windowing system, and testable
+//! with an invisible window.
 // ----------------------------------------------------------------------------
 using LoadProc = void* (*)(const char*);
 

@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -37,15 +37,16 @@ namespace examples
 //! joint turns everything under it, and the head does not know it is on a
 //! turning body:
 //! \code
-//! compages::world::Entity shoulder = body.child("LeftShoulder").position(-13, 15, 0);
-//! m_scene.box("LeftArm", dark).parent(shoulder).position(0, -12, 0).scale(6, 24, 6);
+//! compages::world::Entity shoulder = body.child("LeftShoulder").position(-13,
+//! 15, 0); m_scene.box("LeftArm", dark).parent(shoulder).position(0, -12,
+//! 0).scale(6, 24, 6);
 //! \endcode
 //!
 //! Only the boxes are scaled, never the joints: a scale on a joint would
 //! squash every part under it. The motion is a behavior on the root of each
 //! robot, written from the total time so that it never drifts.
 // ****************************************************************************
-class MovingRobot final : public Example
+class MovingRobot final: public Example
 {
 public:
 
@@ -55,8 +56,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

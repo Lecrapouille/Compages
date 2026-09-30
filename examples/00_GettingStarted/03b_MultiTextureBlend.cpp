@@ -79,19 +79,25 @@ constexpr std::array<std::pair<char const*, char const*>, 5u> MAPS{ {
 
 std::string MultiTextureBlend::description() const
 {
-    return "A blend map mixes four ground materials on one quad: its red, green "
-           "and blue say how much mud, flowers and path there is at each place, "
+    return "A blend map mixes four ground materials on one quad: its red, "
+           "green "
+           "and blue say how much mud, flowers and path there is at each "
+           "place, "
            "and what is left is grass. Five textures, one draw.\n\n"
-           "Drag with the left button on the picture to paint the blend map. In "
-           "Try it, pick the layer (mud, flowers, path, or erase back to grass).";
+           "Drag with the left button on the picture to paint the blend map. "
+           "In "
+           "Try it, pick the layer (mud, flowers, path, or erase back to "
+           "grass).";
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status MultiTextureBlend::setUp()
+compages::Status MultiTextureBlend::setUp()
 {
     COMPAGES_TRY(m_plane.load(VERTEX, FRAGMENT));
-    m_plane["position"] = { { -0.9f, -0.9f }, { 0.9f, -0.9f }, { -0.9f, 0.9f }, { 0.9f, 0.9f } };
-    m_plane["uv"]       = { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } };
+    m_plane["position"] = {
+        { -0.9f, -0.9f }, { 0.9f, -0.9f }, { -0.9f, 0.9f }, { 0.9f, 0.9f }
+    };
+    m_plane["uv"] = { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } };
     m_plane.primitive(compages::gpu::Primitive::TriangleStrip);
 
     for (std::size_t i = 0u; i < MAPS.size(); ++i)
@@ -99,11 +105,12 @@ compages::gpu::Status MultiTextureBlend::setUp()
         const std::string path = dataPath(MAPS[i].second);
         if (path.empty())
         {
-            return compages::gpu::failure("03b_MultiTextureBlend needs textures in "
-                                "external/Compages-data/");
+            return compages::failure("03b_MultiTextureBlend needs textures in "
+                                     "external/Compages-data/");
         }
         const compages::gpu::LoadOptions options =
-            (i == 0u) ? compages::gpu::LoadOptions::data() : compages::gpu::LoadOptions::picture();
+            (i == 0u) ? compages::gpu::LoadOptions::data()
+                      : compages::gpu::LoadOptions::picture();
         COMPAGES_TRY(m_textures[i].load(path, options));
         m_plane[MAPS[i].first] = m_textures[i];
     }
@@ -146,9 +153,10 @@ void MultiTextureBlend::paintAt(float p_u, float p_v)
             {
                 continue;
             }
-            const std::size_t at = (static_cast<std::size_t>(y) * m_blend_width +
-                                    static_cast<std::size_t>(x)) *
-                                   4u;
+            const std::size_t at =
+                (static_cast<std::size_t>(y) * m_blend_width +
+                 static_cast<std::size_t>(x)) *
+                4u;
             if (at + 3u >= m_blend_pixels.size())
             {
                 continue;
@@ -209,15 +217,16 @@ void MultiTextureBlend::uploadBlendMapIfNeeded()
         return;
     }
     m_blend_dirty = false;
-    compages::gpu::check(m_textures[0u].write(std::as_bytes(std::span<const std::uint8_t>(m_blend_pixels))));
+    compages::gpu::check(m_textures[0u].write(
+        std::as_bytes(std::span<const std::uint8_t>(m_blend_pixels))));
 }
 
 //------------------------------------------------------------------------------
-void MultiTextureBlend::draw(Frame const& p_frame)
+void MultiTextureBlend::draw(compages::world::ViewFrame const& p_frame)
 {
     if (p_frame.input.mouse_over && p_frame.input.mouse_left)
     {
-        const Vector2f clip = mouseInClipSpace(p_frame);
+        const compages::core::Vector2f clip = compages::world::mouseInClipSpace(p_frame);
         const float u = std::clamp((clip.x + 0.9f) / 1.8f, 0.0f, 1.0f);
         const float v = std::clamp((clip.y + 0.9f) / 1.8f, 0.0f, 1.0f);
         paintAt(u, v);
@@ -256,7 +265,8 @@ void MultiTextureBlend::controls()
         ImGui::EndTabBar();
     }
     ImGui::SliderFloat("Brush size", &m_brush, 4.0f, 40.0f);
-    ImGui::TextUnformatted("Left drag on the picture paints the selected layer.");
+    ImGui::TextUnformatted(
+        "Left drag on the picture paints the selected layer.");
 }
 
 } // namespace examples

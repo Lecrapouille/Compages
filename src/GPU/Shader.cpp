@@ -19,10 +19,10 @@
 //=============================================================================
 
 #include "Compages/GPU/Shader.hpp"
+#include "Compages/Core/File.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "GPU/Internal/Pools.hpp"
-#include "Compages/Core/File.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -31,12 +31,9 @@
 //! \file
 //! \brief Compiling stages, linking them, and asking the result what it holds.
 //!
-//! \note On matrices. The Matrix of src/Math stores its elements in row major
-//! order, while OpenGL reads a matrix column by column, so one would expect a
-//! transpose on the way to the driver. There is none, and that is correct: the
-//! transformation functions of src/Math already build their matrices transposed,
-//! as their documentation says, which puts a translation in the last row. Those
-//! are exactly the bytes OpenGL expects to find. Transposing here would undo it.
+//! \note On matrices. \c compages::core matrices are row-major with the Scilab
+//! convention (\c y = M * x). OpenGL expects column-major memory, so the GL45
+//! backend uploads them with \c glProgramUniformMatrix*fv(..., GL_TRUE, ...).
 // ****************************************************************************
 
 namespace compages::gpu
@@ -53,7 +50,7 @@ namespace
 //------------------------------------------------------------------------------
 Result<ShaderStage> stageOfFile(std::string const& p_path)
 {
-    const std::string extension = File::extension(p_path);
+    const std::string extension = compages::core::File::extension(p_path);
 
     if ((extension == "vert") || (extension == "vs"))
     {
@@ -90,7 +87,7 @@ Result<ShaderStage> stageOfFile(std::string const& p_path)
 Result<std::string> readSource(std::string const& p_path)
 {
     std::string source;
-    if (!File::readAllFile(p_path, source))
+    if (!compages::core::File::readAllFile(p_path, source))
     {
         return failure("cannot read the shader '" + p_path + "'");
     }
@@ -105,8 +102,8 @@ Result<std::string> readSource(std::string const& p_path)
 //! \brief Say what is wrong when a uniform is written with the wrong type.
 //!
 //! Worth the words: the two ways to get here, a name that does not exist and a
-//! type that does not match, used to look identical from the outside, which is to
-//! say they looked like nothing happening at all.
+//! type that does not match, used to look identical from the outside, which is
+//! to say they looked like nothing happening at all.
 //------------------------------------------------------------------------------
 std::string mismatchMessage(std::string_view p_name,
                             DataType p_expected,
@@ -126,8 +123,9 @@ Result<Shader> Shader::fromSource(ShaderStage p_stage,
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to compile a shader on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to compile a shader on");
     }
     if (p_source.empty())
     {
@@ -145,8 +143,8 @@ Result<Shader> Shader::fromSource(ShaderStage p_stage,
         return failure(where + " did not compile:\n" + compiled.error());
     }
 
-    auto added = detail::pools().shaders.add(detail::ShaderRecord{
-        compiled.value(), p_stage, std::move(p_name) });
+    auto added = detail::pools().shaders.add(
+        detail::ShaderRecord{ compiled.value(), p_stage, std::move(p_name) });
     if (!added)
     {
         backend::destroyShader(compiled.value());
@@ -243,8 +241,9 @@ Result<Program> Program::link(std::initializer_list<Shader const*> p_stages)
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to link a program on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to link a program on");
     }
     if (p_stages.size() == 0u)
     {
@@ -260,9 +259,10 @@ Result<Program> Program::link(std::initializer_list<Shader const*> p_stages)
     {
         if ((one == nullptr) || !one->valid())
         {
-            return failure("one of the stages given to link() holds no compiled "
-                           "shader. A Shader that failed to compile, or one that "
-                           "has been released or moved from");
+            return failure(
+                "one of the stages given to link() holds no compiled "
+                "shader. A Shader that failed to compile, or one that "
+                "has been released or moved from");
         }
         detail::ShaderRecord const* record =
             detail::pools().shaders.get(one->handle());
@@ -307,7 +307,8 @@ Result<Program> Program::fromSources(std::string_view p_vertex,
 {
     Shader vertex;
     Shader fragment;
-    COMPAGES_TRY_ASSIGN(vertex, Shader::fromSource(ShaderStage::Vertex, p_vertex));
+    COMPAGES_TRY_ASSIGN(vertex,
+                        Shader::fromSource(ShaderStage::Vertex, p_vertex));
     COMPAGES_TRY_ASSIGN(fragment,
                         Shader::fromSource(ShaderStage::Fragment, p_fragment));
     return link({ &vertex, &fragment });
@@ -319,7 +320,8 @@ Result<Program> Program::fromFiles(std::string const& p_vertex,
 {
     Shader vertex;
     Shader fragment;
-    COMPAGES_TRY_ASSIGN(vertex, Shader::fromFile(ShaderStage::Vertex, p_vertex));
+    COMPAGES_TRY_ASSIGN(vertex,
+                        Shader::fromFile(ShaderStage::Vertex, p_vertex));
     COMPAGES_TRY_ASSIGN(fragment,
                         Shader::fromFile(ShaderStage::Fragment, p_fragment));
     return link({ &vertex, &fragment });
@@ -338,7 +340,8 @@ Result<Program> Program::fromComputeSource(std::string_view p_source)
 Result<Program> Program::fromComputeFile(std::string const& p_path)
 {
     Shader compute;
-    COMPAGES_TRY_ASSIGN(compute, Shader::fromFile(ShaderStage::Compute, p_path));
+    COMPAGES_TRY_ASSIGN(compute,
+                        Shader::fromFile(ShaderStage::Compute, p_path));
     return link({ &compute });
 }
 
@@ -420,7 +423,8 @@ bool Program::valid() const
 ProgramReflection const& Program::reflection() const
 {
     static const ProgramReflection nothing;
-    detail::ProgramRecord const* record = detail::pools().programs.get(m_handle);
+    detail::ProgramRecord const* record =
+        detail::pools().programs.get(m_handle);
     return (record == nullptr) ? nothing : record->reflection;
 }
 
@@ -434,7 +438,8 @@ bool Program::has(std::string_view p_name) const
 Result<int> Program::locationOf(std::string_view p_name,
                                 DataType p_expected) const
 {
-    detail::ProgramRecord const* record = detail::pools().programs.get(m_handle);
+    detail::ProgramRecord const* record =
+        detail::pools().programs.get(m_handle);
     if (record == nullptr)
     {
         return failure("this program no longer exists. Either it was released "
@@ -460,18 +465,19 @@ Result<int> Program::locationOf(std::string_view p_name,
         }
         if (in_block != nullptr)
         {
-            return failure("'" + std::string(p_name) +
-                           "' belongs to the uniform block '" + block_name +
-                           "', so it is written into that block's buffer rather "
-                           "than one value at a time");
+            return failure(
+                "'" + std::string(p_name) + "' belongs to the uniform block '" +
+                block_name +
+                "', so it is written into that block's buffer rather "
+                "than one value at a time");
         }
 
-        return failure("this program declares no uniform called '" +
-                       std::string(p_name) +
-                       "'. Either the name differs from the shader, or the "
-                       "shader never reads it and the compiler removed it. What "
-                       "it does declare:\n" +
-                       record->reflection.toString());
+        return failure(
+            "this program declares no uniform called '" + std::string(p_name) +
+            "'. Either the name differs from the shader, or the "
+            "shader never reads it and the compiler removed it. What "
+            "it does declare:\n" +
+            record->reflection.toString());
     }
 
     // A sampler is set by giving it the number of a texture unit, which is an
@@ -491,20 +497,19 @@ Result<int> Program::locationOf(std::string_view p_name,
 //------------------------------------------------------------------------------
 //! \brief The body every set() shares: find the uniform, check the type, write.
 //------------------------------------------------------------------------------
-#define GPU_SET_UNIFORM(name, type, data)                                    \
-    do                                                                       \
-    {                                                                        \
-        auto location = locationOf(name, type);                              \
-        if (!location)                                                       \
-        {                                                                    \
-            reportError(location.error());                                   \
-            return;                                                          \
-        }                                                                    \
-        backend::setUniform(                                                 \
-            detail::pools().programs.get(m_handle)->native,                  \
-            location.value(),                                                \
-            type,                                                            \
-            data);                                                           \
+#define GPU_SET_UNIFORM(name, type, data)                                   \
+    do                                                                      \
+    {                                                                       \
+        auto location = locationOf(name, type);                             \
+        if (!location)                                                      \
+        {                                                                   \
+            reportError(location.error());                                  \
+            return;                                                         \
+        }                                                                   \
+        backend::setUniform(detail::pools().programs.get(m_handle)->native, \
+                            location.value(),                               \
+                            type,                                           \
+                            data);                                          \
     } while (false)
 
 //------------------------------------------------------------------------------
@@ -514,19 +519,22 @@ void Program::set(std::string_view p_name, float p_value)
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector2f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector2f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec2, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector3f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector3f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec3, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector4f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector4f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec4, p_value.data());
 }
@@ -553,43 +561,50 @@ void Program::set(std::string_view p_name, bool p_value)
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector2i const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector2i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec2, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector3i const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector3i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec3, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Vector4i const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Vector4i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec4, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Matrix22f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Matrix22f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat2, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Matrix33f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Matrix33f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat3, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, Matrix44f const& p_value)
+void Program::set(std::string_view p_name,
+                  compages::core::Matrix44f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat4, p_value.data());
 }
 
 //------------------------------------------------------------------------------
-void Program::set(std::string_view p_name, std::span<const Matrix44f> p_values)
+void Program::set(std::string_view p_name,
+                  std::span<const compages::core::Matrix44f> p_values)
 {
     auto location = locationOf(p_name, DataType::Mat4);
     if (!location)
@@ -601,12 +616,11 @@ void Program::set(std::string_view p_name, std::span<const Matrix44f> p_values)
     {
         return;
     }
-    backend::setUniformArray(
-        detail::pools().programs.get(m_handle)->native,
-        location.value(),
-        DataType::Mat4,
-        p_values.data()->data(),
-        static_cast<int>(p_values.size()));
+    backend::setUniformArray(detail::pools().programs.get(m_handle)->native,
+                             location.value(),
+                             DataType::Mat4,
+                             p_values.data()->data(),
+                             static_cast<int>(p_values.size()));
 }
 
 #undef GPU_SET_UNIFORM

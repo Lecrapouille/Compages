@@ -62,8 +62,14 @@ public:
     {
     }
 
-    [[nodiscard]] constexpr bool valid() const { return m_bits != 0u; }
-    [[nodiscard]] constexpr explicit operator bool() const { return valid(); }
+    [[nodiscard]] constexpr bool valid() const
+    {
+        return m_bits != 0u;
+    }
+    [[nodiscard]] constexpr explicit operator bool() const
+    {
+        return valid();
+    }
     [[nodiscard]] constexpr std::uint16_t index() const
     {
         return static_cast<std::uint16_t>(m_bits & 0xFFFFu);
@@ -72,7 +78,10 @@ public:
     {
         return static_cast<std::uint16_t>(m_bits >> 16u);
     }
-    [[nodiscard]] constexpr std::uint32_t bits() const { return m_bits; }
+    [[nodiscard]] constexpr std::uint32_t bits() const
+    {
+        return m_bits;
+    }
 
     [[nodiscard]] constexpr bool operator==(NodeId const& p_other) const
     {
@@ -99,7 +108,8 @@ private:
 //! call site instead of guessed from a global flag.
 //!
 //! \code
-//! world.setParent(child, newParent, compages::world::ReparentPolicy::KeepWorld);
+//! world.setParent(child, newParent,
+//! compages::world::ReparentPolicy::KeepWorld);
 //! \endcode
 // ****************************************************************************
 enum class ReparentPolicy
@@ -137,7 +147,7 @@ enum class ReparentPolicy
 //! g.setParent(g.attach(world.create("Child")), root);
 //! \endcode
 // ****************************************************************************
-class SpatialGraph : private NotCopiable
+class SpatialGraph: private compages::core::NotCopiable
 {
 public:
 
@@ -194,10 +204,11 @@ public:
     //! policy is \c KeepWorld, so the child's local TRS can be recomputed. May
     //! be null when the policy is \c KeepLocal.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Status setParent(NodeId p_child,
-                                        NodeId p_parent,
-                                        ReparentPolicy p_policy = ReparentPolicy::KeepLocal,
-                                        TransformStore* p_transforms = nullptr);
+    [[nodiscard]] Status
+    setParent(NodeId p_child,
+              NodeId p_parent,
+              ReparentPolicy p_policy = ReparentPolicy::KeepLocal,
+              TransformStore* p_transforms = nullptr);
 
     // ------------------------------------------------------------------------
     //! \brief The parent of a node, or an empty NodeId at the top.
@@ -253,20 +264,25 @@ public:
             {
                 continue;
             }
-            p_callback(NodeId(static_cast<std::uint16_t>(i),
-                              m_generation[i]));
+            p_callback(NodeId(static_cast<std::uint16_t>(i), m_generation[i]));
         }
     }
 
     // ------------------------------------------------------------------------
     //! \brief How many nodes exist right now.
     // ------------------------------------------------------------------------
-    [[nodiscard]] std::size_t size() const { return m_living; }
+    [[nodiscard]] std::size_t size() const
+    {
+        return m_living;
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Number of node slots ever used, alive or free.
     // ------------------------------------------------------------------------
-    [[nodiscard]] std::size_t capacity() const { return m_nodes.size(); }
+    [[nodiscard]] std::size_t capacity() const
+    {
+        return m_nodes.size();
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Would setting \c p_parent as the parent of \c p_child make a
@@ -316,8 +332,8 @@ private:
     std::vector<std::uint8_t> m_slot_free;
     //! \brief Free node slots.
     std::vector<std::uint16_t> m_free;
-    //! \brief Sparse array \c EntityId::index() -> \c NodeId::bits(). Zero means
-    //! "no node for this entity".
+    //! \brief Sparse array \c EntityId::index() -> \c NodeId::bits(). Zero
+    //! means "no node for this entity".
     std::vector<std::uint32_t> m_entity_to_node;
     std::size_t m_living = 0u;
 };

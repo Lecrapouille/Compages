@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -36,11 +36,12 @@ namespace examples
 //! size:
 //! \code
 //! COMPAGES_TRY(m_scene.load(dataPath("Duck.glb")));
-//! const Vector3f middle = m_scene.frameAll();
-//! m_scene.activeCamera().add<compages::world::Orbit>(middle);   // turn around it
+//! const compages::core::Vector3f middle = m_scene.frameAll();
+//! m_scene.activeCamera().add<compages::world::Orbit>(middle);   // turn around
+//! it
 //! \endcode
 // ****************************************************************************
-class GltfModel final : public Example
+class GltfModel final: public Example
 {
 public:
 
@@ -50,8 +51,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

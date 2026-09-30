@@ -38,7 +38,7 @@
 // - \c operator T(&)[N] and \c data() yield a C array reference; combined with
 //   converting constructors this can trigger surprising implicit conversions
 //   when passing vectors to functions expecting raw pointers.
-// - \c norm() / \c normalize() on integral \c T use \c compages::maths::sqrt (float) for
+// - \c norm() / \c normalize() on integral \c T use \c sqrt (float) for
 //   length but member \c normalize() still divides in \c T; use float/double
 //   vectors for geometric normalization.
 //
@@ -51,6 +51,10 @@
 #include <initializer_list>
 #include <ostream>
 #include <type_traits>
+
+namespace compages::core
+{
+
 
 // *****************************************************************************
 //! \brief Macro for building constructors of any dimension (N).
@@ -84,7 +88,7 @@ public:                                                                        \
         /* Zero-fill any remaining elements */                                 \
         for (size_t i = m; i < N; ++i)                                         \
         {                                                                      \
-            m_data[i] = compages::maths::zero<T>();                                      \
+            m_data[i] = zero<T>();                                      \
         }                                                                      \
     }                                                                          \
                                                                                \
@@ -112,7 +116,7 @@ public:                                                                        \
         /* Zero-fill any remaining elements */                                 \
         for (i = m; i < N; ++i)                                                \
         {                                                                      \
-            m_data[i] = compages::maths::zero<T>();                                      \
+            m_data[i] = zero<T>();                                      \
         }                                                                      \
     }                                                                          \
                                                                                \
@@ -205,13 +209,11 @@ private:                                                                       \
     operator bool() = delete;
 
 // *****************************************************************************
-//! \brief A mathematic element to represent coordinates in space. Note,
-//! contrary to a strict mathematic point of view, this class represents
-//! neither a column vector nor a row vector but one of them depending on the
-//! context. For example Matrix * vector the vector will be considered as column
-//! vector while vector * matrix the vector will be considered as row vector.
-//! This is mainly due to speed up computations for an OpenGL context. If
-//! dimension checks are needed use the class Matrix and set one dimension to 1.
+//! \brief A mathematic element to represent coordinates in space. A Vector is
+//! always a **column vector**: a transform applies as \c y = M * x, and
+//! \c M2 * M1 * x applies \c M1 first. There is no \c x * M product; use
+//! \c castToRowVector() (a 1 x n Matrix) or \c transpose(M) * x when a row
+//! vector is really needed.
 //!
 //! \tparam T the type of the vector (float, int).
 //! \tparam n the vector dimension.
@@ -234,14 +236,14 @@ public:
     //--------------------------------------------------------------------------
     T norm() const
     {
-        T length = compages::maths::zero<T>();
+        T length = zero<T>();
         size_t i = n;
 
         while (i--)
         {
             length += (m_data[i] * m_data[i]);
         }
-        return T(compages::maths::sqrt(length));
+        return T(sqrt(length));
     }
 
     //--------------------------------------------------------------------------
@@ -252,7 +254,7 @@ public:
     //--------------------------------------------------------------------------
     void normalize()
     {
-        T const l = compages::maths::one<T>() / norm();
+        T const l = one<T>() / norm();
         size_t i = n;
 
         while (i--)
@@ -306,7 +308,7 @@ public:
     //--------------------------------------------------------------------------
     inline T norm() const
     {
-        return T(compages::maths::sqrt(x * x + y * y));
+        return T(sqrt(x * x + y * y));
     }
 
     //--------------------------------------------------------------------------
@@ -316,7 +318,7 @@ public:
     //--------------------------------------------------------------------------
     void normalize()
     {
-        T const l = compages::maths::one<T>() / norm();
+        T const l = one<T>() / norm();
         x *= l;
         y *= l;
     }
@@ -373,23 +375,23 @@ public:
 
 // Predefined vectors
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::DUMMY(compages::maths::nan<T>());
+const Vector<T, 2u> Vector<T, 2u>::DUMMY(nan<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::ZERO(compages::maths::zero<T>());
+const Vector<T, 2u> Vector<T, 2u>::ZERO(zero<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::UNIT_SCALE(compages::maths::one<T>());
+const Vector<T, 2u> Vector<T, 2u>::UNIT_SCALE(one<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_SCALE(-compages::maths::one<T>());
+const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_SCALE(-one<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::UNIT_X(compages::maths::one<T>(), compages::maths::zero<T>());
+const Vector<T, 2u> Vector<T, 2u>::UNIT_X(one<T>(), zero<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::UNIT_Y(compages::maths::zero<T>(), compages::maths::one<T>());
+const Vector<T, 2u> Vector<T, 2u>::UNIT_Y(zero<T>(), one<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_X(-compages::maths::one<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_X(-one<T>(),
+                                                   zero<T>());
 template <typename T>
-const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_Y(compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>());
+const Vector<T, 2u> Vector<T, 2u>::NEGATIVE_UNIT_Y(zero<T>(),
+                                                   -one<T>());
 
 // *****************************************************************************
 //! \brief Specialization for vector of dimension 3
@@ -407,7 +409,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Constructor.
     //--------------------------------------------------------------------------
-    Vector(Vector<T, 2u> const& v, const T scalar_z = compages::maths::zero<T>())
+    Vector(Vector<T, 2u> const& v, const T scalar_z = zero<T>())
     {
         x = v.x;
         y = v.y;
@@ -419,7 +421,7 @@ public:
     //--------------------------------------------------------------------------
     Vector(const T scalar_x,
            const T scalar_y,
-           const T scalar_z = compages::maths::zero<T>())
+           const T scalar_z = zero<T>())
     {
         x = scalar_x;
         y = scalar_y;
@@ -431,7 +433,7 @@ public:
     //--------------------------------------------------------------------------
     inline T norm() const
     {
-        return compages::maths::sqrt(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
     }
 
     //--------------------------------------------------------------------------
@@ -440,7 +442,7 @@ public:
     //--------------------------------------------------------------------------
     void normalize()
     {
-        T const l = compages::maths::one<T>() / norm();
+        T const l = one<T>() / norm();
         x *= l;
         y *= l;
         z *= l;
@@ -538,60 +540,60 @@ public:
 //------------------------------------------------------------------------------
 
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::DUMMY(compages::maths::nan<T>());
+const Vector<T, 3u> Vector<T, 3u>::DUMMY(nan<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::ZERO(compages::maths::zero<T>());
+const Vector<T, 3u> Vector<T, 3u>::ZERO(zero<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::ONE(compages::maths::one<T>());
+const Vector<T, 3u> Vector<T, 3u>::ONE(one<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::POSITIVE_INFINITY(compages::maths::max<T>());
+const Vector<T, 3u> Vector<T, 3u>::POSITIVE_INFINITY(max<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_INFINITY(-compages::maths::max<T>());
+const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_INFINITY(-max<T>());
 
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::UNIT_SCALE(compages::maths::one<T>());
+const Vector<T, 3u> Vector<T, 3u>::UNIT_SCALE(one<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_SCALE(-compages::maths::one<T>());
-template <typename T>
-const Vector<T, 3u>
-    Vector<T, 3u>::UNIT_X(compages::maths::one<T>(), compages::maths::zero<T>(), compages::maths::zero<T>());
+const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_SCALE(-one<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::UNIT_Y(compages::maths::zero<T>(), compages::maths::one<T>(), compages::maths::zero<T>());
+    Vector<T, 3u>::UNIT_X(one<T>(), zero<T>(), zero<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::UNIT_Z(compages::maths::zero<T>(), compages::maths::zero<T>(), compages::maths::one<T>());
+    Vector<T, 3u>::UNIT_Y(zero<T>(), one<T>(), zero<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_X(-compages::maths::one<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 3u>
+    Vector<T, 3u>::UNIT_Z(zero<T>(), zero<T>(), one<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_Y(compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_X(-one<T>(),
+                                                   zero<T>(),
+                                                   zero<T>());
 template <typename T>
-const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_Z(compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>());
+const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_Y(zero<T>(),
+                                                   -one<T>(),
+                                                   zero<T>());
+template <typename T>
+const Vector<T, 3u> Vector<T, 3u>::NEGATIVE_UNIT_Z(zero<T>(),
+                                                   zero<T>(),
+                                                   -one<T>());
 
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::LEFT(-compages::maths::one<T>(), compages::maths::zero<T>(), compages::maths::zero<T>());
+    Vector<T, 3u>::LEFT(-one<T>(), zero<T>(), zero<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::RIGHT(compages::maths::one<T>(), compages::maths::zero<T>(), compages::maths::zero<T>());
+    Vector<T, 3u>::RIGHT(one<T>(), zero<T>(), zero<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::BACK(compages::maths::zero<T>(), compages::maths::zero<T>(), -compages::maths::one<T>());
+    Vector<T, 3u>::BACK(zero<T>(), zero<T>(), -one<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::FORWARD(compages::maths::zero<T>(), compages::maths::zero<T>(), compages::maths::one<T>());
+    Vector<T, 3u>::FORWARD(zero<T>(), zero<T>(), one<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::DOWN(compages::maths::zero<T>(), -compages::maths::one<T>(), compages::maths::zero<T>());
+    Vector<T, 3u>::DOWN(zero<T>(), -one<T>(), zero<T>());
 template <typename T>
 const Vector<T, 3u>
-    Vector<T, 3u>::UP(compages::maths::zero<T>(), compages::maths::one<T>(), compages::maths::zero<T>());
+    Vector<T, 3u>::UP(zero<T>(), one<T>(), zero<T>());
 
 // *****************************************************************************
 //! \brief Specialization for vector of dimension 4
@@ -609,7 +611,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Constructor.
     //--------------------------------------------------------------------------
-    Vector(Vector<T, 3u> const& v, const T scalar_w = compages::maths::zero<T>())
+    Vector(Vector<T, 3u> const& v, const T scalar_w = zero<T>())
     {
         x = v.x;
         y = v.y;
@@ -621,11 +623,11 @@ public:
     //! \brief Constructor.
     //! \note z is zero-filled: the incoming vector only supplies x and y.
     //--------------------------------------------------------------------------
-    Vector(Vector<T, 2u> const& v, const T scalar_w = compages::maths::zero<T>())
+    Vector(Vector<T, 2u> const& v, const T scalar_w = zero<T>())
     {
         x = v.x;
         y = v.y;
-        z = compages::maths::zero<T>();
+        z = zero<T>();
         w = scalar_w;
     }
 
@@ -648,7 +650,7 @@ public:
     //--------------------------------------------------------------------------
     inline T norm() const
     {
-        return compages::maths::sqrt(x * x + y * y + z * z + w * w);
+        return sqrt(x * x + y * y + z * z + w * w);
     }
 
     //--------------------------------------------------------------------------
@@ -657,7 +659,7 @@ public:
     //--------------------------------------------------------------------------
     void normalize()
     {
-        T const l = compages::maths::one<T>() / norm();
+        T const l = one<T>() / norm();
         x *= l;
         y *= l;
         z *= l;
@@ -731,53 +733,53 @@ public:
 //------------------------------------------------------------------------------
 
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::DUMMY(compages::maths::nan<T>());
+const Vector<T, 4u> Vector<T, 4u>::DUMMY(nan<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::ZERO(compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::ZERO(zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::UNIT_SCALE(compages::maths::one<T>());
+const Vector<T, 4u> Vector<T, 4u>::UNIT_SCALE(one<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_SCALE(-compages::maths::one<T>());
+const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_SCALE(-one<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::UNIT_X(compages::maths::one<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::UNIT_X(one<T>(),
+                                          zero<T>(),
+                                          zero<T>(),
+                                          zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::UNIT_Y(compages::maths::zero<T>(),
-                                          compages::maths::one<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::UNIT_Y(zero<T>(),
+                                          one<T>(),
+                                          zero<T>(),
+                                          zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::UNIT_Z(compages::maths::zero<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::one<T>(),
-                                          compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::UNIT_Z(zero<T>(),
+                                          zero<T>(),
+                                          one<T>(),
+                                          zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::UNIT_W(compages::maths::zero<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::zero<T>(),
-                                          compages::maths::one<T>());
+const Vector<T, 4u> Vector<T, 4u>::UNIT_W(zero<T>(),
+                                          zero<T>(),
+                                          zero<T>(),
+                                          one<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_X(-compages::maths::one<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_X(-one<T>(),
+                                                   zero<T>(),
+                                                   zero<T>(),
+                                                   zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_Y(compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_Y(zero<T>(),
+                                                   -one<T>(),
+                                                   zero<T>(),
+                                                   zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_Z(compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>(),
-                                                   compages::maths::zero<T>());
+const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_Z(zero<T>(),
+                                                   zero<T>(),
+                                                   -one<T>(),
+                                                   zero<T>());
 template <typename T>
-const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_W(compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   compages::maths::zero<T>(),
-                                                   -compages::maths::one<T>());
+const Vector<T, 4u> Vector<T, 4u>::NEGATIVE_UNIT_W(zero<T>(),
+                                                   zero<T>(),
+                                                   zero<T>(),
+                                                   -one<T>());
 
 // *****************************************************************************
 // Typedefs for the most common types and dimensions
@@ -1057,7 +1059,7 @@ std::ostream& operator<<(std::ostream& os, Vector<T, 4u> const& v)
               << ']';
 }
 
-namespace compages::vector
+namespace vector
 {
 
 // *************************************************************************
@@ -1098,7 +1100,7 @@ compare(Vector<T, n> const& a, Vector<T, n> const& b)
 
     while (i--)
     {
-        result.m_data[i] = compages::maths::almostEqual(a.m_data[i], b.m_data[i]);
+        result.m_data[i] = almostEqual(a.m_data[i], b.m_data[i]);
     }
 
     return result;
@@ -1106,7 +1108,7 @@ compare(Vector<T, n> const& a, Vector<T, n> const& b)
 
 DEFINE_FUN2_OPERATOR(min, std::min)
 DEFINE_FUN2_OPERATOR(max, std::max)
-DEFINE_FUN1_OPERATOR(abs, compages::maths::abs)
+DEFINE_FUN1_OPERATOR(abs, ::compages::core::abs)
 DEFINE_BOOL_OPERATOR(ge, >=)
 DEFINE_BOOL_OPERATOR(gt, >)
 DEFINE_BOOL_OPERATOR(le, <=)
@@ -1134,7 +1136,7 @@ Vector<T, n> lerp(Vector<T, n> const& a, Vector<T, n> const& b, float t)
     size_t i = n;
     while (i--)
     {
-        r[i] = compages::maths::lerp(a[i], b[i], t);
+        r[i] = ::compages::core::lerp(a[i], b[i], t);
     }
 
     return r;
@@ -1156,13 +1158,13 @@ template <typename T, size_t n>
 T collinearity(Vector<T, n> const& u, Vector<T, n> const& v)
 {
     // Null vector ?
-    if (compages::maths::almostZero(u[0]) || compages::maths::almostZero(v[0]))
-        return compages::maths::zero<T>();
+    if (almostZero(u[0]) || almostZero(v[0]))
+        return zero<T>();
 
     const T k = u[0] / v[0];
     for (size_t i = 1u; i < n; ++i)
     {
-        if (!compages::maths::almostEqual(k * v[i], u[i]))
+        if (!almostEqual(k * v[i], u[i]))
             return T(NAN);
     }
     return k;
@@ -1189,7 +1191,7 @@ template <typename T, size_t n>
 bool areEquivalent(Vector<T, n> const& u, Vector<T, n> const& v)
 {
     T k = collinearity(u, v);
-    return compages::maths::almostEqual(k, compages::maths::one<T>());
+    return almostEqual(k, one<T>());
 }
 
 // *************************************************************************
@@ -1214,7 +1216,7 @@ Vector<T, n> clamp(Vector<T, n> const& a, T const lower, T const upper)
     size_t i = n;
 
     while (i--)
-        result[i] = compages::maths::clamp(a[i], lower, upper);
+        result[i] = ::compages::core::clamp(a[i], lower, upper);
     return result;
 }
 
@@ -1281,7 +1283,7 @@ Vector<T, 3u> cross(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
 template <typename T, size_t n>
 T dot(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    T result = compages::maths::zero<T>();
+    T result = zero<T>();
     size_t i = n;
 
     while (i--)
@@ -1338,7 +1340,7 @@ T squaredNorm(Vector<T, n> const& a)
 template <typename T, size_t n>
 T magnitude(Vector<T, n> const& a)
 {
-    return T(compages::maths::sqrt(dot(a, a)));
+    return T(sqrt(dot(a, a)));
 }
 
 // *************************************************************************
@@ -1366,7 +1368,7 @@ T squaredDistance(Vector<T, n> const& a, Vector<T, n> const& b)
 template <typename T, size_t n>
 T distance(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    return compages::maths::sqrt(squaredDistance(a, b));
+    return sqrt(squaredDistance(a, b));
 }
 
 // *************************************************************************
@@ -1422,10 +1424,10 @@ Vector<T, 3u> orthogonal(Vector<T, 3u> const& a)
 {
     // Implementation due to Sam Hocevar - see blog post:
     // http://lolengine.net/blog/2013/09/21/picking-orthogonal-Vector-combing-coconuts
-    if (compages::maths::abs(a.x) > compages::maths::abs(a.z))
-        return { -a.y, a.x, compages::maths::zero<T>() };
+    if (abs(a.x) > abs(a.z))
+        return { -a.y, a.x, zero<T>() };
     else
-        return { compages::maths::zero<T>(), -a.z, a.y };
+        return { zero<T>(), -a.z, a.y };
 }
 
 // *************************************************************************
@@ -1435,14 +1437,14 @@ template <typename T, size_t n>
     requires std::is_floating_point_v<T>
 bool areOrthogonal(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    return compages::maths::almostZero(dot(a, b));
+    return almostZero(dot(a, b));
 }
 
 template <typename T, size_t n>
     requires std::is_integral_v<T>
 bool areOrthogonal(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    return compages::maths::zero<T>() == T(dot(a, b));
+    return zero<T>() == T(dot(a, b));
 }
 
 // *************************************************************************
@@ -1456,13 +1458,13 @@ units::angle::radian_t angleBetween(Vector<T, n> const& org,
                                     Vector<T, n> const& dest)
 {
     T const lenProduct = norm(org) * norm(dest);
-    if (lenProduct == compages::maths::zero<T>())
+    if (lenProduct == zero<T>())
     {
-        return units::angle::radian_t(compages::maths::zero<T>());
+        return units::angle::radian_t(zero<T>());
     }
 
     T f = dot(org, dest) / lenProduct;
-    f = std::min(std::max(f, -compages::maths::one<T>()), compages::maths::one<T>());
+    f = std::min(std::max(f, -one<T>()), one<T>());
     return units::angle::radian_t(std::acos(f));
 }
 
@@ -1481,7 +1483,7 @@ Vector<T, n> reflect(Vector<T, n> const& v, Vector<T, n> const& normal)
 template <typename T, size_t n>
 T sum(Vector<T, n> const& v)
 {
-    T res = compages::maths::zero<T>();
+    T res = zero<T>();
     size_t i = n;
     while (i--)
     {
@@ -1533,7 +1535,7 @@ T mean(Vector<T, 4u> const& v)
 template <typename T, size_t n>
 T rms(Vector<T, n> const& v)
 {
-    return norm(v) / compages::maths::sqrt(v.size());
+    return norm(v) / sqrt(v.size());
 }
 
 // *************************************************************************
@@ -1542,10 +1544,10 @@ T rms(Vector<T, n> const& v)
 template <typename T, size_t n>
 T std(Vector<T, n> const& v)
 {
-    return norm(v - compages::vector::mean(v)) / compages::maths::sqrt(v.size());
+    return norm(v - vector::mean(v)) / sqrt(v.size());
 }
 
-} // namespace compages::vector
+} // namespace vector
 
 // *****************************************************************************
 //! \brief Scalar product (aka dot product).
@@ -1553,7 +1555,7 @@ T std(Vector<T, n> const& v)
 template <typename T, size_t n>
 T operator*(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    return compages::vector::dot(a, b);
+    return vector::dot(a, b);
 }
 
 // *****************************************************************************
@@ -1562,7 +1564,7 @@ T operator*(Vector<T, n> const& a, Vector<T, n> const& b)
 template <typename T>
 Vector<T, 3u> operator%(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
 {
-    return compages::vector::cross<T>(a, b);
+    return vector::cross<T>(a, b);
 }
 
 // *****************************************************************************
@@ -1571,7 +1573,7 @@ Vector<T, 3u> operator%(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
 template <typename T>
 T operator%(Vector<T, 2u> const& a, Vector<T, 2u> const& b)
 {
-    return compages::vector::cross<T>(a, b);
+    return vector::cross<T>(a, b);
 }
 
 #undef DEFINE_UNARY_OPERATOR
@@ -1581,4 +1583,6 @@ T operator%(Vector<T, 2u> const& a, Vector<T, 2u> const& b)
 #undef DEFINE_FUN1_OPERATOR
 #undef DEFINE_FUN2_OPERATOR
 #undef DEFINE_BOOL_OPERATOR
+
+} // namespace compages::core
 

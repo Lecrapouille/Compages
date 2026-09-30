@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include "Compages/World/Entity.hpp"
 #include "Common/Example.hpp"
+#include "Compages/World/Entity.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>
 
@@ -42,7 +42,7 @@ namespace examples
 //! robot.value().lookup("base_link/link_1").angle(30.0_deg);
 //! \endcode
 // ****************************************************************************
-class RobotArm final : public Example
+class RobotArm final: public Example
 {
 public:
 
@@ -52,8 +52,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
 
 private:

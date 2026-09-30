@@ -20,17 +20,19 @@
 
 #pragma once
 
-#include "Compages/GPU/Buffer.hpp"
-#include "Compages/Core/Result.hpp"
-#include "Compages/GPU/Pipeline.hpp"
-#include "Compages/GPU/Shader.hpp"
 #include "Compages/Core/AABB.hpp"
 #include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Result.hpp"
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Buffer.hpp"
+#include "Compages/GPU/Pipeline.hpp"
+#include "Compages/GPU/Shader.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 
 #include <vector>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
 
@@ -44,31 +46,34 @@ class DebugDraw
 {
 public:
 
-    [[nodiscard]] compages::Status ensureInitialized();
+    [[nodiscard]] Status ensureInitialized();
 
     void clear();
 
-    void line(Vector3f const& p_a,
-              Vector3f const& p_b,
-              Vector3f const& p_color = Vector3f(1.0f, 0.2f, 0.2f));
+    void line(compages::core::Vector3f const& p_a,
+              compages::core::Vector3f const& p_b,
+              compages::core::Vector3f const& p_color =
+                  compages::core::Vector3f(1.0f, 0.2f, 0.2f));
 
-    void box(AABB const& p_local_bounds,
-             Matrix44f const& p_world_matrix,
-             Vector3f const& p_color = Vector3f(0.2f, 1.0f, 0.4f));
+    void box(compages::core::AABB const& p_local_bounds,
+             compages::core::Matrix44f const& p_world_matrix,
+             compages::core::Vector3f const& p_color =
+                 compages::core::Vector3f(0.2f, 1.0f, 0.4f));
 
-    void ray(Vector3f const& p_origin,
-             Vector3f const& p_direction,
+    void ray(compages::core::Vector3f const& p_origin,
+             compages::core::Vector3f const& p_direction,
              float p_length,
-             Vector3f const& p_color = Vector3f(1.0f, 1.0f, 0.2f));
+             compages::core::Vector3f const& p_color =
+                 compages::core::Vector3f(1.0f, 1.0f, 0.2f));
 
-    [[nodiscard]] compages::Status flush(CameraFrame const& p_camera);
+    [[nodiscard]] Status flush(CameraFrame const& p_camera);
 
 private:
 
     struct DebugVertex
     {
-        Vector3f position;
-        Vector3f color;
+        compages::core::Vector3f position;
+        compages::core::Vector3f color;
     };
 
     bool m_ready = false;

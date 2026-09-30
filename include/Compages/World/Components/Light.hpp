@@ -22,8 +22,12 @@
 
 #include "Compages/Core/Vector.hpp"
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief A light that does not fall off with distance.
@@ -38,7 +42,7 @@ namespace compages::world
 // ****************************************************************************
 struct DirectionalLight
 {
-    Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
 };
 
@@ -56,7 +60,7 @@ struct DirectionalLight
 // ****************************************************************************
 struct PointLight
 {
-    Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
     //! \brief Distance at which the light has faded out: a fifth of it at
     //! half this distance, nothing beyond.

@@ -37,13 +37,15 @@ static std::string glfwReason()
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status Window::open(std::string const& p_title, int p_width, int p_height)
+compages::Status
+Window::open(std::string const& p_title, int p_width, int p_height)
 {
     if (glfwInit() == GLFW_FALSE)
     {
-        return compages::gpu::failure("no window can be opened: " + glfwReason() +
-                            ". On a machine without a display, try running "
-                            "under Xvfb");
+        return compages::failure(
+            "no window can be opened: " + glfwReason() +
+            ". On a machine without a display, try running "
+            "under Xvfb");
     }
     m_glfw_ready = true;
 
@@ -59,29 +61,31 @@ compages::gpu::Status Window::open(std::string const& p_title, int p_width, int 
         glfwCreateWindow(p_width, p_height, p_title.c_str(), nullptr, nullptr);
     if (m_window == nullptr)
     {
-        return compages::gpu::failure(
+        return compages::failure(
             "no OpenGL 4.5 core profile context is available: " + glfwReason() +
-            ". This backend needs 4.5 for Direct State Access; macOS never went "
+            ". This backend needs 4.5 for Direct State Access; macOS never "
+            "went "
             "past 4.1");
     }
 
     glfwMakeContextCurrent(m_window);
     glfwSetWindowUserPointer(m_window, this);
     glfwSetScrollCallback(m_window, &Window::onScroll);
-    // One frame per refresh of the screen. Without it the loop runs as fast as it
-    // can, which heats the machine and makes the frame rate meaningless.
+    // One frame per refresh of the screen. Without it the loop runs as fast as
+    // it can, which heats the machine and makes the frame rate meaningless.
     glfwSwapInterval(1);
 
     // The library gets a loader, never a window. This one line is the whole of
     // what ties src/GPU to a windowing library, and it is on this side of the
     // boundary.
-    COMPAGES_TRY(compages::gpu::init(reinterpret_cast<compages::gpu::LoadProc>(glfwGetProcAddress)));
+    COMPAGES_TRY(compages::gpu::init(
+        reinterpret_cast<compages::gpu::LoadProc>(glfwGetProcAddress)));
     m_device_ready = true;
 
     m_last_time = glfwGetTime();
     m_second_started = m_last_time;
 
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
@@ -141,22 +145,22 @@ void Window::beginFrame()
     const double since = now - m_second_started;
     if (since >= 1.0)
     {
-        m_frames_per_second =
-            static_cast<float>(static_cast<double>(m_frames_this_second) / since);
+        m_frames_per_second = static_cast<float>(
+            static_cast<double>(m_frames_this_second) / since);
         m_frames_this_second = 0;
         m_second_started = now;
     }
 
     compages::gpu::resetFrameStatistics();
 
-    const Vector2f now_mouse = mouse();
+    const compages::core::Vector2f now_mouse = mouse();
     if (m_mouse_seen)
     {
         m_mouse_delta = now_mouse - m_mouse;
     }
     else
     {
-        m_mouse_delta = Vector2f(0.0f, 0.0f);
+        m_mouse_delta = compages::core::Vector2f(0.0f, 0.0f);
         m_mouse_seen = true;
     }
     m_mouse = now_mouse;
@@ -176,21 +180,22 @@ void Window::endFrame()
 }
 
 //------------------------------------------------------------------------------
-Vector2f Window::mouse() const
+compages::core::Vector2f Window::mouse() const
 {
     if (m_window == nullptr)
     {
-        return Vector2f(0.0f, 0.0f);
+        return compages::core::Vector2f(0.0f, 0.0f);
     }
     double x = 0.0;
     double y = 0.0;
     glfwGetCursorPos(m_window, &x, &y);
 
-    // GLFW counts from the top of the window and the graphics API from the bottom,
-    // so the one place the two disagree is turned over here rather than in every
-    // example.
-    return Vector2f(static_cast<float>(x),
-                    static_cast<float>(m_height) - static_cast<float>(y));
+    // GLFW counts from the top of the window and the graphics API from the
+    // bottom, so the one place the two disagree is turned over here rather than
+    // in every example.
+    return compages::core::Vector2f(static_cast<float>(x),
+                                    static_cast<float>(m_height) -
+                                        static_cast<float>(y));
 }
 
 //------------------------------------------------------------------------------
@@ -208,7 +213,8 @@ void Window::captureMouse(bool p_captured)
         return;
     }
     m_mouse_captured = p_captured;
-    glfwSetInputMode(m_window, GLFW_CURSOR,
+    glfwSetInputMode(m_window,
+                     GLFW_CURSOR,
                      p_captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     if (p_captured)
     {
@@ -216,7 +222,9 @@ void Window::captureMouse(bool p_captured)
     }
     if (glfwRawMouseMotionSupported() == GLFW_TRUE)
     {
-        glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, p_captured ? GLFW_TRUE : GLFW_FALSE);
+        glfwSetInputMode(m_window,
+                         GLFW_RAW_MOUSE_MOTION,
+                         p_captured ? GLFW_TRUE : GLFW_FALSE);
     }
     // The pointer jumps when it is hidden or shown: that is not a motion.
     m_mouse_seen = false;

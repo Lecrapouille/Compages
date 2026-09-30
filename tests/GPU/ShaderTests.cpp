@@ -22,6 +22,9 @@
 
 #include "Compages/GPU/GPU.hpp"
 
+
+
+
 using namespace tests;
 
 namespace
@@ -470,11 +473,11 @@ TEST_F(ShaderTest, SetsAUniform)
 {
     auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
 
-    const Matrix44f model(compages::matrix::Identity);
+    const compages::core::Matrix44f model(compages::core::matrix::Identity);
     auto written = compages::gpu::attempt([&] { program.set("uModel", model); });
     ASSERT_TRUE(bool(written)) << written.error();
 
-    ASSERT_TRUE(bool(compages::gpu::attempt([&] { program.set("uTint", Vector4f(1.0f, 0.5f, 0.0f, 1.0f)); })));
+    ASSERT_TRUE(bool(compages::gpu::attempt([&] { program.set("uTint", compages::core::Vector4f(1.0f, 0.5f, 0.0f, 1.0f)); })));
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { program.set("uGamma", 2.2f); })));
     // A sampler is set by giving it the number of a texture unit.
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { program.set("uTexture", 0); })));
@@ -505,7 +508,7 @@ TEST_F(ShaderTest, RefusesAUniformSetWithTheWrongType)
 {
     auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
 
-    auto written = compages::gpu::attempt([&] { program.set("uModel", Vector4f(0.0f, 0.0f, 0.0f, 1.0f)); });
+    auto written = compages::gpu::attempt([&] { program.set("uModel", compages::core::Vector4f(0.0f, 0.0f, 0.0f, 1.0f)); });
     ASSERT_FALSE(bool(written));
     ASSERT_THAT(written.error(), HasSubstr("declares 'uModel' as mat4"));
     ASSERT_THAT(written.error(), HasSubstr("set as vec4"));
@@ -526,7 +529,7 @@ void main() { oColor = vec4(1.0); }
 
     ASSERT_EQ(program.reflection().uniform("uNeverRead"), nullptr);
 
-    auto written = compages::gpu::attempt([&] { program.set("uNeverRead", Vector4f(1.0f, 1.0f, 1.0f, 1.0f)); });
+    auto written = compages::gpu::attempt([&] { program.set("uNeverRead", compages::core::Vector4f(1.0f, 1.0f, 1.0f, 1.0f)); });
     ASSERT_FALSE(bool(written));
     ASSERT_THAT(written.error(), HasSubstr("never reads it"));
 }

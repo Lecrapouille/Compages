@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>
 
@@ -37,10 +37,11 @@ namespace examples
 //! many shapes wear it, and a colour given with it tints it:
 //! \code
 //! m_scene.sphere("Red", compages::renderer::color(0.85f, 0.25f, 0.2f));
-//! m_scene.sphere("Grass", compages::renderer::texture(dataPath("grassFlowers.png")));
+//! m_scene.sphere("Grass",
+//! compages::renderer::texture(dataPath("grassFlowers.png")));
 //! \endcode
 // ****************************************************************************
-class TexturedSpheres final : public Example
+class TexturedSpheres final: public Example
 {
 public:
 
@@ -50,8 +51,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>
 
@@ -37,11 +37,12 @@ namespace examples
 //! the example still runs with only part of the data checked out:
 //! \code
 //! const std::string path = dataPath("rocks.png");
-//! m_scene.box("rocks", path.empty() ? compages::renderer::color(0.55f, 0.52f, 0.48f)
+//! m_scene.box("rocks", path.empty() ? compages::renderer::color(0.55f, 0.52f,
+//! 0.48f)
 //!                                   : compages::renderer::texture(path));
 //! \endcode
 // ****************************************************************************
-class TextureGallery final : public Example
+class TextureGallery final: public Example
 {
 public:
 
@@ -51,8 +52,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

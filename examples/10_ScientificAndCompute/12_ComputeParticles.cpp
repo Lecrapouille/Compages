@@ -110,7 +110,7 @@ std::string ComputeParticles::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status ComputeParticles::setUp()
+compages::Status ComputeParticles::setUp()
 {
     // Positions, speeds and colours decided once. The compute shader only
     // moves them afterwards.
@@ -122,15 +122,18 @@ compages::gpu::Status ComputeParticles::setUp()
     for (Particle& p : seed)
     {
         const float t = hue(rng);
-        p.position = Vector2f(place(rng), place(rng));
-        p.velocity = Vector2f(speed(rng), speed(rng));
-        p.color = Vector4f(0.4f + (0.6f * t), 0.5f + (0.4f * (1.0f - t)), 0.9f, 0.9f);
+        p.position = compages::core::Vector2f(place(rng), place(rng));
+        p.velocity = compages::core::Vector2f(speed(rng), speed(rng));
+        p.color = compages::core::Vector4f(
+            0.4f + (0.6f * t), 0.5f + (0.4f * (1.0f - t)), 0.9f, 0.9f);
     }
 
     // Storage: a compute shader may write it, a draw may read it.
-    COMPAGES_TRY_ASSIGN(m_particles, compages::gpu::Buffer<Particle>::from(
-                                         seed, compages::gpu::BufferKind::Storage,
-                                         compages::gpu::BufferUsage::Storage));
+    COMPAGES_TRY_ASSIGN(m_particles,
+                        compages::gpu::Buffer<Particle>::from(
+                            seed,
+                            compages::gpu::BufferKind::Storage,
+                            compages::gpu::BufferUsage::Storage));
 
     COMPAGES_TRY(m_step.load(STEP));
     COMPAGES_TRY(m_step.bind("Particles", m_particles));
@@ -138,12 +141,13 @@ compages::gpu::Status ComputeParticles::setUp()
 
     COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
     m_points.vertices(m_particles);
-    m_points.primitive(compages::gpu::Primitive::Points).blend(compages::gpu::Blend::additive());
+    m_points.primitive(compages::gpu::Primitive::Points)
+        .blend(compages::gpu::Blend::additive());
     return m_points.prepare();
 }
 
 //------------------------------------------------------------------------------
-void ComputeParticles::draw(Frame const& p_frame)
+void ComputeParticles::draw(compages::world::ViewFrame const& p_frame)
 {
     // Move them, then wait until those writes are visible as vertices.
     m_step.set("dt", p_frame.elapsed);

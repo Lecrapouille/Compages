@@ -32,7 +32,7 @@ std::string Dummy::description() const
 }
 
 //------------------------------------------------------------------------------
-void Dummy::draw(Frame const&)
+void Dummy::draw(compages::world::ViewFrame const&)
 {
     // The window is already a pass: the gallery opened it before calling draw.
     compages::gpu::clear({ 0.035f, 0.04f, 0.05f });

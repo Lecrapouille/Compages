@@ -20,11 +20,11 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/FieldReflection.hpp"
-#include "Compages/GPU/Core/Preprocessor.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Core/FieldReflection.hpp"
+#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Core/Preprocessor.hpp"
 
 #include <cstdint>
 #include <string>
@@ -42,21 +42,23 @@
 //! attribute tightly packed. Three consequences followed, none of them wanted.
 //!
 //! Interleaving was impossible. Position, normal and texture coordinates of one
-//! vertex sat in three different buffers, so drawing read three streams that were
-//! far apart in memory, when they are always used together.
+//! vertex sat in three different buffers, so drawing read three streams that
+//! were far apart in memory, when they are always used together.
 //!
 //! The layout could not be described without a shader in hand, so the same
-//! geometry could not be handed to a second shader expecting the same vertices in
-//! a different order, and a mesh could not exist before a program did.
+//! geometry could not be handed to a second shader expecting the same vertices
+//! in a different order, and a mesh could not exist before a program did.
 //!
 //! And a mismatch between what the geometry held and what the shader wanted was
 //! not detected: whichever the shader asked for, it got.
 //!
 //! Here the C++ struct is the truth. A vertex is a plain struct, its fields are
-//! described once, and a pipeline checks that description against what the shader
-//! actually declares, naming both sides when they disagree.
+//! described once, and a pipeline checks that description against what the
+//! shader actually declares, naming both sides when they disagree.
 // ****************************************************************************
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -179,8 +181,8 @@ struct AttributeFormat
     //! and still arrives in the shader as a vec4.
     bool normalized = false;
 
-    //! \brief Does the shader see whole numbers rather than floating point? True
-    //! for an ivec or a uvec attribute.
+    //! \brief Does the shader see whole numbers rather than floating point?
+    //! True for an ivec or a uvec attribute.
     bool as_integer = false;
 
     // ------------------------------------------------------------------------
@@ -247,56 +249,68 @@ struct FormatOf<double>
 template <>
 struct FormatOf<std::int8_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::Int8, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::Int8,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 template <>
 struct FormatOf<std::uint8_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::UInt8, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::UInt8,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 template <>
 struct FormatOf<std::int16_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::Int16, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::Int16,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 template <>
 struct FormatOf<std::uint16_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::UInt16, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::UInt16,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 template <>
 struct FormatOf<std::int32_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::Int32, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::Int32,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 template <>
 struct FormatOf<std::uint32_t>
 {
-    static constexpr AttributeFormat value{
-        ScalarType::UInt32, 1u, 1u, false, true
-    };
+    static constexpr AttributeFormat value{ ScalarType::UInt32,
+                                            1u,
+                                            1u,
+                                            false,
+                                            true };
 };
 
 //! \brief A vector of anything the library already knows becomes that same kind
-//! of number, repeated. This is what makes Vector3f work without a
-//! specialization of its own.
+//! of number, repeated. This is what makes compages::core::Vector3f work
+//! without a specialization of its own.
 template <typename T, std::size_t N>
-struct FormatOf<Vector<T, N>>
+struct FormatOf<compages::core::Vector<T, N>>
 {
     static_assert((N >= 1u) && (N <= 4u),
                   "a vertex field holds at most 4 components");
@@ -310,18 +324,16 @@ struct FormatOf<Vector<T, N>>
 //! \brief A matrix field, which the hardware reads one slot at a time.
 //!
 //! Worth having for exactly one reason: a per instance transform. Giving each
-//! instance its own model matrix as a field read once per object is what turns a
-//! thousand draw calls into one, and it is how 15_SpriteBatch works.
+//! instance its own model matrix as a field read once per object is what turns
+//! a thousand draw calls into one, and it is how 15_SpriteBatch works.
 //!
-//! On the order of the numbers. The Matrix of src/Math holds its elements row by
-//! row, and the hardware reads one slot as one column of the shader's matrix, so
-//! the shader sees the transpose of what C++ holds. That is not an oversight and
-//! it is not corrected here: the transformation functions of src/Math already
-//! build their matrices that way round, which is the same arrangement the uniform
-//! path relies on. Reversing it here would make a matrix passed as an attribute
-//! disagree with the same matrix passed as a uniform.
+//! On the order of the numbers. C++ stores row-major Scilab matrices; each
+//! vertex attribute slot is one row (\c Matrix[i]), which matches how
+//! \c glVertexAttribPointer feeds the columns of the GLSL \c mat4 when four
+//! consecutive vec4 attributes are used (same boundary as \c GL_TRUE on
+//! uniform uploads).
 template <typename T, std::size_t Rows, std::size_t Cols>
-struct FormatOf<Matrix<T, Rows, Cols>>
+struct FormatOf<compages::core::Matrix<T, Rows, Cols>>
 {
     static_assert((Rows >= 2u) && (Rows <= 4u) && (Cols >= 2u) && (Cols <= 4u),
                   "a matrix vertex field is between 2x2 and 4x4: the hardware "
@@ -440,8 +452,8 @@ namespace detail
 //! members, obtained from a pointer to that member.
 //!
 //! Measured on a real object rather than computed, because C++20 offers no way
-//! to turn a pointer to member into an offset at compile time. Layouts are built
-//! once when a program starts, so measuring costs nothing worth counting.
+//! to turn a pointer to member into an offset at compile time. Layouts are
+//! built once when a program starts, so measuring costs nothing worth counting.
 //!
 //! \note The library never guesses an offset. Whatever padding the compiler
 //! inserted, this reports where the member truly is, which is what the GPU has
@@ -450,10 +462,11 @@ namespace detail
 template <typename Class, typename Member>
 [[nodiscard]] std::uint32_t offsetOf(Member Class::* p_member)
 {
-    static_assert(std::is_standard_layout_v<Class>,
-                  "a vertex struct must be standard layout, otherwise where its "
-                  "members sit is not something the GPU can be told. Avoid "
-                  "virtual methods and mixed access levels");
+    static_assert(
+        std::is_standard_layout_v<Class>,
+        "a vertex struct must be standard layout, otherwise where its "
+        "members sit is not something the GPU can be told. Avoid "
+        "virtual methods and mixed access levels");
     static_assert(std::is_default_constructible_v<Class>,
                   "a vertex struct must be default constructible so that its "
                   "field offsets can be measured");
@@ -474,10 +487,10 @@ template <typename Class, typename Member>
 //! compages::gpu::field(&Vertex::color, "aColor").normalized()
 //! \endcode
 //!
-//! The pointer to member is what makes this safe: the field must exist, its type
-//! decides the format, and its offset is measured rather than written down. A
-//! field renamed in the struct stops compiling instead of silently reading the
-//! wrong bytes.
+//! The pointer to member is what makes this safe: the field must exist, its
+//! type decides the format, and its offset is measured rather than written
+//! down. A field renamed in the struct stops compiling instead of silently
+//! reading the wrong bytes.
 //!
 //! \param[in] p_member which member of the struct.
 //! \param[in] p_name the name the shader declares for it.
@@ -496,10 +509,11 @@ template <typename Class, typename Member>
 //! \code
 //! struct Vertex
 //! {
-//!     Vector3f position;   // feeds "in vec3 position;"
-//!     Vector2f uv;         // feeds "in vec2 uv;"
+//!     compages::core::Vector3f position;   // feeds "in vec3 position;"
+//!     compages::core::Vector2f uv;         // feeds "in vec2 uv;"
 //! };
-//! const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Vertex>();
+//! const compages::gpu::VertexLayout layout =
+//! compages::gpu::VertexLayout::of<Vertex>();
 //! \endcode
 //!
 //! The name of a field is the name of the shader attribute it feeds. When the
@@ -550,14 +564,16 @@ public:
         std::vector<FieldDesc> fields;
         fields.reserve(reflect::fieldCount<Vertex>());
         const Vertex probe{};
-        reflect::forEachField<Vertex>([&](auto p_index) {
-            constexpr std::size_t I = decltype(p_index)::value;
-            fields.emplace_back(FieldDesc{
-                std::string(reflect::fieldName<Vertex, I>()),
-                formatOf<reflect::FieldType<Vertex, I>>(),
-                static_cast<std::uint32_t>(reflect::fieldOffset<I>(probe)),
-                false });
-        });
+        reflect::forEachField<Vertex>(
+            [&](auto p_index)
+            {
+                constexpr std::size_t I = decltype(p_index)::value;
+                fields.emplace_back(FieldDesc{
+                    std::string(reflect::fieldName<Vertex, I>()),
+                    formatOf<reflect::FieldType<Vertex, I>>(),
+                    static_cast<std::uint32_t>(reflect::fieldOffset<I>(probe)),
+                    false });
+            });
         return VertexLayout(std::move(fields),
                             static_cast<std::uint32_t>(sizeof(Vertex)));
     }
@@ -618,8 +634,8 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Distance in bytes from one vertex to the next, that is the size of
-    //! the C++ struct including whatever padding the compiler added.
+    //! \brief Distance in bytes from one vertex to the next, that is the size
+    //! of the C++ struct including whatever padding the compiler added.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uint32_t stride() const
     {
@@ -690,20 +706,21 @@ private:
 //! \code
 //! struct Vertex
 //! {
-//!     Vector3f position;
-//!     Vector3f normal;
-//!     Vector2f uv;
+//!     compages::core::Vector3f position;
+//!     compages::core::Vector3f normal;
+//!     compages::core::Vector2f uv;
 //! };
 //!
-//! static const compages::gpu::VertexLayout LAYOUT = compages::gpu::describe<Vertex>(
+//! static const compages::gpu::VertexLayout LAYOUT =
+//! compages::gpu::describe<Vertex>(
 //!     compages::gpu::field(&Vertex::position, "aPosition"),
 //!     compages::gpu::field(&Vertex::normal, "aNormal"),
 //!     compages::gpu::field(&Vertex::uv, "aUV"));
 //! \endcode
 //!
-//! The stride comes from sizeof(Vertex), so the vertices can be interleaved in a
-//! single buffer exactly as the struct lays them out, which is what the GPU reads
-//! fastest and what the previous design could not express at all.
+//! The stride comes from sizeof(Vertex), so the vertices can be interleaved in
+//! a single buffer exactly as the struct lays them out, which is what the GPU
+//! reads fastest and what the previous design could not express at all.
 //!
 //! \tparam Vertex the struct describing one vertex.
 // ----------------------------------------------------------------------------

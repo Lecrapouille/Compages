@@ -57,14 +57,14 @@ struct TextureDesc
     //! \brief How many pixels down. One for a 1D texture.
     std::uint32_t height = 1u;
 
-    //! \brief How deep for a 3D texture, or how many layers for an array. Always
-    //! one for a 2D texture, and six is implied for a cube map whatever is put
-    //! here.
+    //! \brief How deep for a 3D texture, or how many layers for an array.
+    //! Always one for a 2D texture, and six is implied for a cube map whatever
+    //! is put here.
     std::uint32_t depth = 1u;
 
     //! \brief How many levels of detail, each half the size of the one before.
-    //! One means no mipmaps; zero means as many as the size allows, which is what
-    //! a texture meant to be seen at a distance wants.
+    //! One means no mipmaps; zero means as many as the size allows, which is
+    //! what a texture meant to be seen at a distance wants.
     std::uint32_t levels = 1u;
 
     //! \brief How the texture is read when magnified.
@@ -87,13 +87,15 @@ struct TextureDesc
     //! other fields keep their defaults and can be chained:
     //! \code
     //! COMPAGES_TRY(m_texture.allocate(
-    //!     compages::gpu::TextureDesc::image(256u, 256u).filter(compages::gpu::Filter::Nearest)
+    //!     compages::gpu::TextureDesc::image(256u,
+    //!     256u).filter(compages::gpu::Filter::Nearest)
     //!                                       .wrap(compages::gpu::Wrap::Repeat)));
     //! \endcode
     // ------------------------------------------------------------------------
-    [[nodiscard]] static TextureDesc image(std::uint32_t p_width,
-                                           std::uint32_t p_height,
-                                           PixelFormat p_format = PixelFormat::RGBA8)
+    [[nodiscard]] static TextureDesc
+    image(std::uint32_t p_width,
+          std::uint32_t p_height,
+          PixelFormat p_format = PixelFormat::RGBA8)
     {
         TextureDesc desc;
         desc.format = p_format;
@@ -127,10 +129,10 @@ struct LoadOptions
 {
     //! \brief Turn the image upside down.
     //!
-    //! Image files start at the top row while a texture coordinate of zero is at
-    //! the bottom, so a texture loaded as it comes out of the file appears
-    //! flipped. Doing it here means it is done once, rather than in every shader
-    //! that samples the texture.
+    //! Image files start at the top row while a texture coordinate of zero is
+    //! at the bottom, so a texture loaded as it comes out of the file appears
+    //! flipped. Doing it here means it is done once, rather than in every
+    //! shader that samples the texture.
     bool flip_vertically = true;
 
     //! \brief Build the smaller levels of detail after loading.
@@ -151,7 +153,8 @@ struct LoadOptions
     //! \brief For a picture meant to be looked at, a photograph or a painted
     //! material: its colours are gamma corrected.
     //! \code
-    //! COMPAGES_TRY(m_grass.load(dataPath("grass.png"), compages::gpu::LoadOptions::picture()));
+    //! COMPAGES_TRY(m_grass.load(dataPath("grass.png"),
+    //! compages::gpu::LoadOptions::picture()));
     //! \endcode
     // ------------------------------------------------------------------------
     [[nodiscard]] static LoadOptions picture()
@@ -196,7 +199,8 @@ struct LoadOptions
 //! COMPAGES_TRY(state.allocate({
 //!     .format = compages::gpu::PixelFormat::RGBA32F,
 //!     .width = 512u, .height = 512u,
-//!     .magnify = compages::gpu::Filter::Nearest, .minify = compages::gpu::Filter::Nearest }));
+//!     .magnify = compages::gpu::Filter::Nearest, .minify =
+//!     compages::gpu::Filter::Nearest }));
 //! \endcode
 //!
 //! The in place load(), loadCube() and allocate() suit a member. The static
@@ -204,10 +208,10 @@ struct LoadOptions
 //! which suits code filling a container.
 //!
 //! The memory is set aside once, when the texture is created, and its size and
-//! format never change afterwards. That is deliberate: a texture whose format can
-//! be changed under a framebuffer or a pipeline that refers to it is a source of
-//! failures that appear far from their cause. To change the size, make another
-//! one.
+//! format never change afterwards. That is deliberate: a texture whose format
+//! can be changed under a framebuffer or a pipeline that refers to it is a
+//! source of failures that appear far from their cause. To change the size,
+//! make another one.
 // ****************************************************************************
 class Texture
 {
@@ -232,30 +236,31 @@ public:
     //! \brief Read an image file into a 2D texture.
     //!
     //! Reads whatever stb_image reads, which covers PNG, JPEG, BMP, TGA, GIF,
-    //! HDR and a few more. The number of channels in the file decides the format:
-    //! one channel becomes R8, three become RGB8, four RGBA8, with the sRGB
-    //! variants when asked for.
+    //! HDR and a few more. The number of channels in the file decides the
+    //! format: one channel becomes R8, three become RGB8, four RGBA8, with the
+    //! sRGB variants when asked for.
     //!
     //! \param[in] p_path the file to read.
     //! \param[in] p_options what to do to it on the way in.
     //! \return the texture, or why not: the file is missing, or is not an image
     //! stb_image understands, in which case its own words are passed on.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Texture> fromFile(
-        std::string const& p_path, LoadOptions const& p_options = {});
+    [[nodiscard]] static Result<Texture>
+    fromFile(std::string const& p_path, LoadOptions const& p_options = {});
 
     // ------------------------------------------------------------------------
     //! \brief Read six image files into a cube map.
     //!
-    //! \param[in] p_paths the six faces, in the order the hardware expects them:
-    //! positive x, negative x, positive y, negative y, positive z, negative z.
-    //! \param[in] p_options what to do to them on the way in. Flipping is off by
-    //! default for a cube map, whose faces are stored the way files are.
+    //! \param[in] p_paths the six faces, in the order the hardware expects
+    //! them: positive x, negative x, positive y, negative y, positive z,
+    //! negative z.
+    //! \param[in] p_options what to do to them on the way in. Flipping is off
+    //! by default for a cube map, whose faces are stored the way files are.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Texture> cubeFromFiles(
-        std::array<std::string, 6u> const& p_paths,
-        LoadOptions const& p_options = { .flip_vertically = false,
-                                         .wrap = Wrap::ClampToEdge });
+    [[nodiscard]] static Result<Texture>
+    cubeFromFiles(std::array<std::string, 6u> const& p_paths,
+                  LoadOptions const& p_options = { .flip_vertically = false,
+                                                   .wrap = Wrap::ClampToEdge });
 
     // ------------------------------------------------------------------------
     //! \brief Same as create(), into this object.
@@ -277,10 +282,10 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Same as cubeFromFiles(), into this object.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadCube(
-        std::array<std::string, 6u> const& p_paths,
-        LoadOptions const& p_options = { .flip_vertically = false,
-                                         .wrap = Wrap::ClampToEdge });
+    [[nodiscard]] Status loadCube(std::array<std::string, 6u> const& p_paths,
+                                  LoadOptions const& p_options = {
+                                      .flip_vertically = false,
+                                      .wrap = Wrap::ClampToEdge });
 
     // ------------------------------------------------------------------------
     //! \brief Read image files of the same size into the layers of a 3D
@@ -289,7 +294,8 @@ public:
     //! A shader samples it with three coordinates; the third blends between
     //! the images, which is how a terrain goes from sand to snow:
     //! \code
-    //! COMPAGES_TRY(m_layers.loadVolume({ dataPath("sand.png"), dataPath("snow.png") }));
+    //! COMPAGES_TRY(m_layers.loadVolume({ dataPath("sand.png"),
+    //! dataPath("snow.png") }));
     //! \endcode
     //!
     //! No mipmaps by default: the smaller levels of a 3D texture also halve
@@ -301,10 +307,10 @@ public:
                                          .wrap = Wrap::ClampToEdge });
 
     //! \brief Same as volumeFromFiles(), into this object.
-    [[nodiscard]] Status loadVolume(
-        std::vector<std::string> const& p_paths,
-        LoadOptions const& p_options = { .mipmaps = false,
-                                         .wrap = Wrap::ClampToEdge });
+    [[nodiscard]] Status loadVolume(std::vector<std::string> const& p_paths,
+                                    LoadOptions const& p_options = {
+                                        .mipmaps = false,
+                                        .wrap = Wrap::ClampToEdge });
 
     Texture(Texture&& p_other) noexcept;
     Texture& operator=(Texture&& p_other) noexcept;
@@ -320,9 +326,9 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Fill the whole of one level of detail.
     //!
-    //! \param[in] p_pixels the pixels, row by row from the bottom, as many bytes
-    //! as the level needs. A count that does not match is refused rather than
-    //! read past its end.
+    //! \param[in] p_pixels the pixels, row by row from the bottom, as many
+    //! bytes as the level needs. A count that does not match is refused rather
+    //! than read past its end.
     //! \param[in] p_level which level of detail, zero being the largest.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status write(std::span<const std::byte> p_pixels,
@@ -359,8 +365,8 @@ public:
     //! Waits for the device to finish with the image, so this belongs in tests,
     //! in screenshots and in debugging rather than in a frame.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Result<std::vector<std::byte>> read(
-        std::uint32_t p_level = 0u) const;
+    [[nodiscard]] Result<std::vector<std::byte>>
+    read(std::uint32_t p_level = 0u) const;
 
     // ------------------------------------------------------------------------
     //! \brief Build the smaller levels of detail from the largest one.
@@ -377,14 +383,15 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Change what happens outside the texture.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status setWrap(Wrap p_x, Wrap p_y, Wrap p_z = Wrap::ClampToEdge);
+    [[nodiscard]] Status
+    setWrap(Wrap p_x, Wrap p_y, Wrap p_z = Wrap::ClampToEdge);
 
     // ------------------------------------------------------------------------
     //! \brief Make the texture readable by a shader on the given texture unit.
     //!
-    //! The unit is the number a sampler uniform is set to: bind on unit 3 and set
-    //! the sampler to 3. compages::gpu::Drawable does both when a texture is assigned to
-    //! a sampler by name.
+    //! The unit is the number a sampler uniform is set to: bind on unit 3 and
+    //! set the sampler to 3. compages::gpu::Drawable does both when a texture
+    //! is assigned to a sampler by name.
     //!
     //! A released texture or a unit the driver does not have is recorded as the
     //! frame error (see Errors.hpp).
@@ -394,9 +401,10 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Make the texture writable by a shader, as an image.
     //!
-    //! This is how a compute pass produces a texture: unlike a sampler, an image
-    //! is addressed by whole pixel and may be written to. The unit is the number
-    //! given in the shader's `layout(binding = ...)` on the image uniform.
+    //! This is how a compute pass produces a texture: unlike a sampler, an
+    //! image is addressed by whole pixel and may be written to. The unit is the
+    //! number given in the shader's `layout(binding = ...)` on the image
+    //! uniform.
     //!
     //! \param[in] p_unit which image unit.
     //! \param[in] p_access what the shader is going to do with it.

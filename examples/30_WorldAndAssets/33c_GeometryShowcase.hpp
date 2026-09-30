@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>
 
@@ -45,7 +45,7 @@ namespace examples
 //! A mesh the Scene has no shortcut for, a tube here, is built by a make
 //! function and given to mesh().
 // ****************************************************************************
-class GeometryShowcase final : public Example
+class GeometryShowcase final: public Example
 {
 public:
 
@@ -55,8 +55,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

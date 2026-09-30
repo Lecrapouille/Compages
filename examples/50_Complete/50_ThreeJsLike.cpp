@@ -30,7 +30,7 @@ std::string ThreeJsLike::description() const
            "zooms.";
 }
 
-compages::gpu::Status ThreeJsLike::setUp()
+compages::Status ThreeJsLike::setUp()
 {
     // Background, camera, light, shape: the whole scene.
     m_scene.background(0.04f, 0.05f, 0.08f);
@@ -41,7 +41,7 @@ compages::gpu::Status ThreeJsLike::setUp()
     return m_scene.prepare();
 }
 
-void ThreeJsLike::draw(Frame const& p_frame)
+void ThreeJsLike::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns; the orbit behavior turns the camera from the mouse.
     m_cube.rotate(p_frame.elapsed, { 0.4f, 1.0f, 0.0f });

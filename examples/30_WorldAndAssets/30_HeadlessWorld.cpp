@@ -18,20 +18,20 @@
 // along with Compages.  If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
-#include "Compages/World/Entity.hpp"
 #include "30_WorldAndAssets/30_HeadlessWorld.hpp"
+#include "Compages/World/Entity.hpp"
 
 namespace examples
 {
 
 struct Position
 {
-    Vector3f value{ 0.0f, 0.0f, 0.0f };
+    compages::core::Vector3f value{ 0.0f, 0.0f, 0.0f };
 };
 
 struct Velocity
 {
-    Vector3f value{ 0.0f, 0.0f, 0.0f };
+    compages::core::Vector3f value{ 0.0f, 0.0f, 0.0f };
 };
 
 //! \brief How many frames a behavior has seen.
@@ -54,7 +54,7 @@ std::string HeadlessWorld::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status HeadlessWorld::setUp()
+compages::Status HeadlessWorld::setUp()
 {
     // One chain per entity: a name, then the components it carries. The rock
     // has no velocity, so the movement system below never sees it.
@@ -68,12 +68,12 @@ compages::gpu::Status HeadlessWorld::setUp()
     compages::world::Entity root = m_world.entity("Simulation");
     root.child("Worker").add<Ticks>();
     return m_world.lookup("Simulation/Worker")
-               ? compages::gpu::success()
-               : compages::gpu::failure("the worker was not found under the root");
+               ? compages::success()
+               : compages::failure("the worker was not found under the root");
 }
 
 //------------------------------------------------------------------------------
-void HeadlessWorld::draw(Frame const& p_frame)
+void HeadlessWorld::draw(compages::world::ViewFrame const& p_frame)
 {
     compages::gpu::clear({ 0.05f, 0.05f, 0.07f });
 
@@ -88,7 +88,8 @@ void HeadlessWorld::draw(Frame const& p_frame)
     compages::world::Entity player = m_world.lookup("player");
     if ((p_frame.total > 0.5f) && (player.get<Position>().value.x <= 0.0f))
     {
-        compages::gpu::reportError("the movement system did not move the player");
+        compages::gpu::reportError(
+            "the movement system did not move the player");
     }
     if (m_world.behaviorCount(m_world.lookup("Simulation/Worker")) != 1u)
     {

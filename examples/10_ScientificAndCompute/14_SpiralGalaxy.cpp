@@ -443,8 +443,8 @@ void SpiralGalaxy::flush(float p_scale)
 {
     for (std::size_t i = 0u; i < m_bodies.size(); ++i)
     {
-        m_positions[i] = Vector2f(m_bodies[i].x / GALAXY_RADIUS,
-                                  m_bodies[i].y / GALAXY_RADIUS);
+        m_positions[i] = compages::core::Vector2f(
+            m_bodies[i].x / GALAXY_RADIUS, m_bodies[i].y / GALAXY_RADIUS);
         m_sizes[i] = m_bodies[i].size * p_scale;
     }
     m_points["position"] = m_positions;
@@ -452,7 +452,7 @@ void SpiralGalaxy::flush(float p_scale)
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status SpiralGalaxy::makeColormap()
+compages::Status SpiralGalaxy::makeColormap()
 {
     compages::gpu::TextureDesc desc;
     desc.kind = compages::gpu::TextureKind::Texture1D;
@@ -484,7 +484,7 @@ compages::gpu::Status SpiralGalaxy::makeColormap()
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status SpiralGalaxy::makeSprite()
+compages::Status SpiralGalaxy::makeSprite()
 {
     COMPAGES_TRY(
         m_sprite.allocate(compages::gpu::TextureDesc::image(
@@ -514,7 +514,7 @@ compages::gpu::Status SpiralGalaxy::makeSprite()
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status SpiralGalaxy::setUp()
+compages::Status SpiralGalaxy::setUp()
 {
     seed();
     COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
@@ -540,19 +540,21 @@ compages::gpu::Status SpiralGalaxy::setUp()
 
     m_points["colormap"] = m_colormap;
     m_points["sprite"] = m_sprite;
-    m_points["model"] = Matrix44f(compages::matrix::Identity);
+    m_points["model"] =
+        compages::core::Matrix44f(compages::core::matrix::Identity);
     // Five units out on +Z: the Glumpy view, translated by (0, 0, -5). The
     // disk lies in z = 0, so the camera looks straight at it.
-    m_points["view"] = compages::matrix::lookAt(Vector3f(0.0f, 0.0f, 5.0f),
-                                                Vector3f(0.0f, 0.0f, 0.0f),
-                                                Vector3f(0.0f, 1.0f, 0.0f));
+    m_points["view"] =
+        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 5.0f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     m_points.primitive(compages::gpu::Primitive::Points)
         .blend(compages::gpu::Blend::additive());
     return m_points.prepare();
 }
 
 //------------------------------------------------------------------------------
-void SpiralGalaxy::draw(Frame const& p_frame)
+void SpiralGalaxy::draw(compages::world::ViewFrame const& p_frame)
 {
     step();
     // Authored in pixels for an 800 pixel frame, as in the Glumpy example.
@@ -562,7 +564,7 @@ void SpiralGalaxy::draw(Frame const& p_frame)
     flush(1.0f);
 
     m_points["projection"] =
-        compages::matrix::perspective(45.0_deg, aspect(p_frame), 1.0f, 1000.0f);
+        compages::core::perspective(45.0_deg, aspect(p_frame), 1.0f, 1000.0f);
 
     compages::gpu::clear({ 0.0f, 0.0f, 0.03f });
     m_points.draw();

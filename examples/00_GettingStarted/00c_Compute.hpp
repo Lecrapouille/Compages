@@ -38,20 +38,24 @@ namespace examples
 //! copy moves one number of a buffer up by its index plus one:
 //! \code
 //! COMPAGES_TRY(m_step.load(STEP_SOURCE));
-//! COMPAGES_TRY(compages::gpu::dispatch(m_step, m_values));   // one copy per number
-//! COMPAGES_TRY(m_values.download());               // the results, on the CPU
+//! COMPAGES_TRY(compages::gpu::dispatch(m_step, m_values));   // one copy per
+//! number COMPAGES_TRY(m_values.download());               // the results, on
+//! the CPU
 //! \endcode
 //! The bars are what the GPU holds. The CPU copy of the buffer does not follow
 //! on its own: it is out of date, the bars orange, until download() is called.
 // ****************************************************************************
-class IntroCompute final : public Example
+class IntroCompute final: public Example
 {
 public:
 
-    [[nodiscard]] std::string name() const override { return "00c_Compute"; }
+    [[nodiscard]] std::string name() const override
+    {
+        return "00c_Compute";
+    }
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
 
 private:

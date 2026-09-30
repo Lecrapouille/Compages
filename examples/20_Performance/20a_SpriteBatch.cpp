@@ -90,12 +90,13 @@ std::string SpriteBatch::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status SpriteBatch::makeAtlas()
+compages::Status SpriteBatch::makeAtlas()
 {
-    COMPAGES_TRY(m_atlas.allocate({ .width = ATLAS,
-                                    .height = ATLAS,
-                                    .magnify = compages::gpu::Filter::Nearest,
-                                    .minify = compages::gpu::Filter::Nearest }));
+    COMPAGES_TRY(
+        m_atlas.allocate({ .width = ATLAS,
+                           .height = ATLAS,
+                           .magnify = compages::gpu::Filter::Nearest,
+                           .minify = compages::gpu::Filter::Nearest }));
 
     // Sixteen tiles, each a colour of its own.
     std::vector<std::uint8_t> pixels(std::size_t{ ATLAS } * ATLAS * 4u);
@@ -105,7 +106,8 @@ compages::gpu::Status SpriteBatch::makeAtlas()
         {
             const std::uint32_t tile = ((y / TILE_PX) * TILES) + (x / TILE_PX);
             const float t = static_cast<float>(tile) / 15.0f;
-            std::uint8_t* pixel = &pixels[((std::size_t{ y } * ATLAS) + x) * 4u];
+            std::uint8_t* pixel =
+                &pixels[((std::size_t{ y } * ATLAS) + x) * 4u];
             pixel[0] = static_cast<std::uint8_t>(40.0f + (200.0f * t));
             pixel[1] = static_cast<std::uint8_t>(180.0f - (120.0f * t));
             pixel[2] = static_cast<std::uint8_t>(80.0f + (140.0f * (1.0f - t)));
@@ -116,7 +118,7 @@ compages::gpu::Status SpriteBatch::makeAtlas()
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status SpriteBatch::setUp()
+compages::Status SpriteBatch::setUp()
 {
     COMPAGES_TRY(makeAtlas());
 
@@ -132,8 +134,9 @@ compages::gpu::Status SpriteBatch::setUp()
         for (std::uint32_t x = 0u; x < SIDE; ++x)
         {
             sprites.emplace_back(Sprite{
-                Vector2f(-1.0f + ((float(x) + 0.5f) * step), -1.0f + ((float(y) + 0.5f) * step)),
-                Vector2f(step * 0.42f, step * 0.42f),
+                compages::core::Vector2f(-1.0f + ((float(x) + 0.5f) * step),
+                                         -1.0f + ((float(y) + 0.5f) * step)),
+                compages::core::Vector2f(step * 0.42f, step * 0.42f),
                 static_cast<float>(tile(rng)),
                 jitter(rng) * 8.0f });
         }
@@ -141,7 +144,8 @@ compages::gpu::Status SpriteBatch::setUp()
 
     COMPAGES_TRY(m_sprites.load(VERTEX, FRAGMENT));
     // perInstance: the record advances once per sprite, not once per corner.
-    m_sprites.vertices(sprites, compages::gpu::VertexLayout::of<Sprite>().perInstance());
+    m_sprites.vertices(sprites,
+                       compages::gpu::VertexLayout::of<Sprite>().perInstance());
     m_sprites.usage(compages::gpu::BufferUsage::Immutable);
     m_sprites.primitive(compages::gpu::Primitive::TriangleStrip);
     m_sprites["atlas"] = m_atlas;
@@ -149,9 +153,10 @@ compages::gpu::Status SpriteBatch::setUp()
 }
 
 //------------------------------------------------------------------------------
-void SpriteBatch::draw(Frame const& p_frame)
+void SpriteBatch::draw(compages::world::ViewFrame const& p_frame)
 {
-    // Time wobbles the sprites; aspect keeps them square when the window is not.
+    // Time wobbles the sprites; aspect keeps them square when the window is
+    // not.
     m_sprites["time"] = p_frame.total;
     m_sprites["aspect"] = aspect(p_frame);
 

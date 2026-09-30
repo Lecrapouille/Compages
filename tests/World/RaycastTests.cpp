@@ -20,6 +20,7 @@
 
 #include "main.hpp"
 
+
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Scene.hpp"
@@ -27,6 +28,8 @@
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Query/Raycast.hpp"
 #include "Compages/World/World.hpp"
+
+
 
 //------------------------------------------------------------------------------
 TEST(Raycast, PicksTheCloserOfTwoBoxes)
@@ -38,13 +41,13 @@ TEST(Raycast, PicksTheCloserOfTwoBoxes)
     world.add(far, compages::renderer::MeshRenderer{});
     world.update();
 
-    const AABB near_box =
-        AABB::fromCenterExtent(Vector3f(0.0f, 0.0f, 0.0f), Vector3f(1.0f));
-    const AABB far_box =
-        AABB::fromCenterExtent(Vector3f(0.0f, 0.0f, -8.0f), Vector3f(1.0f));
+    const compages::core::AABB near_box =
+        compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f), compages::core::Vector3f(1.0f));
+    const compages::core::AABB far_box =
+        compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, -8.0f), compages::core::Vector3f(1.0f));
 
-    const Ray ray = Ray::fromPoints(Vector3f(0.0f, 0.0f, 10.0f),
-                                    Vector3f(0.0f, 0.0f, 0.0f));
+    const compages::core::Ray ray = compages::core::Ray::fromPoints(compages::core::Vector3f(0.0f, 0.0f, 10.0f),
+                                    compages::core::Vector3f(0.0f, 0.0f, 0.0f));
     const auto hit = compages::renderer::raycast(
         world,
         ray,
@@ -65,15 +68,15 @@ TEST(Raycast, SkipsADisabledEntity)
     world.setEnabled(hidden, false);
     world.update();
 
-    const Ray ray = Ray::fromPoints(Vector3f(0.0f, 0.0f, 10.0f),
-                                    Vector3f(0.0f, 0.0f, 0.0f));
+    const compages::core::Ray ray = compages::core::Ray::fromPoints(compages::core::Vector3f(0.0f, 0.0f, 10.0f),
+                                    compages::core::Vector3f(0.0f, 0.0f, 0.0f));
     const auto hit = compages::renderer::raycast(
         world,
         ray,
         [&](compages::world::EntityId, compages::renderer::MeshRenderer const&)
         {
-            return AABB::fromCenterExtent(Vector3f(0.0f, 0.0f, 0.0f),
-                                          Vector3f(1.0f));
+            return compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                                          compages::core::Vector3f(1.0f));
         });
     ASSERT_FALSE(hit.has_value());
 }
@@ -86,7 +89,7 @@ TEST(WorldCamera, ScreenRayThroughTheCentreHitsTheOrigin)
     compages::renderer::Scene scene(world, assets);
 
     compages::world::EntityId cam = world.create("cam");
-    world.transform(cam).position = Vector3f(0.0f, 0.0f, 10.0f);
+    world.transform(cam).position = compages::core::Vector3f(0.0f, 0.0f, 10.0f);
     world.add(cam, compages::world::Camera{});
     scene.activeCamera(cam);
     world.update();
@@ -94,7 +97,7 @@ TEST(WorldCamera, ScreenRayThroughTheCentreHitsTheOrigin)
     auto snapshot = compages::renderer::SceneExtractor::extract(scene, 1.0f);
     ASSERT_TRUE(bool(snapshot)) << snapshot.error();
 
-    const Ray ray = snapshot.value().camera.screenRay(400.0f, 300.0f, 800u, 600u);
+    const compages::core::Ray ray = snapshot.value().camera.screenRay(400.0f, 300.0f, 800u, 600u);
     // Centre of the view, looking along -Z: the ray should pass near the
     // origin and travel toward decreasing Z.
     ASSERT_NEAR(ray.direction.x, 0.0f, 0.05f);

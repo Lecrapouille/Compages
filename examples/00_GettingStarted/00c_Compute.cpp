@@ -52,14 +52,16 @@ void main()
 std::string IntroCompute::description() const
 {
     return "A compute shader draws nothing: it is a function the GPU runs once "
-           "per number, all at the same time. Each copy knows its index and moves "
-           "its number up by that index plus one.\n\nThe bars show what the GPU "
+           "per number, all at the same time. Each copy knows its index and "
+           "moves "
+           "its number up by that index plus one.\n\nThe bars show what the "
+           "GPU "
            "holds. They are orange while the CPU copy is out of date: press "
            "download() in the Try it panel to bring the results back.";
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status IntroCompute::setUp()
+compages::Status IntroCompute::setUp()
 {
     COMPAGES_TRY(m_chart.setUp());
     COMPAGES_TRY(m_step.load(STEP_SOURCE));
@@ -67,10 +69,12 @@ compages::gpu::Status IntroCompute::setUp()
     // Storage, so that a compute shader may write the numbers the CPU gave.
     m_on_gpu = std::vector<int>(COUNT, 0);
     COMPAGES_TRY_ASSIGN(m_values,
-                        compages::gpu::Buffer<int>::from(m_on_gpu, { .kind = compages::gpu::BufferKind::Storage,
-                                                           .usage = compages::gpu::BufferUsage::Storage }));
+                        compages::gpu::Buffer<int>::from(
+                            m_on_gpu,
+                            { .kind = compages::gpu::BufferKind::Storage,
+                              .usage = compages::gpu::BufferUsage::Storage }));
     COMPAGES_TRY(m_values.upload());
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
@@ -86,7 +90,7 @@ void IntroCompute::step()
 
     // Reading back makes the CPU wait for the GPU: fine for a dozen numbers
     // in a lesson. A real program draws them where they are, see 12.
-    compages::gpu::Result<std::vector<int>> read = m_values.read();
+    compages::Result<std::vector<int>> read = m_values.read();
     if (read)
     {
         m_on_gpu = std::move(read.value());
@@ -94,7 +98,7 @@ void IntroCompute::step()
 }
 
 //------------------------------------------------------------------------------
-void IntroCompute::draw(Frame const& p_frame)
+void IntroCompute::draw(compages::world::ViewFrame const& p_frame)
 {
     // Four steps a second when running, so that each one can be followed.
     m_since_step += p_frame.elapsed;
@@ -133,9 +137,11 @@ void IntroCompute::controls()
         ImGui::SameLine();
         ImGui::TextColored(m_stale ? ImVec4(1.0f, 0.62f, 0.25f, 1.0f)
                                    : ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
-                           "%2d", value);
+                           "%2d",
+                           value);
     }
-    ImGui::TextDisabled(m_stale ? "The CPU copy is out of date." : "Both copies agree.");
+    ImGui::TextDisabled(m_stale ? "The CPU copy is out of date."
+                                : "Both copies agree.");
 }
 
 } // namespace examples

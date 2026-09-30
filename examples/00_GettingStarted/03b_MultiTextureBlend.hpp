@@ -22,12 +22,12 @@
 
 #include "Common/Example.hpp"
 
-#include <array>
-#include <cstdint>
-#include <vector>
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Texture.hpp"
+#include <array>
+#include <cstdint>
+#include <vector>
 
 namespace examples
 {
@@ -42,8 +42,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
 
 private:

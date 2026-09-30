@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 namespace examples
 {
@@ -41,10 +41,11 @@ namespace examples
 //! and a selection is only a change of look:
 //! \code
 //! if (auto hit = m_scene.pick(p_frame.input.mouse))
-//!     m_scene.look(hit->entity, compages::renderer::color(0.95f, 0.72f, 0.22f));
+//!     m_scene.look(hit->entity, compages::renderer::color(0.95f, 0.72f,
+//!     0.22f));
 //! \endcode
 // ****************************************************************************
-class CameraPick final : public Example
+class CameraPick final: public Example
 {
 public:
 
@@ -54,8 +55,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

@@ -21,9 +21,9 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
+#include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Render/RenderQueue.hpp"
 #include "Compages/Renderer/Render/RenderSnapshot.hpp"
-#include "Compages/GPU/Texture.hpp"
 
 namespace compages::renderer
 {
@@ -58,11 +58,14 @@ public:
     //! be the one the snapshot was extracted from. Not const: a mesh or a
     //! material seen for the first time is sent to the GPU here.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Status render(RenderSnapshot const& p_snapshot,
-                                          compages::renderer::AssetManager& p_assets);
+    [[nodiscard]] Status render(RenderSnapshot const& p_snapshot,
+                                compages::renderer::AssetManager& p_assets);
 
     //! \brief The queue that was built during the last render, for inspection.
-    [[nodiscard]] RenderQueue const& queue() const { return m_queue; }
+    [[nodiscard]] RenderQueue const& queue() const
+    {
+        return m_queue;
+    }
 
 private:
 

@@ -36,34 +36,27 @@
 namespace compages::renderer
 {
 
-using compages::world::Camera;
-using compages::world::DirectionalLight;
-using compages::world::EntityId;
-using compages::world::LocalTransform;
-using compages::world::PointLight;
-using compages::world::SkinInstance;
-using compages::world::World;
-
 namespace
 {
 
-compages::Status spawnNode(World& p_world,
-                      compages::renderer::AssetManager& p_assets,
-                      compages::renderer::PrefabId p_prefab,
-                      compages::renderer::PrefabNode const& p_node,
-                      EntityId p_parent,
-                      EntityId& p_root_out,
-                      bool p_is_root,
-                      LocalTransform const& p_root_offset,
-                      std::vector<EntityId>& p_nodes,
-                      std::vector<std::pair<EntityId,
-                          compages::renderer::PrefabSkinInstance const*>>& p_skins)
+Status
+spawnNode(compages::world::World& p_world,
+          compages::renderer::AssetManager& p_assets,
+          compages::renderer::PrefabId p_prefab,
+          compages::renderer::PrefabNode const& p_node,
+          compages::world::EntityId p_parent,
+          compages::world::EntityId& p_root_out,
+          bool p_is_root,
+          compages::world::LocalTransform const& p_root_offset,
+          std::vector<compages::world::EntityId>& p_nodes,
+          std::vector<std::pair<compages::world::EntityId,
+                                compages::renderer::PrefabSkinInstance const*>>&
+              p_skins)
 {
-    EntityId entity = p_world.create(p_node.name);
+    compages::world::EntityId entity = p_world.create(p_node.name);
     if (p_node.source_index >= p_nodes.size())
     {
-        p_nodes.resize(
-            static_cast<std::size_t>(p_node.source_index) + 1u);
+        p_nodes.resize(static_cast<std::size_t>(p_node.source_index) + 1u);
     }
     p_nodes[p_node.source_index] = entity;
     if (p_is_root)
@@ -72,14 +65,15 @@ compages::Status spawnNode(World& p_world,
         p_world.add(entity, PrefabInstance{ p_prefab });
     }
 
-    LocalTransform local = p_node.transform;
+    compages::world::LocalTransform local = p_node.transform;
     if (p_is_root)
     {
         local.position = local.position + p_root_offset.position;
         local.rotation = p_root_offset.rotation * local.rotation;
-        local.scale = Vector3f(local.scale.x * p_root_offset.scale.x,
-                               local.scale.y * p_root_offset.scale.y,
-                               local.scale.z * p_root_offset.scale.z);
+        local.scale =
+            compages::core::Vector3f(local.scale.x * p_root_offset.scale.x,
+                                     local.scale.y * p_root_offset.scale.y,
+                                     local.scale.z * p_root_offset.scale.z);
     }
     p_world.transform(entity) = local;
     if (!p_node.enabled)
@@ -89,21 +83,22 @@ compages::Status spawnNode(World& p_world,
 
     if (p_node.mesh_renderer.has_value())
     {
-        compages::renderer::PrefabMeshRenderer const& src = *p_node.mesh_renderer;
-        const compages::renderer::MeshAssetId mesh = p_assets.findMesh(src.mesh);
+        compages::renderer::PrefabMeshRenderer const& src =
+            *p_node.mesh_renderer;
+        const compages::renderer::MeshAssetId mesh =
+            p_assets.findMesh(src.mesh);
         const compages::renderer::MaterialInstanceId material =
             p_assets.findMaterialInstance(src.material_instance);
         if (!mesh.valid())
         {
-            return compages::failure("prefab references unknown mesh '" + src.mesh +
-                                "'");
+            return failure("prefab references unknown mesh '" + src.mesh + "'");
         }
         if (!material.valid())
         {
-            return compages::failure("prefab references unknown material instance '" +
-                                src.material_instance + "'");
+            return failure("prefab references unknown material instance '" +
+                           src.material_instance + "'");
         }
-        MeshRenderer renderer;
+        compages::renderer::MeshRenderer renderer;
         renderer.mesh = mesh;
         renderer.material_instance = material;
         renderer.flags = src.flags;
@@ -131,62 +126,65 @@ compages::Status spawnNode(World& p_world,
     for (compages::renderer::PrefabNode const& child : p_node.children)
     {
         COMPAGES_TRY(spawnNode(p_world,
-                          p_assets,
-                          p_prefab,
-                          child,
-                          entity,
-                          p_root_out,
-                          false,
-                          p_root_offset,
-                          p_nodes,
-                          p_skins));
+                               p_assets,
+                               p_prefab,
+                               child,
+                               entity,
+                               p_root_out,
+                               false,
+                               p_root_offset,
+                               p_nodes,
+                               p_skins));
     }
-    return compages::success();
+    return success();
 }
 
 } // namespace
 
 //------------------------------------------------------------------------------
-compages::Result<EntityId> instantiate(World& p_world,
-                                compages::renderer::AssetManager& p_assets,
-                                compages::renderer::PrefabId p_prefab,
-                                EntityId p_parent,
-                                LocalTransform p_root_offset)
+Result<compages::world::EntityId>
+instantiate(compages::world::World& p_world,
+            compages::renderer::AssetManager& p_assets,
+            compages::renderer::PrefabId p_prefab,
+            compages::world::EntityId p_parent,
+            compages::world::LocalTransform p_root_offset)
 {
     compages::renderer::Prefab const* prefab = p_assets.prefab(p_prefab);
     if (prefab == nullptr)
     {
-        return compages::failure("instantiate called with a stale prefab id");
+        return failure("instantiate called with a stale prefab id");
     }
 
-    EntityId root;
-    std::vector<EntityId> nodes;
-    std::vector<std::pair<EntityId,
-        compages::renderer::PrefabSkinInstance const*>> skins;
+    compages::world::EntityId root;
+    std::vector<compages::world::EntityId> nodes;
+    std::vector<std::pair<compages::world::EntityId,
+                          compages::renderer::PrefabSkinInstance const*>>
+        skins;
     COMPAGES_TRY(spawnNode(p_world,
-                      p_assets,
-                      p_prefab,
-                      prefab->root,
-                      p_parent,
-                      root,
-                      true,
-                      p_root_offset,
-                      nodes,
-                      skins));
+                           p_assets,
+                           p_prefab,
+                           prefab->root,
+                           p_parent,
+                           root,
+                           true,
+                           p_root_offset,
+                           nodes,
+                           skins));
     for (auto const& [entity, source] : skins)
     {
-        SkinInstance instance;
+        compages::world::SkinInstance instance;
         instance.joints.reserve(source->joints.size());
         for (std::uint32_t const joint : source->joints)
         {
-            instance.joints.emplace_back(
-                (joint < nodes.size()) ? nodes[joint] : EntityId{});
+            instance.joints.emplace_back((joint < nodes.size())
+                                             ? nodes[joint]
+                                             : compages::world::EntityId{});
         }
         p_world.add(entity, std::move(instance));
     }
     if (!prefab->animations.empty())
     {
-        Animator animator;
+        compages::renderer::Animator animator;
         animator.clip = prefab->animations.front();
         animator.clips = prefab->animations;
         animator.targets = std::move(nodes);

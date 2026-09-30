@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <string>
 
@@ -38,15 +38,16 @@ namespace examples
 //! with rather than holding it, so that it can be written to a file and read
 //! back: the assets it names are registered first.
 //! \code
-//! m_scene.shapeMesh(compages::renderer::Shape::Box);                    // "box"
-//! m_scene.material("wood", compages::renderer::color(0.62f, 0.42f, 0.24f));
-//! COMPAGES_TRY_ASSIGN(robot, m_scene.assets().addPrefab("robot", compages::renderer::makeRobotPrefab()));
-//! COMPAGES_TRY_ASSIGN(first, m_scene.instantiate(robot));
+//! m_scene.shapeMesh(compages::renderer::Shape::Box);                    //
+//! "box" m_scene.material("wood", compages::renderer::color(0.62f, 0.42f,
+//! 0.24f)); COMPAGES_TRY_ASSIGN(robot, m_scene.assets().addPrefab("robot",
+//! compages::renderer::makeRobotPrefab())); COMPAGES_TRY_ASSIGN(first,
+//! m_scene.instantiate(robot));
 //! ...
 //! compages::renderer::saveScene(m_scene, "/tmp/compages_prefab_scene.json");
 //! \endcode
 // ****************************************************************************
-class PrefabAndSave final : public Example
+class PrefabAndSave final: public Example
 {
 public:
 
@@ -56,8 +57,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

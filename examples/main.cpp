@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    compages::gpu::Status ran = gallery.run(options);
+    compages::Status ran = gallery.run(options);
     if (!ran)
     {
         std::cerr << ran.error() << std::endl;

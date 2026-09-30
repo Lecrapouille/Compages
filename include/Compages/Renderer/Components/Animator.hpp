@@ -31,7 +31,7 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief Plays one AnimationClip onto the entities the clip's channels name.
 //!
-//! \c AnimationSystem advances \c time and writes local TRS on the World. It
+//! \c compages::renderer::AnimationSystem advances \c time and writes local TRS on the compages::world::World. It
 //! does not own the clip: the AssetManager does. The component only stores
 //! ids.
 //!
@@ -45,7 +45,7 @@ struct Animator
     AnimationClipId clip{};
     //! \brief Every clip the model came with, what Scene::play() chooses from.
     std::vector<AnimationClipId> clips;
-    //! \brief Prefab-node index to EntityId mapping for this instance.
+    //! \brief Prefab-node index to compages::world::EntityId mapping for this instance.
     std::vector<compages::world::EntityId> targets;
     float time = 0.0f;
     float speed = 1.0f;

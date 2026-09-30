@@ -222,14 +222,8 @@ std::string resourceName(GLuint p_program, GLenum p_interface, GLuint p_index)
 {
     GLint length = 0;
     const GLenum property = GL_NAME_LENGTH;
-    glGetProgramResourceiv(p_program,
-                           p_interface,
-                           p_index,
-                           1,
-                           &property,
-                           1,
-                           nullptr,
-                           &length);
+    glGetProgramResourceiv(
+        p_program, p_interface, p_index, 1, &property, 1, nullptr, &length);
     if (length <= 1)
     {
         return {};
@@ -269,7 +263,8 @@ void resourceProperties(GLuint p_program,
 GLint resourceCount(GLuint p_program, GLenum p_interface)
 {
     GLint count = 0;
-    glGetProgramInterfaceiv(p_program, p_interface, GL_ACTIVE_RESOURCES, &count);
+    glGetProgramInterfaceiv(
+        p_program, p_interface, GL_ACTIVE_RESOURCES, &count);
     return count;
 }
 
@@ -334,9 +329,9 @@ void readBlockMembers(GLuint p_program,
                       GLuint p_block_index,
                       BlockInfo& p_block)
 {
-    constexpr std::array<GLenum, 3u> block_properties{ GL_BUFFER_BINDING,
-                                                       GL_BUFFER_DATA_SIZE,
-                                                       GL_NUM_ACTIVE_VARIABLES };
+    constexpr std::array<GLenum, 3u> block_properties{
+        GL_BUFFER_BINDING, GL_BUFFER_DATA_SIZE, GL_NUM_ACTIVE_VARIABLES
+    };
     std::array<GLint, 3u> block_values{ 0, 0, 0 };
     resourceProperties(p_program,
                        p_block_interface,
@@ -364,11 +359,9 @@ void readBlockMembers(GLuint p_program,
                            nullptr,
                            member_indices.data());
 
-    constexpr std::array<GLenum, 5u> member_properties{ GL_TYPE,
-                                                        GL_ARRAY_SIZE,
-                                                        GL_OFFSET,
-                                                        GL_ARRAY_STRIDE,
-                                                        GL_MATRIX_STRIDE };
+    constexpr std::array<GLenum, 5u> member_properties{
+        GL_TYPE, GL_ARRAY_SIZE, GL_OFFSET, GL_ARRAY_STRIDE, GL_MATRIX_STRIDE
+    };
     p_block.members.reserve(member_count);
     for (GLint index : member_indices)
     {
@@ -419,8 +412,9 @@ Result<NativeId> compileShader(ShaderStage p_stage, std::string_view p_source)
         glDeleteShader(shader);
         if (log.empty())
         {
-            log = "the shader did not compile and the driver said nothing about "
-                  "why";
+            log =
+                "the shader did not compile and the driver said nothing about "
+                "why";
         }
         return failure(std::move(log));
     }
@@ -464,7 +458,8 @@ Result<NativeId> linkProgram(std::span<const NativeId> p_shaders)
         glDeleteProgram(program);
         if (log.empty())
         {
-            log = "the stages did not link and the driver said nothing about why";
+            log =
+                "the stages did not link and the driver said nothing about why";
         }
         return failure(std::move(log));
     }
@@ -479,8 +474,8 @@ void destroyProgram(NativeId p_program)
 }
 
 //------------------------------------------------------------------------------
-// Everything here goes through the one interface query introduced in OpenGL 4.3,
-// glGetProgramResource*, rather than the older glGetActiveAttrib,
+// Everything here goes through the one interface query introduced in
+// OpenGL 4.3, glGetProgramResource*, rather than the older glGetActiveAttrib,
 // glGetActiveUniform and glGetActiveUniformBlockiv. The same three calls then
 // answer for attributes, uniforms, uniform blocks and storage blocks, and the
 // older family has no way at all to describe a storage block.
@@ -521,12 +516,12 @@ void reflectProgram(NativeId p_program,
         p_reflection.attributes.emplace_back(std::move(attribute));
     }
 
-    // The uniforms. GL_BLOCK_INDEX tells the ones living in a block from the ones
-    // the driver keeps a copy of itself, and only the latter have a location.
-    constexpr std::array<GLenum, 4u> uniform_properties{ GL_TYPE,
-                                                         GL_ARRAY_SIZE,
-                                                         GL_LOCATION,
-                                                         GL_BLOCK_INDEX };
+    // The uniforms. GL_BLOCK_INDEX tells the ones living in a block from the
+    // ones the driver keeps a copy of itself, and only the latter have a
+    // location.
+    constexpr std::array<GLenum, 4u> uniform_properties{
+        GL_TYPE, GL_ARRAY_SIZE, GL_LOCATION, GL_BLOCK_INDEX
+    };
     const GLint uniform_count = resourceCount(program, GL_UNIFORM);
     for (GLint i = 0; i < uniform_count; ++i)
     {
@@ -544,7 +539,8 @@ void reflectProgram(NativeId p_program,
         }
 
         UniformInfo uniform;
-        uniform.name = resourceName(program, GL_UNIFORM, static_cast<GLuint>(i));
+        uniform.name =
+            resourceName(program, GL_UNIFORM, static_cast<GLuint>(i));
         if (isBuiltIn(uniform.name))
         {
             continue;
@@ -556,8 +552,8 @@ void reflectProgram(NativeId p_program,
         p_reflection.uniforms.emplace_back(std::move(uniform));
     }
 
-    // The uniform blocks, and then the storage blocks, which differ only in which
-    // list their members are found in.
+    // The uniform blocks, and then the storage blocks, which differ only in
+    // which list their members are found in.
     const GLint uniform_block_count = resourceCount(program, GL_UNIFORM_BLOCK);
     p_reflection.uniform_blocks.reserve(
         static_cast<std::size_t>(uniform_block_count));
@@ -592,8 +588,8 @@ void reflectProgram(NativeId p_program,
     }
 
     // Asking a program without a compute stage for its work group size is an
-    // error the driver would report, hence the check on the stages rather than on
-    // the answer.
+    // error the driver would report, hence the check on the stages rather than
+    // on the answer.
     const bool has_compute =
         std::find(p_stages.begin(), p_stages.end(), ShaderStage::Compute) !=
         p_stages.end();
@@ -668,26 +664,26 @@ void setUniform(NativeId p_program,
             glProgramUniform4uiv(program, p_location, 1, uints);
             break;
 
-        // The matrices of src/Math are stored the way the transformation
-        // functions build them, which is already the order OpenGL reads a matrix
-        // in, so nothing is transposed on the way through. See Shader.cpp.
+        // Row-major Scilab layout in C++; GL column-major via transpose flag.
         case DataType::Mat2:
-            glProgramUniformMatrix2fv(program, p_location, 1, GL_FALSE, floats);
+            glProgramUniformMatrix2fv(program, p_location, 1, GL_TRUE, floats);
             break;
         case DataType::Mat3:
-            glProgramUniformMatrix3fv(program, p_location, 1, GL_FALSE, floats);
+            glProgramUniformMatrix3fv(program, p_location, 1, GL_TRUE, floats);
             break;
         case DataType::Mat4:
-            glProgramUniformMatrix4fv(program, p_location, 1, GL_FALSE, floats);
+            glProgramUniformMatrix4fv(program, p_location, 1, GL_TRUE, floats);
             break;
 
-        // Everything below cannot arrive here, and is listed rather than left to
-        // a default so that adding a type to DataType has to be decided here too.
+        // Everything below cannot arrive here, and is listed rather than left
+        // to a default so that adding a type to DataType has to be decided here
+        // too.
         //
         // A sampler and an image are set by giving them the number of a texture
         // unit, which arrives as DataType::Int above. The doubles and the non
-        // square matrices have no set() taking them, so nothing can ask for them
-        // yet; when one is added, this switch stops compiling until it is handled.
+        // square matrices have no set() taking them, so nothing can ask for
+        // them yet; when one is added, this switch stops compiling until it is
+        // handled.
         case DataType::Double:
         case DataType::DVec2:
         case DataType::DVec3:
@@ -741,7 +737,7 @@ void setUniformArray(NativeId p_program,
     {
         case DataType::Mat4:
             glProgramUniformMatrix4fv(
-                program, p_location, p_count, GL_FALSE, floats);
+                program, p_location, p_count, GL_TRUE, floats);
             break;
         case DataType::Float:
         case DataType::Vec2:

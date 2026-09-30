@@ -49,17 +49,17 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Vertex
     {
-        Vector3f position;
+        compages::core::Vector3f position;
         //! \brief Where to read the stack of pictures: x and y on a picture,
         //! z between them.
-        Vector3f layer_coord;
+        compages::core::Vector3f layer_coord;
     };
 
     void makeTerrain(std::uint32_t p_side);

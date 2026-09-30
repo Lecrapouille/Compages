@@ -20,45 +20,51 @@
 
 #pragma once
 
-
 // *****************************************************************************
-//! \file Collection of Matrix transformation routines adaptated from the OpenGL
-//! Mathematic library (GLM).
+//! \file 4×4 transform helpers (translation, scale, rotation, projections,
+//! look-at). Matrices follow the **Scilab / column-vector** convention:
+//! \c y = M * x and \c translate(M,t) returns \c M * T so that \c T is applied
+//! to the point before \c M (same as \c (M * T) * x = M * (T * x)).
 //!
-//! \warning Note that all matrices are transposed to be directly usable by
-//!   OpenGL (since OpenGL matrices are column-major. Beware of option passed
-//!   to glUniformMatrix4fv that should be set to GL_FALSE). As consequence:
-//!   transpose(A * B) = transpose(B) * transpose(A). But to confuse more things
-//!   OpenGL convention is still M * x.
+//! OpenGL column-major layout is **not** baked in here: transpose once at GPU
+//! upload (\c glUniformMatrix4fv(..., GL_TRUE, ...)) or call \c transpose().
+//! See also \c doc/MathMatrices.md in the Robotik tree.
 //!
-//! \note The original code can be found here:
+//! \note Adapted from GLM:
 //!   https://github.com/g-truc/glm/blob/master/glm/ext/matrix_transform.inl
 //! \see https://learnopengl.com/Getting-started/Transformations
-//! \see https://antongerdelan.net/opengl/raycasting.html
 // *****************************************************************************
 
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
+#include <cassert>
 #include <cmath>
+#include <limits>
 
-namespace compages::matrix
+namespace compages::core
 {
+
 //--------------------------------------------------------------------------
-//! \brief Build a translation 4 * 4 matrix created from a vector of 3
-//! components.
+//! \brief Post-multiply by a translation: \c M * T ( \c T applied first on \c x
+//! ).
 //!
-//! \param[in] M Input matrix multiplied by this translation matrix.
-//! \param[in] t Coordinates of a translation vector.
-//! \return A transposed matrix.
+//! \param[in] M matrix already in the chain.
+//! \param[in] t translation (Tx, Ty, Tz).
+//! \return \c M * T.
 //!
 //! \code
-//! If \c M is the identity matrix, the output matrix O will be:
-//!                | 1 0 0 Tx |
-//!                | 0 1 0 Ty |
-//! O = transpose( | 0 0 1 Tz | )
-//!                | 0 0 0 1  |
+//! T = | 1  0  0  Tx |
+//!     | 0  1  0  Ty |
+//!     | 0  0  1  Tz |
+//!     | 0  0  0  1  |
+//!
+//! (M * T)(i,j) = M(i,j)           for j in {0,1,2}
+//! (M * T)(i,3) = M(i,0)*Tx + M(i,1)*Ty + M(i,2)*Tz + M(i,3)
 //! \endcode
+//!
+//! \note Implemented by updating column 3 only (same result as
+//!   \c M * translationMatrix(t), without a full 4×4 product).
 //--------------------------------------------------------------------------
 
 template <typename T>
@@ -66,59 +72,79 @@ Matrix<T, 4u, 4u> translate(Matrix<T, 4u, 4u> const& M, Vector<T, 3u> const& t)
 {
     Matrix<T, 4u, 4u> O(M);
 
-    O[3] = M[0] * t.x + M[1] * t.y + M[2] * t.z + M[3];
+    O(0, 3) = M(0, 0) * t.x + M(0, 1) * t.y + M(0, 2) * t.z + M(0, 3);
+    O(1, 3) = M(1, 0) * t.x + M(1, 1) * t.y + M(1, 2) * t.z + M(1, 3);
+    O(2, 3) = M(2, 0) * t.x + M(2, 1) * t.y + M(2, 2) * t.z + M(2, 3);
+    O(3, 3) = M(3, 0) * t.x + M(3, 1) * t.y + M(3, 2) * t.z + M(3, 3);
 
     return O;
 }
 
 //--------------------------------------------------------------------------
-//! \brief Build a scale 4 * 4 matrix created from 3 scalars.
+//! \brief Post-multiply by an axis-aligned scale: \c M * S.
 //!
-//! \param[in] M Input matrix multiplied by this scale matrix.
-//! \param[in] s Ratio of scaling for each axis.
-//! \return A transposed matrix.
+//! \param[in] M matrix already in the chain.
+//! \param[in] s scale (Sx, Sy, Sz).
+//! \return \c M * S.
 //!
 //! \code
-//! If \c M is the identity matrix, the output matrix O will be:
-//!                 | Sx 0  0  0 |
-//!                 | 0  Sy 0  0 |
-//! O =  transpose( | 0  0  Sz 0 | )
-//!                 | 0  0  0  1 |
+//! S = | Sx  0   0   0 |
+//!     | 0   Sy  0   0 |
+//!     | 0   0   Sz  0 |
+//!     | 0   0   0   1 |
+//!
+//! (M * S)(i,0) = M(i,0)*Sx,  (M * S)(i,1) = M(i,1)*Sy,
+//! (M * S)(i,2) = M(i,2)*Sz,  (M * S)(i,3) = M(i,3)
 //! \endcode
+//!
+//! \note Column scaling only (specialized, not a full 4×4 multiply).
 //--------------------------------------------------------------------------
 template <typename T>
 Matrix<T, 4u, 4u> scale(Matrix<T, 4u, 4u> const& M, Vector<T, 3u> const& s)
 {
     Matrix<T, 4u, 4u> O;
 
-    O[0] = M[0] * s.x;
-    O[1] = M[1] * s.y;
-    O[2] = M[2] * s.z;
-    O[3] = M[3];
+    O(0, 0) = M(0, 0) * s.x;
+    O(0, 1) = M(0, 1) * s.y;
+    O(0, 2) = M(0, 2) * s.z;
+    O(0, 3) = M(0, 3);
+    O(1, 0) = M(1, 0) * s.x;
+    O(1, 1) = M(1, 1) * s.y;
+    O(1, 2) = M(1, 2) * s.z;
+    O(1, 3) = M(1, 3);
+    O(2, 0) = M(2, 0) * s.x;
+    O(2, 1) = M(2, 1) * s.y;
+    O(2, 2) = M(2, 2) * s.z;
+    O(2, 3) = M(2, 3);
+    O(3, 0) = M(3, 0) * s.x;
+    O(3, 1) = M(3, 1) * s.y;
+    O(3, 2) = M(3, 2) * s.z;
+    O(3, 3) = M(3, 3);
 
     return O;
 }
 
 //--------------------------------------------------------------------------
-//! \brief Build a rotation 4 * 4 matrix created from an axis vector and an
-//! angle. With positive angle the rotation direction is clockwise due to the
-//! fact that OpenGL matrices are transposed.
+//! \brief Post-multiply by an axis-angle rotation: \c M * R.
 //!
-//! \param[in] M Input matrix multiplied by this rotation matrix.
-//! \param[in] angle Rotation angle expressed in radians.
-//! \param[in] r Rotation axis that will be normalized by this function.
-//! \return A transposed matrix.
+//! \param[in] M matrix already in the chain.
+//! \param[in] angle rotation in radians.
+//! \param[in] r axis (normalized inside the function).
+//! \return \c M * R.
 //!
 //! \code
-//! If \c M is the identity matrix, the output matrix O will be:
+//! R = | R00  R01  R02  0 |     with R the 3×3 Rodrigues matrix around
+//!     | R10  R11  R12  0 |     unit axis (Rx,Ry,Rz), c = cos(angle),
+//!     | R20  R21  R22  0 |     s = sin(angle):
+//!     |  0    0    0   1 |
 //!
-//!                | RxRx(1-c)+c      RxRy(1-c)-Rz.s   RxRz(1-c)+Ry.s   0 |
-//!                | RyRx(1-c)+Rz.s   RyRy(1-c)+c      RyRz(1-c)-Rx.s   0 |
-//! O = transpose( | RzRx(1-c)-Ry.s   RzRy(1-c)+Rx.s   RzRz(1-c)+c      0 | )
-//!                | 0                0                0                1 |
-//!
-//! Where: c = cosinus and s = sinus.
+//! R00 = c + Rx²(1-c)       R01 = Rx*Ry(1-c) - Rz*s   R02 = Rx*Rz(1-c) + Ry*s
+//! R10 = Ry*Rx(1-c) + Rz*s  R11 = c + Ry²(1-c)        R12 = Ry*Rz(1-c) - Rx*s
+//! R20 = Rz*Rx(1-c) - Ry*s  R21 = Rz*Ry(1-c) + Rx*s   R22 = c + Rz²(1-c)
 //! \endcode
+//!
+//! A positive angle turns counter-clockwise when looking from the tip of the
+//! axis toward the origin (right-hand rule).
 //--------------------------------------------------------------------------
 template <typename T>
 Matrix<T, 4u, 4u> rotate(Matrix<T, 4u, 4u> const& M,
@@ -128,34 +154,35 @@ Matrix<T, 4u, 4u> rotate(Matrix<T, 4u, 4u> const& M,
     T const c = units::math::cos(angle);
     T const s = units::math::sin(angle);
 
-    Vector<T, 3u> axis(compages::vector::normalize(r));
-    Vector<T, 3u> temp((compages::maths::one<T>() - c) * axis);
-    Matrix<T, 4u, 4u> rotate;
+    Vector<T, 3u> const axis(vector::normalize(r));
+    Vector<T, 3u> const temp((one<T>() - c) * axis);
 
-    rotate[0][0] = c + temp[0] * axis[0];
-    rotate[0][1] = temp[0] * axis[1] + s * axis[2];
-    rotate[0][2] = temp[0] * axis[2] - s * axis[1];
+    Matrix<T, 4u, 4u> rot(matrix::Type::Identity);
 
-    rotate[1][0] = temp[1] * axis[0] - s * axis[2];
-    rotate[1][1] = c + temp[1] * axis[1];
-    rotate[1][2] = temp[1] * axis[2] + s * axis[0];
+    rot(0, 0) = c + temp.x * axis.x;
+    rot(0, 1) = temp.x * axis.y - s * axis.z;
+    rot(0, 2) = temp.x * axis.z + s * axis.y;
 
-    rotate[2][0] = temp[2] * axis[0] + s * axis[1];
-    rotate[2][1] = temp[2] * axis[1] - s * axis[0];
-    rotate[2][2] = c + temp[2] * axis[2];
+    rot(1, 0) = temp.y * axis.x + s * axis.z;
+    rot(1, 1) = c + temp.y * axis.y;
+    rot(1, 2) = temp.y * axis.z - s * axis.x;
 
-    Matrix<T, 4u, 4u> O;
-    O[0] = M[0] * rotate[0][0] + M[1] * rotate[0][1] + M[2] * rotate[0][2];
-    O[1] = M[0] * rotate[1][0] + M[1] * rotate[1][1] + M[2] * rotate[1][2];
-    O[2] = M[0] * rotate[2][0] + M[1] * rotate[2][1] + M[2] * rotate[2][2];
-    O[3] = M[3];
+    rot(2, 0) = temp.z * axis.x - s * axis.y;
+    rot(2, 1) = temp.z * axis.y + s * axis.x;
+    rot(2, 2) = c + temp.z * axis.z;
 
-    return O;
+    return M * rot;
 }
 
 //--------------------------------------------------------------------------
-//! \brief Return the orthogonal matrix.
-//! \return the transposed orthogonal matrix.
+//! \brief Orthographic projection (\c p_ndc = ortho * p_view).
+//!
+//! \code
+//! ortho = | 2/(r-l)    0          0              -(r+l)/(r-l) |
+//!         | 0          2/(t-b)    0              -(t+b)/(t-b) |
+//!         | 0          0          -2/(f-n)       -(f+n)/(f-n) |
+//!         | 0          0          0               1           |
+//! \endcode
 //--------------------------------------------------------------------------
 template <typename T>
 Matrix<T, 4u, 4u> ortho(T const left,
@@ -165,8 +192,7 @@ Matrix<T, 4u, 4u> ortho(T const left,
                         T const near,
                         T const far)
 {
-    // Row-vector layout, consistent with compages::matrix::perspective:
-    // p_ndc = p_view * ortho, with the camera looking down its local -Z. For
+    // Column-vector layout: p_ndc = ortho * p_view, camera local -Z. For
     // a point at z_view = -near we want z_ndc = -1, at z_view = -far we want
     // z_ndc = +1. That linear map is z_ndc = -2/(f-n) * z_view - (f+n)/(f-n),
     // which is why the z coefficient below is negative even though the x and
@@ -175,24 +201,24 @@ Matrix<T, 4u, 4u> ortho(T const left,
     // the near plane in the right-handed convention used everywhere else.
     return { //
              T(2) / (right - left),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             //
-             compages::maths::zero<T>(),
-             T(2) / (top - bottom),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             //
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             -T(2) / (far - near),
-             compages::maths::zero<T>(),
-             //
+             zero<T>(),
+             zero<T>(),
              -(right + left) / (right - left),
+             //
+             zero<T>(),
+             T(2) / (top - bottom),
+             zero<T>(),
              -(top + bottom) / (top - bottom),
+             //
+             zero<T>(),
+             zero<T>(),
+             -T(2) / (far - near),
              -(far + near) / (far - near),
-             compages::maths::one<T>()
+             //
+             zero<T>(),
+             zero<T>(),
+             zero<T>(),
+             one<T>()
     };
 }
 
@@ -202,7 +228,16 @@ Matrix<T, 4u, 4u> ortho(T const left,
 //! \param[in] aspect Aspect ratio of the viewport.
 //! \param[in] zNear The near clipping distance.
 //! \param[in] zFar The far clipping distance.
-//! \return the transposed perspective matrix.
+//! \return perspective matrix (\c p_ndc = perspective * p_view).
+//!
+//! \code
+//! g = 1 / tan(fovY/2), n = zNear, f = zFar
+//!
+//! perspective = | g/aspect  0    0              0            |
+//!               | 0         g    0              0            |
+//!               | 0         0   -(f+n)/(f-n)   -2*f*n/(f-n)  |
+//!               | 0         0   -1              0            |
+//! \endcode
 //--------------------------------------------------------------------------
 template <typename T>
 Matrix<T, 4u, 4u> perspective(units::angle::radian_t const fovY,
@@ -210,40 +245,33 @@ Matrix<T, 4u, 4u> perspective(units::angle::radian_t const fovY,
                               T const zNear,
                               T const zFar)
 {
-    assert(compages::maths::abs(aspect - std::numeric_limits<T>::epsilon()) >
-           static_cast<T>(0));
+    assert(abs(aspect) > std::numeric_limits<T>::epsilon());
 
     T const tanHalfFovY = std::tan(fovY.to<T>() / T(2));
 
     return { //
-             compages::maths::one<T>() / (aspect * tanHalfFovY),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
+             one<T>() / (aspect * tanHalfFovY),
+             zero<T>(),
+             zero<T>(),
+             zero<T>(),
 
              //
-             compages::maths::zero<T>(),
-             compages::maths::one<T>() / (tanHalfFovY),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
+             zero<T>(),
+             one<T>() / (tanHalfFovY),
+             zero<T>(),
+             zero<T>(),
 
              //
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
+             zero<T>(),
+             zero<T>(),
              -(zFar + zNear) / (zFar - zNear),
-             -compages::maths::one<T>(),
-
-             //
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
              -(T(2) * zFar * zNear) / (zFar - zNear),
-             compages::maths::zero<T>(),
 
              //
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             compages::maths::zero<T>(),
-             compages::maths::one<T>()
+             zero<T>(),
+             zero<T>(),
+             -one<T>(),
+             zero<T>()
     };
 }
 
@@ -254,54 +282,54 @@ Matrix<T, 4u, 4u> perspective(units::angle::radian_t const fovY,
 //! \param[in] target Position where the camera is looking at
 //! \param[in] upwards Normalized up vector, how the camera is oriented.
 //!   Typically (0, 0, 1)
-//! \return A transposed matrix.
+//! \return view matrix \c V such that \c p_cam = V * p_world.
+//!
+//! With \c direction = normalize(target - position), \c right = normalize(
+//! direction × up), \c up' = right × direction:
 //!
 //! \code
-//!                     | Rx Ry Rz 0 |   | 1 0 0 -Px |
-//! LookAt = transpose( | Ux Uy Uz 0 | x | 0 1 0 -Py | )
-//!                     | Dx Dy Dz 0 |   | 0 0 1 -Pz |
-//!                     |  0  0  0 1 |   | 0 0 0 1   |
-//!
-//! Where:
-//!   - U is the up vector,
-//!   - D is the direction vector,
-//!   - R is the right vector (= cross product between U and D).
-//!   - P is the camera's position vector.
+//! V = |  Rx   Ry   Rz   -(R·position) |
+//!     |  Ux   Uy   Uz   -(U·position) |
+//!     | -Dx  -Dy  -Dz    D·position   |
+//!     |  0    0    0          1       |
 //! \endcode
+//!
+//! (R, U, D) are the right, up and view-direction vectors: they are the rows
+//! of the rotation block, so the camera looks down its local -Z axis.
 //--------------------------------------------------------------------------
 template <typename T>
 Matrix<T, 4u, 4u> lookAt(Vector<T, 3u> const& position,
                          Vector<T, 3u> const& target,
                          Vector<T, 3u> const& upwards)
 {
-    Vector<T, 3u> const direction(compages::vector::normalize(target - position));
+    Vector<T, 3u> const direction(vector::normalize(target - position));
     Vector<T, 3u> const right(
-        compages::vector::normalize(compages::vector::cross(direction, upwards)));
-    Vector<T, 3u> const up(compages::vector::cross(right, direction));
+        vector::normalize(vector::cross(direction, upwards)));
+    Vector<T, 3u> const up(vector::cross(right, direction));
 
     return { //
              right.x,
-             up.x,
-             -direction.x,
-             compages::maths::zero<T>(),
-
-             //
              right.y,
-             up.y,
-             -direction.y,
-             compages::maths::zero<T>(),
-
-             //
              right.z,
-             up.z,
-             -direction.z,
-             compages::maths::zero<T>(),
+             -vector::dot(right, position),
 
              //
-             -(compages::vector::dot(right, position)),
-             -(compages::vector::dot(up, position)),
-             compages::vector::dot(direction, position),
-             compages::maths::one<T>()
+             up.x,
+             up.y,
+             up.z,
+             -vector::dot(up, position),
+
+             //
+             -direction.x,
+             -direction.y,
+             -direction.z,
+             vector::dot(direction, position),
+
+             //
+             zero<T>(),
+             zero<T>(),
+             zero<T>(),
+             one<T>()
     };
 }
 
@@ -321,22 +349,28 @@ template <typename T>
 Matrix<T, 3u, 3u> normalMatrix(Matrix<T, 4u, 4u> const& modelMatrix,
                                Matrix<T, 4u, 4u> const& viewMatrix)
 {
-    return normalMatrix(modelMatrix * viewMatrix);
+    return normalMatrix(viewMatrix * modelMatrix);
 }
 
 // --------------------------------------------------------------------------
-//! \brief Apply a 4x4 the way this library stores it: rows of the CPU array
-//! are the columns the shader multiplies with, so a point is a weighted sum
-//! of those rows. Same convention as \c AABB::transformed.
+//! \brief Translation part (column 3) of an affine 4x4 matrix.
+// --------------------------------------------------------------------------
+[[nodiscard]] inline Vector3f translation(Matrix44f const& p_matrix)
+{
+    return Vector3f(p_matrix(0, 3), p_matrix(1, 3), p_matrix(2, 3));
+}
+
+// --------------------------------------------------------------------------
+//! \brief Apply \c p_matrix to a 3D point (\c w = 1), with perspective divide.
+//! Uses the canonical product \c M * x (see \c Matrix::operator*).
 // --------------------------------------------------------------------------
 [[nodiscard]] inline Vector3f transformPoint(Matrix44f const& p_matrix,
                                              Vector3f const& p_point)
 {
-    Vector4f const h = (p_matrix[0] * p_point.x) + (p_matrix[1] * p_point.y) +
-                       (p_matrix[2] * p_point.z) + p_matrix[3];
+    Vector4f const h =
+        p_matrix * Vector4f(p_point.x, p_point.y, p_point.z, 1.0f);
     const float w = (std::abs(h.w) < 1.0e-8f) ? 1.0f : h.w;
     return Vector3f(h.x / w, h.y / w, h.z / w);
 }
 
-} // namespace compages::matrix
-
+} // namespace compages::core

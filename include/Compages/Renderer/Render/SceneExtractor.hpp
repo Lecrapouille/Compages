@@ -29,23 +29,24 @@ namespace compages::renderer
 
 class Scene;
 
-using compages::world::EntityId;
-
 // ****************************************************************************
-//! \brief Turns a Scene + World into a RenderSnapshot.
+//! \brief Turns a Scene + compages::world::World into a RenderSnapshot.
 //!
 //! This is the explicit extraction brick of the frame contract
-//! (\c Scene/FramePipeline.hpp). The World stops here; the Renderer never
-//! walks it. Extraction reads:
+//! (\c Scene/FramePipeline.hpp). The compages::world::World stops here; the
+//! Renderer never walks it. Extraction reads:
 //! - the Scene's active camera (projection, transform, viewport, near/far);
-//! - every MeshRenderer, SkinInstance pose, DirectionalLight and PointLight;
-//! - every world matrix produced by the last \c World::update();
+//! - every compages::renderer::MeshRenderer, compages::world::SkinInstance
+//! pose, compages::world::DirectionalLight and compages::world::PointLight;
+//! - every world matrix produced by the last \c
+//! compages::world::World::update();
 //! - the AssetManager, to skip items that refer to stale ids.
 //!
-//! It writes a RenderSnapshot: a value that stands on its own. Frustum
-//! culling happens here, before the snapshot exists, not after: an item
-//! whose world bounds fall entirely outside the camera frustum is left
-//! out. LOD, visibility, batching and light selection belong here later.
+//! It writes a RenderSnapshot: a value that stands on its own.
+//! compages::core::Frustum culling happens here, before the snapshot exists,
+//! not after: an item whose world bounds fall entirely outside the camera
+//! frustum is left out. LOD, visibility, batching and light selection belong
+//! here later.
 // ****************************************************************************
 class SceneExtractor
 {
@@ -55,23 +56,23 @@ public:
     //! \brief Build a snapshot out of a Scene, using the given aspect ratio
     //! for the perspective projection.
     //!
-    //! Requires the Scene to have a valid active camera EntityId with a Camera
-    //! component. Refuses otherwise, with a sentence: rendering with no
-    //! camera should be an error, not a black screen.
+    //! Requires the Scene to have a valid active camera
+    //! compages::world::EntityId with a compages::world::Camera component.
+    //! Refuses otherwise, with a sentence: rendering with no camera should be
+    //! an error, not a black screen.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static compages::Result<RenderSnapshot>
-    extract(Scene const& p_scene, float p_aspect);
+    [[nodiscard]] static Result<RenderSnapshot> extract(Scene const& p_scene,
+                                                        float p_aspect);
 
     //! \brief Same, but taking width and height instead of aspect. Convenience.
-    [[nodiscard]] static compages::Result<RenderSnapshot>
-    extract(Scene const& p_scene,
-            std::uint32_t p_width,
-            std::uint32_t p_height);
+    [[nodiscard]] static Result<RenderSnapshot> extract(Scene const& p_scene,
+                                                        std::uint32_t p_width,
+                                                        std::uint32_t p_height);
 
     //! \brief Same, through another camera than the active one.
-    [[nodiscard]] static compages::Result<RenderSnapshot>
+    [[nodiscard]] static Result<RenderSnapshot>
     extract(Scene const& p_scene,
-            EntityId p_camera,
+            compages::world::EntityId p_camera,
             std::uint32_t p_width,
             std::uint32_t p_height);
 };

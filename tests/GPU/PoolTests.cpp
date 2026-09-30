@@ -36,15 +36,16 @@ struct Thing
     std::shared_ptr<int> owned;
 };
 
-using ThingPool = compages::gpu::Pool<Thing, struct ThingTag>;
-using ThingHandle = ThingPool::Handle;
+struct ThingTag
+{
+};
 
 } // namespace
 
 //------------------------------------------------------------------------------
 TEST(Pool, StartsEmpty)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
     ASSERT_TRUE(pool.empty());
     ASSERT_EQ(pool.size(), 0u);
@@ -54,12 +55,12 @@ TEST(Pool, StartsEmpty)
 //------------------------------------------------------------------------------
 TEST(Pool, HandsOutAHandleNamingWhatWasStored)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
     auto added = pool.add(Thing{ 42, nullptr });
     ASSERT_TRUE(bool(added)) << added.error();
 
-    const ThingHandle handle = added.take();
+    const compages::gpu::Handle<ThingTag> handle = added.take();
     ASSERT_TRUE(pool.valid(handle));
     ASSERT_NE(pool.get(handle), nullptr);
     ASSERT_EQ(pool.get(handle)->value, 42);
@@ -72,9 +73,9 @@ TEST(Pool, HandsOutAHandleNamingWhatWasStored)
 //------------------------------------------------------------------------------
 TEST(Pool, NeverHandsOutAHandleThatLooksEmpty)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
-    const ThingHandle handle = pool.add(Thing{ 1, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> handle = pool.add(Thing{ 1, nullptr }).take();
 
     ASSERT_TRUE(handle.valid());
     ASSERT_EQ(handle.index(), 0u);
@@ -84,11 +85,11 @@ TEST(Pool, NeverHandsOutAHandleThatLooksEmpty)
 //------------------------------------------------------------------------------
 TEST(Pool, RejectsAnEmptyHandle)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
-    ASSERT_FALSE(pool.valid(ThingHandle{}));
-    ASSERT_EQ(pool.get(ThingHandle{}), nullptr);
-    ASSERT_FALSE(pool.remove(ThingHandle{}));
+    ASSERT_FALSE(pool.valid(compages::gpu::Handle<ThingTag>{}));
+    ASSERT_EQ(pool.get(compages::gpu::Handle<ThingTag>{}), nullptr);
+    ASSERT_FALSE(pool.remove(compages::gpu::Handle<ThingTag>{}));
 }
 
 //------------------------------------------------------------------------------
@@ -97,18 +98,18 @@ TEST(Pool, RejectsAnEmptyHandle)
 //------------------------------------------------------------------------------
 TEST(Pool, RejectsAHandleToASlotThatDoesNotExist)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
     (void)pool.add(Thing{ 1, nullptr });
 
-    ASSERT_FALSE(pool.valid(ThingHandle(500u, 1u)));
-    ASSERT_EQ(pool.get(ThingHandle(500u, 1u)), nullptr);
+    ASSERT_FALSE(pool.valid(compages::gpu::Handle<ThingTag>(500u, 1u)));
+    ASSERT_EQ(pool.get(compages::gpu::Handle<ThingTag>(500u, 1u)), nullptr);
 }
 
 //------------------------------------------------------------------------------
 TEST(Pool, ForgetsAReleasedResource)
 {
-    ThingPool pool;
-    const ThingHandle handle = pool.add(Thing{ 7, nullptr }).take();
+    compages::gpu::Pool<Thing, ThingTag> pool;
+    const compages::gpu::Handle<ThingTag> handle = pool.add(Thing{ 7, nullptr }).take();
 
     ASSERT_TRUE(pool.remove(handle));
 
@@ -123,8 +124,8 @@ TEST(Pool, ForgetsAReleasedResource)
 //------------------------------------------------------------------------------
 TEST(Pool, RefusesToReleaseTwice)
 {
-    ThingPool pool;
-    const ThingHandle handle = pool.add(Thing{ 7, nullptr }).take();
+    compages::gpu::Pool<Thing, ThingTag> pool;
+    const compages::gpu::Handle<ThingTag> handle = pool.add(Thing{ 7, nullptr }).take();
 
     ASSERT_TRUE(pool.remove(handle));
     ASSERT_FALSE(pool.remove(handle));
@@ -137,9 +138,9 @@ TEST(Pool, RefusesToReleaseTwice)
 //------------------------------------------------------------------------------
 TEST(Pool, LetsGoOfWhatAReleasedRecordOwned)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
     auto owned = std::make_shared<int>(1);
-    const ThingHandle handle = pool.add(Thing{ 1, owned }).take();
+    const compages::gpu::Handle<ThingTag> handle = pool.add(Thing{ 1, owned }).take();
     ASSERT_EQ(owned.use_count(), 2);
 
     pool.remove(handle);
@@ -153,11 +154,11 @@ TEST(Pool, LetsGoOfWhatAReleasedRecordOwned)
 //------------------------------------------------------------------------------
 TEST(Pool, ReusesTheSlotButNotTheHandle)
 {
-    ThingPool pool;
-    const ThingHandle first = pool.add(Thing{ 1, nullptr }).take();
+    compages::gpu::Pool<Thing, ThingTag> pool;
+    const compages::gpu::Handle<ThingTag> first = pool.add(Thing{ 1, nullptr }).take();
     pool.remove(first);
 
-    const ThingHandle second = pool.add(Thing{ 2, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> second = pool.add(Thing{ 2, nullptr }).take();
 
     ASSERT_EQ(second.index(), first.index());
     ASSERT_NE(second.generation(), first.generation());
@@ -171,10 +172,10 @@ TEST(Pool, ReusesTheSlotButNotTheHandle)
 //------------------------------------------------------------------------------
 TEST(Pool, KeepsTheOtherResourcesWhereTheyWere)
 {
-    ThingPool pool;
-    const ThingHandle a = pool.add(Thing{ 1, nullptr }).take();
-    const ThingHandle b = pool.add(Thing{ 2, nullptr }).take();
-    const ThingHandle c = pool.add(Thing{ 3, nullptr }).take();
+    compages::gpu::Pool<Thing, ThingTag> pool;
+    const compages::gpu::Handle<ThingTag> a = pool.add(Thing{ 1, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> b = pool.add(Thing{ 2, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> c = pool.add(Thing{ 3, nullptr }).take();
 
     pool.remove(b);
 
@@ -191,11 +192,11 @@ TEST(Pool, KeepsTheOtherResourcesWhereTheyWere)
 //------------------------------------------------------------------------------
 TEST(Pool, GrowsNoFurtherThanTheMostResourcesEverAlive)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
     for (int round = 0; round < 100; ++round)
     {
-        ThingHandle handles[4];
+        compages::gpu::Handle<ThingTag> handles[4];
         for (int i = 0; i < 4; ++i)
         {
             handles[i] = pool.add(Thing{ i, nullptr }).take();
@@ -213,15 +214,15 @@ TEST(Pool, GrowsNoFurtherThanTheMostResourcesEverAlive)
 //------------------------------------------------------------------------------
 TEST(Pool, VisitsEveryLiveResourceAndNoOther)
 {
-    ThingPool pool;
-    const ThingHandle a = pool.add(Thing{ 1, nullptr }).take();
-    const ThingHandle b = pool.add(Thing{ 2, nullptr }).take();
-    const ThingHandle c = pool.add(Thing{ 3, nullptr }).take();
+    compages::gpu::Pool<Thing, ThingTag> pool;
+    const compages::gpu::Handle<ThingTag> a = pool.add(Thing{ 1, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> b = pool.add(Thing{ 2, nullptr }).take();
+    const compages::gpu::Handle<ThingTag> c = pool.add(Thing{ 3, nullptr }).take();
     pool.remove(b);
 
     std::vector<int> seen;
-    std::vector<ThingHandle> handles;
-    pool.forEach([&](ThingHandle p_handle, Thing& p_thing) {
+    std::vector<compages::gpu::Handle<ThingTag>> handles;
+    pool.forEach([&](compages::gpu::Handle<ThingTag> p_handle, Thing& p_thing) {
         seen.emplace_back(p_thing.value);
         handles.emplace_back(p_handle);
     });
@@ -236,12 +237,12 @@ TEST(Pool, VisitsEveryLiveResourceAndNoOther)
 //------------------------------------------------------------------------------
 TEST(Pool, GivesTheVisitorUsableHandles)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
     (void)pool.add(Thing{ 1, nullptr });
     (void)pool.add(Thing{ 2, nullptr });
 
-    std::vector<ThingHandle> handles;
-    pool.forEach([&](ThingHandle p_handle, Thing&) {
+    std::vector<compages::gpu::Handle<ThingTag>> handles;
+    pool.forEach([&](compages::gpu::Handle<ThingTag> p_handle, Thing&) {
         handles.emplace_back(p_handle);
     });
 
@@ -256,9 +257,9 @@ TEST(Pool, GivesTheVisitorUsableHandles)
 //------------------------------------------------------------------------------
 TEST(Pool, DropsEverythingWhenCleared)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
     auto owned = std::make_shared<int>(1);
-    const ThingHandle handle = pool.add(Thing{ 1, owned }).take();
+    const compages::gpu::Handle<ThingTag> handle = pool.add(Thing{ 1, owned }).take();
 
     pool.clear();
 
@@ -275,9 +276,9 @@ TEST(Pool, DropsEverythingWhenCleared)
 //------------------------------------------------------------------------------
 TEST(Pool, SkipsZeroWhenTheReuseCountWrapsAround)
 {
-    ThingPool pool;
+    compages::gpu::Pool<Thing, ThingTag> pool;
 
-    ThingHandle handle;
+    compages::gpu::Handle<ThingTag> handle;
     for (std::uint32_t round = 0u; round <= 0xFFFFu; ++round)
     {
         handle = pool.add(Thing{ 1, nullptr }).take();

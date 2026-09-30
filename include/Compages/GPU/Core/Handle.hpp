@@ -29,11 +29,6 @@
 namespace compages::gpu
 {
 
-using compages::Failure;
-using compages::Result;
-using compages::Status;
-using compages::failure;
-using compages::success;
 
 // ****************************************************************************
 //! \brief Names one GPU resource, in 32 bits, and knows when it is stale.

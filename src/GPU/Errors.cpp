@@ -44,8 +44,9 @@ void reportError(std::string p_message)
         g_first = std::move(p_message);
     }
     ++g_count;
-    assert(!g_break && "compages::gpu::reportError() with setBreakOnError(true): see "
-                       "compages::gpu::takeFrameError() for the message");
+    assert(!g_break &&
+           "compages::gpu::reportError() with setBreakOnError(true): see "
+           "compages::gpu::takeFrameError() for the message");
 }
 
 //------------------------------------------------------------------------------

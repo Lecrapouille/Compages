@@ -113,9 +113,9 @@ const char* typeName(GLenum p_type)
 //! This one function replaces the old habit of asking glGetError() after every
 //! single OpenGL call. It is a strictly better deal: the driver tells us what
 //! went wrong in a sentence, rather than us learning that something, somewhere,
-//! returned GL_INVALID_OPERATION. Under a debug context the message even arrives
-//! while the offending call is still on the stack, so a breakpoint here shows
-//! the culprit.
+//! returned GL_INVALID_OPERATION. Under a debug context the message even
+//! arrives while the offending call is still on the stack, so a breakpoint here
+//! shows the culprit.
 //------------------------------------------------------------------------------
 void GLAD_API_PTR onDriverMessage(GLenum p_source,
                                   GLenum p_type,
@@ -158,10 +158,10 @@ void GLAD_API_PTR onDriverMessage(GLenum p_source,
     char const* severity = (p_severity == GL_DEBUG_SEVERITY_HIGH)     ? "high"
                            : (p_severity == GL_DEBUG_SEVERITY_MEDIUM) ? "medium"
                                                                       : "low";
-    std::string text = std::string(sourceName(p_source)) + " " +
-                       typeName(p_type) + " #" + std::to_string(p_id) + " (" +
-                       severity + "): " +
-                       (p_message != nullptr ? p_message : "(no message)");
+    std::string text =
+        std::string(sourceName(p_source)) + " " + typeName(p_type) + " #" +
+        std::to_string(p_id) + " (" + severity +
+        "): " + (p_message != nullptr ? p_message : "(no message)");
     log(level, text);
 }
 
@@ -172,8 +172,8 @@ void GLAD_API_PTR onDriverMessage(GLenum p_source,
 bool enableDriverMessages()
 {
     // Present since 4.3 as core, but a driver only honours it when the context
-    // was created with the debug flag, which is why this is a request and not an
-    // assumption.
+    // was created with the debug flag, which is why this is a request and not
+    // an assumption.
     if (glDebugMessageCallback == nullptr)
     {
         return false;
@@ -198,14 +198,12 @@ void queryLimits(DeviceInfo& p_info)
     p_info.vendor = queryString(GL_VENDOR);
     p_info.renderer = queryString(GL_RENDERER);
     p_info.version = queryString(GL_VERSION);
-    p_info.shading_language_version =
-        queryString(GL_SHADING_LANGUAGE_VERSION);
+    p_info.shading_language_version = queryString(GL_SHADING_LANGUAGE_VERSION);
 
     p_info.max_vertex_attributes = queryInt(GL_MAX_VERTEX_ATTRIBS);
     p_info.max_texture_size = queryInt(GL_MAX_TEXTURE_SIZE);
     p_info.max_texture_size_3d = queryInt(GL_MAX_3D_TEXTURE_SIZE);
-    p_info.max_texture_units =
-        queryInt(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+    p_info.max_texture_units = queryInt(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
     p_info.max_uniform_block_size = queryInt(GL_MAX_UNIFORM_BLOCK_SIZE);
     p_info.uniform_buffer_offset_alignment =
         queryInt(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
@@ -233,17 +231,17 @@ Status init(LoadProc p_load, DeviceInfo& p_info)
     {
         return failure(
             "the OpenGL symbols could not be loaded. Is a context current on "
-            "this thread? compages::gpu::init() must be called after the window has been "
+            "this thread? compages::gpu::init() must be called after the "
+            "window has been "
             "created and made current");
     }
 
     p_info.version_major = GLAD_VERSION_MAJOR(version);
     p_info.version_minor = GLAD_VERSION_MINOR(version);
 
-    const bool too_old =
-        (p_info.version_major < MINIMUM_VERSION_MAJOR) ||
-        ((p_info.version_major == MINIMUM_VERSION_MAJOR) &&
-         (p_info.version_minor < MINIMUM_VERSION_MINOR));
+    const bool too_old = (p_info.version_major < MINIMUM_VERSION_MAJOR) ||
+                         ((p_info.version_major == MINIMUM_VERSION_MAJOR) &&
+                          (p_info.version_minor < MINIMUM_VERSION_MINOR));
     if (too_old)
     {
         return failure(
@@ -252,8 +250,7 @@ Status init(LoadProc p_load, DeviceInfo& p_info)
             std::to_string(MINIMUM_VERSION_MINOR) +
             " for Direct State Access but the driver granted " +
             std::to_string(p_info.version_major) + "." +
-            std::to_string(p_info.version_minor) +
-            ". Ask the window for a " +
+            std::to_string(p_info.version_minor) + ". Ask the window for a " +
             std::to_string(MINIMUM_VERSION_MAJOR) + "." +
             std::to_string(MINIMUM_VERSION_MINOR) +
             " core profile context, or run on a machine whose driver supports "

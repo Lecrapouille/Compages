@@ -30,9 +30,10 @@ std::string AttributeFormat::glslType() const
 {
     const std::string count = std::to_string(components);
 
-    // Several slots means a matrix, which the hardware reads one column per slot.
-    // GLSL names it by columns first, so a field spanning four slots of four
-    // components is a mat4, and one spanning three slots of four is a mat3x4.
+    // Several slots means a matrix, which the hardware reads one column per
+    // slot. GLSL names it by columns first, so a field spanning four slots of
+    // four components is a mat4, and one spanning three slots of four is a
+    // mat3x4.
     if (slots > 1u)
     {
         const std::string prefix =
@@ -50,7 +51,8 @@ std::string AttributeFormat::glslType() const
         {
             return (scalar == ScalarType::Double) ? "double" : "float";
         }
-        return (scalar == ScalarType::UInt8) || (scalar == ScalarType::UInt16) ||
+        return (scalar == ScalarType::UInt8) ||
+                       (scalar == ScalarType::UInt16) ||
                        (scalar == ScalarType::UInt32)
                    ? "uint"
                    : "int";
@@ -77,10 +79,10 @@ VertexLayout::VertexLayout(std::vector<FieldDesc> p_fields,
 //------------------------------------------------------------------------------
 FieldDesc const* VertexLayout::find(std::string_view p_name) const
 {
-    auto it = std::find_if(
-        m_fields.begin(), m_fields.end(), [&](FieldDesc const& p_field) {
-            return p_field.name == p_name;
-        });
+    auto it = std::find_if(m_fields.begin(),
+                           m_fields.end(),
+                           [&](FieldDesc const& p_field)
+                           { return p_field.name == p_name; });
     return (it == m_fields.end()) ? nullptr : &(*it);
 }
 
@@ -98,10 +100,10 @@ std::size_t VertexLayout::slots() const
 //------------------------------------------------------------------------------
 bool VertexLayout::hasPerInstanceFields() const
 {
-    return std::any_of(
-        m_fields.begin(), m_fields.end(), [](FieldDesc const& p_field) {
-            return p_field.per_instance;
-        });
+    return std::any_of(m_fields.begin(),
+                       m_fields.end(),
+                       [](FieldDesc const& p_field)
+                       { return p_field.per_instance; });
 }
 
 //------------------------------------------------------------------------------
@@ -121,10 +123,10 @@ Status VertexLayout::validate() const
 //------------------------------------------------------------------------------
 FieldDesc* VertexLayout::edit(std::string_view p_name, const char* p_what)
 {
-    auto it = std::find_if(
-        m_fields.begin(), m_fields.end(), [&](FieldDesc const& p_field) {
-            return p_field.name == p_name;
-        });
+    auto it = std::find_if(m_fields.begin(),
+                           m_fields.end(),
+                           [&](FieldDesc const& p_field)
+                           { return p_field.name == p_name; });
     if (it != m_fields.end())
     {
         return &(*it);
@@ -224,18 +226,21 @@ void VertexLayout::check()
 
         if (field.name.empty())
         {
-            m_error = "field " + std::to_string(i) + " has no name, so no "
+            m_error = "field " + std::to_string(i) +
+                      " has no name, so no "
                       "shader attribute can be matched to it";
             return;
         }
 
         if (!field.format.valid())
         {
-            m_error = "field '" + field.name + "' has a format the hardware "
+            m_error = "field '" + field.name +
+                      "' has a format the hardware "
                       "cannot read: " +
                       std::to_string(field.format.components) +
-                      " components of " + compages::gpu::toString(field.format.scalar) +
-                      " over " + std::to_string(field.format.slots) +
+                      " components of " +
+                      compages::gpu::toString(field.format.scalar) + " over " +
+                      std::to_string(field.format.slots) +
                       " slots. Between 1 and 4 components are allowed, and a "
                       "field cannot be both normalized and read as a whole "
                       "number";

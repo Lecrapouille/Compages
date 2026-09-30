@@ -25,8 +25,15 @@
 
 #include <vector>
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief Joint Entities of a skinned MeshRenderer, in skin order.
@@ -45,7 +52,7 @@ struct SkinInstance
     //! \brief ibm * jointWorld * inverse(meshWorld), filled by
     //! \c AnimationSystem::pose. The Extractor copies this into the
     //! snapshot; the vertex shader is what deforms the rest pose.
-    std::vector<Matrix44f> pose;
+    std::vector<compages::core::Matrix44f> pose;
 };
 
 } // namespace compages::world

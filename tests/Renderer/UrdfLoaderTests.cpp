@@ -21,12 +21,15 @@
 #include "Compages/World/Entity.hpp"
 #include "main.hpp"
 
+
 #include "Compages/Renderer/Assets/UrdfLoader.hpp"
 
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <string>
+
+
 
 using namespace units::literals;
 
@@ -121,7 +124,7 @@ private:
     std::filesystem::path m_path;
 };
 
-void expectNear(Vector3f const& p_actual, Vector3f const& p_expected)
+void expectNear(compages::core::Vector3f const& p_actual, compages::core::Vector3f const& p_expected)
 {
     EXPECT_NEAR(p_actual.x, p_expected.x, 1.0e-4f);
     EXPECT_NEAR(p_actual.y, p_expected.y, 1.0e-4f);
@@ -129,9 +132,9 @@ void expectNear(Vector3f const& p_actual, Vector3f const& p_expected)
 }
 
 //! \brief URDF is Z-up and the World Y-up: (x, y, z) becomes (x, z, -y).
-Vector3f yUp(float p_x, float p_y, float p_z)
+compages::core::Vector3f yUp(float p_x, float p_y, float p_z)
 {
-    return Vector3f(p_x, p_z, -p_y);
+    return compages::core::Vector3f(p_x, p_z, -p_y);
 }
 
 } // namespace
@@ -173,8 +176,8 @@ TEST(UrdfLoader, ReadsTheLimitsOfTheJoints)
     EXPECT_NEAR(joint.state.velocity.min.to<double>(), -2.618, 1.0e-9);
     EXPECT_NEAR(joint.state.velocity.max.to<double>(), 2.618, 1.0e-9);
     EXPECT_TRUE(std::isinf(joint.state.acceleration.max.to<double>()));
-    expectNear(joint.axis, Vector3f(0, 1, 0));
-    expectNear(joint.origin.position, Vector3f(0.1f, 0.0f, 0.615f));
+    expectNear(joint.axis, compages::core::Vector3f(0, 1, 0));
+    expectNear(joint.origin.position, compages::core::Vector3f(0.1f, 0.0f, 0.615f));
 }
 
 //------------------------------------------------------------------------------
@@ -254,7 +257,7 @@ TEST(UrdfLoader, HangsUnderAParent)
     EXPECT_EQ(robot.value().parent(), cell);
     world.update();
     expectNear(robot.value().lookup(TOOL0).worldPosition(),
-               Vector3f(5.0f, 0.0f, 0.0f) + yUp(0.94f, 0.0f, 1.455f));
+               compages::core::Vector3f(5.0f, 0.0f, 0.0f) + yUp(0.94f, 0.0f, 1.455f));
 }
 
 //------------------------------------------------------------------------------

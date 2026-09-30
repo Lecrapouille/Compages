@@ -43,18 +43,18 @@ void FPSController::apply(World& p_world,
         pitch = std::clamp(pitch, min_pitch, max_pitch);
     }
 
-    const Quatf q_yaw = Quatf::fromAngleAxis(
+    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(yaw)),
-        Vector3f(0.0f, 1.0f, 0.0f));
-    const Quatf q_pitch = Quatf::fromAngleAxis(
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(pitch)),
-        Vector3f(1.0f, 0.0f, 0.0f));
+        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
 
     // Walk on XZ using yaw only. At yaw = 0 the camera looks along -Z, so
     // forward on the ground is (0, 0, -1).
-    Vector3f walk(0.0f);
-    const Vector3f forward_xz = q_yaw * Vector3f(0.0f, 0.0f, -1.0f);
-    const Vector3f right_xz = q_yaw * Vector3f(1.0f, 0.0f, 0.0f);
+    compages::core::Vector3f walk(0.0f);
+    const compages::core::Vector3f forward_xz = q_yaw * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::core::Vector3f right_xz = q_yaw * compages::core::Vector3f(1.0f, 0.0f, 0.0f);
     if (p_input.forward)
     {
         walk += forward_xz;
@@ -83,7 +83,7 @@ void FPSController::apply(World& p_world,
     {
         eye_height = std::max(0.2f, eye_height - (move_speed * p_dt));
     }
-    const float length = compages::vector::norm(walk);
+    const float length = compages::core::vector::norm(walk);
     if (length > 1.0e-6f)
     {
         const float speed =

@@ -23,8 +23,12 @@
 #include "Compages/Core/Vector.hpp"
 #include "Compages/World/Controllers/Input.hpp"
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief What a camera controller reads in one frame.
@@ -43,7 +47,7 @@ struct CameraInput
 {
     //! \brief Mouse motion this frame, in pixels, y up. Look is typically
     //! applied only when \c look is true.
-    Vector2f look_delta{ 0.0f, 0.0f };
+    compages::core::Vector2f look_delta{ 0.0f, 0.0f };
     //! \brief Scroll wheel this frame. Positive is "away from the user",
     //! which an orbit controller treats as zoom in.
     float zoom_delta = 0.0f;

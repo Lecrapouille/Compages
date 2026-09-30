@@ -25,8 +25,15 @@
 
 #include <vector>
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
+
+
 
 // ****************************************************************************
 //! \brief Inverse-bind matrices of a glTF skin, in this library's matrix
@@ -34,7 +41,7 @@ namespace compages::renderer
 // ****************************************************************************
 struct SkinAsset
 {
-    std::vector<Matrix44f> inverse_bind;
+    std::vector<compages::core::Matrix44f> inverse_bind;
 };
 
 } // namespace compages::renderer

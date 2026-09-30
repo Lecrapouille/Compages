@@ -26,16 +26,16 @@ namespace compages::renderer
 {
 
 //------------------------------------------------------------------------------
-Ray CameraFrame::screenRay(float p_x,
+compages::core::Ray CameraFrame::screenRay(float p_x,
                            float p_y,
                            std::uint32_t p_width,
                            std::uint32_t p_height) const
 {
     if ((p_width == 0u) || (p_height == 0u))
     {
-        const Vector3f forward = compages::matrix::transformPoint(
-            inverse_view, Vector3f(0.0f, 0.0f, -1.0f)) - position;
-        return Ray::fromPoints(position, position + forward);
+        const compages::core::Vector3f forward = compages::core::transformPoint(
+            inverse_view, compages::core::Vector3f(0.0f, 0.0f, -1.0f)) - position;
+        return compages::core::Ray::fromPoints(position, position + forward);
     }
 
     const float ndc_x =
@@ -43,15 +43,14 @@ Ray CameraFrame::screenRay(float p_x,
     const float ndc_y =
         ((p_y / static_cast<float>(p_height)) * 2.0f) - 1.0f;
 
-    // Row-vector unprojection: a clip-space point is a 1x4 row, and applying
-    // inverse(view * projection) recovers the world point. Near is z = -1,
-    // far is z = +1, the OpenGL clip convention this backend uses.
-    const Matrix44f inv_vp = compages::matrix::inverse(view_projection);
-    const Vector3f world_near =
-        compages::matrix::transformPoint(inv_vp, Vector3f(ndc_x, ndc_y, -1.0f));
-    const Vector3f world_far =
-        compages::matrix::transformPoint(inv_vp, Vector3f(ndc_x, ndc_y, 1.0f));
-    return Ray::fromPoints(world_near, world_far);
+    // Column-vector unprojection: \c p_world = inverse(view_projection) * \c p_clip.
+    // Near is z = -1, far is z = +1 (OpenGL clip convention).
+    const compages::core::Matrix44f inv_vp = compages::core::inverse(view_projection);
+    const compages::core::Vector3f world_near =
+        compages::core::transformPoint(inv_vp, compages::core::Vector3f(ndc_x, ndc_y, -1.0f));
+    const compages::core::Vector3f world_far =
+        compages::core::transformPoint(inv_vp, compages::core::Vector3f(ndc_x, ndc_y, 1.0f));
+    return compages::core::Ray::fromPoints(world_near, world_far);
 }
 
 } // namespace compages::renderer

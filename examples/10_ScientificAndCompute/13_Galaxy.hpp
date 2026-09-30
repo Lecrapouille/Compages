@@ -52,16 +52,16 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Star
     {
-        Vector2f position;
-        Vector2f velocity;
-        Vector4f color;
+        compages::core::Vector2f position;
+        compages::core::Vector2f velocity;
+        compages::core::Vector4f color;
     };
 
     compages::gpu::PingPong<Star> m_stars;

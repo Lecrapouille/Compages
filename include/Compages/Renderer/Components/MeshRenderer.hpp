@@ -67,7 +67,7 @@ enum class RenderFlags : std::uint32_t
 //! \brief "Draw this mesh with this material", stored on a world entity.
 //!
 //! Data only: generational ids into the AssetManager, not GPU objects and not
-//! the assets themselves. The World stays a simulation; resolving an id to a
+//! the assets themselves. The compages::world::World stays a simulation; resolving an id to a
 //! pipeline or a buffer is the renderer's job, at extraction time.
 //!
 //! \code

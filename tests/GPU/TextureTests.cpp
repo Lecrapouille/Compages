@@ -52,7 +52,7 @@ std::string dataPath(std::string const& p_name)
     for (const char* root :
          { "external/Compages-data/", "../external/Compages-data/" })
     {
-        if (File::exist(root + p_name))
+        if (compages::core::File::exist(root + p_name))
         {
             return root + p_name;
         }

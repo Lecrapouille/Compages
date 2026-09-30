@@ -43,10 +43,9 @@ namespace compages::renderer
 //! if (mesh) { scene.mesh(mesh.take(), "Link1"); }
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] compages::Result<MeshAsset> loadStl(std::string const& p_path);
+[[nodiscard]] Result<MeshAsset> loadStl(std::string const& p_path);
 
 //! \brief Same, from the bytes of a file already in memory.
-[[nodiscard]] compages::Result<MeshAsset>
-parseStl(std::span<const std::byte> p_bytes);
+[[nodiscard]] Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes);
 
 } // namespace compages::renderer

@@ -61,9 +61,9 @@ GLFormat toGL(PixelFormat p_format)
         case PixelFormat::SRGB8A8:
             return { GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE };
 
-        // An integer format is handed integer pixels: GL_RED_INTEGER rather than
-        // GL_RED. Getting this one wrong is the classic way to end up with a
-        // texture full of zeroes.
+        // An integer format is handed integer pixels: GL_RED_INTEGER rather
+        // than GL_RED. Getting this one wrong is the classic way to end up with
+        // a texture full of zeroes.
         case PixelFormat::R8UI:
             return { GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE };
         case PixelFormat::R32I:
@@ -86,12 +86,14 @@ GLFormat toGL(PixelFormat p_format)
             return { GL_RGBA32F, GL_RGBA, GL_FLOAT };
 
         case PixelFormat::Depth16:
-            return { GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT,
+            return { GL_DEPTH_COMPONENT16,
+                     GL_DEPTH_COMPONENT,
                      GL_UNSIGNED_SHORT };
         case PixelFormat::Depth32F:
             return { GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT };
         case PixelFormat::Depth24Stencil8:
-            return { GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL,
+            return { GL_DEPTH24_STENCIL8,
+                     GL_DEPTH_STENCIL,
                      GL_UNSIGNED_INT_24_8 };
     }
     return { GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE };
@@ -141,7 +143,8 @@ GLenum magnifyToGL(Filter p_filter)
 }
 
 //------------------------------------------------------------------------------
-//! \brief What the driver is told about reduction, which does know about mipmaps.
+//! \brief What the driver is told about reduction, which does know about
+//! mipmaps.
 //!
 //! Two choices in one, and forgetting the second is a classic: a texture with
 //! mipmaps whose reduction filter says GL_LINEAR never reads them, so all that
@@ -225,18 +228,19 @@ Result<NativeId> createTexture(TextureDesc const& p_desc)
     }
 
     const bool has_mipmaps = p_desc.levels > 1u;
-    glTextureParameteri(name, GL_TEXTURE_MAG_FILTER,
+    glTextureParameteri(name,
+                        GL_TEXTURE_MAG_FILTER,
                         static_cast<GLint>(magnifyToGL(p_desc.magnify)));
     glTextureParameteri(
         name,
         GL_TEXTURE_MIN_FILTER,
         static_cast<GLint>(minifyToGL(p_desc.minify, has_mipmaps)));
-    glTextureParameteri(name, GL_TEXTURE_WRAP_S,
-                        static_cast<GLint>(toGL(p_desc.wrap_x)));
-    glTextureParameteri(name, GL_TEXTURE_WRAP_T,
-                        static_cast<GLint>(toGL(p_desc.wrap_y)));
-    glTextureParameteri(name, GL_TEXTURE_WRAP_R,
-                        static_cast<GLint>(toGL(p_desc.wrap_z)));
+    glTextureParameteri(
+        name, GL_TEXTURE_WRAP_S, static_cast<GLint>(toGL(p_desc.wrap_x)));
+    glTextureParameteri(
+        name, GL_TEXTURE_WRAP_T, static_cast<GLint>(toGL(p_desc.wrap_y)));
+    glTextureParameteri(
+        name, GL_TEXTURE_WRAP_R, static_cast<GLint>(toGL(p_desc.wrap_z)));
 
     return static_cast<NativeId>(name);
 }
@@ -342,11 +346,13 @@ void setTextureFilter(NativeId p_texture,
                       bool p_has_mipmaps)
 {
     const GLuint name = static_cast<GLuint>(p_texture);
-    glTextureParameteri(name, GL_TEXTURE_MAG_FILTER,
-                        static_cast<GLint>(magnifyToGL(p_magnify)));
     glTextureParameteri(name,
-                        GL_TEXTURE_MIN_FILTER,
-                        static_cast<GLint>(minifyToGL(p_minify, p_has_mipmaps)));
+                        GL_TEXTURE_MAG_FILTER,
+                        static_cast<GLint>(magnifyToGL(p_magnify)));
+    glTextureParameteri(
+        name,
+        GL_TEXTURE_MIN_FILTER,
+        static_cast<GLint>(minifyToGL(p_minify, p_has_mipmaps)));
 }
 
 //------------------------------------------------------------------------------
@@ -376,8 +382,8 @@ void bindTextureAsImage(NativeId p_texture,
                         ImageAccess p_access,
                         std::uint32_t p_level)
 {
-    // Every layer at once, which is what a compute shader addressing a volume or
-    // an array of images expects.
+    // Every layer at once, which is what a compute shader addressing a volume
+    // or an array of images expects.
     glBindImageTexture(static_cast<GLuint>(p_unit),
                        static_cast<GLuint>(p_texture),
                        static_cast<GLint>(p_level),

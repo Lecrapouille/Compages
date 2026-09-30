@@ -104,7 +104,7 @@ std::string ComplexShader::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status ComplexShader::setUp()
+compages::Status ComplexShader::setUp()
 {
     COMPAGES_TRY(m_quad.load(VERTEX, FRAGMENT));
 
@@ -116,7 +116,7 @@ compages::gpu::Status ComplexShader::setUp()
 
     // The knobs of the original shader, left as uniforms so a frame can
     // change them. Only time does, below.
-    m_quad["color"] = Vector3f(1.0f, 1.0f, 1.0f);
+    m_quad["color"] = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
     m_quad["speed"] = 0.0001f;
     m_quad["brightness"] = 0.0018f;
     m_quad["distfading"] = 0.7f;
@@ -125,7 +125,7 @@ compages::gpu::Status ComplexShader::setUp()
 }
 
 //------------------------------------------------------------------------------
-void ComplexShader::draw(Frame const& p_frame)
+void ComplexShader::draw(compages::world::ViewFrame const& p_frame)
 {
     // The whole animation is this uniform. The quad itself never moves.
     m_quad["time"] = p_frame.total;

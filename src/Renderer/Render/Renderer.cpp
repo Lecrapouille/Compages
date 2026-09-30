@@ -20,10 +20,10 @@
 
 #include "Compages/Renderer/Render/Renderer.hpp"
 
-#include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/RenderPass.hpp"
+#include "Compages/Renderer/Assets/AssetManager.hpp"
+#include "Compages/Renderer/Assets/ShaderLib.hpp"
 
 #include <algorithm>
 #include <array>
@@ -36,40 +36,46 @@ namespace compages::renderer
 namespace
 {
 
-constexpr std::array<std::string_view, compages::renderer::shaders::MAX_POINT_LIGHTS>
-    kPointPosNames{
-        "pointLightPos0", "pointLightPos1", "pointLightPos2", "pointLightPos3"
-    };
-constexpr std::array<std::string_view, compages::renderer::shaders::MAX_POINT_LIGHTS>
+constexpr std::array<std::string_view,
+                     compages::renderer::shaders::MAX_POINT_LIGHTS>
+    kPointPosNames{ "pointLightPos0",
+                    "pointLightPos1",
+                    "pointLightPos2",
+                    "pointLightPos3" };
+constexpr std::array<std::string_view,
+                     compages::renderer::shaders::MAX_POINT_LIGHTS>
     kPointColorNames{ "pointLightColor0",
                       "pointLightColor1",
                       "pointLightColor2",
                       "pointLightColor3" };
-constexpr std::array<std::string_view, compages::renderer::shaders::MAX_POINT_LIGHTS>
+constexpr std::array<std::string_view,
+                     compages::renderer::shaders::MAX_POINT_LIGHTS>
     kPointRangeNames{ "pointLightRange0",
                       "pointLightRange1",
                       "pointLightRange2",
                       "pointLightRange3" };
 
-compages::Status bindCamera(compages::renderer::Material& p_material,
-                       RenderSnapshot const& p_snapshot)
+Status bindCamera(compages::renderer::Material& p_material,
+                  RenderSnapshot const& p_snapshot)
 {
     p_material.program.set("view", p_snapshot.camera.view);
-    p_material.program.set("projection",
-                                   p_snapshot.camera.projection);
-    return compages::success();
+    p_material.program.set("projection", p_snapshot.camera.projection);
+    return success();
 }
 
-compages::Status bindLighting(compages::renderer::Material& p_material,
-                         RenderSnapshot const& p_snapshot)
+Status bindLighting(compages::renderer::Material& p_material,
+                    RenderSnapshot const& p_snapshot)
 {
     COMPAGES_TRY(bindCamera(p_material, p_snapshot));
 
-    Vector3f light_direction = p_snapshot.environment.default_light_direction;
-    Vector3f light_color = p_snapshot.environment.default_light_color;
+    compages::core::Vector3f light_direction =
+        p_snapshot.environment.default_light_direction;
+    compages::core::Vector3f light_color =
+        p_snapshot.environment.default_light_color;
     if (!p_snapshot.directional_lights.empty())
     {
-        DirectionalLightFrame const& sun = p_snapshot.directional_lights.front();
+        DirectionalLightFrame const& sun =
+            p_snapshot.directional_lights.front();
         light_direction = sun.direction;
         light_color = sun.color * sun.intensity;
     }
@@ -81,9 +87,10 @@ compages::Status bindLighting(compages::renderer::Material& p_material,
     p_material.program.set("fogColor", p_snapshot.environment.fog_color);
     p_material.program.set("fogDensity", p_snapshot.environment.fog_density);
 
-    const int count = static_cast<int>(std::min(
-        p_snapshot.point_lights.size(),
-        static_cast<std::size_t>(compages::renderer::shaders::MAX_POINT_LIGHTS)));
+    const int count = static_cast<int>(
+        std::min(p_snapshot.point_lights.size(),
+                 static_cast<std::size_t>(
+                     compages::renderer::shaders::MAX_POINT_LIGHTS)));
     p_material.program.set("pointLightCount", count);
 
     for (int i = 0; i < compages::renderer::shaders::MAX_POINT_LIGHTS; ++i)
@@ -93,7 +100,7 @@ compages::Status bindLighting(compages::renderer::Material& p_material,
             PointLightFrame const& light =
                 p_snapshot.point_lights[static_cast<std::size_t>(i)];
             p_material.program.set(kPointPosNames[static_cast<std::size_t>(i)],
-                                           light.position);
+                                   light.position);
             p_material.program.set(
                 kPointColorNames[static_cast<std::size_t>(i)],
                 light.color * light.intensity);
@@ -102,21 +109,20 @@ compages::Status bindLighting(compages::renderer::Material& p_material,
         }
         else
         {
-            p_material.program.set(
-                kPointPosNames[static_cast<std::size_t>(i)],
-                Vector3f(0.0f, 0.0f, 0.0f));
+            p_material.program.set(kPointPosNames[static_cast<std::size_t>(i)],
+                                   compages::core::Vector3f(0.0f, 0.0f, 0.0f));
             p_material.program.set(
                 kPointColorNames[static_cast<std::size_t>(i)],
-                Vector3f(0.0f, 0.0f, 0.0f));
-            p_material.program.set(kPointRangeNames[static_cast<std::size_t>(i)],
-                                       1.0f);
+                compages::core::Vector3f(0.0f, 0.0f, 0.0f));
+            p_material.program.set(
+                kPointRangeNames[static_cast<std::size_t>(i)], 1.0f);
         }
     }
-    return compages::success();
+    return success();
 }
 
-compages::Status bindMaterialFrame(compages::renderer::Material& p_material,
-                              RenderSnapshot const& p_snapshot)
+Status bindMaterialFrame(compages::renderer::Material& p_material,
+                         RenderSnapshot const& p_snapshot)
 {
     switch (p_material.family)
     {
@@ -133,12 +139,12 @@ compages::Status bindMaterialFrame(compages::renderer::Material& p_material,
 } // namespace
 
 //------------------------------------------------------------------------------
-compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
-                                  compages::renderer::AssetManager& p_assets)
+Status Renderer::render(RenderSnapshot const& p_snapshot,
+                        compages::renderer::AssetManager& p_assets)
 {
     if (!compages::gpu::inRenderPass())
     {
-        return compages::failure(
+        return failure(
             "Renderer::render was called with no pass open. The pass says "
             "where to draw and what the target starts from");
     }
@@ -146,7 +152,7 @@ compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
     m_queue.build(p_snapshot, p_assets);
     if (m_queue.empty())
     {
-        return compages::success();
+        return success();
     }
 
     compages::renderer::MaterialId bound_material;
@@ -196,7 +202,7 @@ compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
         {
             material->program.set(
                 "uJoints",
-                std::span<const Matrix44f>(
+                std::span<const compages::core::Matrix44f>(
                     p_snapshot.joint_palette.data() + item.joint_offset,
                     static_cast<std::size_t>(joint_count)));
         }
@@ -205,7 +211,7 @@ compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
             case compages::renderer::ShaderFamily::PbrMinimal:
             {
                 material->program.set("baseColorFactor",
-                                              instance->base_color_factor);
+                                      instance->base_color_factor);
                 const bool has_map = instance->base_color_texture.valid();
                 material->program.set("hasBaseColorMap", has_map);
                 compages::gpu::Texture const* picture = nullptr;
@@ -227,11 +233,13 @@ compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
                         compages::gpu::TextureDesc white;
                         white.width = 1u;
                         white.height = 1u;
-                        COMPAGES_TRY_ASSIGN(m_white, compages::gpu::Texture::create(white));
-                        const std::array<std::byte, 4u> pixel{
-                            std::byte{ 255 }, std::byte{ 255 },
-                            std::byte{ 255 }, std::byte{ 255 }
-                        };
+                        COMPAGES_TRY_ASSIGN(
+                            m_white, compages::gpu::Texture::create(white));
+                        const std::array<std::byte, 4u> pixel{ std::byte{ 255 },
+                                                               std::byte{ 255 },
+                                                               std::byte{ 255 },
+                                                               std::byte{
+                                                                   255 } };
                         COMPAGES_TRY(m_white.write(pixel));
                     }
                     picture = &m_white;
@@ -254,12 +262,12 @@ compages::Status Renderer::render(RenderSnapshot const& p_snapshot,
                 break;
         }
         compages::gpu::drawIndexed(material->pipeline,
-                                 mesh->vertices.handle(),
-                                 mesh->indexBuffer(),
-                                 mesh->index_type,
-                                 mesh->index_count);
+                                   mesh->vertices.handle(),
+                                   mesh->indexBuffer(),
+                                   mesh->index_type,
+                                   mesh->index_count);
     }
-    return compages::success();
+    return success();
 }
 
 } // namespace compages::renderer

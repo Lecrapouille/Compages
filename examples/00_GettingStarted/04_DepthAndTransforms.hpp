@@ -29,16 +29,16 @@ namespace examples
 // ****************************************************************************
 //! \brief A solid in three dimensions: indices, depth, culling and matrices.
 //!
-//! Everything the previous four examples left out arrives at once, because these
-//! four things are what turn a flat picture into a solid and they are useless one
-//! at a time.
+//! Everything the previous four examples left out arrives at once, because
+//! these four things are what turn a flat picture into a solid and they are
+//! useless one at a time.
 //!
-//! Indices, so that a corner shared by several triangles is stored once and named
-//! several times. Depth testing, so that a face nearer the eye covers one further
-//! away whatever order they were drawn in. Back face culling, so that half the
-//! triangles of a closed shape are dropped before they cost anything. And three
-//! matrices, so that a shape described once can be placed, looked at, and
-//! projected.
+//! Indices, so that a corner shared by several triangles is stored once and
+//! named several times. Depth testing, so that a face nearer the eye covers one
+//! further away whatever order they were drawn in. Back face culling, so that
+//! half the triangles of a closed shape are dropped before they cost anything.
+//! And three matrices, so that a shape described once can be placed, looked at,
+//! and projected.
 //!
 //! The depth test and the culling live in the render state of the drawable:
 //! \code
@@ -61,8 +61,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

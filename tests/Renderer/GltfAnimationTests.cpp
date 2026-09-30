@@ -34,6 +34,9 @@
 
 #include <cmath>
 
+
+
+
 using namespace tests;
 
 namespace
@@ -48,12 +51,12 @@ std::string soldierPath()
            "../external/Compages-data/" })
     {
         const std::string path = std::string(root) + "Soldier.glb";
-        if (File::exist(path))
+        if (compages::core::File::exist(path))
         {
             return path;
         }
     }
-    if (File::exist("/home/qq/three.js/examples/models/gltf/Soldier.glb"))
+    if (compages::core::File::exist("/home/qq/three.js/examples/models/gltf/Soldier.glb"))
     {
         return "/home/qq/three.js/examples/models/gltf/Soldier.glb";
     }
@@ -142,10 +145,10 @@ TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
     float worst = 0.0f;
     world.each<compages::world::SkinInstance>(
         [&](compages::world::EntityId, compages::world::SkinInstance const& p_skin) {
-        for (Matrix44f const& joint : p_skin.pose)
+        for (compages::core::Matrix44f const& joint : p_skin.pose)
         {
-            const Vector3f t(joint[3].x, joint[3].y, joint[3].z);
-            worst = std::max(worst, compages::vector::norm(t));
+            const compages::core::Vector3f t = compages::core::translation(joint);
+            worst = std::max(worst, compages::core::vector::norm(t));
         }
     });
     EXPECT_LT(worst, 8.0f) << "bind-pose joint matrices translated too far";
@@ -182,7 +185,7 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     ASSERT_NE(body, nullptr);
 
     ASSERT_TRUE(bool(compages::renderer::AnimationSystem::pose(world, assets)));
-    std::vector<Matrix44f> bind;
+    std::vector<compages::core::Matrix44f> bind;
     auto const skins = world.view<compages::world::SkinInstance>();
     ASSERT_FALSE(skins.empty());
     auto const first_skin = *skins.begin();
@@ -195,11 +198,9 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     ASSERT_EQ(after.size(), bind.size());
     for (std::size_t j = 0u; j < bind.size(); ++j)
     {
-        const Vector3f d(
-            after[j][3].x - bind[j][3].x,
-            after[j][3].y - bind[j][3].y,
-            after[j][3].z - bind[j][3].z);
-        worst = std::max(worst, compages::vector::norm(d));
+        const compages::core::Vector3f d = compages::core::translation(after[j]) -
+                                           compages::core::translation(bind[j]);
+        worst = std::max(worst, compages::core::vector::norm(d));
     }
     EXPECT_GT(worst, 0.05f) << "Walk clip left the bind pose unchanged";
 }

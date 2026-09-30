@@ -36,7 +36,7 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief A MeshRenderer inside a prefab, referencing assets by registered
+//! \brief A compages::renderer::MeshRenderer inside a prefab, referencing assets by registered
 //! name rather than by runtime id.
 // ****************************************************************************
 struct PrefabMeshRenderer

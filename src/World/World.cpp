@@ -18,12 +18,13 @@
 // along with Compages.  If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
-#include "Compages/World/Entity.hpp"
 #include "Compages/World/World.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include "Compages/World/Controllers/ViewFrame.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 #include <utility>
 
 namespace compages::world
@@ -46,15 +47,21 @@ Entity World::entity(EntityId p_id)
 //------------------------------------------------------------------------------
 EntityId World::create(std::string p_name)
 {
-    assert(m_living < EntityId::MAX_COUNT && "World entity limit reached");
+    // The spatial graph indexes its nodes with 16 bits: past MAX_COUNT living
+    // entities it would silently link the wrong nodes. Fail loudly, in release
+    // builds too (an assert is compiled out by NDEBUG).
+    if (m_living >= EntityId::MAX_COUNT)
+    {
+        throw std::length_error("compages::world::World: too many living "
+                                "entities (limit is 65535)");
+    }
     EntityId entity(m_registry.create());
     ++m_living;
     (void)m_graph.attach(entity);
     m_transforms.allocate(entity);
     if (!p_name.empty())
     {
-        m_registry.emplace<Name>(
-            entity.native(), Name{ std::move(p_name) });
+        m_registry.emplace<Name>(entity.native(), Name{ std::move(p_name) });
     }
     return entity;
 }
@@ -101,8 +108,7 @@ std::string const& World::name(EntityId p_entity) const
     {
         return s_empty_name;
     }
-    if (auto const* value =
-            m_registry.try_get<Name>(p_entity.native()))
+    if (auto const* value = m_registry.try_get<Name>(p_entity.native()))
     {
         return value->value;
     }
@@ -122,8 +128,8 @@ void World::setName(EntityId p_entity, std::string p_name)
     }
     else
     {
-        m_registry.emplace_or_replace<Name>(
-            p_entity.native(), Name{ std::move(p_name) });
+        m_registry.emplace_or_replace<Name>(p_entity.native(),
+                                            Name{ std::move(p_name) });
     }
 }
 
@@ -170,36 +176,34 @@ bool World::enabledInHierarchy(EntityId p_entity) const
 }
 
 //------------------------------------------------------------------------------
-compages::Status World::setParent(EntityId p_child,
-                             EntityId p_parent,
-                             ReparentPolicy p_policy)
+Status
+World::setParent(EntityId p_child, EntityId p_parent, ReparentPolicy p_policy)
 {
     if (!alive(p_child))
     {
-        return compages::failure(
+        return failure(
             "setParent was given a child entity that no longer exists");
     }
     if (p_parent.valid() && !alive(p_parent))
     {
-        return compages::failure(
+        return failure(
             "setParent was given a parent entity that no longer exists");
     }
     if (p_child == p_parent)
     {
-        return compages::failure("an entity cannot be its own parent");
+        return failure("an entity cannot be its own parent");
     }
 
     const NodeId child = m_graph.nodeOf(p_child);
-    const NodeId parent = p_parent.valid() ? m_graph.nodeOf(p_parent) : NodeId{};
+    const NodeId parent =
+        p_parent.valid() ? m_graph.nodeOf(p_parent) : NodeId{};
     if (!child.valid())
     {
-        return compages::failure(
-            "the child entity is not part of the spatial graph");
+        return failure("the child entity is not part of the spatial graph");
     }
     if (p_parent.valid() && !parent.valid())
     {
-        return compages::failure(
-            "the parent entity is not part of the spatial graph");
+        return failure("the parent entity is not part of the spatial graph");
     }
 
     return m_graph.setParent(child, parent, p_policy, &m_transforms);
@@ -256,11 +260,10 @@ EntityId World::find(EntityId p_root, std::string_view p_path) const
             continue;
         }
         const std::size_t slash = p_path.find('/', begin);
-        const std::string_view part =
-            p_path.substr(begin,
-                          (slash == std::string_view::npos)
-                              ? std::string_view::npos
-                              : (slash - begin));
+        const std::string_view part = p_path.substr(
+            begin,
+            (slash == std::string_view::npos) ? std::string_view::npos
+                                              : (slash - begin));
 
         EntityId child = firstChild(current);
         EntityId found;
@@ -311,7 +314,7 @@ LocalTransform World::transform(EntityId p_entity) const
 }
 
 //------------------------------------------------------------------------------
-Matrix44f const& World::worldMatrix(EntityId p_entity) const
+compages::core::Matrix44f const& World::worldMatrix(EntityId p_entity) const
 {
     assert(alive(p_entity) && "World::worldMatrix on a stale entity");
     return m_transforms.world(p_entity);
@@ -324,9 +327,12 @@ void World::update()
     m_transform_system.update(m_graph, m_transforms);
 }
 
-void World::update(Frame const& p_frame)
+void World::update(compages::core::Frame const& p_frame)
 {
     m_frame = p_frame;
+    // A headless step has no input: do not keep the keys and the mouse of a
+    // previous update(ViewFrame), or behaviors would see them held forever.
+    m_input = Input{};
     runBehaviors();
     update();
 }
@@ -365,12 +371,14 @@ Entity World::lookup(std::string_view p_path)
     return Entity(*this, find(root, p_path.substr(slash + 1u)));
 }
 
-Behavior& World::addBehavior(EntityId p_entity, std::unique_ptr<Behavior> p_behavior)
+Behavior& World::addBehavior(EntityId p_entity,
+                             std::unique_ptr<Behavior> p_behavior)
 {
     assert(alive(p_entity) && "a behavior added to a dead entity");
     p_behavior->m_world = this;
     p_behavior->m_entity = p_entity;
-    Behaviors& behaviors = m_registry.get_or_emplace<Behaviors>(p_entity.native());
+    Behaviors& behaviors =
+        m_registry.get_or_emplace<Behaviors>(p_entity.native());
     behaviors.list.emplace_back(std::move(p_behavior));
     return *behaviors.list.back();
 }
@@ -408,10 +416,10 @@ void World::runBehaviors()
         // pointer is only followed once found again in its entity.
         Behaviors const* owner = tryGet<Behaviors>(run.entity);
         if ((owner == nullptr) ||
-            std::none_of(owner->list.begin(), owner->list.end(),
-                         [&run](std::unique_ptr<Behavior> const& p_kept) {
-                             return p_kept.get() == run.behavior;
-                         }))
+            std::none_of(owner->list.begin(),
+                         owner->list.end(),
+                         [&run](std::unique_ptr<Behavior> const& p_kept)
+                         { return p_kept.get() == run.behavior; }))
         {
             continue;
         }

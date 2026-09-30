@@ -110,7 +110,7 @@ namespace detail
     for (std::string const& root : detail::dataRoots())
     {
         const std::string path = root + p_name;
-        if (File::exist(path))
+        if (compages::core::File::exist(path))
         {
             return path;
         }

@@ -20,14 +20,14 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Enums.hpp"
 #include "Compages/GPU/Core/DirtyRange.hpp"
+#include "Compages/GPU/Core/Enums.hpp"
 #include "Compages/GPU/Core/Handle.hpp"
 #include "Compages/GPU/Errors.hpp"
 
-#include <cstddef>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <initializer_list>
 #include <ranges>
 #include <span>
@@ -35,6 +35,11 @@
 #include <utility>
 #include <vector>
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -104,14 +109,16 @@ void destroyBuffer(BufferHandle p_handle);
 //!
 //! One class covers what the previous layer spread over separate types for
 //! vertex data, indices and uniforms: what changes between them is the kind
-//! given at creation, not the code. It also covers what the previous layer could
-//! not express at all, since it insisted on one buffer per vertex attribute:
-//! here a Buffer<Vertex> holds whole interleaved vertices.
+//! given at creation, not the code. It also covers what the previous layer
+//! could not express at all, since it insisted on one buffer per vertex
+//! attribute: here a Buffer<Vertex> holds whole interleaved vertices.
 //!
 //! \code
-//! struct Star { Vector3f position; Vector3f velocity; };
+//! struct Star { compages::core::Vector3f position; compages::core::Vector3f
+//! velocity; };
 //!
-//! auto buffer = compages::gpu::Buffer<Star>::create(1000000, compages::gpu::BufferKind::Storage,
+//! auto buffer = compages::gpu::Buffer<Star>::create(1000000,
+//! compages::gpu::BufferKind::Storage,
 //!                                        compages::gpu::BufferUsage::Storage);
 //! if (!buffer) { std::cerr << buffer.error(); return; }
 //! buffer.value().write(stars);
@@ -123,16 +130,16 @@ void destroyBuffer(BufferHandle p_handle);
 //! \code
 //! compages::gpu::Buffer<Vertex> trail;
 //! trail.emplace_back(position, color);      // sent at the next draw
-//! trail[0].color = Vector3f(1, 0, 0);       // only this element is sent
-//! compages::gpu::draw(pipeline, trail);
+//! trail[0].color = compages::core::Vector3f(1, 0, 0);       // only this
+//! element is sent compages::gpu::draw(pipeline, trail);
 //! \endcode
 //!
-//! The memory is released when the Buffer is destroyed. A Buffer can be moved but
-//! not copied, since two owners of the same memory would release it twice.
+//! The memory is released when the Buffer is destroyed. A Buffer can be moved
+//! but not copied, since two owners of the same memory would release it twice.
 //!
-//! \tparam T what one element is. Must be trivially copyable: the bytes are sent
-//! to the device as they are, and a type owning memory elsewhere would send a
-//! pointer the device cannot follow.
+//! \tparam T what one element is. Must be trivially copyable: the bytes are
+//! sent to the device as they are, and a type owning memory elsewhere would
+//! send a pointer the device cannot follow.
 // ****************************************************************************
 template <typename T>
 class Buffer
@@ -159,7 +166,8 @@ public:
     // ------------------------------------------------------------------------
     //! \brief A buffer holding these elements, sent at the first upload().
     // ------------------------------------------------------------------------
-    Buffer(std::initializer_list<T> p_data, BufferKind p_kind = BufferKind::Vertex)
+    Buffer(std::initializer_list<T> p_data,
+           BufferKind p_kind = BufferKind::Vertex)
         : m_cpu(p_data), m_kind(p_kind), m_mirrored(true)
     {
         m_dirty.addAll(m_cpu.size());
@@ -181,12 +189,11 @@ public:
     //! \param[in] p_count how many elements. Not zero: a buffer of nothing is
     //! almost always a count that was computed wrong.
     //! \param[in] p_kind what the buffer is for.
-    //! \param[in] p_usage how often it will be written from the CPU. Immutable is
-    //! refused here, since an immutable buffer can never be filled.
+    //! \param[in] p_usage how often it will be written from the CPU. Immutable
+    //! is refused here, since an immutable buffer can never be filled.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Buffer> create(std::size_t p_count,
-                                               BufferKind p_kind,
-                                               BufferUsage p_usage)
+    [[nodiscard]] static Result<Buffer>
+    create(std::size_t p_count, BufferKind p_kind, BufferUsage p_usage)
     {
         if (p_usage == BufferUsage::Immutable)
         {
@@ -195,11 +202,11 @@ public:
                 "its contents when created. Use Buffer::from() with the data, "
                 "or ask for BufferUsage::Dynamic");
         }
-        auto handle_result = detail::createBuffer(
-                           p_count * sizeof(T), nullptr, p_kind, p_usage);
+        auto handle_result =
+            detail::createBuffer(p_count * sizeof(T), nullptr, p_kind, p_usage);
         if (!handle_result)
         {
-            return compages::failure(handle_result.error());
+            return failure(handle_result.error());
         }
         auto handle = handle_result.take();
         return Buffer(handle, p_count);
@@ -212,29 +219,26 @@ public:
     //! read from a file: the driver may then place it in the memory the device
     //! reads fastest, knowing it will never be written again.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Buffer> from(std::span<const T> p_data,
-                                             BufferKind p_kind,
-                                             BufferUsage p_usage)
+    [[nodiscard]] static Result<Buffer>
+    from(std::span<const T> p_data, BufferKind p_kind, BufferUsage p_usage)
     {
-        auto handle_result = detail::createBuffer(p_data.size_bytes(),
-                                            p_data.data(),
-                                            p_kind,
-                                            p_usage);
+        auto handle_result = detail::createBuffer(
+            p_data.size_bytes(), p_data.data(), p_kind, p_usage);
         if (!handle_result)
         {
-            return compages::failure(handle_result.error());
+            return failure(handle_result.error());
         }
         auto handle = handle_result.take();
         return Buffer(handle, p_data.size());
     }
 
-    [[nodiscard]] static Result<Buffer>
-    from(std::span<const T> p_data, BufferOptions p_options = {})
+    [[nodiscard]] static Result<Buffer> from(std::span<const T> p_data,
+                                             BufferOptions p_options = {})
     {
         auto buffer_result = from(p_data, p_options.kind, p_options.usage);
         if (!buffer_result)
         {
-            return compages::failure(buffer_result.error());
+            return failure(buffer_result.error());
         }
         auto buffer = buffer_result.take();
         buffer.m_kind = p_options.kind;
@@ -247,15 +251,14 @@ public:
     }
 
     template <std::ranges::contiguous_range Range>
-        requires std::same_as<
-            std::remove_cv_t<std::ranges::range_value_t<Range>>, T>
-    [[nodiscard]] static Result<Buffer>
-    from(Range const& p_data, BufferOptions p_options = {})
+        requires std::
+            same_as<std::remove_cv_t<std::ranges::range_value_t<Range>>, T>
+        [[nodiscard]] static Result<Buffer> from(Range const& p_data,
+                                                 BufferOptions p_options = {})
     {
-        return from(
-            std::span<const T>(std::ranges::data(p_data),
-                               std::ranges::size(p_data)),
-            p_options);
+        return from(std::span<const T>(std::ranges::data(p_data),
+                                       std::ranges::size(p_data)),
+                    p_options);
     }
 
     [[nodiscard]] static Result<Buffer> indices(std::span<const T> p_data)
@@ -345,13 +348,12 @@ public:
     {
         if (m_mirrored && (p_first + p_data.size() <= m_cpu.size()))
         {
-            std::copy(p_data.begin(), p_data.end(), m_cpu.begin() +
-                      static_cast<std::ptrdiff_t>(p_first));
+            std::copy(p_data.begin(),
+                      p_data.end(),
+                      m_cpu.begin() + static_cast<std::ptrdiff_t>(p_first));
         }
-        check(detail::writeBuffer(m_handle,
-                                  p_first * sizeof(T),
-                                  p_data.size_bytes(),
-                                  p_data.data()));
+        check(detail::writeBuffer(
+            m_handle, p_first * sizeof(T), p_data.size_bytes(), p_data.data()));
     }
 
     // ------------------------------------------------------------------------
@@ -374,8 +376,9 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] T& operator[](std::size_t p_index)
     {
-        assert(m_mirrored && (p_index < m_cpu.size()) &&
-               "writing past the end of a Buffer, or into one without a CPU copy");
+        assert(
+            m_mirrored && (p_index < m_cpu.size()) &&
+            "writing past the end of a Buffer, or into one without a CPU copy");
         m_dirty.add(p_index);
         return m_cpu[p_index];
     }
@@ -397,9 +400,9 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Does this buffer keep its elements on the CPU too?
     //!
-    //! True for one default constructed, or made with BufferOptions::cpu_mirror.
-    //! Only such a buffer can grow, be changed element by element, or be
-    //! read back with download().
+    //! True for one default constructed, or made with
+    //! BufferOptions::cpu_mirror. Only such a buffer can grow, be changed
+    //! element by element, or be read back with download().
     // ------------------------------------------------------------------------
     [[nodiscard]] bool mirrored() const
     {
@@ -531,15 +534,15 @@ public:
         }
         if (!valid() || (m_count < m_cpu.size()))
         {
-            // Doubling keeps emplace_back cheap: the device memory is replaced a
-            // logarithmic number of times, not once per element.
+            // Doubling keeps emplace_back cheap: the device memory is replaced
+            // a logarithmic number of times, not once per element.
             std::size_t capacity = std::max(m_cpu.size(), m_reserved);
             capacity = std::max(capacity, m_count * 2u);
-            auto created = detail::createBuffer(capacity * sizeof(T), nullptr,
-                                                m_kind, BufferUsage::Dynamic);
+            auto created = detail::createBuffer(
+                capacity * sizeof(T), nullptr, m_kind, BufferUsage::Dynamic);
             if (!created)
             {
-                return compages::failure(created.error());
+                return failure(created.error());
             }
             detail::destroyBuffer(m_handle);
             m_handle = created.value();
@@ -585,17 +588,16 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Read elements back into CPU memory.
     //!
-    //! Waits for the device to finish with the memory, so it belongs in tests and
-    //! in debugging rather than in a frame. A compute pass that needs its result
-    //! on the CPU every frame wants a second buffer and one frame of delay
-    //! instead.
+    //! Waits for the device to finish with the memory, so it belongs in tests
+    //! and in debugging rather than in a frame. A compute pass that needs its
+    //! result on the CPU every frame wants a second buffer and one frame of
+    //! delay instead.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status read(std::span<T> p_into, std::size_t p_first = 0u) const
+    [[nodiscard]] Status read(std::span<T> p_into,
+                              std::size_t p_first = 0u) const
     {
-        return detail::readBuffer(m_handle,
-                                  p_first * sizeof(T),
-                                  p_into.size_bytes(),
-                                  p_into.data());
+        return detail::readBuffer(
+            m_handle, p_first * sizeof(T), p_into.size_bytes(), p_into.data());
     }
 
     // ------------------------------------------------------------------------

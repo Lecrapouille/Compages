@@ -35,21 +35,21 @@ struct CameraFrame;
 // ****************************************************************************
 //! \brief Geometric pick against the MeshRenderers of a Scene.
 //!
-//! Resolves each MeshRenderer to its MeshAsset bounds, transforms them by
-//! the last \c World::update() matrices, and returns the closest hit. This
+//! Resolves each compages::renderer::MeshRenderer to its MeshAsset bounds, transforms them by
+//! the last \c compages::world::World::update() matrices, and returns the closest hit. This
 //! is the visual raycast of Étape 4: it does not talk to a physics world.
 //!
-//! \param[in] p_scene World + AssetManager + (unused) camera. The ray is
+//! \param[in] p_scene compages::world::World + AssetManager + (unused) camera. The ray is
 //! already in world space; use \c CameraFrame::screenRay to build it.
 // ****************************************************************************
-[[nodiscard]] std::optional<RayHit> pick(Scene const& p_scene, Ray const& p_ray);
+[[nodiscard]] std::optional<compages::renderer::RayHit> pick(Scene const& p_scene, compages::core::Ray const& p_ray);
 
 // ****************************************************************************
 //! \brief Unproject a pixel through the camera frame and pick.
 //!
 //! Convenience for the common "click to select" path.
 // ****************************************************************************
-[[nodiscard]] std::optional<RayHit>
+[[nodiscard]] std::optional<compages::renderer::RayHit>
 pickAt(Scene const& p_scene,
        CameraFrame const& p_camera,
        float p_x,

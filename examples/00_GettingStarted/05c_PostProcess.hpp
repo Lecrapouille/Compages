@@ -38,15 +38,18 @@ class PostProcess: public Example
 {
 public:
 
-    [[nodiscard]] std::string name() const override { return "05c_PostProcess"; }
+    [[nodiscard]] std::string name() const override
+    {
+        return "05c_PostProcess";
+    }
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
-    [[nodiscard]] compages::gpu::Status ensureTarget(std::uint32_t p_width,
-                                           std::uint32_t p_height);
+    [[nodiscard]] compages::Status ensureTarget(std::uint32_t p_width,
+                                                std::uint32_t p_height);
 
     //! \brief Declared before the drawables sampling them, so destroyed after.
     compages::gpu::Texture m_color_target;

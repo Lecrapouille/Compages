@@ -29,7 +29,7 @@ namespace compages::renderer
 {
 
 //------------------------------------------------------------------------------
-std::optional<compages::renderer::RayHit> pick(compages::renderer::Scene const& p_scene, Ray const& p_ray)
+std::optional<compages::renderer::RayHit> pick(compages::renderer::Scene const& p_scene, compages::core::Ray const& p_ray)
 {
     compages::world::World const& world = p_scene.world();
     compages::renderer::AssetManager const& assets = p_scene.assets();
@@ -41,7 +41,7 @@ std::optional<compages::renderer::RayHit> pick(compages::renderer::Scene const& 
             compages::renderer::MeshAsset const* mesh = assets.mesh(p_renderer.mesh);
             if (mesh == nullptr)
             {
-                return AABB{};
+                return compages::core::AABB{};
             }
             return mesh->local_bounds.transformed(world.worldMatrix(p_entity));
         });

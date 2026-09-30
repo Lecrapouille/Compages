@@ -3,24 +3,24 @@
 // Copyright 2018-2026 Quentin Quadrat <lecrapouille@gmail.com>
 //=============================================================================
 
-#include "Compages/World/Entity.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include "Compages/Core/AABB.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/RenderPass.hpp"
-#include "Compages/Renderer/Systems/AnimationSystem.hpp"
-#include "Compages/Renderer/Components/Animator.hpp"
 #include "Compages/Renderer/Assets/AnimationClip.hpp"
 #include "Compages/Renderer/Assets/Primitives.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
 #include "Compages/Renderer/Assets/UrdfLoader.hpp"
-#include "Compages/World/Components/Camera.hpp"
-#include "Compages/World/Components/Light.hpp"
+#include "Compages/Renderer/Components/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Prefab/PrefabInstantiate.hpp"
 #include "Compages/Renderer/Render/Picker.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
+#include "Compages/Renderer/Systems/AnimationSystem.hpp"
+#include "Compages/World/Components/Camera.hpp"
+#include "Compages/World/Components/Light.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -29,14 +29,6 @@
 
 namespace compages::renderer
 {
-
-using compages::renderer::AnimationSystem;
-using compages::renderer::Animator;
-using compages::world::Camera;
-using compages::world::DirectionalLight;
-using compages::renderer::MeshRenderer;
-using compages::world::PointLight;
-using Viewport = compages::world::Camera::Viewport;
 
 namespace
 {
@@ -47,32 +39,38 @@ char const* shapeName(Shape p_shape)
 {
     switch (p_shape)
     {
-        case Shape::Box: return "box";
-        case Shape::Sphere: return "sphere";
-        case Shape::Plane: return "plane";
-        case Shape::Cylinder: return "cylinder";
-        case Shape::Cone: return "cone";
-        case Shape::Pyramid: return "pyramid";
+        case Shape::Box:
+            return "box";
+        case Shape::Sphere:
+            return "sphere";
+        case Shape::Plane:
+            return "plane";
+        case Shape::Cylinder:
+            return "cylinder";
+        case Shape::Cone:
+            return "cone";
+        case Shape::Pyramid:
+            return "pyramid";
     }
     return "shape";
 }
 
 //! \brief Turn a mesh built along Z so that it stands along Y, the way the
 //! shapes of the Scene all stand.
-compages::Result<MeshAsset> standUp(compages::Result<MeshAsset> p_mesh)
+Result<MeshAsset> standUp(Result<MeshAsset> p_mesh)
 {
     if (!p_mesh)
     {
         return p_mesh;
     }
     MeshAsset mesh = p_mesh.take();
-    AABB bounds;
+    compages::core::AABB bounds;
     for (MeshVertex& vertex : mesh.source_vertices)
     {
-        vertex.position = Vector3f(vertex.position.x, -vertex.position.z,
-                                   vertex.position.y);
-        vertex.normal = Vector3f(vertex.normal.x, -vertex.normal.z,
-                                 vertex.normal.y);
+        vertex.position = compages::core::Vector3f(
+            vertex.position.x, -vertex.position.z, vertex.position.y);
+        vertex.normal = compages::core::Vector3f(
+            vertex.normal.x, -vertex.normal.z, vertex.normal.y);
         bounds.expand(vertex.position);
     }
     mesh.local_bounds = bounds;
@@ -81,42 +79,56 @@ compages::Result<MeshAsset> standUp(compages::Result<MeshAsset> p_mesh)
     return mesh;
 }
 
-compages::Result<MeshAsset> buildShape(Shape p_shape)
+Result<MeshAsset> buildShape(Shape p_shape)
 {
     switch (p_shape)
     {
-        case Shape::Box: return makeCube();
-        case Shape::Sphere: return makeSphere(0.5f, 24u, 32u);
-        case Shape::Plane: return makePlane(1.0f, 1.0f);
-        case Shape::Cylinder: return standUp(makeCylinder(0.5f, 1.0f, 32u));
-        case Shape::Cone: return standUp(makeCone(0.5f, 0.0f, 1.0f, 32u));
-        case Shape::Pyramid: return standUp(makePyramid(0.5f, 1.0f));
+        case Shape::Box:
+            return makeCube();
+        case Shape::Sphere:
+            return makeSphere(0.5f, 24u, 32u);
+        case Shape::Plane:
+            return makePlane(1.0f, 1.0f);
+        case Shape::Cylinder:
+            return standUp(makeCylinder(0.5f, 1.0f, 32u));
+        case Shape::Cone:
+            return standUp(makeCone(0.5f, 0.0f, 1.0f, 32u));
+        case Shape::Pyramid:
+            return standUp(makePyramid(0.5f, 1.0f));
     }
-    return compages::failure("unknown shape");
+    return failure("unknown shape");
 }
 
 char const* familyName(ShaderFamily p_family)
 {
     switch (p_family)
     {
-        case ShaderFamily::Lit: return "lit";
-        case ShaderFamily::PbrMinimal: return "textured";
-        case ShaderFamily::Depth: return "depth";
-        case ShaderFamily::Normals: return "normals";
+        case ShaderFamily::Lit:
+            return "lit";
+        case ShaderFamily::PbrMinimal:
+            return "textured";
+        case ShaderFamily::Depth:
+            return "depth";
+        case ShaderFamily::Normals:
+            return "normals";
     }
     return "material";
 }
 
-compages::Result<Material> buildFamily(ShaderFamily p_family)
+Result<Material> buildFamily(ShaderFamily p_family)
 {
     switch (p_family)
     {
-        case ShaderFamily::Lit: return makeLitMaterial();
-        case ShaderFamily::PbrMinimal: return makePbrMaterial();
-        case ShaderFamily::Depth: return makeDepthMaterial();
-        case ShaderFamily::Normals: return makeNormalsMaterial();
+        case ShaderFamily::Lit:
+            return makeLitMaterial();
+        case ShaderFamily::PbrMinimal:
+            return makePbrMaterial();
+        case ShaderFamily::Depth:
+            return makeDepthMaterial();
+        case ShaderFamily::Normals:
+            return makeNormalsMaterial();
     }
-    return compages::failure("unknown material family");
+    return failure("unknown material family");
 }
 
 constexpr char const* SKY_VERTEX = R"(#version 450 core
@@ -148,7 +160,7 @@ void main()
 } // namespace
 
 //------------------------------------------------------------------------------
-Scene::Scene(World& p_world)
+Scene::Scene(compages::world::World& p_world)
     : m_world(p_world),
       m_owned_assets(std::make_unique<AssetManager>()),
       m_assets(m_owned_assets.get())
@@ -156,7 +168,7 @@ Scene::Scene(World& p_world)
 }
 
 //------------------------------------------------------------------------------
-Scene::Scene(World& p_world, AssetManager& p_assets)
+Scene::Scene(compages::world::World& p_world, AssetManager& p_assets)
     : m_world(p_world), m_assets(&p_assets)
 {
 }
@@ -257,7 +269,8 @@ MaterialInstance Scene::instanceOf(Look const& p_look)
 //------------------------------------------------------------------------------
 MaterialInstanceId Scene::material(std::string p_name, Look const& p_look)
 {
-    auto id = m_assets->addMaterialInstance(std::move(p_name), instanceOf(p_look));
+    auto id =
+        m_assets->addMaterialInstance(std::move(p_name), instanceOf(p_look));
     if (!id)
     {
         compages::gpu::reportError(id.error());
@@ -267,57 +280,60 @@ MaterialInstanceId Scene::material(std::string p_name, Look const& p_look)
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
+compages::world::Entity
+Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
 {
-    Entity entity = m_world.entity(std::move(p_name));
+    compages::world::Entity entity = m_world.entity(std::move(p_name));
     auto instance = m_assets->addMaterialInstance({}, instanceOf(p_look));
     if (!instance)
     {
         compages::gpu::reportError(instance.error());
         return entity;
     }
-    entity.set(MeshRenderer{ p_mesh, instance.value() });
+    entity.set(compages::renderer::MeshRenderer{ p_mesh, instance.value() });
     return entity;
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::shape(Shape p_shape, std::string p_name, Look const& p_look)
+compages::world::Entity
+Scene::shape(Shape p_shape, std::string p_name, Look const& p_look)
 {
     return drawn(shapeMesh(p_shape), std::move(p_name), p_look);
 }
 
-Entity Scene::box(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::box(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Box, std::move(p_name), p_look);
 }
 
-Entity Scene::sphere(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::sphere(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Sphere, std::move(p_name), p_look);
 }
 
-Entity Scene::plane(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::plane(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Plane, std::move(p_name), p_look);
 }
 
-Entity Scene::cylinder(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::cylinder(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Cylinder, std::move(p_name), p_look);
 }
 
-Entity Scene::cone(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::cone(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Cone, std::move(p_name), p_look);
 }
 
-Entity Scene::pyramid(std::string p_name, Look const& p_look)
+compages::world::Entity Scene::pyramid(std::string p_name, Look const& p_look)
 {
     return shape(Shape::Pyramid, std::move(p_name), p_look);
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::mesh(MeshAsset p_mesh, std::string p_name, Look const& p_look)
+compages::world::Entity
+Scene::mesh(MeshAsset p_mesh, std::string p_name, Look const& p_look)
 {
     auto id = m_assets->addMesh({}, std::move(p_mesh));
     if (!id)
@@ -329,19 +345,21 @@ Entity Scene::mesh(MeshAsset p_mesh, std::string p_name, Look const& p_look)
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::copy(EntityId p_entity, std::string p_name)
+compages::world::Entity Scene::copy(compages::world::EntityId p_entity,
+                                    std::string p_name)
 {
-    Entity copy = m_world.entity(std::move(p_name));
+    compages::world::Entity copy = m_world.entity(std::move(p_name));
     if (!m_world.alive(p_entity))
     {
         compages::gpu::reportError("copy() of an entity that does not exist");
         return copy;
     }
-    Entity original(m_world, p_entity);
+    compages::world::Entity original(m_world, p_entity);
     copy.position(original.position())
         .rotation(original.rotation())
         .scale(original.scale());
-    if (MeshRenderer const* renderer = original.find<MeshRenderer>())
+    if (compages::renderer::MeshRenderer const* renderer =
+            original.find<compages::renderer::MeshRenderer>())
     {
         copy.set(*renderer);
     }
@@ -349,9 +367,10 @@ Entity Scene::copy(EntityId p_entity, std::string p_name)
 }
 
 //------------------------------------------------------------------------------
-void Scene::look(EntityId p_entity, Look const& p_look)
+void Scene::look(compages::world::EntityId p_entity, Look const& p_look)
 {
-    MeshRenderer* renderer = m_world.tryGet<MeshRenderer>(p_entity);
+    compages::renderer::MeshRenderer* renderer =
+        m_world.tryGet<compages::renderer::MeshRenderer>(p_entity);
     if (renderer == nullptr)
     {
         return compages::gpu::reportError(
@@ -369,9 +388,10 @@ void Scene::look(EntityId p_entity, Look const& p_look)
     renderer->material_instance = id.value();
 
     bool worn = false;
-    m_world.each<MeshRenderer>([&](EntityId, MeshRenderer const& p_other) {
-        worn = worn || (p_other.material_instance == old);
-    });
+    m_world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId,
+            compages::renderer::MeshRenderer const& p_other)
+        { worn = worn || (p_other.material_instance == old); });
     if (!worn && m_assets->materialInstanceName(old).empty())
     {
         m_assets->removeMaterialInstance(old);
@@ -379,9 +399,10 @@ void Scene::look(EntityId p_entity, Look const& p_look)
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::camera(std::string p_name)
+compages::world::Entity Scene::camera(std::string p_name)
 {
-    Entity camera = m_world.entity(std::move(p_name)).set(Camera{});
+    compages::world::Entity camera =
+        m_world.entity(std::move(p_name)).set(compages::world::Camera{});
     if (!m_world.alive(m_active_camera))
     {
         m_active_camera = camera;
@@ -390,82 +411,93 @@ Entity Scene::camera(std::string p_name)
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::sun(std::string p_name, Vector3f p_color, float p_intensity)
+compages::world::Entity Scene::sun(std::string p_name,
+                                   compages::core::Vector3f p_color,
+                                   float p_intensity)
 {
     return m_world.entity(std::move(p_name))
-        .set(DirectionalLight{ p_color, p_intensity })
+        .set(compages::world::DirectionalLight{ p_color, p_intensity })
         .position(4.0f, 8.0f, 6.0f)
         .lookAt(0.0f, 0.0f, 0.0f);
 }
 
 //------------------------------------------------------------------------------
-Entity Scene::lamp(std::string p_name,
-                   Vector3f p_color,
-                   float p_intensity,
-                   float p_range)
+compages::world::Entity Scene::lamp(std::string p_name,
+                                    compages::core::Vector3f p_color,
+                                    float p_intensity,
+                                    float p_range)
 {
     return m_world.entity(std::move(p_name))
-        .set(PointLight{ p_color, p_intensity, p_range });
+        .set(compages::world::PointLight{ p_color, p_intensity, p_range });
 }
 
 //------------------------------------------------------------------------------
-Vector3f Scene::frameAll()
+compages::core::Vector3f Scene::frameAll()
 {
     m_world.update();
-    AABB bounds;
-    m_world.each<MeshRenderer>(
-        [&](EntityId p_entity, MeshRenderer const& p_renderer) {
+    compages::core::AABB bounds;
+    m_world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId p_entity,
+            compages::renderer::MeshRenderer const& p_renderer)
+        {
             MeshAsset const* mesh = m_assets->mesh(p_renderer.mesh);
             if (mesh != nullptr)
             {
-                bounds = bounds.merged(
-                    mesh->local_bounds.transformed(m_world.worldMatrix(p_entity)));
+                bounds = bounds.merged(mesh->local_bounds.transformed(
+                    m_world.worldMatrix(p_entity)));
             }
         });
     if (bounds.empty())
     {
-        compages::gpu::reportError("frameAll() with nothing drawn to frame: load or "
-                         "make the shapes first");
-        return Vector3f(0.0f, 0.0f, 0.0f);
+        compages::gpu::reportError(
+            "frameAll() with nothing drawn to frame: load or "
+            "make the shapes first");
+        return compages::core::Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    const Vector3f center = bounds.center();
-    const Vector3f extent = bounds.extent();
+    const compages::core::Vector3f center = bounds.center();
+    const compages::core::Vector3f extent = bounds.extent();
     const float radius = std::max({ extent.x, extent.y, extent.z, 0.05f });
 
-    Entity eye = m_world.alive(m_active_camera) ? activeCamera() : camera();
-    eye.position(center + Vector3f(0.0f, radius, radius * 4.0f)).lookAt(center);
-    Camera& lens = eye.get<Camera>();
+    compages::world::Entity eye =
+        m_world.alive(m_active_camera) ? activeCamera() : camera();
+    eye.position(center + compages::core::Vector3f(0.0f, radius, radius * 4.0f))
+        .lookAt(center);
+    compages::world::Camera& lens = eye.get<compages::world::Camera>();
     lens.near_plane = std::max(radius * 0.01f, 0.01f);
     lens.far_plane = std::max(radius * 40.0f, 20.0f);
 
-    sun("Sun", Vector3f(1.0f, 0.98f, 0.92f), 1.2f)
-        .position(center + Vector3f(radius, radius * 2.0f, radius))
+    sun("Sun", compages::core::Vector3f(1.0f, 0.98f, 0.92f), 1.2f)
+        .position(center +
+                  compages::core::Vector3f(radius, radius * 2.0f, radius))
         .lookAt(center);
-    m_environment.ambient = Vector3f(0.22f, 0.22f, 0.24f);
+    m_environment.ambient = compages::core::Vector3f(0.22f, 0.22f, 0.24f);
     return center;
 }
 
 //------------------------------------------------------------------------------
-compages::Result<Entity> Scene::instantiate(PrefabId p_prefab,
-                                            EntityId p_parent,
-                                            LocalTransform p_offset)
+Result<compages::world::Entity>
+Scene::instantiate(PrefabId p_prefab,
+                   compages::world::EntityId p_parent,
+                   compages::world::LocalTransform p_offset)
 {
-    auto root = compages::renderer::instantiate(m_world, *m_assets, p_prefab, p_parent,
-                                   p_offset);
+    auto root = compages::renderer::instantiate(
+        m_world, *m_assets, p_prefab, p_parent, p_offset);
     if (!root)
     {
-        return compages::failure(root.error());
+        return failure(root.error());
     }
-    return Entity(m_world, root.value());
+    return compages::world::Entity(m_world, root.value());
 }
 
 //------------------------------------------------------------------------------
-compages::Result<Entity> Scene::load(std::string const& p_path,
-                                     EntityId p_parent)
+Result<compages::world::Entity> Scene::load(std::string const& p_path,
+                                            compages::world::EntityId p_parent)
 {
     std::string extension = std::filesystem::path(p_path).extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(),
+    std::transform(extension.begin(),
+                   extension.end(),
+                   extension.begin(),
                    [](unsigned char c) { return char(std::tolower(c)); });
     if (extension == ".urdf")
     {
@@ -476,13 +508,13 @@ compages::Result<Entity> Scene::load(std::string const& p_path,
         auto mesh = loadStl(p_path);
         if (!mesh)
         {
-            return compages::failure(mesh.error());
+            return failure(mesh.error());
         }
-        Entity drawn = this->mesh(mesh.take(),
-                                  std::filesystem::path(p_path).stem().string());
+        compages::world::Entity drawn = this->mesh(
+            mesh.take(), std::filesystem::path(p_path).stem().string());
         if (m_world.alive(p_parent))
         {
-            drawn.parent(Entity(m_world, p_parent));
+            drawn.parent(compages::world::Entity(m_world, p_parent));
         }
         return drawn;
     }
@@ -490,15 +522,16 @@ compages::Result<Entity> Scene::load(std::string const& p_path,
     auto prefab = m_assets->load(p_path);
     if (!prefab)
     {
-        return compages::failure(prefab.error());
+        return failure(prefab.error());
     }
     return instantiate(prefab.value(), p_parent);
 }
 
 //------------------------------------------------------------------------------
-bool Scene::play(EntityId p_model, std::string_view p_clip)
+bool Scene::play(compages::world::EntityId p_model, std::string_view p_clip)
 {
-    Animator* animator = m_world.tryGet<Animator>(p_model);
+    compages::renderer::Animator* animator =
+        m_world.tryGet<compages::renderer::Animator>(p_model);
     if (animator == nullptr)
     {
         return false;
@@ -521,10 +554,11 @@ bool Scene::play(EntityId p_model, std::string_view p_clip)
 }
 
 //------------------------------------------------------------------------------
-std::vector<std::string> Scene::clips(EntityId p_model) const
+std::vector<std::string> Scene::clips(compages::world::EntityId p_model) const
 {
     std::vector<std::string> names;
-    Animator const* animator = m_world.tryGet<Animator>(p_model);
+    compages::renderer::Animator const* animator =
+        m_world.tryGet<compages::renderer::Animator>(p_model);
     if (animator == nullptr)
     {
         return names;
@@ -541,9 +575,10 @@ std::vector<std::string> Scene::clips(EntityId p_model) const
 }
 
 //------------------------------------------------------------------------------
-std::string Scene::playing(EntityId p_model) const
+std::string Scene::playing(compages::world::EntityId p_model) const
 {
-    Animator const* animator = m_world.tryGet<Animator>(p_model);
+    compages::renderer::Animator const* animator =
+        m_world.tryGet<compages::renderer::Animator>(p_model);
     AnimationClip const* clip =
         (animator == nullptr) ? nullptr : m_assets->animation(animator->clip);
     return (clip == nullptr) ? std::string() : clip->name;
@@ -552,14 +587,15 @@ std::string Scene::playing(EntityId p_model) const
 //------------------------------------------------------------------------------
 Scene& Scene::background(float p_red, float p_green, float p_blue)
 {
-    m_settings.clear_color = Vector4f(p_red, p_green, p_blue, 1.0f);
+    m_settings.clear_color =
+        compages::core::Vector4f(p_red, p_green, p_blue, 1.0f);
     return *this;
 }
 
 //------------------------------------------------------------------------------
 Scene& Scene::ambient(float p_red, float p_green, float p_blue)
 {
-    m_environment.ambient = Vector3f(p_red, p_green, p_blue);
+    m_environment.ambient = compages::core::Vector3f(p_red, p_green, p_blue);
     return *this;
 }
 
@@ -577,56 +613,63 @@ Scene& Scene::skybox(std::array<std::string, 6u> const& p_faces)
     }
     // A cube around the camera, seen from the inside. Drawn first and
     // without the depth test, it is behind whatever comes after.
-    m_sky["position"] = { { -1, -1, -1 }, { 1, -1, -1 }, { 1, 1, -1 }, { -1, 1, -1 },
-                          { -1, -1, 1 },  { 1, -1, 1 },  { 1, 1, 1 },  { -1, 1, 1 } };
-    m_sky.indices({ 0, 1, 2, 2, 3, 0,  4, 6, 5, 6, 4, 7,  0, 3, 7, 7, 4, 0,
-                    1, 5, 6, 6, 2, 1,  3, 2, 6, 6, 7, 3,  0, 4, 5, 5, 1, 0 });
+    m_sky["position"] = { { -1, -1, -1 }, { 1, -1, -1 }, { 1, 1, -1 },
+                          { -1, 1, -1 },  { -1, -1, 1 }, { 1, -1, 1 },
+                          { 1, 1, 1 },    { -1, 1, 1 } };
+    m_sky.indices({ 0, 1, 2, 2, 3, 0, 4, 6, 5, 6, 4, 7, 0, 3, 7, 7, 4, 0,
+                    1, 5, 6, 6, 2, 1, 3, 2, 6, 6, 7, 3, 0, 4, 5, 5, 1, 0 });
     m_sky["sky"] = m_sky_texture;
     m_sky.depthTest(false);
     return *this;
 }
 
 //------------------------------------------------------------------------------
-compages::Status Scene::prepare()
+Status Scene::prepare()
 {
-    m_world.each<MeshRenderer>([&](EntityId, MeshRenderer const& p_renderer) {
-        if (m_assets->mesh(p_renderer.mesh) != nullptr)
+    m_world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId,
+            compages::renderer::MeshRenderer const& p_renderer)
         {
-            compages::gpu::check(m_assets->prepare(p_renderer.mesh));
-        }
-        MaterialInstance const* instance =
-            m_assets->materialInstance(p_renderer.material_instance);
-        if (instance == nullptr)
-        {
-            return;
-        }
-        if (m_assets->material(instance->material) != nullptr)
-        {
-            compages::gpu::check(m_assets->prepare(instance->material));
-        }
-        if (instance->base_color_texture.valid())
-        {
-            compages::gpu::check(m_assets->prepare(instance->base_color_texture));
-        }
-    });
+            if (m_assets->mesh(p_renderer.mesh) != nullptr)
+            {
+                compages::gpu::check(m_assets->prepare(p_renderer.mesh));
+            }
+            MaterialInstance const* instance =
+                m_assets->materialInstance(p_renderer.material_instance);
+            if (instance == nullptr)
+            {
+                return;
+            }
+            if (m_assets->material(instance->material) != nullptr)
+            {
+                compages::gpu::check(m_assets->prepare(instance->material));
+            }
+            if (instance->base_color_texture.valid())
+            {
+                compages::gpu::check(
+                    m_assets->prepare(instance->base_color_texture));
+            }
+        });
     if (compages::gpu::hasFrameError())
     {
-        return compages::failure(compages::gpu::takeFrameError());
+        return failure(compages::gpu::takeFrameError());
     }
-    return compages::success();
+    return success();
 }
 
 //------------------------------------------------------------------------------
-void Scene::update(ViewFrame const& p_frame)
+void Scene::update(compages::world::ViewFrame const& p_frame)
 {
     m_world.update(p_frame);
-    compages::gpu::check(AnimationSystem::sample(m_world, *m_assets, p_frame.elapsed));
+    compages::gpu::check(compages::renderer::AnimationSystem::sample(
+        m_world, *m_assets, p_frame.elapsed));
     m_world.update();
-    compages::gpu::check(AnimationSystem::pose(m_world, *m_assets));
+    compages::gpu::check(
+        compages::renderer::AnimationSystem::pose(m_world, *m_assets));
 }
 
 //------------------------------------------------------------------------------
-void Scene::render(EntityId p_camera)
+void Scene::render(compages::world::EntityId p_camera)
 {
     if (!compages::gpu::inRenderPass())
     {
@@ -635,7 +678,8 @@ void Scene::render(EntityId p_camera)
             "the picture goes");
     }
     compages::gpu::PassDesc const& where = compages::gpu::currentPass();
-    Camera const* lens = m_world.tryGet<Camera>(p_camera);
+    compages::world::Camera const* lens =
+        m_world.tryGet<compages::world::Camera>(p_camera);
 
     // A camera drawing into a part of the picture gets a pass of its own over
     // that part, so that clearing it leaves the rest alone.
@@ -646,15 +690,17 @@ void Scene::render(EntityId p_camera)
     part.target = {};
     if (lens != nullptr)
     {
-        Viewport const& v = lens->viewport;
+        compages::world::Camera::Viewport const& v = lens->viewport;
         const float x = std::clamp(v.x, 0.0f, 1.0f);
         const float y = std::clamp(v.y, 0.0f, 1.0f);
         const float w = std::clamp(v.width, 0.0f, 1.0f - x);
         const float h = std::clamp(v.height, 0.0f, 1.0f - y);
         part.x = where.x + std::uint32_t(std::lround(x * float(where.width)));
         part.y = where.y + std::uint32_t(std::lround(y * float(where.height)));
-        part.width = std::max(1u, std::uint32_t(std::lround(w * float(where.width))));
-        part.height = std::max(1u, std::uint32_t(std::lround(h * float(where.height))));
+        part.width =
+            std::max(1u, std::uint32_t(std::lround(w * float(where.width))));
+        part.height =
+            std::max(1u, std::uint32_t(std::lround(h * float(where.height))));
     }
     compages::gpu::RenderPass pass(part);
     if (!pass.open())
@@ -662,8 +708,8 @@ void Scene::render(EntityId p_camera)
         return;
     }
 
-    auto snapshot = SceneExtractor::extract(*this, p_camera, part.width,
-                                            part.height);
+    auto snapshot =
+        SceneExtractor::extract(*this, p_camera, part.width, part.height);
     if (!snapshot)
     {
         return compages::gpu::reportError(snapshot.error());
@@ -697,21 +743,23 @@ void Scene::render()
 }
 
 //------------------------------------------------------------------------------
-void Scene::draw(ViewFrame const& p_frame)
+void Scene::draw(compages::world::ViewFrame const& p_frame)
 {
     update(p_frame);
     render();
 }
 
 //------------------------------------------------------------------------------
-std::optional<RayHit> Scene::pick(Vector2f p_pixel) const
+std::optional<compages::renderer::RayHit>
+Scene::pick(compages::core::Vector2f p_pixel) const
 {
     if ((m_last_camera.viewport_width == 0u) ||
         (m_last_camera.viewport_height == 0u))
     {
         return std::nullopt;
     }
-    return pickAt(*this, m_last_camera,
+    return pickAt(*this,
+                  m_last_camera,
                   p_pixel.x - m_last_camera.viewport_x,
                   p_pixel.y - m_last_camera.viewport_y,
                   m_last_camera.viewport_width,

@@ -19,8 +19,8 @@
 //=============================================================================
 
 #include "Compages/GPU/Compute.hpp"
-#include "GPU/Backends/Backend.hpp"
 #include "Compages/GPU/Device.hpp"
+#include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
 #include "GPU/Internal/Statistics.hpp"
 
@@ -58,7 +58,7 @@ Result<ComputeProgram> ComputeProgram::fromSource(std::string_view p_source)
     auto program_result = Program::fromComputeSource(p_source);
     if (!program_result)
     {
-        return compages::failure(program_result.error());
+        return failure(program_result.error());
     }
     auto program = program_result.take();
     if (program.reflection().work_group_size[0] == 0)
@@ -77,7 +77,7 @@ Result<ComputeProgram> ComputeProgram::fromFile(std::string const& p_path)
     auto program_result = Program::fromComputeFile(p_path);
     if (!program_result)
     {
-        return compages::failure(program_result.error());
+        return failure(program_result.error());
     }
     auto program = program_result.take();
     if (program.reflection().work_group_size[0] == 0)
@@ -113,12 +113,13 @@ Status ComputeProgram::bind(std::string_view p_block, BufferHandle p_buffer)
     }
     if (record->kind != BufferKind::Storage)
     {
-        return failure("'" + std::string(p_block) +
-                       "' is a storage block, and the buffer was created to "
-                       "hold " +
-                       std::string(toString(record->kind)) +
-                       " data. Create it with BufferKind::Storage: that is also "
-                       "what lets a later draw read it as vertices");
+        return failure(
+            "'" + std::string(p_block) +
+            "' is a storage block, and the buffer was created to "
+            "hold " +
+            std::string(toString(record->kind)) +
+            " data. Create it with BufferKind::Storage: that is also "
+            "what lets a later draw read it as vertices");
     }
 
     backend::bindBufferToPoint(
@@ -133,8 +134,9 @@ Status ComputeProgram::dispatch(std::uint32_t p_groups_x,
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to dispatch on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to dispatch on");
     }
     COMPAGES_TRY(ensureCompute(m_program));
 

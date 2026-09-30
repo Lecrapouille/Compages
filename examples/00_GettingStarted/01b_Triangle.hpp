@@ -28,8 +28,8 @@ namespace examples
 // ****************************************************************************
 //! \brief One triangle, from a shader and its attributes given by name.
 //!
-//! A compages::gpu::Drawable is a shader with its data. The shader declares what a
-//! vertex is, so the values are given attribute by attribute:
+//! A compages::gpu::Drawable is a shader with its data. The shader declares
+//! what a vertex is, so the values are given attribute by attribute:
 //! \code
 //! m_triangle["position"] = { {-0.8f, -0.6f}, {0.8f, -0.6f}, {0.0f, 0.8f} };
 //! \endcode
@@ -49,8 +49,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

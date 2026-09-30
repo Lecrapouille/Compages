@@ -38,7 +38,7 @@ namespace compages::renderer
 //!
 //! **Index** (low 16 bits) is the slot number in the manager's dense table.
 //! It stays fixed for the lifetime of that registration: reloading GPU data
-//! after a context loss does not change the index, so World components can keep
+//! after a context loss does not change the index, so compages::world::World components can keep
 //! storing the same id.
 //!
 //! **Generation** (high 16 bits) counts how many times that slot was reused.

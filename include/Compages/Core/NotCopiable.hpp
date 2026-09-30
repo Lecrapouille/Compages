@@ -20,8 +20,11 @@
 
 #pragma once
 
+namespace compages::core
+{
 // ****************************************************************************
-//! \brief Base for unique owners (World, stores, GPU handles): no copy, move OK.
+//! \brief Base for unique owners (World, stores, GPU handles): no copy, move
+//! OK.
 //!
 //! Inherit privately so the restriction does not leak to the public interface.
 //! \code
@@ -39,3 +42,6 @@ protected:
     NotCopiable& operator=(NotCopiable&&) = default;
     ~NotCopiable() = default;
 };
+
+} // namespace compages::core
+

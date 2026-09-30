@@ -20,7 +20,10 @@
 
 #include "main.hpp"
 
+
 #include "Compages/GPU/Core/Std140.hpp"
+
+
 
 // ----------------------------------------------------------------------------
 // The structs below are the ones a real program writes. GPU_STD140 is used at
@@ -31,8 +34,8 @@
 //! \brief Two matrices, the easiest case: both align on 16 and occupy 64.
 struct Camera
 {
-    Matrix44f projection;
-    Matrix44f view;
+    compages::core::Matrix44f projection;
+    compages::core::Matrix44f view;
 };
 GPU_STD140(Camera, projection, view);
 
@@ -40,7 +43,7 @@ GPU_STD140(Camera, projection, view);
 //! in the four bytes it leaves behind.
 struct Light
 {
-    Vector3f direction;
+    compages::core::Vector3f direction;
     float intensity;
 };
 GPU_STD140(Light, direction, intensity);
@@ -49,8 +52,8 @@ GPU_STD140(Light, direction, intensity);
 //! of 16 with nothing to add.
 struct Material
 {
-    Vector4f albedo;
-    Vector4f emissive;
+    compages::core::Vector4f albedo;
+    compages::core::Vector4f emissive;
 };
 GPU_STD140(Material, albedo, emissive);
 
@@ -61,23 +64,22 @@ GPU_STD140(Material, albedo, emissive);
 //------------------------------------------------------------------------------
 TEST(Std140, KnowsTheAlignmentAndSizeOfEachType)
 {
-    using namespace compages::gpu::std140;
 
-    ASSERT_EQ(Rules<float>::alignment, 4u);
-    ASSERT_EQ(Rules<float>::size, 4u);
+    ASSERT_EQ(compages::gpu::std140::Rules<float>::alignment, 4u);
+    ASSERT_EQ(compages::gpu::std140::Rules<float>::size, 4u);
 
-    ASSERT_EQ(Rules<Vector2f>::alignment, 8u);
-    ASSERT_EQ(Rules<Vector2f>::size, 8u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector2f>::alignment, 8u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector2f>::size, 8u);
 
     // Aligns on 16, occupies 12: the four bytes after it can hold a float.
-    ASSERT_EQ(Rules<Vector3f>::alignment, 16u);
-    ASSERT_EQ(Rules<Vector3f>::size, 12u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector3f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector3f>::size, 12u);
 
-    ASSERT_EQ(Rules<Vector4f>::alignment, 16u);
-    ASSERT_EQ(Rules<Vector4f>::size, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f>::size, 16u);
 
-    ASSERT_EQ(Rules<Matrix44f>::alignment, 16u);
-    ASSERT_EQ(Rules<Matrix44f>::size, 64u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix44f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix44f>::size, 64u);
 }
 
 //------------------------------------------------------------------------------
@@ -87,8 +89,8 @@ TEST(Std140, KnowsTheAlignmentAndSizeOfEachType)
 //------------------------------------------------------------------------------
 TEST(Std140, KnowsAMatrixOfThreeOccupiesFortyEightBytes)
 {
-    ASSERT_EQ(compages::gpu::std140::Rules<Matrix33f>::size, 48u);
-    ASSERT_EQ(sizeof(Matrix33f), 36u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix33f>::size, 48u);
+    ASSERT_EQ(sizeof(compages::core::Matrix33f), 36u);
 }
 
 //------------------------------------------------------------------------------
@@ -97,27 +99,25 @@ TEST(Std140, KnowsAMatrixOfThreeOccupiesFortyEightBytes)
 //------------------------------------------------------------------------------
 TEST(Std140, KnowsEveryArrayElementIsPaddedToSixteenBytes)
 {
-    using namespace compages::gpu::std140;
 
-    ASSERT_EQ(Rules<float[10]>::size, 160u);
+    ASSERT_EQ(compages::gpu::std140::Rules<float[10]>::size, 160u);
     ASSERT_EQ(sizeof(float[10]), 40u);
 
     // A vector of four already fills 16, so an array of them is the one case
     // where C++ and std140 agree.
-    ASSERT_EQ(Rules<Vector4f[10]>::size, 160u);
-    ASSERT_EQ(sizeof(Vector4f[10]), 160u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f[10]>::size, 160u);
+    ASSERT_EQ(sizeof(compages::core::Vector4f[10]), 160u);
 }
 
 //------------------------------------------------------------------------------
 TEST(Std140, RoundsUpTheWayTheRulesDo)
 {
-    using compages::gpu::std140::roundUp;
 
-    ASSERT_EQ(roundUp(0u, 16u), 0u);
-    ASSERT_EQ(roundUp(1u, 16u), 16u);
-    ASSERT_EQ(roundUp(16u, 16u), 16u);
-    ASSERT_EQ(roundUp(17u, 16u), 32u);
-    ASSERT_EQ(roundUp(12u, 4u), 12u);
+    ASSERT_EQ(compages::gpu::std140::roundUp(0u, 16u), 0u);
+    ASSERT_EQ(compages::gpu::std140::roundUp(1u, 16u), 16u);
+    ASSERT_EQ(compages::gpu::std140::roundUp(16u, 16u), 16u);
+    ASSERT_EQ(compages::gpu::std140::roundUp(17u, 16u), 32u);
+    ASSERT_EQ(compages::gpu::std140::roundUp(12u, 4u), 12u);
 }
 
 //------------------------------------------------------------------------------
@@ -157,12 +157,11 @@ TEST(Std140, RefusesAStructThatWasNeverChecked)
 //------------------------------------------------------------------------------
 TEST(Std140, CatchesTheFloatBeforeAVectorOfThree)
 {
-    using compages::gpu::std140::Member;
 
-    // What C++ does with { float radius; Vector3f position; }
-    const std::array<Member, 2> members{
-        Member{ "radius", 0u, 4u, 4u },
-        Member{ "position", 4u, 16u, 12u },
+    // What C++ does with { float radius; compages::core::Vector3f position; }
+    const std::array<compages::gpu::std140::Member, 2> members{
+        compages::gpu::std140::Member{ "radius", 0u, 4u, 4u },
+        compages::gpu::std140::Member{ "position", 4u, 16u, 12u },
     };
 
     ASSERT_EQ(compages::gpu::std140::firstMismatch(members), 1u);
@@ -177,11 +176,10 @@ TEST(Std140, CatchesTheFloatBeforeAVectorOfThree)
 //------------------------------------------------------------------------------
 TEST(Std140, AcceptsTheSameMembersInTheRightOrder)
 {
-    using compages::gpu::std140::Member;
 
-    const std::array<Member, 2> members{
-        Member{ "position", 0u, 16u, 12u },
-        Member{ "radius", 12u, 4u, 4u },
+    const std::array<compages::gpu::std140::Member, 2> members{
+        compages::gpu::std140::Member{ "position", 0u, 16u, 12u },
+        compages::gpu::std140::Member{ "radius", 12u, 4u, 4u },
     };
 
     ASSERT_EQ(compages::gpu::std140::firstMismatch(members), 2u);
@@ -191,10 +189,9 @@ TEST(Std140, AcceptsTheSameMembersInTheRightOrder)
 //------------------------------------------------------------------------------
 TEST(Std140, RoundsTheWholeBlockUpToSixteenBytes)
 {
-    using compages::gpu::std140::Member;
 
     // A single float occupies 4 bytes, but the block it sits in occupies 16.
-    const std::array<Member, 1> members{ Member{ "value", 0u, 4u, 4u } };
+    const std::array<compages::gpu::std140::Member, 1> members{ compages::gpu::std140::Member{ "value", 0u, 4u, 4u } };
 
     ASSERT_EQ(compages::gpu::std140::blockSize(members), 16u);
 }

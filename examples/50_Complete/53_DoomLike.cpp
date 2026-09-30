@@ -18,8 +18,8 @@
 // along with Compages.  If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
-#include "Compages/World/Entity.hpp"
 #include "50_Complete/53_DoomLike.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include "Common/DataPath.hpp"
 #include "Common/Gui.hpp"
@@ -50,7 +50,8 @@ struct DoomLike::Flicker: compages::world::Behavior
     {
         // Two sines of unrelated speeds: never quite the same twice.
         const float t = frame().total + phase;
-        compages::world::PointLight& light = entity().get<compages::world::PointLight>();
+        compages::world::PointLight& light =
+            entity().get<compages::world::PointLight>();
         light.intensity =
             3.0f + (0.35f * std::sin(t * 13.0f)) + (0.25f * std::sin(t * 7.3f));
     }
@@ -76,7 +77,7 @@ std::string DoomLike::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::setUp()
+compages::Status DoomLike::setUp()
 {
     // Loaded once for both levels: each Scene built later shares them.
     auto need = [](char const* p_file) -> compages::Result<std::string>
@@ -84,7 +85,7 @@ compages::gpu::Status DoomLike::setUp()
         const std::string path = dataPath(p_file);
         if (path.empty())
         {
-            return compages::gpu::failure(
+            return compages::failure(
                 std::string(p_file) +
                 " is missing: see external/ "
                 "(Shotgun.glb is written by "
@@ -108,7 +109,7 @@ compages::gpu::Status DoomLike::setUp()
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::buildLevel(std::size_t p_level)
+compages::Status DoomLike::buildLevel(std::size_t p_level)
 {
     doom::LevelData const& level = doom::levels()[p_level];
     const std::string wall_file = dataPath(level.wall);
@@ -118,7 +119,7 @@ compages::gpu::Status DoomLike::buildLevel(std::size_t p_level)
     if (wall_file.empty() || floor_file.empty() || crate_file.empty() ||
         hazard_file.empty())
     {
-        return compages::gpu::failure(
+        return compages::failure(
             "53_DoomLike needs the textures of external/Compages-data/");
     }
 
@@ -164,20 +165,20 @@ void DoomLike::configureAtmosphere(doom::LevelData const& p_level)
     m_level_scene.scene->background(
         p_level.fog.x, p_level.fog.y, p_level.fog.z);
     m_level_scene.scene->environment().default_light_color =
-        Vector3f(0.0f, 0.0f, 0.0f);
+        compages::core::Vector3f(0.0f, 0.0f, 0.0f);
     m_level_scene.scene->environment().fog_color = p_level.fog;
     m_level_scene.scene->environment().fog_density = 0.055f;
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::setupPlayerRig()
+compages::Status DoomLike::setupPlayerRig()
 {
     m_rig.camera = m_level_scene.scene->camera("Player");
     m_rig.camera.get<compages::world::Camera>().fov = 75.0_deg;
     m_rig.camera.get<compages::world::Camera>().near_plane = 0.05f;
     m_rig.camera.get<compages::world::Camera>().far_plane = 80.0f;
     m_rig.lantern = m_level_scene.scene->lamp(
-        "Lantern", Vector3f(1.0f, 0.85f, 0.6f), 1.6f, 9.0f);
+        "Lantern", compages::core::Vector3f(1.0f, 0.85f, 0.6f), 1.6f, 9.0f);
     m_rig.lantern.parent(m_rig.camera)
         .position(0.3f, -0.2f, 0.0f)
         .enable(m_player.lantern_on);
@@ -185,31 +186,33 @@ compages::gpu::Status DoomLike::setupPlayerRig()
                                                    m_rig.camera.id());
     if (!weapon)
     {
-        return compages::gpu::failure(weapon.error());
+        return compages::failure(weapon.error());
     }
     m_rig.weapon = weapon.value();
     m_rig.weapon.scale(0.7f);
-    m_rig.muzzle = compages::world::Entity(*m_level_scene.world,
-                                 findNamed(m_rig.weapon.id(), "Muzzle"));
+    m_rig.muzzle = compages::world::Entity(
+        *m_level_scene.world, findNamed(m_rig.weapon.id(), "Muzzle"));
     playLoop(m_rig.weapon.id(), "Idle");
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::scanMapGrid(doom::LevelData const& p_level,
-                                  std::string const& p_wall_file,
-                                  std::string const& p_floor_file,
-                                  std::string const& p_crate_file,
-                                  std::string const& p_hazard_file)
+compages::Status DoomLike::scanMapGrid(doom::LevelData const& p_level,
+                                       std::string const& p_wall_file,
+                                       std::string const& p_floor_file,
+                                       std::string const& p_crate_file,
+                                       std::string const& p_hazard_file)
 {
     compages::renderer::Look wall = compages::renderer::texture(p_wall_file);
     wall.color = p_level.wall_tint;
     compages::renderer::Look ceiling = compages::renderer::texture(p_wall_file);
     ceiling.color = p_level.wall_tint * 0.35f;
     compages::renderer::Look floor = compages::renderer::texture(p_floor_file);
-    floor.color = Vector3f(0.75f, 0.7f, 0.7f);
-    const compages::renderer::Look crate = compages::renderer::texture(p_crate_file);
-    const compages::renderer::Look hazard = compages::renderer::texture(p_hazard_file);
+    floor.color = compages::core::Vector3f(0.75f, 0.7f, 0.7f);
+    const compages::renderer::Look crate =
+        compages::renderer::texture(p_crate_file);
+    const compages::renderer::Look hazard =
+        compages::renderer::texture(p_hazard_file);
 
     std::vector<std::string> const& rows = m_content.map.rows();
     for (std::size_t row = 0u; row < rows.size(); ++row)
@@ -226,26 +229,26 @@ compages::gpu::Status DoomLike::scanMapGrid(doom::LevelData const& p_level,
                                    hazard));
         }
     }
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::placeCell(char p_cell,
-                                std::size_t p_column,
-                                std::size_t p_row,
-                                compages::renderer::Look const& p_wall,
-                                compages::renderer::Look const& p_ceiling,
-                                compages::renderer::Look const& p_floor,
-                                compages::renderer::Look const& p_crate,
-                                compages::renderer::Look const& p_hazard)
+compages::Status DoomLike::placeCell(char p_cell,
+                                     std::size_t p_column,
+                                     std::size_t p_row,
+                                     compages::renderer::Look const& p_wall,
+                                     compages::renderer::Look const& p_ceiling,
+                                     compages::renderer::Look const& p_floor,
+                                     compages::renderer::Look const& p_crate,
+                                     compages::renderer::Look const& p_hazard)
 {
-    const Vector3f at = doom::Map::center(p_column, p_row);
+    const compages::core::Vector3f at = doom::Map::center(p_column, p_row);
     if (p_cell == '#')
     {
         m_level_scene.scene->box("Wall", p_wall)
             .position(at.x, WALL_HEIGHT * 0.5f, at.z)
             .scale(CELL, WALL_HEIGHT, CELL);
-        return compages::gpu::success();
+        return compages::success();
     }
 
     m_level_scene.scene->box("Floor", p_floor)
@@ -289,12 +292,14 @@ compages::gpu::Status DoomLike::placeCell(char p_cell,
             if (!shells)
             {
                 m_level_scene.scene
-                    ->box("Cross", compages::renderer::color(0.9f, 0.05f, 0.05f))
+                    ->box("Cross",
+                          compages::renderer::color(0.9f, 0.05f, 0.05f))
                     .parent(body)
                     .position(0.0f, 0.52f, 0.0f)
                     .scale(0.7f, 0.05f, 0.2f);
                 m_level_scene.scene
-                    ->box("Cross", compages::renderer::color(0.9f, 0.05f, 0.05f))
+                    ->box("Cross",
+                          compages::renderer::color(0.9f, 0.05f, 0.05f))
                     .parent(body)
                     .position(0.0f, 0.52f, 0.0f)
                     .scale(0.2f, 0.05f, 0.7f);
@@ -312,7 +317,10 @@ compages::gpu::Status DoomLike::placeCell(char p_cell,
                 .position(at.x, WALL_HEIGHT * 0.5f, at.z)
                 .scale(0.25f, WALL_HEIGHT, 0.25f);
             m_level_scene.scene
-                ->lamp("ExitLamp", Vector3f(0.3f, 1.0f, 0.45f), 3.0f, 10.0f)
+                ->lamp("ExitLamp",
+                       compages::core::Vector3f(0.3f, 1.0f, 0.45f),
+                       3.0f,
+                       10.0f)
                 .position(at.x, 2.0f, at.z);
             break;
         case 'M':
@@ -324,7 +332,7 @@ compages::gpu::Status DoomLike::placeCell(char p_cell,
         default:
             break;
     }
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
@@ -332,55 +340,59 @@ void DoomLike::placeTorch(std::size_t p_column, std::size_t p_row)
 {
     // On the first wall around the cell, a bracket and a flame. With no wall
     // around, a brazier on a pole in the middle of the cell.
-    const Vector3f at = doom::Map::center(p_column, p_row);
+    const compages::core::Vector3f at = doom::Map::center(p_column, p_row);
     const long column = long(p_column);
     const long row = long(p_row);
-    Vector3f toward(0.0f, 0.0f, 0.0f);
+    compages::core::Vector3f toward(0.0f, 0.0f, 0.0f);
     if (m_content.map.at(column, row - 1) == '#')
     {
-        toward = Vector3f(0.0f, 0.0f, -1.0f);
+        toward = compages::core::Vector3f(0.0f, 0.0f, -1.0f);
     }
     else if (m_content.map.at(column, row + 1) == '#')
     {
-        toward = Vector3f(0.0f, 0.0f, 1.0f);
+        toward = compages::core::Vector3f(0.0f, 0.0f, 1.0f);
     }
     else if (m_content.map.at(column - 1, row) == '#')
     {
-        toward = Vector3f(-1.0f, 0.0f, 0.0f);
+        toward = compages::core::Vector3f(-1.0f, 0.0f, 0.0f);
     }
     else if (m_content.map.at(column + 1, row) == '#')
     {
-        toward = Vector3f(1.0f, 0.0f, 0.0f);
+        toward = compages::core::Vector3f(1.0f, 0.0f, 0.0f);
     }
     const bool pole = (toward.norm() < 0.5f);
 
-    const Vector3f base = at + (toward * ((CELL * 0.5f) - 0.15f));
-    m_level_scene.scene->box("Bracket", compages::renderer::color(0.12f, 0.1f, 0.08f))
+    const compages::core::Vector3f base =
+        at + (toward * ((CELL * 0.5f) - 0.15f));
+    m_level_scene.scene
+        ->box("Bracket", compages::renderer::color(0.12f, 0.1f, 0.08f))
         .position(base.x, pole ? 1.05f : 1.9f, base.z)
         .scale(0.14f, pole ? 2.1f : 0.6f, 0.14f);
-    compages::world::Entity flame =
-        m_level_scene.scene->box("Flame", compages::renderer::color(4.0f, 1.8f, 0.5f));
+    compages::world::Entity flame = m_level_scene.scene->box(
+        "Flame", compages::renderer::color(4.0f, 1.8f, 0.5f));
     flame.position(base.x, 2.3f, base.z)
         .scale(0.18f, 0.3f, 0.18f)
-        .rotate(0.785f, Vector3f(0.0f, 1.0f, 0.0f));
-    const Vector3f glow = at + (toward * ((CELL * 0.5f) - 0.5f));
+        .rotate(0.785f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Vector3f glow =
+        at + (toward * ((CELL * 0.5f) - 0.5f));
     compages::world::Entity light = m_level_scene.scene->lamp(
-        "Torch", Vector3f(1.0f, 0.55f, 0.22f), 3.0f, 11.0f);
+        "Torch", compages::core::Vector3f(1.0f, 0.55f, 0.22f), 3.0f, 11.0f);
     light.position(glow.x, 2.3f, glow.z)
         .add<Flicker>(float((p_row * 7u) + p_column));
     m_cast.torches.emplace_back(
-        Torch{ light, flame, Vector3f(base.x, 2.3f, base.z) });
+        Torch{ light, flame, compages::core::Vector3f(base.x, 2.3f, base.z) });
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status DoomLike::placeEnemy(Kind p_kind, Vector3f p_at)
+compages::Status DoomLike::placeEnemy(Kind p_kind,
+                                      compages::core::Vector3f p_at)
 {
     const bool soldier = (p_kind == Kind::Soldier);
     auto placed = m_level_scene.scene->instantiate(
         soldier ? m_content.soldier_prefab : m_content.robot_prefab);
     if (!placed)
     {
-        return compages::gpu::failure(placed.error());
+        return compages::failure(placed.error());
     }
     Enemy enemy;
     enemy.kind = p_kind;
@@ -393,7 +405,7 @@ compages::gpu::Status DoomLike::placeEnemy(Kind p_kind, Vector3f p_at)
         enemy.root.scale(ROBOT_SCALE);
         playLoop(enemy.root.id(), "Walking");
         m_cast.enemies.emplace_back(enemy);
-        return compages::gpu::success();
+        return compages::success();
     }
 
     // A soldier carries a shotgun in its right hand. The hand is a bone of a
@@ -409,28 +421,31 @@ compages::gpu::Status DoomLike::placeEnemy(Kind p_kind, Vector3f p_at)
     if (hand.valid())
     {
         m_level_scene.world->update();
-        Matrix44f const& m = m_level_scene.world->worldMatrix(hand);
-        const float scale =
-            std::max(Vector3f(m[0].x, m[0].y, m[0].z).norm(), 1.0e-6f);
+        compages::core::Matrix44f const& m =
+            m_level_scene.world->worldMatrix(hand);
+        const float scale = std::max(
+            compages::core::Vector3f(m[0].x, m[0].y, m[0].z).norm(), 1.0e-6f);
         compages::world::LocalTransform grip;
-        grip.position = Vector3f(0.0f, 0.09f / scale, 0.03f / scale);
-        grip.rotation =
-            Quatf::fromAngleAxis(units::angle::radian_t(double(PI * 0.5f)),
-                                 Vector3f(1.0f, 0.0f, 0.0f));
-        grip.scale = Vector3f(0.75f / scale, 0.75f / scale, 0.75f / scale);
+        grip.position =
+            compages::core::Vector3f(0.0f, 0.09f / scale, 0.03f / scale);
+        grip.rotation = compages::core::Quatf::fromAngleAxis(
+            units::angle::radian_t(double(PI * 0.5f)),
+            compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+        grip.scale = compages::core::Vector3f(
+            0.75f / scale, 0.75f / scale, 0.75f / scale);
         auto gun = m_level_scene.scene->instantiate(
             m_content.shotgun_prefab, hand, grip);
         if (!gun)
         {
-            return compages::gpu::failure(gun.error());
+            return compages::failure(gun.error());
         }
         enemy.gun = gun.value();
-        enemy.muzzle = compages::world::Entity(*m_level_scene.world,
-                                     findNamed(enemy.gun.id(), "Muzzle"));
+        enemy.muzzle = compages::world::Entity(
+            *m_level_scene.world, findNamed(enemy.gun.id(), "Muzzle"));
         playLoop(enemy.gun.id(), "Idle");
     }
     m_cast.enemies.emplace_back(enemy);
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
@@ -441,7 +456,8 @@ void DoomLike::say(std::string p_message)
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::playOnce(compages::world::EntityId p_model, std::string_view p_clip)
+void DoomLike::playOnce(compages::world::EntityId p_model,
+                        std::string_view p_clip)
 {
     // From its start, and held on its last pose at the end.
     m_level_scene.scene->play(p_model, p_clip);
@@ -455,7 +471,8 @@ void DoomLike::playOnce(compages::world::EntityId p_model, std::string_view p_cl
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::playLoop(compages::world::EntityId p_model, std::string_view p_clip)
+void DoomLike::playLoop(compages::world::EntityId p_model,
+                        std::string_view p_clip)
 {
     if (compages::renderer::Animator* animator =
             m_level_scene.world->tryGet<compages::renderer::Animator>(p_model))
@@ -487,7 +504,7 @@ float DoomLike::clipLength(compages::world::EntityId p_model,
 
 //------------------------------------------------------------------------------
 compages::world::EntityId DoomLike::findNamed(compages::world::EntityId p_root,
-                                    std::string_view p_name) const
+                                              std::string_view p_name) const
 {
     std::vector<compages::world::EntityId> open{ p_root };
     while (!open.empty())
@@ -522,7 +539,7 @@ void DoomLike::tickTimers(float p_dt)
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::tickPlaying(Frame const& p_frame, float p_dt)
+void DoomLike::tickPlaying(compages::world::ViewFrame const& p_frame, float p_dt)
 {
     movePlayer(p_frame);
     useWeapon(p_frame);
@@ -549,9 +566,10 @@ void DoomLike::tickPlaying(Frame const& p_frame, float p_dt)
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::tickAfterDeath(Frame const& p_frame)
+void DoomLike::tickAfterDeath(compages::world::ViewFrame const& p_frame)
 {
-    if (!compages::world::pressed(p_frame.input, m_ui.previous, compages::world::Key::Space))
+    if (!compages::world::pressed(
+            p_frame.input, m_ui.previous, compages::world::Key::Space))
     {
         return;
     }
@@ -561,7 +579,7 @@ void DoomLike::tickAfterDeath(Frame const& p_frame)
         m_session.kills = 0u;
         m_player.reserve = 24;
     }
-    const compages::gpu::Status built = buildLevel(won ? 0u : m_session.level);
+    const compages::Status built = buildLevel(won ? 0u : m_session.level);
     if (!built)
     {
         compages::gpu::reportError(built.error());
@@ -584,20 +602,21 @@ void DoomLike::updateBlastLights(float p_dt)
 //------------------------------------------------------------------------------
 void DoomLike::drawAimCrosshair()
 {
-    const Vector3f ahead = eye() + (aim() * 0.5f);
-    const Vector3f right(std::cos(m_player.yaw) * 0.008f,
-                         0.0f,
-                         -std::sin(m_player.yaw) * 0.008f);
-    const Vector3f up(0.0f, 0.008f, 0.0f);
-    const Vector3f color = (m_player.gun == Gun::Reloading)
-                               ? Vector3f(0.5f, 0.5f, 0.5f)
-                               : Vector3f(0.9f, 0.9f, 0.9f);
+    const compages::core::Vector3f ahead = eye() + (aim() * 0.5f);
+    const compages::core::Vector3f right(std::cos(m_player.yaw) * 0.008f,
+                                         0.0f,
+                                         -std::sin(m_player.yaw) * 0.008f);
+    const compages::core::Vector3f up(0.0f, 0.008f, 0.0f);
+    const compages::core::Vector3f color =
+        (m_player.gun == Gun::Reloading)
+            ? compages::core::Vector3f(0.5f, 0.5f, 0.5f)
+            : compages::core::Vector3f(0.9f, 0.9f, 0.9f);
     m_level_scene.scene->debug().line(ahead - right, ahead + right, color);
     m_level_scene.scene->debug().line(ahead - up, ahead + up, color);
 }
 
 //------------------------------------------------------------------------------
-void DoomLike::draw(Frame const& p_frame)
+void DoomLike::draw(compages::world::ViewFrame const& p_frame)
 {
     const float dt = p_frame.elapsed;
     tickTimers(dt);
@@ -764,7 +783,7 @@ void DoomLike::controls()
                                   doom::levels()[i].title;
         if (ImGui::Button(label.c_str()))
         {
-            const compages::gpu::Status built = buildLevel(i);
+            const compages::Status built = buildLevel(i);
             if (!built)
             {
                 compages::gpu::reportError(built.error());

@@ -28,17 +28,14 @@
 namespace compages::renderer
 {
 
-using compages::world::Entity;
-using compages::world::EntityId;
-using compages::world::World;
-
 class Scene;
 
 // ****************************************************************************
-//! \brief Build the kinematic chain of a URDF robot in a World: one entity
-//! per link, named after it, hanging from the link of its parent joint, with
-//! a RevoluteJoint or a PrismaticJoint component. Fixed joints are plain
-//! local transforms. Visuals are ignored: what a headless simulation needs.
+//! \brief Build the kinematic chain of a URDF robot in a
+//! compages::world::World: one entity per link, named after it, hanging from
+//! the link of its parent joint, with a compages::world::RevoluteJoint or a
+//! compages::world::PrismaticJoint component. Fixed joints are plain local
+//! transforms. Visuals are ignored: what a headless simulation needs.
 //!
 //! URDF is Z-up and Compages is Y-up: the returned root, named after the
 //! robot, turns one into the other. The root link hangs under it.
@@ -48,8 +45,10 @@ class Scene;
 //! robot.value().lookup("base_link/link_1").angle(30.0_deg);
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] compages::Result<Entity>
-loadUrdf(World& p_world, std::string const& p_path, EntityId p_parent = {});
+[[nodiscard]] Result<compages::world::Entity>
+loadUrdf(compages::world::World& p_world,
+         std::string const& p_path,
+         compages::world::EntityId p_parent = {});
 
 // ****************************************************************************
 //! \brief Same, with the visuals of the links: STL meshes, glTF models,
@@ -57,7 +56,9 @@ loadUrdf(World& p_world, std::string const& p_path, EntityId p_parent = {});
 //! paths are relative to the URDF file; a "package://" prefix is dropped.
 //! What Scene::load() does for a ".urdf" file.
 // ****************************************************************************
-[[nodiscard]] compages::Result<Entity>
-loadUrdf(Scene& p_scene, std::string const& p_path, EntityId p_parent = {});
+[[nodiscard]] Result<compages::world::Entity>
+loadUrdf(Scene& p_scene,
+         std::string const& p_path,
+         compages::world::EntityId p_parent = {});
 
 } // namespace compages::renderer

@@ -29,8 +29,15 @@
 #include <span>
 #include <vector>
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
+
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 // ****************************************************************************
 //! \brief SoA storage for local TRS and derived world matrices, keyed by
@@ -51,7 +58,7 @@ namespace compages::world
 //! store.markDirty(entity);
 //! \endcode
 // ****************************************************************************
-class TransformStore : private NotCopiable
+class TransformStore : private compages::core::NotCopiable
 {
 public:
 
@@ -80,41 +87,41 @@ public:
     [[nodiscard]] LocalTransformView localMutable(EntityId p_entity);
 
     //! \brief Read-only access to one SoA channel.
-    [[nodiscard]] Vector3f const& position(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Vector3f const& position(EntityId p_entity) const;
     //! \brief Read-only access to one SoA channel.
-    [[nodiscard]] Quatf const& rotation(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Quatf const& rotation(EntityId p_entity) const;
     //! \brief Read-only access to one SoA channel.
-    [[nodiscard]] Vector3f const& scale(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Vector3f const& scale(EntityId p_entity) const;
 
     //! \brief Tight view of every stored position (systems, debug).
-    [[nodiscard]] std::span<Vector3f const> positions() const
+    [[nodiscard]] std::span<compages::core::Vector3f const> positions() const
     {
         return m_position;
     }
     //! \brief Tight view of every stored rotation.
-    [[nodiscard]] std::span<Quatf const> rotations() const
+    [[nodiscard]] std::span<compages::core::Quatf const> rotations() const
     {
         return m_rotation;
     }
     //! \brief Tight view of every stored scale.
-    [[nodiscard]] std::span<Vector3f const> scales() const
+    [[nodiscard]] std::span<compages::core::Vector3f const> scales() const
     {
         return m_scale;
     }
     //! \brief Cached world matrices from the last \c TransformSystem pass.
-    [[nodiscard]] std::span<Matrix44f const> worlds() const
+    [[nodiscard]] std::span<compages::core::Matrix44f const> worlds() const
     {
         return m_world;
     }
 
     //! \brief Local TRS matrix for one entity (does not read the cache).
-    [[nodiscard]] Matrix44f localMatrix(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Matrix44f localMatrix(EntityId p_entity) const;
 
     //! \brief World matrix after the last \c TransformSystem::update().
-    [[nodiscard]] Matrix44f const& world(EntityId p_entity) const;
+    [[nodiscard]] compages::core::Matrix44f const& world(EntityId p_entity) const;
 
     //! \brief Override the cached world matrix (tests, importers).
-    void setWorld(EntityId p_entity, Matrix44f const& p_matrix);
+    void setWorld(EntityId p_entity, compages::core::Matrix44f const& p_matrix);
 
     //! \brief Local TRS changed; recompute on the next \c TransformSystem pass.
     void markDirty(EntityId p_entity);
@@ -139,10 +146,10 @@ private:
     void ensureCapacity(std::size_t p_index);
     [[nodiscard]] bool slotMatches(EntityId p_entity) const;
 
-    std::vector<Vector3f> m_position;
-    std::vector<Quatf> m_rotation;
-    std::vector<Vector3f> m_scale;
-    std::vector<Matrix44f> m_world;
+    std::vector<compages::core::Vector3f> m_position;
+    std::vector<compages::core::Quatf> m_rotation;
+    std::vector<compages::core::Vector3f> m_scale;
+    std::vector<compages::core::Matrix44f> m_world;
     std::vector<std::uint8_t> m_flags;
     std::vector<std::uint16_t> m_generation;
 };

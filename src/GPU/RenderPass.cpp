@@ -19,11 +19,11 @@
 //=============================================================================
 
 #include "Compages/GPU/RenderPass.hpp"
-#include "GPU/Backends/Backend.hpp"
 #include "Compages/GPU/Device.hpp"
+#include "Compages/GPU/Errors.hpp"
+#include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
 #include "GPU/Internal/Statistics.hpp"
-#include "Compages/GPU/Errors.hpp"
 
 #include <vector>
 
@@ -67,8 +67,9 @@ Result<RenderPass> RenderPass::begin(PassDesc const& p_given)
 
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is nothing to "
-                       "draw into");
+        return failure(
+            "compages::gpu::init() has not been called, so there is nothing to "
+            "draw into");
     }
     if ((p_desc.width == 0u) || (p_desc.height == 0u))
     {
@@ -76,7 +77,8 @@ Result<RenderPass> RenderPass::begin(PassDesc const& p_given)
             "a pass of " + std::to_string(p_desc.width) + " by " +
             std::to_string(p_desc.height) +
             " pixels draws nothing at all. A size of zero usually means the "
-            "window size was read before the window was shown, or that the window "
+            "window size was read before the window was shown, or that the "
+            "window "
             "is minimised, in which case the frame is worth skipping entirely");
     }
 
@@ -218,12 +220,13 @@ PassDesc const& currentPass()
 }
 
 //------------------------------------------------------------------------------
-void clear(Vector4f const& p_color)
+void clear(compages::core::Vector4f const& p_color)
 {
     if (g_open.empty())
     {
-        return reportError("compages::gpu::clear() with no pass open: there is no "
-                           "target to clear");
+        return reportError(
+            "compages::gpu::clear() with no pass open: there is no "
+            "target to clear");
     }
     PassDesc desc = g_open.back().desc;
     desc.clear_color = true;
@@ -233,9 +236,9 @@ void clear(Vector4f const& p_color)
 }
 
 //------------------------------------------------------------------------------
-void clear(Vector3f const& p_color)
+void clear(compages::core::Vector3f const& p_color)
 {
-    clear(Vector4f(p_color[0], p_color[1], p_color[2], 1.0f));
+    clear(compages::core::Vector4f(p_color[0], p_color[1], p_color[2], 1.0f));
 }
 
 //------------------------------------------------------------------------------
@@ -243,11 +246,13 @@ void clear(std::initializer_list<float> p_color)
 {
     if ((p_color.size() != 3u) && (p_color.size() != 4u))
     {
-        return reportError("compages::gpu::clear() takes a colour of three numbers, or "
-                           "four with the alpha");
+        return reportError(
+            "compages::gpu::clear() takes a colour of three numbers, or "
+            "four with the alpha");
     }
     const float* c = p_color.begin();
-    clear(Vector4f(c[0], c[1], c[2], (p_color.size() == 4u) ? c[3] : 1.0f));
+    clear(compages::core::Vector4f(
+        c[0], c[1], c[2], (p_color.size() == 4u) ? c[3] : 1.0f));
 }
 
 //------------------------------------------------------------------------------
@@ -255,8 +260,9 @@ void clearDepth(float p_depth)
 {
     if (g_open.empty())
     {
-        return reportError("compages::gpu::clearDepth() with no pass open: there is no "
-                           "target to clear");
+        return reportError(
+            "compages::gpu::clearDepth() with no pass open: there is no "
+            "target to clear");
     }
     PassDesc desc = g_open.back().desc;
     desc.clear_color = false;
@@ -266,7 +272,7 @@ void clearDepth(float p_depth)
 }
 
 //------------------------------------------------------------------------------
-void clear(Vector3f const& p_color, float p_depth)
+void clear(compages::core::Vector3f const& p_color, float p_depth)
 {
     clear(p_color);
     clearDepth(p_depth);
@@ -281,7 +287,8 @@ Result<std::vector<std::byte>> readPixels(std::uint32_t p_x,
     if (g_open.empty())
     {
         return failure(
-            "there is no pass open, so there is no target to read from. Read the "
+            "there is no pass open, so there is no target to read from. Read "
+            "the "
             "picture before the pass goes out of scope");
     }
 
@@ -293,12 +300,14 @@ Result<std::vector<std::byte>> readPixels(std::uint32_t p_x,
     {
         return failure("the region being read runs outside the pass: " +
                        std::to_string(width) + " by " + std::to_string(height) +
-                       " at " + std::to_string(p_x) + ", " + std::to_string(p_y) +
-                       " does not fit in " + std::to_string(current.width) +
-                       " by " + std::to_string(current.height));
+                       " at " + std::to_string(p_x) + ", " +
+                       std::to_string(p_y) + " does not fit in " +
+                       std::to_string(current.width) + " by " +
+                       std::to_string(current.height));
     }
 
-    std::vector<std::byte> pixels(static_cast<std::size_t>(width) * height * 4u);
+    std::vector<std::byte> pixels(static_cast<std::size_t>(width) * height *
+                                  4u);
     backend::readTargetPixels(
         current.x + p_x, current.y + p_y, width, height, pixels.data());
     return pixels;

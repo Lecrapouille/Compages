@@ -24,8 +24,12 @@
 #include "Compages/World/Controllers/CameraInput.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::world
 {
+
+
 
 class World;
 
@@ -47,7 +51,7 @@ class OrbitController
 {
 public:
 
-    Vector3f target{ 0.0f, 0.0f, 0.0f };
+    compages::core::Vector3f target{ 0.0f, 0.0f, 0.0f };
     float yaw = 0.0f;
     float pitch = -0.35f;
     float distance = 40.0f;
@@ -68,7 +72,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Write the pose from the current yaw/pitch/distance, ignoring
-    //! input. What a demo uses to drive the camera from \c Frame::total.
+    //! input. What a demo uses to drive the camera from \c compages::core::Frame::total.
     // ------------------------------------------------------------------------
     void writePose(World& p_world, EntityId p_camera) const;
 };

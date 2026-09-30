@@ -177,14 +177,14 @@ using Status = Result<void>;
 //! COMPAGES_TRY(m_texture.load("wood.png"));
 //! \endcode
 // ****************************************************************************
-#define COMPAGES_TRY(expr)                                      \
-    do                                                          \
-    {                                                           \
-        auto compages_try_result_ = (expr);                     \
-        if (!compages_try_result_)                              \
-        {                                                       \
+#define COMPAGES_TRY(expr)                                          \
+    do                                                              \
+    {                                                               \
+        auto compages_try_result_ = (expr);                         \
+        if (!compages_try_result_)                                  \
+        {                                                           \
             return compages::failure(compages_try_result_.error()); \
-        }                                                       \
+        }                                                           \
     } while (false)
 
 // ****************************************************************************
@@ -196,8 +196,9 @@ using Status = Result<void>;
 //! \code
 //! compages::Status Demo::setUp()
 //! {
-//!     COMPAGES_TRY_ASSIGN(m_block, compages::gpu::UniformBlock::create(m_program, "Camera"));
-//!     return compages::success();
+//!     COMPAGES_TRY_ASSIGN(m_block,
+//!     compages::gpu::UniformBlock::create(m_program, "Camera")); return
+//!     compages::success();
 //! }
 //! \endcode
 //!
@@ -207,13 +208,13 @@ using Status = Result<void>;
 //! COMPAGES_TRY(m_program.load(VERTEX_SHADER, FRAGMENT_SHADER));
 //! \endcode
 // ****************************************************************************
-#define COMPAGES_TRY_ASSIGN(target, expr)                         \
-    do                                                            \
-    {                                                             \
-        auto compages_try_result_ = (expr);                       \
-        if (!compages_try_result_)                                \
-        {                                                         \
+#define COMPAGES_TRY_ASSIGN(target, expr)                           \
+    do                                                              \
+    {                                                               \
+        auto compages_try_result_ = (expr);                         \
+        if (!compages_try_result_)                                  \
+        {                                                           \
             return compages::failure(compages_try_result_.error()); \
-        }                                                         \
-        (target) = compages_try_result_.take();                    \
+        }                                                           \
+        (target) = compages_try_result_.take();                     \
     } while (false)

@@ -69,7 +69,7 @@ using TextureMap = std::unordered_map<cgltf_image*, TextureAssetId>;
 // --- Embedded images ---------------------------------------------------------
 // Decode buffer-view pixels into TextureAsset (sRGB base colour by default).
 
-[[nodiscard]] compages::Result<TextureAsset>
+[[nodiscard]] Result<TextureAsset>
 textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
 {
     // glTF UV (0, 0) is the top-left of the image file. OpenGL treats the
@@ -92,12 +92,13 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
     if (decoded == nullptr)
     {
         const char* why = stbi_failure_reason();
-        return compages::failure(std::string("embedded glTF image: ") +
-                                 ((why == nullptr) ? "unknown reason" : why));
+        return failure(std::string("embedded glTF image: ") +
+                       ((why == nullptr) ? "unknown reason" : why));
     }
 
     const compages::gpu::PixelFormat format =
-        p_srgb ? compages::gpu::PixelFormat::SRGB8A8 : compages::gpu::PixelFormat::RGBA8;
+        p_srgb ? compages::gpu::PixelFormat::SRGB8A8
+               : compages::gpu::PixelFormat::RGBA8;
 
     compages::gpu::TextureDesc desc;
     desc.kind = compages::gpu::TextureKind::Texture2D;
@@ -123,15 +124,14 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
     return result;
 }
 
-[[nodiscard]] compages::Result<TextureAssetId>
-importImage(cgltf_image* p_image,
-            AssetManager& p_assets,
-            TextureMap& p_cache,
-            std::size_t& p_texture_count)
+[[nodiscard]] Result<TextureAssetId> importImage(cgltf_image* p_image,
+                                                 AssetManager& p_assets,
+                                                 TextureMap& p_cache,
+                                                 std::size_t& p_texture_count)
 {
     if (p_image == nullptr)
     {
-        return compages::failure("glTF image pointer is null");
+        return failure("glTF image pointer is null");
     }
     const auto cached = p_cache.find(p_image);
     if (cached != p_cache.end())
@@ -151,27 +151,26 @@ importImage(cgltf_image* p_image,
     }
     else if (p_image->uri != nullptr)
     {
-        return compages::failure(
+        return failure(
             "external glTF image URIs are not supported yet; embed images "
             "in the GLB");
     }
     else
     {
-        return compages::failure(
-            "glTF image has neither a buffer view nor a URI");
+        return failure("glTF image has neither a buffer view nor a URI");
     }
 
     auto texture_result = textureFromMemory(bytes, true);
     if (!texture_result)
     {
-        return compages::failure(texture_result.error());
+        return failure(texture_result.error());
     }
     auto texture = texture_result.take();
     texture.name = (p_image->name != nullptr) ? p_image->name : "gltf-image";
     auto id_result = p_assets.addTexture(texture.name, std::move(texture));
     if (!id_result)
     {
-        return compages::failure(id_result.error());
+        return failure(id_result.error());
     }
     auto id = id_result.take();
     p_cache.emplace(p_image, id);
@@ -180,7 +179,8 @@ importImage(cgltf_image* p_image,
 }
 
 // --- Mesh primitives ---------------------------------------------------------
-// Unpack POSITION/NORMAL/TEXCOORD/JOINTS/WEIGHTS into MeshAsset (+ optional skin).
+// Unpack POSITION/NORMAL/TEXCOORD/JOINTS/WEIGHTS into MeshAsset (+ optional
+// skin).
 
 [[nodiscard]] cgltf_accessor const*
 findAttribute(cgltf_primitive const* p_primitive,
@@ -198,20 +198,19 @@ findAttribute(cgltf_primitive const* p_primitive,
     return nullptr;
 }
 
-[[nodiscard]] compages::Result<MeshAsset>
+[[nodiscard]] Result<MeshAsset>
 meshFromPrimitive(cgltf_primitive const* p_primitive)
 {
     cgltf_accessor const* positions =
         findAttribute(p_primitive, cgltf_attribute_type_position);
     if (positions == nullptr)
     {
-        return compages::failure("glTF primitive has no POSITION attribute");
+        return failure("glTF primitive has no POSITION attribute");
     }
     if (positions->count > 65535u)
     {
-        return compages::failure(
-            "glTF primitive exceeds the 65535 vertex limit of "
-            "the current MeshAsset");
+        return failure("glTF primitive exceeds the 65535 vertex limit of "
+                       "the current MeshAsset");
     }
 
     cgltf_accessor const* normals =
@@ -227,7 +226,7 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
     if (cgltf_accessor_unpack_floats(
             positions, position_data.data(), position_data.size()) == 0)
     {
-        return compages::failure("failed to read glTF POSITION data");
+        return failure("failed to read glTF POSITION data");
     }
 
     std::vector<float> normal_data;
@@ -237,7 +236,7 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
         if (cgltf_accessor_unpack_floats(
                 normals, normal_data.data(), normal_data.size()) == 0)
         {
-            return compages::failure("failed to read glTF NORMAL data");
+            return failure("failed to read glTF NORMAL data");
         }
     }
 
@@ -248,7 +247,7 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
         if (cgltf_accessor_unpack_floats(uvs, uv_data.data(), uv_data.size()) ==
             0)
         {
-            return compages::failure("failed to read glTF TEXCOORD data");
+            return failure("failed to read glTF TEXCOORD data");
         }
     }
 
@@ -259,7 +258,7 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
         if (cgltf_accessor_unpack_floats(
                 weights, weight_data.data(), weight_data.size()) == 0)
         {
-            return compages::failure("failed to read glTF WEIGHTS data");
+            return failure("failed to read glTF WEIGHTS data");
         }
     }
 
@@ -267,34 +266,36 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
 
     std::vector<MeshVertex> vertices;
     vertices.reserve(positions->count);
-    AABB bounds;
+    compages::core::AABB bounds;
     for (std::size_t i = 0u; i < positions->count; ++i)
     {
         MeshVertex vertex;
-        vertex.position = Vector3f(position_data[(i * 3u) + 0u],
-                                   position_data[(i * 3u) + 1u],
-                                   position_data[(i * 3u) + 2u]);
+        vertex.position =
+            compages::core::Vector3f(position_data[(i * 3u) + 0u],
+                                     position_data[(i * 3u) + 1u],
+                                     position_data[(i * 3u) + 2u]);
         if (!normal_data.empty())
         {
-            vertex.normal = Vector3f(normal_data[(i * 3u) + 0u],
-                                     normal_data[(i * 3u) + 1u],
-                                     normal_data[(i * 3u) + 2u]);
+            vertex.normal =
+                compages::core::Vector3f(normal_data[(i * 3u) + 0u],
+                                         normal_data[(i * 3u) + 1u],
+                                         normal_data[(i * 3u) + 2u]);
         }
         else
         {
-            vertex.normal = compages::vector::normalize(vertex.position);
+            vertex.normal = compages::core::vector::normalize(vertex.position);
         }
         if (!uv_data.empty())
         {
-            vertex.uv =
-                Vector2f(uv_data[(i * 2u) + 0u], uv_data[(i * 2u) + 1u]);
+            vertex.uv = compages::core::Vector2f(uv_data[(i * 2u) + 0u],
+                                                 uv_data[(i * 2u) + 1u]);
         }
         bounds.expand(vertex.position);
         vertices.emplace_back(vertex);
     }
 
     std::vector<std::uint16_t> joint_indices;
-    std::vector<Vector4f> joint_weights;
+    std::vector<compages::core::Vector4f> joint_weights;
     if (skinned)
     {
         joint_indices.resize(vertices.size() * 4u);
@@ -304,20 +305,22 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
             cgltf_uint raw[4] = { 0u, 0u, 0u, 0u };
             if (cgltf_accessor_read_uint(joints, i, raw, 4u) == 0)
             {
-                return compages::failure("failed to read glTF JOINTS data");
+                return failure("failed to read glTF JOINTS data");
             }
             joint_indices[(i * 4u) + 0u] = static_cast<std::uint16_t>(raw[0]);
             joint_indices[(i * 4u) + 1u] = static_cast<std::uint16_t>(raw[1]);
             joint_indices[(i * 4u) + 2u] = static_cast<std::uint16_t>(raw[2]);
             joint_indices[(i * 4u) + 3u] = static_cast<std::uint16_t>(raw[3]);
-            joint_weights[i] = Vector4f(weight_data[(i * 4u) + 0u],
-                                        weight_data[(i * 4u) + 1u],
-                                        weight_data[(i * 4u) + 2u],
-                                        weight_data[(i * 4u) + 3u]);
-            vertices[i].joints = Vector4i(static_cast<int>(raw[0]),
-                                          static_cast<int>(raw[1]),
-                                          static_cast<int>(raw[2]),
-                                          static_cast<int>(raw[3]));
+            joint_weights[i] =
+                compages::core::Vector4f(weight_data[(i * 4u) + 0u],
+                                         weight_data[(i * 4u) + 1u],
+                                         weight_data[(i * 4u) + 2u],
+                                         weight_data[(i * 4u) + 3u]);
+            vertices[i].joints =
+                compages::core::Vector4i(static_cast<int>(raw[0]),
+                                         static_cast<int>(raw[1]),
+                                         static_cast<int>(raw[2]),
+                                         static_cast<int>(raw[3]));
             vertices[i].weights = joint_weights[i];
         }
     }
@@ -360,7 +363,8 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
 }
 
 // --- Node transform ----------------------------------------------------------
-// Map glTF matrix or TRS into LocalTransform / PrefabNode fields.
+// Map glTF matrix or TRS into compages::world::LocalTransform / PrefabNode
+// fields.
 
 template <typename Transform>
 void applyNodeTransform(cgltf_node const* p_node, Transform&& p_local)
@@ -369,71 +373,73 @@ void applyNodeTransform(cgltf_node const* p_node, Transform&& p_local)
     {
         // glTF matrices are column-major, column-vector: translation sits at
         // indices 12, 13, 14 and the first three columns are the scaled basis.
-        // Quatf::fromMatrix() reads a mathematical (column-vector) rotation.
-        p_local.position = Vector3f(
+        // compages::core::Quatf::fromMatrix() reads a mathematical
+        // (column-vector) rotation.
+        p_local.position = compages::core::Vector3f(
             p_node->matrix[12], p_node->matrix[13], p_node->matrix[14]);
 
-        const Vector3f axis_x(
+        const compages::core::Vector3f axis_x(
             p_node->matrix[0], p_node->matrix[1], p_node->matrix[2]);
-        const Vector3f axis_y(
+        const compages::core::Vector3f axis_y(
             p_node->matrix[4], p_node->matrix[5], p_node->matrix[6]);
-        const Vector3f axis_z(
+        const compages::core::Vector3f axis_z(
             p_node->matrix[8], p_node->matrix[9], p_node->matrix[10]);
-        const float scale_x = compages::vector::norm(axis_x);
-        const float scale_y = compages::vector::norm(axis_y);
-        const float scale_z = compages::vector::norm(axis_z);
-        p_local.scale = Vector3f(scale_x, scale_y, scale_z);
+        const float scale_x = compages::core::vector::norm(axis_x);
+        const float scale_y = compages::core::vector::norm(axis_y);
+        const float scale_z = compages::core::vector::norm(axis_z);
+        p_local.scale = compages::core::Vector3f(scale_x, scale_y, scale_z);
 
-        Matrix44f rotation_matrix(compages::matrix::Identity);
+        compages::core::Matrix44f rotation_matrix(
+            compages::core::matrix::Identity);
         if (scale_x > 1.0e-8f)
         {
-            const Vector3f n = axis_x / scale_x;
+            const compages::core::Vector3f n = axis_x / scale_x;
             rotation_matrix(0, 0) = n.x;
             rotation_matrix(1, 0) = n.y;
             rotation_matrix(2, 0) = n.z;
         }
         if (scale_y > 1.0e-8f)
         {
-            const Vector3f n = axis_y / scale_y;
+            const compages::core::Vector3f n = axis_y / scale_y;
             rotation_matrix(0, 1) = n.x;
             rotation_matrix(1, 1) = n.y;
             rotation_matrix(2, 1) = n.z;
         }
         if (scale_z > 1.0e-8f)
         {
-            const Vector3f n = axis_z / scale_z;
+            const compages::core::Vector3f n = axis_z / scale_z;
             rotation_matrix(0, 2) = n.x;
             rotation_matrix(1, 2) = n.y;
             rotation_matrix(2, 2) = n.z;
         }
-        p_local.rotation = Quatf::fromMatrix(rotation_matrix);
+        p_local.rotation = compages::core::Quatf::fromMatrix(rotation_matrix);
         return;
     }
 
     if (p_node->has_translation)
     {
-        p_local.position = Vector3f(p_node->translation[0],
-                                    p_node->translation[1],
-                                    p_node->translation[2]);
+        p_local.position = compages::core::Vector3f(p_node->translation[0],
+                                                    p_node->translation[1],
+                                                    p_node->translation[2]);
     }
     if (p_node->has_rotation)
     {
-        p_local.rotation = Quatf(p_node->rotation[3],
-                                 p_node->rotation[0],
-                                 p_node->rotation[1],
-                                 p_node->rotation[2]);
+        p_local.rotation = compages::core::Quatf(p_node->rotation[3],
+                                                 p_node->rotation[0],
+                                                 p_node->rotation[1],
+                                                 p_node->rotation[2]);
     }
     if (p_node->has_scale)
     {
-        p_local.scale =
-            Vector3f(p_node->scale[0], p_node->scale[1], p_node->scale[2]);
+        p_local.scale = compages::core::Vector3f(
+            p_node->scale[0], p_node->scale[1], p_node->scale[2]);
     }
 }
 
 // --- Materials ---------------------------------------------------------------
 // PBR base colour factor + embedded base colour texture, shared MaterialId.
 
-[[nodiscard]] compages::Result<MaterialInstanceId>
+[[nodiscard]] Result<MaterialInstanceId>
 materialInstanceFromGltf(cgltf_material const* p_material,
                          MaterialId p_shared_material,
                          AssetManager& p_assets,
@@ -446,9 +452,10 @@ materialInstanceFromGltf(cgltf_material const* p_material,
     {
         const cgltf_pbr_metallic_roughness& pbr =
             p_material->pbr_metallic_roughness;
-        instance.base_color_factor = Vector3f(pbr.base_color_factor[0],
-                                              pbr.base_color_factor[1],
-                                              pbr.base_color_factor[2]);
+        instance.base_color_factor =
+            compages::core::Vector3f(pbr.base_color_factor[0],
+                                     pbr.base_color_factor[1],
+                                     pbr.base_color_factor[2]);
         if (pbr.base_color_texture.texture != nullptr)
         {
             auto texture_id_result =
@@ -458,7 +465,7 @@ materialInstanceFromGltf(cgltf_material const* p_material,
                             p_texture_count);
             if (!texture_id_result)
             {
-                return compages::failure(texture_id_result.error());
+                return failure(texture_id_result.error());
             }
             auto texture_id = texture_id_result.take();
             instance.base_color_texture = texture_id;
@@ -472,7 +479,7 @@ materialInstanceFromGltf(cgltf_material const* p_material,
     auto id_result = p_assets.addMaterialInstance(name, instance);
     if (!id_result)
     {
-        return compages::failure(id_result.error());
+        return failure(id_result.error());
     }
     auto id = id_result.take();
     return id;
@@ -487,15 +494,15 @@ materialInstanceFromGltf(cgltf_material const* p_material,
 // --- Live world import (legacy) ----------------------------------------------
 // Recursively spawn entities, first primitive only per mesh node.
 
-[[nodiscard]] compages::Status importNode(cgltf_node* p_node,
-                                          cgltf_data* p_data,
-                                          AssetManager& p_assets,
-                                          compages::world::World& p_world,
-                                          compages::world::EntityId p_parent,
-                                          MaterialId p_shared_material,
-                                          TextureMap& p_textures,
-                                          std::vector<compages::world::EntityId>& p_nodes,
-                                          GltfImport& p_result)
+[[nodiscard]] Status importNode(cgltf_node* p_node,
+                                cgltf_data* p_data,
+                                AssetManager& p_assets,
+                                compages::world::World& p_world,
+                                compages::world::EntityId p_parent,
+                                MaterialId p_shared_material,
+                                TextureMap& p_textures,
+                                std::vector<compages::world::EntityId>& p_nodes,
+                                GltfImport& p_result)
 {
     const std::string node_name =
         (p_node->name != nullptr) ? p_node->name : "gltf-node";
@@ -516,14 +523,14 @@ materialInstanceFromGltf(cgltf_material const* p_material,
             auto mesh_result = meshFromPrimitive(&p_node->mesh->primitives[i]);
             if (!mesh_result)
             {
-                return compages::failure(mesh_result.error());
+                return failure(mesh_result.error());
             }
             auto mesh = mesh_result.take();
             auto mesh_id_result = p_assets.addMesh(
                 node_name + "-mesh-" + std::to_string(i), std::move(mesh));
             if (!mesh_id_result)
             {
-                return compages::failure(mesh_id_result.error());
+                return failure(mesh_id_result.error());
             }
             auto mesh_id = mesh_id_result.take();
             ++p_result.mesh_count;
@@ -536,7 +543,7 @@ materialInstanceFromGltf(cgltf_material const* p_material,
                                          p_result.texture_count);
             if (!instance_id_result)
             {
-                return compages::failure(instance_id_result.error());
+                return failure(instance_id_result.error());
             }
             auto instance_id = instance_id_result.take();
 
@@ -560,13 +567,13 @@ materialInstanceFromGltf(cgltf_material const* p_material,
                                 p_nodes,
                                 p_result));
     }
-    return compages::success();
+    return success();
 }
 
 // --- Skins -------------------------------------------------------------------
 // Inverse bind matrices and joint entity wiring after the node tree exists.
 
-[[nodiscard]] compages::Result<SkinAssetId>
+[[nodiscard]] Result<SkinAssetId>
 importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
 {
     SkinAsset asset;
@@ -577,22 +584,23 @@ importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
         if (cgltf_accessor_unpack_floats(
                 p_skin->inverse_bind_matrices, raw.data(), raw.size()) == 0)
         {
-            return compages::failure(
-                "failed to read glTF inverse bind matrices");
+            return failure("failed to read glTF inverse bind matrices");
         }
         for (std::size_t i = 0u; i < p_skin->joints_count; ++i)
         {
-            // glTF is column-major. This library stores the same 16 floats so
-            // a shader upload with GL_FALSE sees the original columns.
-            std::memcpy(asset.inverse_bind[i].data(),
+            // glTF is column-major, Matrix is row-major.
+            compages::core::Matrix44f column_major;
+            std::memcpy(column_major.data(),
                         raw.data() + (i * 16u),
                         sizeof(float) * 16u);
+            asset.inverse_bind[i] = compages::core::transpose(column_major);
         }
     }
     else
     {
-        asset.inverse_bind.assign(p_skin->joints_count,
-                                  Matrix44f(compages::matrix::Identity));
+        asset.inverse_bind.assign(
+            p_skin->joints_count,
+            compages::core::Matrix44f(compages::core::matrix::Identity));
     }
     const std::string name = (p_skin->name != nullptr)
                                  ? p_skin->name
@@ -600,13 +608,13 @@ importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
     auto id_result = p_assets.addSkin(name, std::move(asset));
     if (!id_result)
     {
-        return compages::failure(id_result.error());
+        return failure(id_result.error());
     }
     auto id = id_result.take();
     return id;
 }
 
-[[nodiscard]] compages::Status
+[[nodiscard]] Status
 bindSkins(cgltf_data* p_data,
           AssetManager& p_assets,
           compages::world::World& p_world,
@@ -622,7 +630,8 @@ bindSkins(cgltf_data* p_data,
             continue;
         }
         const compages::world::EntityId entity = p_nodes[i];
-        if (!entity.valid() || !p_world.has<compages::renderer::MeshRenderer>(entity))
+        if (!entity.valid() ||
+            !p_world.has<compages::renderer::MeshRenderer>(entity))
         {
             continue;
         }
@@ -640,7 +649,7 @@ bindSkins(cgltf_data* p_data,
                 importSkinAsset(node->skin, p_assets, skin_index);
             if (!created_result)
             {
-                return compages::failure(created_result.error());
+                return failure(created_result.error());
             }
             auto created = created_result.take();
             skin_id = created;
@@ -668,17 +677,17 @@ bindSkins(cgltf_data* p_data,
         }
         p_world.add(entity, std::move(instance));
     }
-    return compages::success();
+    return success();
 }
 
 // --- Animation clips ---------------------------------------------------------
-// glTF samplers become compages::renderer::AnimationClip assets keyed by node index.
+// glTF samplers become compages::renderer::AnimationClip assets keyed by node
+// index.
 
-[[nodiscard]] compages::Status
-importAnimations(cgltf_data* p_data,
-                 AssetManager& p_assets,
-                 std::string const& p_path,
-                 std::vector<AnimationClipId>& p_result)
+[[nodiscard]] Status importAnimations(cgltf_data* p_data,
+                                      AssetManager& p_assets,
+                                      std::string const& p_path,
+                                      std::vector<AnimationClipId>& p_result)
 {
     for (std::size_t i = 0u; i < p_data->animations_count; ++i)
     {
@@ -734,7 +743,7 @@ importAnimations(cgltf_data* p_data,
                                              curve.times.data(),
                                              curve.times.size()) == 0)
             {
-                return compages::failure("failed to read glTF animation times");
+                return failure("failed to read glTF animation times");
             }
             const std::size_t components =
                 (curve.path == AnimationChannel::Path::Rotation) ? 4u : 3u;
@@ -743,8 +752,7 @@ importAnimations(cgltf_data* p_data,
                                              curve.values.data(),
                                              curve.values.size()) == 0)
             {
-                return compages::failure(
-                    "failed to read glTF animation values");
+                return failure("failed to read glTF animation values");
             }
             if (!curve.times.empty())
             {
@@ -756,18 +764,19 @@ importAnimations(cgltf_data* p_data,
         auto id_result = p_assets.addAnimation(asset_name, std::move(clip));
         if (!id_result)
         {
-            return compages::failure(id_result.error());
+            return failure(id_result.error());
         }
         auto id = id_result.take();
         p_result.emplace_back(id);
     }
-    return compages::success();
+    return success();
 }
 
 // --- Prefab tree -------------------------------------------------------------
-// Headless path: one PrefabNode per glTF node; extra primitives become children.
+// Headless path: one PrefabNode per glTF node; extra primitives become
+// children.
 
-[[nodiscard]] compages::Result<PrefabNode>
+[[nodiscard]] Result<PrefabNode>
 loadPrefabNode(cgltf_node* p_node,
                cgltf_data* p_data,
                AssetManager& p_assets,
@@ -805,7 +814,7 @@ loadPrefabNode(cgltf_node* p_node,
         auto mesh_result = meshFromPrimitive(primitive);
         if (!mesh_result)
         {
-            return compages::failure(mesh_result.error());
+            return failure(mesh_result.error());
         }
         auto mesh = mesh_result.take();
         const std::string mesh_name =
@@ -814,7 +823,7 @@ loadPrefabNode(cgltf_node* p_node,
         auto mesh_id_result = p_assets.addMesh(mesh_name, std::move(mesh));
         if (!mesh_id_result)
         {
-            return compages::failure(mesh_id_result.error());
+            return failure(mesh_id_result.error());
         }
         auto mesh_id = mesh_id_result.take();
         auto material_id_result = materialInstanceFromGltf(primitive->material,
@@ -824,7 +833,7 @@ loadPrefabNode(cgltf_node* p_node,
                                                            p_texture_count);
         if (!material_id_result)
         {
-            return compages::failure(material_id_result.error());
+            return failure(material_id_result.error());
         }
         auto material_id = material_id_result.take();
 
@@ -849,7 +858,7 @@ loadPrefabNode(cgltf_node* p_node,
                     importSkinAsset(p_node->skin, p_assets, skin_index);
                 if (!created_result)
                 {
-                    return compages::failure(created_result.error());
+                    return failure(created_result.error());
                 }
                 auto created = created_result.take();
                 skin_id = created;
@@ -888,7 +897,7 @@ loadPrefabNode(cgltf_node* p_node,
                                            p_asset_name);
         if (!child_result)
         {
-            return compages::failure(child_result.error());
+            return failure(child_result.error());
         }
         auto child = child_result.take();
         result.children.emplace_back(std::move(child));
@@ -903,31 +912,29 @@ loadPrefabNode(cgltf_node* p_node,
 } // namespace
 
 // --- Public: reusable prefab -------------------------------------------------
-// Parse file, build Prefab + animations; no World entities.
+// Parse file, build Prefab + animations; no compages::world::World entities.
 
 //------------------------------------------------------------------------------
-compages::Result<PrefabId> loadGltf(std::string const& p_path,
-                                    AssetManager& p_assets,
-                                    MaterialId p_shared_material)
+Result<PrefabId> loadGltf(std::string const& p_path,
+                          AssetManager& p_assets,
+                          MaterialId p_shared_material)
 {
     cgltf_options options{};
     cgltf_data* raw = nullptr;
     if (cgltf_parse_file(&options, p_path.c_str(), &raw) !=
         cgltf_result_success)
     {
-        return compages::failure("cgltf_parse_file failed for '" + p_path +
-                                 "'");
+        return failure("cgltf_parse_file failed for '" + p_path + "'");
     }
     std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(raw, &cgltf_free);
     if (cgltf_load_buffers(&options, data.get(), p_path.c_str()) !=
         cgltf_result_success)
     {
-        return compages::failure("cgltf_load_buffers failed for '" + p_path +
-                                 "'");
+        return failure("cgltf_load_buffers failed for '" + p_path + "'");
     }
     if ((data->scenes_count == 0u) || (data->scene == nullptr))
     {
-        return compages::failure("glTF file has no default scene");
+        return failure("glTF file has no default scene");
     }
 
     MaterialId shared_material = p_shared_material;
@@ -947,7 +954,7 @@ compages::Result<PrefabId> loadGltf(std::string const& p_path,
             p_assets.addMaterial("gltf-pbr", std::move(material));
         if (!created_result)
         {
-            return compages::failure(created_result.error());
+            return failure(created_result.error());
         }
         auto created = created_result.take();
         shared_material = created;
@@ -974,7 +981,7 @@ compages::Result<PrefabId> loadGltf(std::string const& p_path,
                                            p_path);
         if (!child_result)
         {
-            return compages::failure(child_result.error());
+            return failure(child_result.error());
         }
         auto child = child_result.take();
         prefab.root.children.emplace_back(std::move(child));
@@ -986,14 +993,15 @@ compages::Result<PrefabId> loadGltf(std::string const& p_path,
 }
 
 // --- Public: immediate world instance ----------------------------------------
-// Same assets as loadGltf but attaches MeshRenderer/Animator under p_parent.
+// Same assets as loadGltf but attaches
+// compages::renderer::MeshRenderer/Animator under p_parent.
 
 //------------------------------------------------------------------------------
-compages::Result<GltfImport> importGltf(std::string const& p_path,
-                                        AssetManager& p_assets,
-                                        compages::world::World& p_world,
-                                        compages::world::EntityId p_parent,
-                                        MaterialId p_shared_material)
+Result<GltfImport> importGltf(std::string const& p_path,
+                              AssetManager& p_assets,
+                              compages::world::World& p_world,
+                              compages::world::EntityId p_parent,
+                              MaterialId p_shared_material)
 {
     cgltf_options options{};
     cgltf_data* data = nullptr;
@@ -1001,16 +1009,14 @@ compages::Result<GltfImport> importGltf(std::string const& p_path,
         cgltf_parse_file(&options, p_path.c_str(), &data);
     if (parse_result != cgltf_result_success)
     {
-        return compages::failure("cgltf_parse_file failed for '" + p_path +
-                                 "'");
+        return failure("cgltf_parse_file failed for '" + p_path + "'");
     }
 
     if (cgltf_load_buffers(&options, data, p_path.c_str()) !=
         cgltf_result_success)
     {
         cgltf_free(data);
-        return compages::failure("cgltf_load_buffers failed for '" + p_path +
-                                 "'");
+        return failure("cgltf_load_buffers failed for '" + p_path + "'");
     }
 
     MaterialId shared_material = p_shared_material;
@@ -1019,7 +1025,7 @@ compages::Result<GltfImport> importGltf(std::string const& p_path,
         auto material_result = makePbrMaterial();
         if (!material_result)
         {
-            return compages::failure(material_result.error());
+            return failure(material_result.error());
         }
         auto material = material_result.take();
         // COMPAGES_TRY_VALUE always declares a new name; assigning back into
@@ -1029,7 +1035,7 @@ compages::Result<GltfImport> importGltf(std::string const& p_path,
             p_assets.addMaterial("gltf-pbr", std::move(material));
         if (!created_result)
         {
-            return compages::failure(created_result.error());
+            return failure(created_result.error());
         }
         auto created = created_result.take();
         shared_material = created;
@@ -1041,7 +1047,7 @@ compages::Result<GltfImport> importGltf(std::string const& p_path,
     if ((data->scenes_count == 0u) || (data->scene == nullptr))
     {
         cgltf_free(data);
-        return compages::failure("glTF file has no default scene");
+        return failure("glTF file has no default scene");
     }
 
     // Identity wrapper so the caller can frame the model without overwriting

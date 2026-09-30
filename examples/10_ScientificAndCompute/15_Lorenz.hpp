@@ -28,9 +28,9 @@ namespace examples
 // ****************************************************************************
 //! \brief A curve that grows a point per step, and only the new points travel.
 //!
-//! HeightMap rewrote every vertex. This one appends: emplace_back() marks the new
-//! end of the vertices, so the next draw sends the points added since the last
-//! one rather than the whole trail:
+//! HeightMap rewrote every vertex. This one appends: emplace_back() marks the
+//! new end of the vertices, so the next draw sends the points added since the
+//! last one rather than the whole trail:
 //! \code
 //! m_trail.emplace_back(Vertex{ point, color });
 //! m_trail.draw();                   // a line strip through every point
@@ -49,22 +49,22 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 
     struct Vertex
     {
-        Vector3f position;
-        Vector3f color;
+        compages::core::Vector3f position;
+        compages::core::Vector3f color;
     };
 
     //! \brief One step of the attractor, appended to the trail.
     void step();
 
     compages::gpu::Drawable m_trail;
-    Vector3f m_state{ 0.1f, 0.0f, 0.0f };
+    compages::core::Vector3f m_state{ 0.1f, 0.0f, 0.0f };
 };
 
 } // namespace examples

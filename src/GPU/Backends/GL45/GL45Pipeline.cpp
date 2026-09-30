@@ -34,14 +34,14 @@
 //! previous design ended up with one VAO per mesh per shader, and with a VAO
 //! refusing to be used by a second program.
 //!
-//! Direct State Access splits them. glVertexArrayAttribFormat says how to read a
-//! vertex and is set once, here. glVertexArrayVertexBuffer says where the
-//! vertices are and is set at draw time. So one of these objects describes a way
-//! of reading a vertex, full stop, and every pipeline reading a vertex that way
-//! shares it, whatever program it draws with and whatever mesh it draws.
+//! Direct State Access splits them. glVertexArrayAttribFormat says how to read
+//! a vertex and is set once, here. glVertexArrayVertexBuffer says where the
+//! vertices are and is set at draw time. So one of these objects describes a
+//! way of reading a vertex, full stop, and every pipeline reading a vertex that
+//! way shares it, whatever program it draws with and whatever mesh it draws.
 //!
-//! That is what the cache below is: a way of reading a vertex, kept once, with a
-//! count of how many pipelines want it.
+//! That is what the cache below is: a way of reading a vertex, kept once, with
+//! a count of how many pipelines want it.
 // ****************************************************************************
 
 namespace compages::gpu::backend
@@ -53,9 +53,9 @@ namespace
 // ****************************************************************************
 //! \brief What makes two ways of reading a vertex the same one.
 //!
-//! Everything that goes into the vertex array object and nothing else. The buffer
-//! is deliberately absent, since it is bound at draw time; that absence is the
-//! whole reason the sharing works.
+//! Everything that goes into the vertex array object and nothing else. The
+//! buffer is deliberately absent, since it is bound at draw time; that absence
+//! is the whole reason the sharing works.
 // ****************************************************************************
 struct ReaderKey
 {
@@ -134,8 +134,8 @@ std::map<ReaderKey, Reader>& readers()
     return instance;
 }
 
-//! \brief Which vertex array object was bound last, so that binding the same one
-//! twice costs nothing.
+//! \brief Which vertex array object was bound last, so that binding the same
+//! one twice costs nothing.
 GLuint g_bound_vao = 0u;
 
 //! \brief Which program was used last, for the same reason.
@@ -281,10 +281,10 @@ GLenum toGL(PolygonMode p_mode)
 //------------------------------------------------------------------------------
 //! \brief Describe one field to the vertex array object.
 //!
-//! Three flavours of the same call, and choosing between them is the whole of what
-//! ScalarType and the normalized flag are for. The wrong one does not fail: it
-//! reads the same bytes and delivers different numbers, which is why the check in
-//! Pipeline.cpp exists.
+//! Three flavours of the same call, and choosing between them is the whole of
+//! what ScalarType and the normalized flag are for. The wrong one does not
+//! fail: it reads the same bytes and delivers different numbers, which is why
+//! the check in Pipeline.cpp exists.
 //------------------------------------------------------------------------------
 void describeField(GLuint p_vao, VertexAttribute const& p_attribute)
 {
@@ -307,21 +307,15 @@ void describeField(GLuint p_vao, VertexAttribute const& p_attribute)
         if (p_attribute.format.as_integer)
         {
             // Whole numbers reaching the shader as whole numbers.
-            glVertexArrayAttribIFormat(p_vao,
-                                       where,
-                                       p_attribute.format.components,
-                                       type,
-                                       offset);
+            glVertexArrayAttribIFormat(
+                p_vao, where, p_attribute.format.components, type, offset);
         }
         else if (p_attribute.format.scalar == ScalarType::Double)
         {
             // Double precision has a call of its own: the others would silently
             // narrow it to a float.
-            glVertexArrayAttribLFormat(p_vao,
-                                       where,
-                                       p_attribute.format.components,
-                                       type,
-                                       offset);
+            glVertexArrayAttribLFormat(
+                p_vao, where, p_attribute.format.components, type, offset);
         }
         else
         {
@@ -335,8 +329,8 @@ void describeField(GLuint p_vao, VertexAttribute const& p_attribute)
         }
 
         // Every field reads from the same buffer binding, since they are
-        // interleaved in one buffer. That is the point of describing a vertex as a
-        // struct.
+        // interleaved in one buffer. That is the point of describing a vertex
+        // as a struct.
         glVertexArrayAttribBinding(p_vao, where, 0u);
     }
 }
@@ -363,8 +357,9 @@ void clearVertexArrayCache()
 } // namespace detail
 
 //------------------------------------------------------------------------------
-Result<NativeId> acquireVertexReader(
-    std::span<const VertexAttribute> p_attributes, std::uint32_t p_stride)
+Result<NativeId>
+acquireVertexReader(std::span<const VertexAttribute> p_attributes,
+                    std::uint32_t p_stride)
 {
     ReaderKey key;
     key.stride = p_stride;
@@ -390,9 +385,9 @@ Result<NativeId> acquireVertexReader(
     }
 
     // A per instance field is read once per object drawn rather than once per
-    // corner. Since every field shares binding zero, one field being per instance
-    // makes them all so, which is why a per instance layout is described on its
-    // own rather than mixed with a per vertex one.
+    // corner. Since every field shares binding zero, one field being per
+    // instance makes them all so, which is why a per instance layout is
+    // described on its own rather than mixed with a per vertex one.
     bool per_instance = false;
     for (VertexAttribute const& attribute : p_attributes)
     {
@@ -438,9 +433,10 @@ std::size_t vertexReadersHeld()
 //------------------------------------------------------------------------------
 void forgetRenderState()
 {
-    // Not restoring anything, and not reading the device to find out what it holds
-    // either. Both would cost more than the one thing that is needed: the next
-    // pipeline must send all of its state instead of trusting these variables.
+    // Not restoring anything, and not reading the device to find out what it
+    // holds either. Both would cost more than the one thing that is needed: the
+    // next pipeline must send all of its state instead of trusting these
+    // variables.
     g_state_known = false;
     g_used_program = 0u;
     g_bound_vao = 0u;
@@ -484,9 +480,9 @@ void bindPipeline(NativeId p_program,
         g_bound_vao = vao;
     }
 
-    // Everything below is skipped when it already holds, but only once something
-    // has been applied at all: the state the driver starts a frame with is not
-    // ours to assume.
+    // Everything below is skipped when it already holds, but only once
+    // something has been applied at all: the state the driver starts a frame
+    // with is not ours to assume.
     const bool everything = !g_state_known;
 
     if (everything || (state.depth_test != g_applied.depth_test))
@@ -547,7 +543,7 @@ void bindPipeline(NativeId p_program,
     if (everything || (state.front_face != g_applied.front_face))
     {
         glFrontFace((state.front_face == FrontFace::CounterClockwise) ? GL_CCW
-                                                                       : GL_CW);
+                                                                      : GL_CW);
     }
 
     if (everything || (state.polygon != g_applied.polygon))
@@ -567,9 +563,9 @@ void bindPipeline(NativeId p_program,
                        std::bit_cast<std::uint32_t>(g_applied.line_width)))
     {
         // A core profile driver is allowed to refuse any width but one, and
-        // several do. Asked for anyway, because it works on most desktop drivers
-        // and a wireframe view is where it matters; the driver's own message says
-        // so when it does not.
+        // several do. Asked for anyway, because it works on most desktop
+        // drivers and a wireframe view is where it matters; the driver's own
+        // message says so when it does not.
         glLineWidth(state.line_width);
     }
 

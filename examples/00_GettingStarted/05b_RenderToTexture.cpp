@@ -123,7 +123,7 @@ std::string RenderToTexture::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status RenderToTexture::makeCube()
+compages::Status RenderToTexture::makeCube()
 {
     COMPAGES_TRY(m_cube.load(SCENE_VERTEX, SCENE_FRAGMENT));
 
@@ -132,26 +132,27 @@ compages::gpu::Status RenderToTexture::makeCube()
     m_cube.vertices(cube.vertices);
     m_cube.indices(cube.indices);
     m_cube.depthTest().cull(compages::gpu::CullMode::Back);
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status RenderToTexture::makeTarget()
+compages::Status RenderToTexture::makeTarget()
 {
     // A size of its own, whatever the window does.
     COMPAGES_TRY(m_color.allocate({ .format = compages::gpu::PixelFormat::RGBA8,
                                     .width = TARGET,
                                     .height = TARGET }));
-    COMPAGES_TRY(m_depth.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
-                                    .width = TARGET,
-                                    .height = TARGET,
-                                    .magnify = compages::gpu::Filter::Nearest,
-                                    .minify = compages::gpu::Filter::Nearest }));
+    COMPAGES_TRY(
+        m_depth.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
+                           .width = TARGET,
+                           .height = TARGET,
+                           .magnify = compages::gpu::Filter::Nearest,
+                           .minify = compages::gpu::Filter::Nearest }));
     return m_target.attach(m_color, m_depth);
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status RenderToTexture::setUp()
+compages::Status RenderToTexture::setUp()
 {
     COMPAGES_TRY(makeCube());
     COMPAGES_TRY(makeTarget());
@@ -162,27 +163,31 @@ compages::gpu::Status RenderToTexture::setUp()
     COMPAGES_TRY(m_process.load(SCREEN_VERTEX, PROCESS_FRAGMENT));
     m_blit["image"] = m_color;
     m_process["image"] = m_color;
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-void RenderToTexture::draw(Frame const& p_frame)
+void RenderToTexture::draw(compages::world::ViewFrame const& p_frame)
 {
-    const Matrix44f identity(compages::matrix::Identity);
-    m_cube["model"] = compages::matrix::rotate(identity,
-                                     units::angle::radian_t(p_frame.total * 0.7f),
-                                     Vector3f(0.3f, 1.0f, 0.2f));
-    m_cube["view"] = compages::matrix::lookAt(Vector3f(0.0f, 0.0f, 3.0f),
-                                    Vector3f(0.0f, 0.0f, 0.0f),
-                                    Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Matrix44f identity(compages::core::matrix::Identity);
+    m_cube["model"] =
+        compages::core::rotate(identity,
+                               units::angle::radian_t(p_frame.total * 0.7f),
+                               compages::core::Vector3f(0.3f, 1.0f, 0.2f));
+    m_cube["view"] =
+        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 3.0f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     // The aspect of the offscreen picture, not of the window. Stretching is
     // what the screen passes do, on purpose.
-    m_cube["projection"] = compages::matrix::perspective(60.0_deg, 1.0f, 0.1f, 20.0f);
+    m_cube["projection"] =
+        compages::core::perspective(60.0_deg, 1.0f, 0.1f, 20.0f);
 
     // Into the texture. The pass covers the whole framebuffer and suspends
     // the window pass until the end of the scope.
     {
-        compages::gpu::RenderPass offscreen(m_target, { .color = { 0.07f, 0.07f, 0.1f, 1.0f } });
+        compages::gpu::RenderPass offscreen(
+            m_target, { .color = { 0.07f, 0.07f, 0.1f, 1.0f } });
         m_cube.draw();
     }
 
@@ -190,13 +195,14 @@ void RenderToTexture::draw(Frame const& p_frame)
     // the right. The cube is never drawn here.
     const std::uint32_t half = p_frame.width / 2u;
     {
-        compages::gpu::RenderPass left({ .width = half, .height = p_frame.height });
+        compages::gpu::RenderPass left(
+            { .width = half, .height = p_frame.height });
         m_blit.draw(3u);
     }
     {
         compages::gpu::RenderPass right({ .x = half,
-                                .width = p_frame.width - half,
-                                .height = p_frame.height });
+                                          .width = p_frame.width - half,
+                                          .height = p_frame.height });
         m_process.draw(3u);
     }
 }

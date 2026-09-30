@@ -29,7 +29,7 @@ namespace examples
 struct Picture
 {
     char const* file;
-    Vector3f fallback;
+    compages::core::Vector3f fallback;
 };
 
 //------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ std::string TextureGallery::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status TextureGallery::setUp()
+compages::Status TextureGallery::setUp()
 {
     // A slow orbit, so the boxes show more than their front face.
     m_scene.background(0.08f, 0.10f, 0.14f).ambient(0.16f, 0.16f, 0.18f);
@@ -67,21 +67,22 @@ compages::gpu::Status TextureGallery::setUp()
     {
         Picture const& picture = PICTURES[i];
         const std::string path = dataPath(picture.file);
-        const compages::renderer::Look look = path.empty() ? compages::renderer::color(picture.fallback.x,
-                                                             picture.fallback.y,
-                                                             picture.fallback.z)
-                                              : compages::renderer::texture(path);
+        const compages::renderer::Look look =
+            path.empty() ? compages::renderer::color(picture.fallback.x,
+                                                     picture.fallback.y,
+                                                     picture.fallback.z)
+                         : compages::renderer::texture(path);
         const float column = float(i % 3u) - 1.0f;
         const float row = float(i / 3u) - 1.0f;
         m_boxes.emplace_back(m_scene.box(picture.file, look)
-                              .position(column * 3.0f, 0.6f, row * 3.0f)
-                              .scale(1.4f));
+                                 .position(column * 3.0f, 0.6f, row * 3.0f)
+                                 .scale(1.4f));
     }
     return m_scene.prepare();
 }
 
 //------------------------------------------------------------------------------
-void TextureGallery::draw(Frame const& p_frame)
+void TextureGallery::draw(compages::world::ViewFrame const& p_frame)
 {
     // The same turn for every box, so the grid stays aligned.
     for (compages::world::Entity& box : m_boxes)

@@ -20,27 +20,29 @@
 
 #pragma once
 
-
 #include "Units.hpp"
+#include <bit>
 #include <cassert>
 #include <cmath>
+#include <concepts>
 #include <cstdint>
-#include <cstring>
 #include <limits>
+#include <numbers>
+#include <type_traits>
 #include <vector>
 
 //------------------------------------------------------------------------------
 //! \file Maths.hpp Wrap some mathematic functions.
 //------------------------------------------------------------------------------
 
-namespace compages::maths
+namespace compages::core
 {
 
 //------------------------------------------------------------------------------
 //! \brief Allow to redefine neutral and/or absorbing element in algebra.
 //------------------------------------------------------------------------------
 template <typename T>
-T one()
+[[nodiscard]] constexpr T one()
 {
     return T(1);
 }
@@ -49,25 +51,26 @@ T one()
 //! \brief Allow to redefine neutral and/or absorbing element in algebra.
 //------------------------------------------------------------------------------
 template <typename T>
-T zero()
+[[nodiscard]] constexpr T zero()
 {
     return T(0);
 }
 
 //------------------------------------------------------------------------------
-//! \brief Return the biggest number for float and double
+//! \brief Return the biggest finite number of the type.
 //------------------------------------------------------------------------------
 template <typename T>
-T max()
+[[nodiscard]] constexpr T max()
 {
     return std::numeric_limits<T>::max();
 }
 
 //------------------------------------------------------------------------------
-//! \brief Return the smallest number for float and double
+//! \brief Return std::numeric_limits<T>::min(): the smallest positive
+//! normalized value for floating points, the most negative value for integers.
 //------------------------------------------------------------------------------
 template <typename T>
-T min()
+[[nodiscard]] constexpr T min()
 {
     return std::numeric_limits<T>::min();
 }
@@ -76,7 +79,7 @@ T min()
 //! \brief Return Not A Number for float and double
 //------------------------------------------------------------------------------
 template <typename T>
-T nan()
+[[nodiscard]] constexpr T nan()
 {
     return std::numeric_limits<T>::quiet_NaN();
 }
@@ -85,178 +88,240 @@ T nan()
 //! \brief Check if x is a Not A Number for float and double
 //------------------------------------------------------------------------------
 template <typename T>
-bool isNan(T const& x)
+[[nodiscard]] bool isNan(T const& x)
 {
     return std::isnan(x);
 }
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-const-variable"
 
 //------------------------------------------------------------------------------
 // Constant numbers
 //------------------------------------------------------------------------------
 
 //! \brief PI number
-template <typename T>
-constexpr T PI = T(3.1415926535897932385);
+template <std::floating_point T>
+inline constexpr T PI = std::numbers::pi_v<T>;
 //! \brief PI number / 2
-template <typename T>
-constexpr T HALF_PI = T(0.5) * PI<T>;
+template <std::floating_point T>
+inline constexpr T HALF_PI = std::numbers::pi_v<T> / T(2);
 //! \brief 2 * PI number
-template <typename T>
-constexpr T TWO_PI = T(2.0) * PI<T>;
+template <std::floating_point T>
+inline constexpr T TWO_PI = T(2) * std::numbers::pi_v<T>;
 //! \brief ln(2)
-template <typename T>
-constexpr T LN2 = T(0.6931471805599453094);
-
-#pragma GCC diagnostic pop
+template <std::floating_point T>
+inline constexpr T LN2 = std::numbers::ln2_v<T>;
 
 //------------------------------------------------------------------------------
-//! \brief
+//! \brief Return true if \c value is a strictly positive power of two.
 //------------------------------------------------------------------------------
-static inline bool isPowerOfTwo(int const value)
+template <std::integral T>
+[[nodiscard]] constexpr bool isPowerOfTwo(T const value)
 {
-    return (value != 0) && ((value & (value - 1)) == 0);
+    return (value > T(0)) &&
+           std::has_single_bit(static_cast<std::make_unsigned_t<T>>(value));
 }
 
 //------------------------------------------------------------------------------
-//! \brief
+//! \brief Smallest power of two greater than or equal to \c value. Return 1
+//! for \c value < 1.
+//! \pre The result shall be representable by \c T.
 //------------------------------------------------------------------------------
-static inline int upperPowerOfTwo(int const value)
+template <std::integral T>
+[[nodiscard]] constexpr T upperPowerOfTwo(T const value)
 {
-    return static_cast<int>(std::pow(
-        2.0f, std::ceil(std::log(static_cast<float>(value)) / LN2<float>)));
+    using U = std::make_unsigned_t<T>;
+    if (value <= T(1))
+    {
+        return T(1);
+    }
+    assert(static_cast<U>(value) <= (U(1) << (std::numeric_limits<T>::digits - 1)) &&
+           "upperPowerOfTwo: result not representable");
+    return static_cast<T>(std::bit_ceil(static_cast<U>(value)));
 }
 
 //------------------------------------------------------------------------------
-//! \brief
+//! \brief Greatest power of two less than or equal to \c value. Return 0
+//! for \c value < 1.
 //------------------------------------------------------------------------------
-static inline int lowerPowerOfTwo(int const value)
+template <std::integral T>
+[[nodiscard]] constexpr T lowerPowerOfTwo(T const value)
 {
-    return static_cast<int>(std::pow(
-        2.0f, std::floor(std::log(static_cast<float>(value)) / LN2<float>)));
+    if (value < T(1))
+    {
+        return T(0);
+    }
+    return static_cast<T>(
+        std::bit_floor(static_cast<std::make_unsigned_t<T>>(value)));
 }
 
 //------------------------------------------------------------------------------
-//! \brief
+//! \brief Power of two whose exponent is the rounded base-2 logarithm of
+//! \c value, i.e. 2^round(log2(value)). The rounding happens in log space: the
+//! switch from 2^k to 2^(k+1) is at 2^k * sqrt(2), not at 1.5 * 2^k. Return 1
+//! for \c value < 1.
+//! \pre The result shall be representable by \c T.
 //------------------------------------------------------------------------------
-static inline int nearestPowerOfTwo(int const value)
+template <std::integral T>
+    requires(sizeof(T) <= sizeof(std::uint32_t))
+[[nodiscard]] constexpr T nearestPowerOfTwo(T const value)
 {
-    return static_cast<int>(std::pow(
-        2.0f, std::round(std::log(static_cast<float>(value)) / LN2<float>)));
+    if (value <= T(1))
+    {
+        return T(1);
+    }
+    std::uint64_t const v = static_cast<std::uint64_t>(value);
+    std::uint64_t const lower = std::bit_floor(v);
+    // value > lower * sqrt(2)  <=>  value^2 > 2 * lower^2 (never equal).
+    if (v * v > 2u * lower * lower)
+    {
+        return upperPowerOfTwo(value);
+    }
+    return static_cast<T>(lower);
 }
 
 //------------------------------------------------------------------------------
 //! \brief Return absolute number
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T abs(T const x)
+[[nodiscard]] constexpr T abs(T const x)
 {
     return (x >= zero<T>()) ? x : -x;
 }
 
 // TODO https://gist.github.com/MikimotoH/282dca62e08b90b9b673
-static inline float sqrt(int const x)
+[[nodiscard]] inline float sqrt(int const x)
 {
-    return ::sqrtf(static_cast<float>(x));
+    return std::sqrt(static_cast<float>(x));
 }
 
-static inline float sqrt(size_t const x)
+[[nodiscard]] inline float sqrt(size_t const x)
 {
-    return ::sqrtf(static_cast<float>(x));
+    return std::sqrt(static_cast<float>(x));
 }
 
-static inline float sqrt(float const x)
+[[nodiscard]] inline float sqrt(float const x)
 {
-    return ::sqrtf(x);
+    return std::sqrt(x);
 }
 
-static inline long double sqrt(long double const x)
+[[nodiscard]] inline long double sqrt(long double const x)
 {
-    return ::sqrtl(x);
+    return std::sqrt(x);
 }
 
-static inline double sqrt(double const x)
+[[nodiscard]] inline double sqrt(double const x)
 {
-    return ::sqrt(x);
+    return std::sqrt(x);
 }
 
+//------------------------------------------------------------------------------
+//! \brief Default tolerance, in ULPs, used by almostEqual().
+//------------------------------------------------------------------------------
+inline constexpr std::uint32_t DEFAULT_MAX_ULPS = 6u;
+
+namespace detail
+{
+//! \brief Signed integer type having the same size than the float type T.
+template <std::floating_point T>
+struct UlpsInteger;
+
+template <>
+struct UlpsInteger<float>
+{
+    using type = std::int32_t;
+};
+
+template <>
+struct UlpsInteger<double>
+{
+    using type = std::int64_t;
+};
+} // namespace detail
+
+//------------------------------------------------------------------------------
+//! \brief Distance in ULPs between two floating points of the same sign.
+//! Return the max value of the integer type for NaN, infinity or different
+//! signs.
+//! \see https://bitbashing.io/comparing-floats.html
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] constexpr typename detail::UlpsInteger<T>::type
+ulpsDistance(T const a, T const b)
+{
+    using R = typename detail::UlpsInteger<T>::type;
+    static_assert(sizeof(T) == sizeof(R));
+
+    // Save work if the floats are equal. Also handles +0 == -0.
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wcast-qual"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-
-//! \brief
-static uint32_t maxUlps = 6U;
-
-//! \brief https://bitbashing.io/comparing-floats.html
-//! T/R float/int32_t
-template <typename T, typename R>
-static R ulpsDistance(const T a, const T b)
-{
-    // Save work if the floats are equal.
-    // Also handles +0 == -0
     if (a == b)
         return 0;
+#pragma GCC diagnostic pop
 
-    const auto max = std::numeric_limits<R>::max();
+    constexpr R max = std::numeric_limits<R>::max();
 
-    // Max distance for NaN
-    if (std::isnan(a) || std::isnan(b))
+    // Max distance for NaN and for infinities which are not equal.
+    if (std::isnan(a) || std::isnan(b) || std::isinf(a) || std::isinf(b))
         return max;
 
-    // If one's infinite and they're not equal, max distance.
-    if (std::isinf(a) || std::isinf(b))
-        return max;
-
-    // Float to int without strict aliasing rules warnings
-    R ia, ib;
-    memcpy(&ia, &a, sizeof(T));
-    memcpy(&ib, &b, sizeof(T));
+    R const ia = std::bit_cast<R>(a);
+    R const ib = std::bit_cast<R>(b);
 
     // Don't compare differently-signed floats.
     if ((ia < 0) != (ib < 0))
         return max;
 
-    // Return the absolute value of the distance in ULPs.
-    R distance = ia - ib;
-    if (distance < 0)
-        distance = -distance;
-    return distance;
+    // Same sign so the subtraction cannot overflow.
+    R const distance = ia - ib;
+    return (distance < 0) ? -distance : distance;
 }
 
-static inline bool almostEqual(float const a, float const b)
+//------------------------------------------------------------------------------
+//! \brief Compare two floating points with a tolerance expressed in ULPs.
+//! \note ULPs are meaningless around zero (0 and 1e-30 are billions of ULPs
+//!   apart): use almostZero() for comparisons against zero.
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] constexpr bool
+almostEqual(T const a, T const b, std::uint32_t const maxUlps = DEFAULT_MAX_ULPS)
 {
-    return ulpsDistance<float, int32_t>(a, b) <= int32_t(compages::maths::maxUlps);
+    using R = typename detail::UlpsInteger<T>::type;
+    return ulpsDistance(a, b) <= static_cast<R>(maxUlps);
 }
 
-static inline bool almostEqual(double const a, double const b)
+//------------------------------------------------------------------------------
+//! \brief Exact comparison for integers (so that generic Vector/Matrix code
+//! can call almostEqual() whatever their type).
+//------------------------------------------------------------------------------
+template <std::integral T>
+[[nodiscard]] constexpr bool almostEqual(T const a, T const b)
 {
-    return ulpsDistance<double, int64_t>(a, b) <= int32_t(compages::maths::maxUlps);
+    return a == b;
 }
 
-#pragma GCC diagnostic pop
-
-static inline bool almostZero(float const A)
+//------------------------------------------------------------------------------
+//! \brief Check if |x| <= epsilon (absolute tolerance, see almostEqual()).
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] constexpr bool
+almostZero(T const x, T const epsilon = std::numeric_limits<T>::epsilon())
 {
-    return almostEqual(A, zero<float>());
+    return abs(x) <= epsilon;
 }
 
-template <typename T,
-          class = typename std::enable_if<std::is_integral<T>::value>::type>
-bool inline isPowerOfTwo(T const value)
+//------------------------------------------------------------------------------
+//! \brief Exact comparison against zero for integers.
+//------------------------------------------------------------------------------
+template <std::integral T>
+[[nodiscard]] constexpr bool almostZero(T const x)
 {
-    return ((value & (value - one<T>())) == zero<T>()) && (value != zero<T>());
+    return x == T(0);
 }
 
 //------------------------------------------------------------------------------
 //! \brief Constrain value: std::min(std::max(x, lower), upper)
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T clamp(T const x, T const lower, T const upper)
+[[nodiscard]] constexpr T clamp(T const x, T const lower, T const upper)
 {
     if (x < lower)
         return lower;
@@ -271,93 +336,119 @@ static inline T clamp(T const x, T const lower, T const upper)
 //! \brief Return the sign of the number: -1 or 0 or +1.
 //------------------------------------------------------------------------------
 template <typename T>
-static inline int sign(T const val)
+[[nodiscard]] constexpr int sign(T const val)
 {
-    return (zero<T>() < val) - (val < zero<T>);
-}
-
-//! \brief Converts radians to degrees and returns the result.
-template <typename T>
-static inline T toRadian(T const degrees)
-{
-    return static_cast<T>(degrees * T(0.01745329251994329576923690768489));
+    return int(zero<T>() < val) - int(val < zero<T>());
 }
 
 //------------------------------------------------------------------------------
 //! \brief Converts degrees to radians and returns the result.
 //------------------------------------------------------------------------------
-template <typename T>
-static inline T toDegree(T const radians)
+template <std::floating_point T>
+[[nodiscard]] constexpr T toRadian(T const degrees)
 {
-    return static_cast<T>(radians * T(57.295779513082320876798154814105));
+    return degrees * (std::numbers::pi_v<T> / T(180));
 }
 
 //------------------------------------------------------------------------------
-//! \brief Normalize the angle given in degrees to [-180 +180] degrees.
+//! \brief Converts radians to degrees and returns the result.
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] constexpr T toDegree(T const radians)
+{
+    return radians * (T(180) / std::numbers::pi_v<T>);
+}
+
+namespace detail
+{
+//------------------------------------------------------------------------------
+//! \brief Remainder of x / period with the sign of x (like std::fmod), in
+//! constant time whatever the distance of x to the interval.
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T wrapTo180(T const degrees)
+[[nodiscard]] T truncatedModulo(T const x, T const period)
 {
-    T angle = degrees;
-    while (angle <= -T(180))
-        angle += T(360);
-    while (angle > T(180))
-        angle -= T(360);
-    return angle;
+    if constexpr (std::floating_point<T>)
+        return std::fmod(x, period);
+    else
+        return x % period;
 }
 
 //------------------------------------------------------------------------------
-//! \brief Normalize the angle given in degrees to [0 +360] degrees.
+//! \brief Wrap x into [low, low + period).
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T wrapTo360(T const degrees)
+[[nodiscard]] T wrapHalfOpen(T const x, T const low, T const period)
 {
-    T angle = degrees;
-    while (angle < zero<T>())
-        angle += T(360);
-    while (angle >= T(360))
-        angle -= T(360);
-    return angle;
+    T r = truncatedModulo(T(x - low), period);
+    if (r < zero<T>())
+    {
+        r += period;
+        // A tiny negative r rounds r + period up to period.
+        if (r >= period)
+            r = zero<T>();
+    }
+    return low + r;
 }
 
 //------------------------------------------------------------------------------
-//! \brief Normalize the angle given in radians to [-PI +PI] radians.
+//! \brief Wrap x into (low, low + period].
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T wrapToPI(T const radians)
+[[nodiscard]] T wrapHalfClosed(T const x, T const low, T const period)
 {
-    T angle = radians;
-    while (angle <= -PI<T>)
-        angle += TWO_PI<T>;
-    while (angle > PI<T>)
-        angle -= TWO_PI<T>;
-    return angle;
+    T r = truncatedModulo(T(x - low), period);
+    if (r <= zero<T>())
+        r += period;
+    return low + r;
+}
+} // namespace detail
+
+//------------------------------------------------------------------------------
+//! \brief Normalize the angle given in degrees to ]-180 +180] degrees.
+//------------------------------------------------------------------------------
+template <typename T>
+[[nodiscard]] T wrapTo180(T const degrees)
+{
+    return detail::wrapHalfClosed(degrees, T(-180), T(360));
 }
 
 //------------------------------------------------------------------------------
-//! \brief Normalize the angle given in radians to [0 2*PI] radians.
+//! \brief Normalize the angle given in degrees to [0 +360[ degrees.
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T wrapTo2PI(T const radians)
+[[nodiscard]] T wrapTo360(T const degrees)
 {
-    T angle = radians;
-    while (angle < zero<T>())
-        angle += TWO_PI<T>;
-    while (angle >= TWO_PI<T>)
-        angle -= TWO_PI<T>;
-    return angle;
+    return detail::wrapHalfOpen(degrees, zero<T>(), T(360));
 }
 
 //------------------------------------------------------------------------------
-//! \brief Linear mapping of x from range2 [start1 stop1] to range2 [start2
+//! \brief Normalize the angle given in radians to ]-PI +PI] radians.
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] T wrapToPI(T const radians)
+{
+    return detail::wrapHalfClosed(radians, -PI<T>, TWO_PI<T>);
+}
+
+//------------------------------------------------------------------------------
+//! \brief Normalize the angle given in radians to [0 2*PI[ radians.
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+[[nodiscard]] T wrapTo2PI(T const radians)
+{
+    return detail::wrapHalfOpen(radians, zero<T>(), TWO_PI<T>);
+}
+
+//------------------------------------------------------------------------------
+//! \brief Linear mapping of x from range1 [start1 stop1] to range2 [start2
 //! stop2].
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T
+[[nodiscard]] constexpr T
 lmap(T const x, T const start1, T const stop1, T const start2, T const stop2)
 {
-    T mapped = start2 + (stop2 - start2) * ((x - start1) / (stop1 - start1));
-    return mapped;
+    return start2 + (stop2 - start2) * ((x - start1) / (stop1 - start1));
 }
 
 //------------------------------------------------------------------------------
@@ -365,7 +456,7 @@ lmap(T const x, T const start1, T const stop1, T const start2, T const stop2)
 //! inside the range [0,1].
 //------------------------------------------------------------------------------
 template <typename T>
-static inline T lerp(T const a, T const b, T const t)
+[[nodiscard]] constexpr T lerp(T const a, T const b, std::type_identity_t<T> const t)
 {
     assert((t >= zero<T>()) && (t <= one<T>()) && "param t shall be [0 1]");
     return (one<T>() - t) * a + t * b;
@@ -375,42 +466,42 @@ static inline T lerp(T const a, T const b, T const t)
 //! \brief Return evenly spaced numbers over a specified interval.
 //! \param[in] start The starting scalar value of the sequence.
 //! \param[in] end The end value of the sequence, unless endpoint is set to
-//!    false.  In that case, the sequence consists of all but the last of num +
-//!    1 evenly spaced samples, so that stop is excluded.
-//! \param[in] N Number of samples to generate. Should be > 1.
-//! \param[out] The vector of equally spaced samples in the closed interval
-//!   [start, stop] or the half-open interval [start, stop) (depending on
-//!   whether endpoint is true or false).
+//!    false.  In that case, the sequence consists of all but the last of N +
+//!    1 evenly spaced samples, so that end is excluded.
+//! \param[in] N Number of samples to generate.
+//! \param[out] result The vector of N equally spaced samples in the closed
+//!   interval [start, end] or the half-open interval [start, end) (depending
+//!   on whether endpoint is true or false).
+//! \param[in] endpoint If true, end is the last sample.
 //! \return Size of spacing between samples. Return NaN if this value cannot be
-//! computed.
-//! \note: This code has been inpsired by the Numpy.linspace function.
+//! computed (N == 0, or N == 1 with endpoint).
+//! \note: This code has been inspired by the Numpy.linspace function.
 //------------------------------------------------------------------------------
-template <typename T>
-static T linspace(T const start,
-                  T const end,
-                  size_t const N,
-                  std::vector<T>& result,
-                  const bool endpoint)
+template <std::floating_point T>
+T linspace(T const start,
+           T const end,
+           size_t const N,
+           std::vector<T>& result,
+           bool const endpoint = true)
 {
-    const T not_a_number = std::numeric_limits<T>::quiet_NaN();
     result.clear();
-
     if (0u == N)
     {
-        return not_a_number;
+        return nan<T>();
     }
 
     result.resize(N);
-    if (1u == N)
+    size_t const divisions = endpoint ? N - 1u : N;
+    if (0u == divisions)
     {
-        result.emplace_back(start);
-        return not_a_number;
+        result[0] = start;
+        return nan<T>();
     }
 
-    T delta = (end - start) / static_cast<T>(N - 1u);
-    for (size_t i = 0u; i < N - 1u; ++i)
+    T const delta = (end - start) / static_cast<T>(divisions);
+    for (size_t i = 0u; i < N; ++i)
     {
-        result[i] = start + delta * T(i);
+        result[i] = start + delta * static_cast<T>(i);
     }
 
     if (endpoint)
@@ -423,31 +514,31 @@ static T linspace(T const start,
 //------------------------------------------------------------------------------
 //! https://en.wikipedia.org/wiki/Smoothstep
 //------------------------------------------------------------------------------
-template <typename T>
-static T smoothstep(T const x, T const min, T const max)
+template <std::floating_point T>
+[[nodiscard]] constexpr T smoothstep(T const x, T const min, T const max)
 {
     if (x <= min)
         return zero<T>();
     if (x >= max)
         return one<T>();
 
-    x = (x - min) / (max - min);
-    return x * x * (T(3) - T(2) * x);
+    T const t = (x - min) / (max - min);
+    return t * t * (T(3) - T(2) * t);
 }
 
 //------------------------------------------------------------------------------
 //! https://en.wikipedia.org/wiki/Smoothstep
 //------------------------------------------------------------------------------
-template <typename T>
-static T smootherstep(T const x, T const min, T const max)
+template <std::floating_point T>
+[[nodiscard]] constexpr T smootherstep(T const x, T const min, T const max)
 {
     if (x <= min)
         return zero<T>();
     if (x >= max)
         return one<T>();
 
-    x = (x - min) / (max - min);
-    return x * x * x * (x * (x * T(6) - T(15)) + T(10));
+    T const t = (x - min) / (max - min);
+    return t * t * t * (t * (t * T(6) - T(15)) + T(10));
 }
 
-} // namespace compages::maths
+} // namespace compages::core

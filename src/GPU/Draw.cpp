@@ -21,9 +21,9 @@
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "Compages/GPU/RenderPass.hpp"
 #include "GPU/Internal/Pools.hpp"
 #include "GPU/Internal/Statistics.hpp"
-#include "Compages/GPU/RenderPass.hpp"
 
 namespace compages::gpu
 {
@@ -45,15 +45,16 @@ struct Ready
 //!
 //! Three things can have gone wrong since the pipeline was created, and none of
 //! them can be found out any earlier: the pipeline may have been released, its
-//! program may have been released under it, and there may be no pass open to draw
-//! into.
+//! program may have been released under it, and there may be no pass open to
+//! draw into.
 //------------------------------------------------------------------------------
 Result<Ready> readyToDraw(Pipeline const& p_pipeline)
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to draw on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to draw on");
     }
 
     detail::PipelineRecord const* record =
@@ -68,16 +69,18 @@ Result<Ready> readyToDraw(Pipeline const& p_pipeline)
         detail::pools().programs.get(record->program);
     if (program == nullptr)
     {
-        return failure("the program this pipeline draws with has been released. "
-                       "A pipeline does not own its program, so the program has "
-                       "to outlive it");
+        return failure(
+            "the program this pipeline draws with has been released. "
+            "A pipeline does not own its program, so the program has "
+            "to outlive it");
     }
 
     if (!inRenderPass())
     {
         return failure(
             "nothing is being drawn because no pass is open, so there is no "
-            "target and no viewport. Open one with compages::gpu::RenderPass::begin() at "
+            "target and no viewport. Open one with "
+            "compages::gpu::RenderPass::begin() at "
             "the top of the frame");
     }
 
@@ -88,22 +91,21 @@ Result<Ready> readyToDraw(Pipeline const& p_pipeline)
 //! \brief Does this many vertices make whole primitives?
 //!
 //! Four vertices drawn as triangles is one triangle and one vertex left over,
-//! which the device silently ignores. The missing triangle is then blamed on the
-//! shader.
+//! which the device silently ignores. The missing triangle is then blamed on
+//! the shader.
 //------------------------------------------------------------------------------
 Status wholePrimitives(Primitive p_primitive, std::size_t p_count)
 {
     const std::size_t per = verticesPerPrimitive(p_primitive);
     if (per == 0u)
     {
-        // A strip or a fan makes as many primitives as it can from whatever it is
-        // given, so no count is wrong. Too few to make one at all is still worth
-        // saying.
-        const std::size_t least =
-            ((p_primitive == Primitive::TriangleStrip) ||
-             (p_primitive == Primitive::TriangleFan))
-                ? 3u
-                : 2u;
+        // A strip or a fan makes as many primitives as it can from whatever it
+        // is given, so no count is wrong. Too few to make one at all is still
+        // worth saying.
+        const std::size_t least = ((p_primitive == Primitive::TriangleStrip) ||
+                                   (p_primitive == Primitive::TriangleFan))
+                                      ? 3u
+                                      : 2u;
         if (p_count < least)
         {
             return failure(std::to_string(p_count) +
@@ -116,10 +118,9 @@ Status wholePrimitives(Primitive p_primitive, std::size_t p_count)
 
     if (p_count < per)
     {
-        return failure(std::to_string(p_count) +
-                       " vertices are not enough to draw one " +
-                       toString(p_primitive) + ", which needs " +
-                       std::to_string(per));
+        return failure(
+            std::to_string(p_count) + " vertices are not enough to draw one " +
+            toString(p_primitive) + ", which needs " + std::to_string(per));
     }
     if ((p_count % per) != 0u)
     {
@@ -145,17 +146,19 @@ Status vertexSourceFits(detail::PipelineRecord const& p_pipeline,
         detail::pools().buffers.get(p_vertices);
     if (buffer == nullptr)
     {
-        return failure("the buffer holding the vertices no longer exists. It was "
-                       "released, or the Buffer object went out of scope while "
-                       "something still drew from it");
+        return failure(
+            "the buffer holding the vertices no longer exists. It was "
+            "released, or the Buffer object went out of scope while "
+            "something still drew from it");
     }
     if ((buffer->kind != BufferKind::Vertex) &&
         (buffer->kind != BufferKind::Storage))
     {
-        return failure(std::string("this buffer was created to hold ") +
-                       toString(buffer->kind) +
-                       " data, not vertices. A vertex buffer, or a storage "
-                       "buffer a compute pass just wrote, is what a draw reads");
+        return failure(
+            std::string("this buffer was created to hold ") +
+            toString(buffer->kind) +
+            " data, not vertices. A vertex buffer, or a storage "
+            "buffer a compute pass just wrote, is what a draw reads");
     }
 
     const std::uint32_t stride = p_pipeline.layout.stride();
@@ -170,11 +173,10 @@ Status vertexSourceFits(detail::PipelineRecord const& p_pipeline,
     const std::size_t held = buffer->bytes / stride;
     if (p_first + p_count > held)
     {
-        return failure(
-            "the draw asks for " + std::to_string(p_count) +
-            " vertices starting at " + std::to_string(p_first) +
-            ", but the buffer holds " + std::to_string(held) + " of " +
-            std::to_string(stride) + " bytes each");
+        return failure("the draw asks for " + std::to_string(p_count) +
+                       " vertices starting at " + std::to_string(p_first) +
+                       ", but the buffer holds " + std::to_string(held) +
+                       " of " + std::to_string(stride) + " bytes each");
     }
     return success();
 }
@@ -183,9 +185,9 @@ Status vertexSourceFits(detail::PipelineRecord const& p_pipeline,
 
 //------------------------------------------------------------------------------
 void draw(Pipeline const& p_pipeline,
-            BufferHandle p_vertices,
-            std::size_t p_count,
-            std::size_t p_first)
+          BufferHandle p_vertices,
+          std::size_t p_count,
+          std::size_t p_first)
 {
     auto ready_ = readyToDraw(p_pipeline);
     if (!ready_)
@@ -196,8 +198,9 @@ void draw(Pipeline const& p_pipeline,
 
     if (p_count == 0u)
     {
-        return reportError("a draw of zero vertices is almost always a count that "
-                       "was never computed. Skip the draw instead");
+        return reportError(
+            "a draw of zero vertices is almost always a count that "
+            "was never computed. Skip the draw instead");
     }
     if (!check(wholePrimitives(ready.pipeline->state.primitive, p_count)))
     {
@@ -223,11 +226,11 @@ void draw(Pipeline const& p_pipeline,
 
 //------------------------------------------------------------------------------
 void drawIndexed(Pipeline const& p_pipeline,
-                   BufferHandle p_vertices,
-                   BufferHandle p_indices,
-                   IndexType p_type,
-                   std::size_t p_count,
-                   std::size_t p_first)
+                 BufferHandle p_vertices,
+                 BufferHandle p_indices,
+                 IndexType p_type,
+                 std::size_t p_count,
+                 std::size_t p_first)
 {
     auto ready_ = readyToDraw(p_pipeline);
     if (!ready_)
@@ -238,8 +241,9 @@ void drawIndexed(Pipeline const& p_pipeline,
 
     if (p_count == 0u)
     {
-        return reportError("a draw of zero indices is almost always a count that was "
-                       "never computed. Skip the draw instead");
+        return reportError(
+            "a draw of zero indices is almost always a count that was "
+            "never computed. Skip the draw instead");
     }
     if (!check(wholePrimitives(ready.pipeline->state.primitive, p_count)))
     {
@@ -258,22 +262,24 @@ void drawIndexed(Pipeline const& p_pipeline,
             std::string("the buffer given as indices was created to hold ") +
             toString(indices->kind) +
             " data. An index buffer has to be created with "
-            "compages::gpu::BufferKind::Index, because the driver places it differently");
+            "compages::gpu::BufferKind::Index, because the driver places it "
+            "differently");
     }
 
     const std::size_t held = indices->bytes / sizeOf(p_type);
     if (p_first + p_count > held)
     {
         return reportError("the draw asks for " + std::to_string(p_count) +
-                       " indices starting at " + std::to_string(p_first) +
-                       ", but the buffer holds " + std::to_string(held) + " of " +
-                       std::to_string(sizeOf(p_type)) + " bytes each");
+                           " indices starting at " + std::to_string(p_first) +
+                           ", but the buffer holds " + std::to_string(held) +
+                           " of " + std::to_string(sizeOf(p_type)) +
+                           " bytes each");
     }
 
     // Every vertex the indices name has to exist, but checking that would mean
-    // reading the indices back from the device on every draw. What can be checked
-    // for free is that there is a vertex buffer at all and that it is the right
-    // kind, so that is what is done.
+    // reading the indices back from the device on every draw. What can be
+    // checked for free is that there is a vertex buffer at all and that it is
+    // the right kind, so that is what is done.
     detail::BufferRecord const* vertices =
         detail::pools().buffers.get(p_vertices);
     if (vertices == nullptr)
@@ -321,8 +327,9 @@ void drawWithoutVertices(Pipeline const& p_pipeline, std::size_t p_count)
 
     if (p_count == 0u)
     {
-        return reportError("a draw of zero vertices is almost always a count that "
-                       "was never computed. Skip the draw instead");
+        return reportError(
+            "a draw of zero vertices is almost always a count that "
+            "was never computed. Skip the draw instead");
     }
     if (!check(wholePrimitives(ready.pipeline->state.primitive, p_count)))
     {
@@ -335,8 +342,10 @@ void drawWithoutVertices(Pipeline const& p_pipeline, std::size_t p_count)
             "this pipeline reads " +
             std::to_string(ready.pipeline->attributes.size()) +
             " vertex attributes, so there is nowhere for them to come from. "
-            "Either pass a vertex buffer to compages::gpu::draw(), or build the pipeline "
-            "with a default constructed compages::gpu::VertexLayout for a shader that "
+            "Either pass a vertex buffer to compages::gpu::draw(), or build "
+            "the pipeline "
+            "with a default constructed compages::gpu::VertexLayout for a "
+            "shader that "
             "makes its own vertices");
     }
 
@@ -350,10 +359,10 @@ void drawWithoutVertices(Pipeline const& p_pipeline, std::size_t p_count)
 
 //------------------------------------------------------------------------------
 void drawInstanced(Pipeline const& p_pipeline,
-                     BufferHandle p_vertices,
-                     std::size_t p_vertex_count,
-                     std::size_t p_instances,
-                     std::size_t p_first)
+                   BufferHandle p_vertices,
+                   std::size_t p_vertex_count,
+                   std::size_t p_instances,
+                   std::size_t p_first)
 {
     auto ready_ = readyToDraw(p_pipeline);
     if (!ready_)
@@ -369,10 +378,12 @@ void drawInstanced(Pipeline const& p_pipeline,
     }
     if (p_vertex_count == 0u)
     {
-        return reportError("a draw of zero vertices is almost always a count that "
-                       "was never computed. Skip the draw instead");
+        return reportError(
+            "a draw of zero vertices is almost always a count that "
+            "was never computed. Skip the draw instead");
     }
-    if (!check(wholePrimitives(ready.pipeline->state.primitive, p_vertex_count)))
+    if (!check(
+            wholePrimitives(ready.pipeline->state.primitive, p_vertex_count)))
     {
         return;
     }
@@ -382,7 +393,8 @@ void drawInstanced(Pipeline const& p_pipeline,
         // The buffer holds one record per object, not one per corner. Four
         // vertices and a hundred thousand instances is four corners generated
         // from gl_VertexID and a hundred thousand sprites in the buffer.
-        if (!check(vertexSourceFits(*ready.pipeline, p_vertices, p_instances, 0u)))
+        if (!check(
+                vertexSourceFits(*ready.pipeline, p_vertices, p_instances, 0u)))
         {
             return;
         }
@@ -390,7 +402,7 @@ void drawInstanced(Pipeline const& p_pipeline,
     else
     {
         if (!check(vertexSourceFits(
-            *ready.pipeline, p_vertices, p_vertex_count, p_first)))
+                *ready.pipeline, p_vertices, p_vertex_count, p_first)))
         {
             return;
         }
@@ -403,10 +415,8 @@ void drawInstanced(Pipeline const& p_pipeline,
     backend::bindVertexBuffer(ready.pipeline->reader,
                               buffer->native,
                               ready.pipeline->layout.stride());
-    backend::drawInstanced(ready.pipeline->state.primitive,
-                           p_first,
-                           p_vertex_count,
-                           p_instances);
+    backend::drawInstanced(
+        ready.pipeline->state.primitive, p_first, p_vertex_count, p_instances);
 
     detail::countDraw(p_vertex_count * p_instances, p_instances);
     return;
@@ -414,8 +424,8 @@ void drawInstanced(Pipeline const& p_pipeline,
 
 //------------------------------------------------------------------------------
 void drawIndirect(Pipeline const& p_pipeline,
-                    BufferHandle p_vertices,
-                    BufferHandle p_commands)
+                  BufferHandle p_vertices,
+                  BufferHandle p_commands)
 {
     auto ready_ = readyToDraw(p_pipeline);
     if (!ready_)
@@ -433,15 +443,15 @@ void drawIndirect(Pipeline const& p_pipeline,
         detail::pools().buffers.get(p_commands);
     if (commands == nullptr)
     {
-        return reportError("the buffer holding the draw command no longer exists");
+        return reportError(
+            "the buffer holding the draw command no longer exists");
     }
     if (commands->bytes < sizeof(DrawIndirectCommand))
     {
-        return reportError(
-            "a drawIndirect command is " +
-            std::to_string(sizeof(DrawIndirectCommand)) +
-            " bytes, and the buffer holds " +
-            std::to_string(commands->bytes));
+        return reportError("a drawIndirect command is " +
+                           std::to_string(sizeof(DrawIndirectCommand)) +
+                           " bytes, and the buffer holds " +
+                           std::to_string(commands->bytes));
     }
 
     detail::BufferRecord const* buffer =

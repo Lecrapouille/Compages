@@ -28,8 +28,12 @@
 
 #include <string>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
+
+
 
 // ****************************************************************************
 //! \brief Which built-in shader family a Material was built from.
@@ -84,9 +88,9 @@ struct MaterialInstance
     MaterialId material;
     //! \brief The base colour uploaded to the shader's \c color uniform, when
     //! the shader declares one.
-    Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     //! \brief PBR base colour factor (\c baseColorFactor in glTF).
-    Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
     //! \brief Optional albedo map. Empty means the factor alone is used.
     TextureAssetId base_color_texture{};
     //! \brief DepthMaterial near/far smoothstep range, in eye-space metres.

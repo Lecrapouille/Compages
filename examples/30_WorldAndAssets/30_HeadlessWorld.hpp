@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "Compages/World/Entity.hpp"
 #include "Common/Example.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include "Compages/World/World.hpp"
 
@@ -35,12 +35,13 @@ namespace examples
 //! entity is made, named, and given components in one chain; a system is a
 //! loop over the entities having some components:
 //! \code
-//! struct Position { Vector3f value; };
-//! struct Velocity { Vector3f value; };
+//! struct Position { compages::core::Vector3f value; };
+//! struct Velocity { compages::core::Vector3f value; };
 //!
 //! m_world.entity("player").set(Position{}).set(Velocity{ { 1, 0, 0 } });
 //!
-//! m_world.each<Position, Velocity>([&](compages::world::Entity, Position& p, Velocity& v)
+//! m_world.each<Position, Velocity>([&](compages::world::Entity, Position& p,
+//! Velocity& v)
 //! {
 //!     p.value += v.value * dt;
 //! });
@@ -49,7 +50,7 @@ namespace examples
 //! Nothing here needs a GPU: the same code runs in a test or on a server.
 //! This example draws nothing and checks every frame that the systems ran.
 // ****************************************************************************
-class HeadlessWorld final : public Example
+class HeadlessWorld final: public Example
 {
 public:
 
@@ -59,8 +60,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

@@ -40,7 +40,8 @@ namespace
 //------------------------------------------------------------------------------
 std::string staleHandleMessage()
 {
-    return "this buffer no longer exists. Either it was released while something "
+    return "this buffer no longer exists. Either it was released while "
+           "something "
            "still referred to it, or the Buffer object was moved from and the "
            "old one is being used";
 }
@@ -55,8 +56,9 @@ Result<BufferHandle> createBuffer(std::size_t p_bytes,
 {
     if (!initialized())
     {
-        return failure("compages::gpu::init() has not been called, so there is no device "
-                       "to put a buffer on");
+        return failure(
+            "compages::gpu::init() has not been called, so there is no device "
+            "to put a buffer on");
     }
 
     if (p_bytes == 0u)
@@ -67,22 +69,24 @@ Result<BufferHandle> createBuffer(std::size_t p_bytes,
 
     if ((p_usage == BufferUsage::Immutable) && (p_data == nullptr))
     {
-        return failure("an immutable buffer can never be written, so it must be "
-                       "given its contents when created");
+        return failure(
+            "an immutable buffer can never be written, so it must be "
+            "given its contents when created");
     }
 
-    // A storage buffer is what a compute pass writes into, and the driver has its
-    // own ceiling on how big one may be. Saying which limit was passed is more
-    // useful than letting the driver refuse without explanation.
+    // A storage buffer is what a compute pass writes into, and the driver has
+    // its own ceiling on how big one may be. Saying which limit was passed is
+    // more useful than letting the driver refuse without explanation.
     if (p_kind == BufferKind::Storage)
     {
         const auto limit =
             static_cast<std::size_t>(device().max_shader_storage_block_size);
         if (p_bytes > limit)
         {
-            return failure("a storage buffer of " + std::to_string(p_bytes) +
-                           " bytes was asked for but this driver allows at most " +
-                           std::to_string(limit));
+            return failure(
+                "a storage buffer of " + std::to_string(p_bytes) +
+                " bytes was asked for but this driver allows at most " +
+                std::to_string(limit));
         }
     }
     if (p_kind == BufferKind::Uniform)
@@ -100,15 +104,16 @@ Result<BufferHandle> createBuffer(std::size_t p_bytes,
         }
     }
 
-    auto native_result = backend::createBuffer(p_bytes, p_data, p_kind, p_usage);
+    auto native_result =
+        backend::createBuffer(p_bytes, p_data, p_kind, p_usage);
     if (!native_result)
     {
-        return compages::failure(native_result.error());
+        return failure(native_result.error());
     }
     auto native = native_result.take();
 
-    auto added = pools().buffers.add(
-        BufferRecord{ native, p_bytes, p_kind, p_usage });
+    auto added =
+        pools().buffers.add(BufferRecord{ native, p_bytes, p_kind, p_usage });
     if (!added)
     {
         // The pool is full, so the memory we just reserved has nowhere to be
@@ -130,9 +135,9 @@ void destroyBuffer(BufferHandle p_handle)
         return;
     }
 
-    // After compages::gpu::shutdown() the driver has nothing left to free the memory on,
-    // and the pool has already been emptied, so this branch means the device is
-    // gone while a Buffer object is still around.
+    // After compages::gpu::shutdown() the driver has nothing left to free the
+    // memory on, and the pool has already been emptied, so this branch means
+    // the device is gone while a Buffer object is still around.
     if (initialized())
     {
         backend::destroyBuffer(record->native);
@@ -155,9 +160,11 @@ Status writeBuffer(BufferHandle p_handle,
     if (record->usage == BufferUsage::Immutable)
     {
         return failure(
-            "this buffer was created immutable, which is a promise to the driver "
+            "this buffer was created immutable, which is a promise to the "
+            "driver "
             "that it would never be written again in exchange for the fastest "
-            "memory available. Create it with BufferUsage::Dynamic to write it");
+            "memory available. Create it with BufferUsage::Dynamic to write "
+            "it");
     }
 
     if (p_bytes == 0u)
@@ -201,8 +208,8 @@ Status readBuffer(BufferHandle p_handle,
 
     if (p_offset + p_bytes > record->bytes)
     {
-        return failure("reading " + std::to_string(p_bytes) + " bytes at byte " +
-                       std::to_string(p_offset) +
+        return failure("reading " + std::to_string(p_bytes) +
+                       " bytes at byte " + std::to_string(p_offset) +
                        " would run past the end of a buffer of " +
                        std::to_string(record->bytes) + " bytes");
     }
@@ -255,10 +262,8 @@ std::size_t liveBufferCount()
 std::size_t bufferMemory()
 {
     std::size_t total = 0u;
-    pools().buffers.forEach(
-        [&total](BufferHandle, BufferRecord const& p_record) {
-            total += p_record.bytes;
-        });
+    pools().buffers.forEach([&total](BufferHandle, BufferRecord const& p_record)
+                            { total += p_record.bytes; });
     return total;
 }
 

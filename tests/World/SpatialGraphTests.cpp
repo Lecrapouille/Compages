@@ -20,9 +20,12 @@
 
 #include "main.hpp"
 
+
 #include "Compages/World/Spatial/SpatialGraph.hpp"
 #include "Compages/World/Spatial/TransformStore.hpp"
 #include "Compages/World/World.hpp"
+
+
 
 //------------------------------------------------------------------------------
 TEST(SpatialGraph, AttachIsIdempotent)
@@ -116,10 +119,10 @@ TEST(SpatialGraph, KeepWorldReparentPreservesWorldPose)
     ASSERT_TRUE(bool(graph.setParent(c, b)));
 
     // A at (10, 0, 0). B at (0, 5, 0) relative to A. C at (0, 2, 0) relative
-    // to B. World position of C is (10, 7, 0).
-    transforms.localMutable(ea).position = Vector3f(10.0f, 0.0f, 0.0f);
-    transforms.localMutable(eb).position = Vector3f(0.0f, 5.0f, 0.0f);
-    transforms.localMutable(ec).position = Vector3f(0.0f, 2.0f, 0.0f);
+    // to B. compages::world::World position of C is (10, 7, 0).
+    transforms.localMutable(ea).position = compages::core::Vector3f(10.0f, 0.0f, 0.0f);
+    transforms.localMutable(eb).position = compages::core::Vector3f(0.0f, 5.0f, 0.0f);
+    transforms.localMutable(ec).position = compages::core::Vector3f(0.0f, 2.0f, 0.0f);
 
     // Manually build world matrices (no TransformSystem here).
     transforms.setWorld(ea, compages::world::localMatrix(transforms.local(ea)));

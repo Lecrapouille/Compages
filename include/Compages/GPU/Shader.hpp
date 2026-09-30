@@ -20,17 +20,19 @@
 
 #pragma once
 
+#include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Vector.hpp"
 #include "Compages/GPU/Core/Enums.hpp"
 #include "Compages/GPU/Core/Handle.hpp"
 #include "Compages/GPU/Core/Reflection.hpp"
-#include "Compages/Core/Matrix.hpp"
-#include "Compages/Core/Vector.hpp"
 
 #include <initializer_list>
 #include <span>
 #include <string>
 #include <string_view>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -43,10 +45,10 @@ using ProgramHandle = Handle<struct ProgramTag>;
 // ****************************************************************************
 //! \brief One stage of a pipeline, compiled and ready to be linked.
 //!
-//! A stage is worth having as a value of its own for two reasons. A vertex shader
-//! shared by several programs is compiled once. And a compilation error is
-//! reported on its own, with the log of the one stage that failed, rather than
-//! being mixed into a link error that names none of them.
+//! A stage is worth having as a value of its own for two reasons. A vertex
+//! shader shared by several programs is compiled once. And a compilation error
+//! is reported on its own, with the log of the one stage that failed, rather
+//! than being mixed into a link error that names none of them.
 //!
 //! \code
 //! auto vertex = compages::gpu::Shader::fromFile("shaders/mesh.vert");
@@ -69,8 +71,8 @@ public:
     //!
     //! \param[in] p_stage which stage this is.
     //! \param[in] p_source the GLSL source, which must begin with its #version.
-    //! \param[in] p_name what to call it in messages, typically the file it came
-    //! from.
+    //! \param[in] p_name what to call it in messages, typically the file it
+    //! came from.
     //! \return the compiled stage, or the compiler log as the error. The log is
     //! passed through as the driver wrote it, since its line numbers are what
     //! makes it useful.
@@ -145,7 +147,7 @@ private:
 //! compages::gpu::Program program;
 //! COMPAGES_TRY(program.loadFiles("shaders/mesh.vert", "shaders/mesh.frag"));
 //! std::cout << program.reflection().toString() << std::endl;
-//! program.set("uColor", Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+//! program.set("uColor", compages::core::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 //! \endcode
 //!
 //! The static fromSources(), fromFiles() and link() return the program as a
@@ -154,8 +156,8 @@ private:
 //!
 //! Linking is where the driver decides everything the library then relies on:
 //! which slot each attribute got, where each member of a uniform block really
-//! sits, which binding a storage block expects. All of it is read once, here, and
-//! kept: see reflection().
+//! sits, which binding a storage block expects. All of it is read once, here,
+//! and kept: see reflection().
 // ****************************************************************************
 class Program
 {
@@ -173,14 +175,14 @@ public:
     //! linked into other programs.
     //! \return the linked program, or the linker log as the error.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program> link(
-        std::initializer_list<Shader const*> p_stages);
+    [[nodiscard]] static Result<Program>
+    link(std::initializer_list<Shader const*> p_stages);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a vertex and a fragment stage from source.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program> fromSources(
-        std::string_view p_vertex, std::string_view p_fragment);
+    [[nodiscard]] static Result<Program>
+    fromSources(std::string_view p_vertex, std::string_view p_fragment);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a vertex and a fragment stage from files.
@@ -188,24 +190,24 @@ public:
     //! What almost every caller wants. On failure the error names the file that
     //! would not compile, followed by the log of the driver.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program> fromFiles(
-        std::string const& p_vertex, std::string const& p_fragment);
+    [[nodiscard]] static Result<Program>
+    fromFiles(std::string const& p_vertex, std::string const& p_fragment);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a compute program from source.
     //!
-    //! A compute program has one stage and no drawing: it runs on a grid of work
-    //! groups whose size the shader itself declares, which reflection() reports
-    //! as work_group_size.
+    //! A compute program has one stage and no drawing: it runs on a grid of
+    //! work groups whose size the shader itself declares, which reflection()
+    //! reports as work_group_size.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program> fromComputeSource(
-        std::string_view p_source);
+    [[nodiscard]] static Result<Program>
+    fromComputeSource(std::string_view p_source);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a compute program from a file.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program> fromComputeFile(
-        std::string const& p_path);
+    [[nodiscard]] static Result<Program>
+    fromComputeFile(std::string const& p_path);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a vertex and a fragment stage from source, into
@@ -282,15 +284,15 @@ public:
     //!
     //! \code
     //! program.set("uModel", model);
-    //! program.set("uColor", Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+    //! program.set("uColor", compages::core::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
     //! program.set("uTexture", 0);   // texture unit
     //! \endcode
     //!
     //! Nothing is returned: a uniform is set every frame, and a failure there
     //! is a mistake to fix rather than a case to handle. No uniform of that
     //! name, or one declared with another type, is recorded as the frame error
-    //! (see compages::gpu::takeFrameError()). Both used to pass unnoticed and show up as
-    //! a black screen.
+    //! (see compages::gpu::takeFrameError()). Both used to pass unnoticed and
+    //! show up as a black screen.
     //!
     //! \note For anything that changes every frame and is shared by several
     //! programs, a uniform block is the better tool: one buffer written once
@@ -298,11 +300,11 @@ public:
     // ------------------------------------------------------------------------
     void set(std::string_view p_name, float p_value);
     //! \brief Set a vec2 uniform.
-    void set(std::string_view p_name, Vector2f const& p_value);
+    void set(std::string_view p_name, compages::core::Vector2f const& p_value);
     //! \brief Set a vec3 uniform.
-    void set(std::string_view p_name, Vector3f const& p_value);
+    void set(std::string_view p_name, compages::core::Vector3f const& p_value);
     //! \brief Set a vec4 uniform.
-    void set(std::string_view p_name, Vector4f const& p_value);
+    void set(std::string_view p_name, compages::core::Vector4f const& p_value);
     //! \brief Set an int uniform, or the texture unit of a sampler.
     void set(std::string_view p_name, int p_value);
     //! \brief Set a uint uniform.
@@ -310,19 +312,20 @@ public:
     //! \brief Set a bool uniform.
     void set(std::string_view p_name, bool p_value);
     //! \brief Set an ivec2 uniform.
-    void set(std::string_view p_name, Vector2i const& p_value);
+    void set(std::string_view p_name, compages::core::Vector2i const& p_value);
     //! \brief Set an ivec3 uniform.
-    void set(std::string_view p_name, Vector3i const& p_value);
+    void set(std::string_view p_name, compages::core::Vector3i const& p_value);
     //! \brief Set an ivec4 uniform.
-    void set(std::string_view p_name, Vector4i const& p_value);
+    void set(std::string_view p_name, compages::core::Vector4i const& p_value);
     //! \brief Set a mat2 uniform.
-    void set(std::string_view p_name, Matrix22f const& p_value);
+    void set(std::string_view p_name, compages::core::Matrix22f const& p_value);
     //! \brief Set a mat3 uniform.
-    void set(std::string_view p_name, Matrix33f const& p_value);
+    void set(std::string_view p_name, compages::core::Matrix33f const& p_value);
     //! \brief Set a mat4 uniform.
-    void set(std::string_view p_name, Matrix44f const& p_value);
+    void set(std::string_view p_name, compages::core::Matrix44f const& p_value);
     //! \brief Set a mat4 array, such as a joint palette.
-    void set(std::string_view p_name, std::span<const Matrix44f> p_values);
+    void set(std::string_view p_name,
+             std::span<const compages::core::Matrix44f> p_values);
 
     // ------------------------------------------------------------------------
     //! \brief Say which binding point a uniform block is to be read from.

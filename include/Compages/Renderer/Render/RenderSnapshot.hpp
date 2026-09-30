@@ -31,24 +31,28 @@
 #include <cstdint>
 #include <vector>
 
+#include "Compages/Core/Quaternion.hpp"
+#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
+
+
 
 // ****************************************************************************
 //! \brief One thing to draw during the frame, resolved down to an id and a
 //! world matrix.
 //!
-//! What the World's MeshRenderer becomes after extraction: same ids, plus the
+//! What the compages::world::World's compages::renderer::MeshRenderer becomes after extraction: same ids, plus the
 //! current world matrix and the current world bounds. Nothing here points
-//! back into the World.
+//! back into the compages::world::World.
 // ****************************************************************************
 struct RenderItem
 {
     compages::world::EntityId entity;
     compages::renderer::MeshAssetId mesh;
     compages::renderer::MaterialInstanceId material_instance;
-    Matrix44f world_matrix{ compages::matrix::Identity };
-    AABB world_bounds;
+    compages::core::Matrix44f world_matrix{ compages::core::matrix::Identity };
+    compages::core::AABB world_bounds;
     compages::renderer::RenderFlags flags = compages::renderer::RenderFlags::None;
     //! \brief Offset into \c RenderSnapshot::joint_palette. Zero and a
     //! \c joint_count of zero means a rigid mesh.
@@ -61,8 +65,8 @@ struct RenderItem
 // ****************************************************************************
 struct DirectionalLightFrame
 {
-    Vector3f direction{ 0.0f, -1.0f, 0.0f };
-    Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f direction{ 0.0f, -1.0f, 0.0f };
+    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
 };
 
@@ -71,8 +75,8 @@ struct DirectionalLightFrame
 // ****************************************************************************
 struct PointLightFrame
 {
-    Vector3f position{ 0.0f, 0.0f, 0.0f };
-    Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::core::Vector3f position{ 0.0f, 0.0f, 0.0f };
+    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
     float range = 100.0f;
 };
@@ -80,7 +84,7 @@ struct PointLightFrame
 // ****************************************************************************
 //! \brief A frozen picture of everything the frame needs to draw.
 //!
-//! The Renderer consumes a snapshot. It does not read the World. That is what
+//! The Renderer consumes a snapshot. It does not read the compages::world::World. That is what
 //! lets a future version put simulation on one thread and rendering on
 //! another, and what makes the renderer testable in isolation.
 // ****************************************************************************
@@ -92,7 +96,7 @@ struct RenderSnapshot
     std::vector<PointLightFrame> point_lights;
     //! \brief Packed joint matrices for every skinned item, in the same
     //! space the vertex shader multiplies rest-pose vertices with.
-    std::vector<Matrix44f> joint_palette;
+    std::vector<compages::core::Matrix44f> joint_palette;
     compages::renderer::Environment environment{};
 };
 

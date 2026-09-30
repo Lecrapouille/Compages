@@ -95,20 +95,21 @@ std::string GameOfLife::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status GameOfLife::setUp()
+compages::Status GameOfLife::setUp()
 {
     // Two textures of one byte per cell, each wired to a framebuffer so that
     // a pass can write into it. Nearest: a cell is a cell, never a blend.
     // Repeat: reading past an edge reads the other side.
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(m_field[i].allocate({ .format = compages::gpu::PixelFormat::R8,
-                                           .width = SIZE,
-                                           .height = SIZE,
-                                           .magnify = compages::gpu::Filter::Nearest,
-                                           .minify = compages::gpu::Filter::Nearest,
-                                           .wrap_x = compages::gpu::Wrap::Repeat,
-                                           .wrap_y = compages::gpu::Wrap::Repeat }));
+        COMPAGES_TRY(
+            m_field[i].allocate({ .format = compages::gpu::PixelFormat::R8,
+                                  .width = SIZE,
+                                  .height = SIZE,
+                                  .magnify = compages::gpu::Filter::Nearest,
+                                  .minify = compages::gpu::Filter::Nearest,
+                                  .wrap_x = compages::gpu::Wrap::Repeat,
+                                  .wrap_y = compages::gpu::Wrap::Repeat }));
         COMPAGES_TRY(m_target[i].attach(m_field[i]));
     }
 
@@ -120,24 +121,26 @@ compages::gpu::Status GameOfLife::setUp()
     {
         cell = (coin(rng) == 0) ? 255u : 0u;
     }
-    COMPAGES_TRY(m_field[0].write(std::as_bytes(std::span<const std::uint8_t>(cells))));
+    COMPAGES_TRY(
+        m_field[0].write(std::as_bytes(std::span<const std::uint8_t>(cells))));
 
     COMPAGES_TRY(m_step.load(SCREEN_VERTEX, STEP_FRAGMENT));
-    m_step["texel"] = Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
+    m_step["texel"] =
+        compages::core::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
     COMPAGES_TRY(m_show.load(SCREEN_VERTEX, SHOW_FRAGMENT));
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-void GameOfLife::draw(Frame const&)
+void GameOfLife::draw(compages::world::ViewFrame const&)
 {
     // Read the current generation, write the next one into the other texture.
     // The pass takes the size of its target, not of the window.
     const int next = 1 - m_current;
     m_step["previous"] = m_field[m_current];
     {
-        compages::gpu::RenderPass into(m_target[next], { .clear_color = false,
-                                               .clear_depth = false });
+        compages::gpu::RenderPass into(
+            m_target[next], { .clear_color = false, .clear_depth = false });
         m_step.draw(3u);
     }
     m_current = next;

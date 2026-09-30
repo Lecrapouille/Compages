@@ -22,8 +22,8 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>
 
@@ -40,14 +40,15 @@ namespace examples
 //! drawn over the next frame and then forgotten:
 //! \code
 //! m_scene.update(p_frame);                  // move, then
-//! for (compages::world::Entity& cube : m_cubes)       // outline where they are now
+//! for (compages::world::Entity& cube : m_cubes)       // outline where they
+//! are now
 //!     m_scene.debug().box(UNIT, cube.worldMatrix(), { 1.0f, 0.8f, 0.2f });
 //! m_scene.render();
 //! \endcode
 //!
 //! The physics engine, when it comes back, will move the same entities.
 // ****************************************************************************
-class MvpDemo final : public Example
+class MvpDemo final: public Example
 {
 public:
 
@@ -57,8 +58,8 @@ public:
     }
 
     [[nodiscard]] std::string description() const override;
-    [[nodiscard]] compages::gpu::Status setUp() override;
-    void draw(Frame const& p_frame) override;
+    [[nodiscard]] compages::Status setUp() override;
+    void draw(compages::world::ViewFrame const& p_frame) override;
 
 private:
 

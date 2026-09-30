@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <array>
 
+namespace compages::core
+{
 // ****************************************************************************
 //! \file
 //! \brief The six planes of a view, for asking whether a box is visible.
@@ -69,7 +71,7 @@ class Frustum
         // --------------------------------------------------------------------
         [[nodiscard]] float signedDistance(Vector3f const& p_point) const
         {
-            return compages::vector::dot(normal, p_point) + offset;
+            return compages::core::vector::dot(normal, p_point) + offset;
         }
     };
 
@@ -78,13 +80,8 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Read the six planes out of a view-projection matrix.
     //!
-    //! This library uses the row-vector convention: a point p is a 1x4 row
-    //! and applying view then projection to p is p * view * projection. The
-    //! caller therefore passes \c view * \c projection, not the other way
-    //! round. The extraction uses the standard Gribb/Hartmann form
-    //! (row 3 +/- row i of the combined matrix).
-    //! \param[in] p_vp combined view and projection matrix (\c view * \c
-    //! projection).
+    //! \param[in] p_vp combined matrix \c projection * \c view (column-vector
+    //! clip = \c p_vp * \c p_world).
     //! \return A frustum whose six planes are normalized.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Frustum fromViewProjection(Matrix44f const& p_vp)
@@ -93,29 +90,20 @@ public:
         {
             Plane plane;
             Vector3f const xyz(p_row.x, p_row.y, p_row.z);
-            float const length = compages::vector::norm(xyz);
+            float const length = compages::core::vector::norm(xyz);
             float const inv = (length < 1.0e-8f) ? 1.0f : (1.0f / length);
             plane.normal = xyz * inv;
             plane.offset = p_row.w * inv;
             return plane;
         };
 
-        // Gribb/Hartmann wants the rows of the matrix the shader multiplies
-        // with. This library stores those as columns: CPU row i is shader
-        // column i, so shader row r is (M[0][r], M[1][r], M[2][r], M[3][r]).
-        auto shaderRow = [&p_vp](std::size_t p_row)
-        {
-            return Vector4f(
-                p_vp[0][p_row], p_vp[1][p_row], p_vp[2][p_row], p_vp[3][p_row]);
-        };
-
         Frustum frustum;
-        frustum.m_planes[0] = make(shaderRow(3) + shaderRow(0)); // left
-        frustum.m_planes[1] = make(shaderRow(3) - shaderRow(0)); // right
-        frustum.m_planes[2] = make(shaderRow(3) + shaderRow(1)); // bottom
-        frustum.m_planes[3] = make(shaderRow(3) - shaderRow(1)); // top
-        frustum.m_planes[4] = make(shaderRow(3) + shaderRow(2)); // near
-        frustum.m_planes[5] = make(shaderRow(3) - shaderRow(2)); // far
+        frustum.m_planes[0] = make(p_vp[3] + p_vp[0]); // left
+        frustum.m_planes[1] = make(p_vp[3] - p_vp[0]); // right
+        frustum.m_planes[2] = make(p_vp[3] + p_vp[1]); // bottom
+        frustum.m_planes[3] = make(p_vp[3] - p_vp[1]); // top
+        frustum.m_planes[4] = make(p_vp[3] + p_vp[2]); // near
+        frustum.m_planes[5] = make(p_vp[3] - p_vp[2]); // far
         return frustum;
     }
 
@@ -153,3 +141,6 @@ private:
 
     std::array<Plane, 6u> m_planes{};
 };
+
+} // namespace compages::core
+

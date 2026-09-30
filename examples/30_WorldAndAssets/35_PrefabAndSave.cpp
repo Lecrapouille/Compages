@@ -18,8 +18,8 @@
 // along with Compages.  If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
-#include "Compages/World/Entity.hpp"
 #include "30_WorldAndAssets/35_PrefabAndSave.hpp"
+#include "Compages/World/Entity.hpp"
 
 #include "Compages/Renderer/Assets/Prefabs.hpp"
 #include "Compages/Renderer/Serialization/SceneSerializer.hpp"
@@ -70,13 +70,14 @@ std::string PrefabAndSave::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status PrefabAndSave::setUp()
+compages::Status PrefabAndSave::setUp()
 {
     m_scene.background(0.05f, 0.07f, 0.12f).ambient(0.14f, 0.15f, 0.18f);
     m_scene.camera()
         .position(0.0f, 35.0f, 120.0f)
         .lookAt(0.0f, 25.0f, 0.0f)
-        .add<compages::world::Orbit>(Vector3f(0.0f, 25.0f, 0.0f));
+        .add<compages::world::Orbit>(
+            compages::core::Vector3f(0.0f, 25.0f, 0.0f));
     m_scene.sun();
 
     // What the prefab names, registered under those names.
@@ -85,8 +86,9 @@ compages::gpu::Status PrefabAndSave::setUp()
     m_scene.material("dark", compages::renderer::color(0.35f, 0.24f, 0.14f));
     m_scene.material("light", compages::renderer::color(0.92f, 0.90f, 0.82f));
     compages::renderer::PrefabId robot;
-    COMPAGES_TRY_ASSIGN(
-        robot, m_scene.assets().addPrefab("robot", compages::renderer::makeRobotPrefab()));
+    COMPAGES_TRY_ASSIGN(robot,
+                        m_scene.assets().addPrefab(
+                            "robot", compages::renderer::makeRobotPrefab()));
 
     // Three instances of the one prefab, each with its own Wave.
     for (int i = 0; i < 3; ++i)
@@ -100,7 +102,7 @@ compages::gpu::Status PrefabAndSave::setUp()
 }
 
 //------------------------------------------------------------------------------
-void PrefabAndSave::draw(Frame const& p_frame)
+void PrefabAndSave::draw(compages::world::ViewFrame const& p_frame)
 {
     m_scene.draw(p_frame);
     // Once, after the first frames, so the file holds a scene that has run.

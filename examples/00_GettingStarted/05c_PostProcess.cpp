@@ -86,13 +86,14 @@ void main()
 )";
 
 //------------------------------------------------------------------------------
-static compages::gpu::Status loadTexture(char const* p_file, compages::gpu::Texture& p_out)
+static compages::Status loadTexture(char const* p_file,
+                                    compages::gpu::Texture& p_out)
 {
     // The pictures live in Compages-data, not next to the source.
     const std::string path = dataPath(p_file);
     if (path.empty())
     {
-        return compages::gpu::failure(std::string("missing texture: ") + p_file);
+        return compages::failure(std::string("missing texture: ") + p_file);
     }
     // sRGB so the sampled colour is linear before the wavy pass.
     compages::gpu::LoadOptions options;
@@ -101,9 +102,12 @@ static compages::gpu::Status loadTexture(char const* p_file, compages::gpu::Text
 }
 
 //------------------------------------------------------------------------------
-static compages::renderer::MeshVertex meshVertex(Vector3f p_position, Vector2f p_uv)
+static compages::renderer::MeshVertex
+meshVertex(compages::core::Vector3f p_position, compages::core::Vector2f p_uv)
 {
-    return compages::renderer::MeshVertex{ p_position, Vector3f(0.0f, 1.0f, 0.0f), p_uv };
+    return compages::renderer::MeshVertex{
+        p_position, compages::core::Vector3f(0.0f, 1.0f, 0.0f), p_uv
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -114,29 +118,31 @@ std::string PostProcess::description() const
 }
 
 //------------------------------------------------------------------------------
-compages::gpu::Status PostProcess::ensureTarget(std::uint32_t p_width,
-                                      std::uint32_t p_height)
+compages::Status PostProcess::ensureTarget(std::uint32_t p_width,
+                                           std::uint32_t p_height)
 {
     if ((p_width == m_target_width) && (p_height == m_target_height) &&
         m_fbo.valid())
     {
-        return compages::gpu::success();
+        return compages::success();
     }
 
     // Allocated again in place: whatever samples these textures still does.
-    COMPAGES_TRY(m_color_target.allocate({ .format = compages::gpu::PixelFormat::RGBA8,
-                                           .width = p_width,
-                                           .height = p_height }));
-    COMPAGES_TRY(m_depth_target.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
-                                           .width = p_width,
-                                           .height = p_height }));
+    COMPAGES_TRY(
+        m_color_target.allocate({ .format = compages::gpu::PixelFormat::RGBA8,
+                                  .width = p_width,
+                                  .height = p_height }));
+    COMPAGES_TRY(m_depth_target.allocate(
+        { .format = compages::gpu::PixelFormat::Depth32F,
+          .width = p_width,
+          .height = p_height }));
     COMPAGES_TRY(m_fbo.attach(m_color_target, m_depth_target));
     m_target_width = p_width;
     m_target_height = p_height;
-    return compages::gpu::success();
+    return compages::success();
 }
 
-compages::gpu::Status PostProcess::setUp()
+compages::Status PostProcess::setUp()
 {
     COMPAGES_TRY(loadTexture("wooden-crate.jpg", m_crate_texture));
     COMPAGES_TRY(loadTexture("path.png", m_floor_texture));
@@ -144,51 +150,93 @@ compages::gpu::Status PostProcess::setUp()
     // Thirty six vertices, six per face: no index buffer, each corner is
     // stored once per triangle that uses it.
     const std::array<compages::renderer::MeshVertex, 36u> cube{
-        meshVertex(Vector3f(-1.0f, -1.0f, -1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, -1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, 1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, 1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, 1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, 1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, -1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, -1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, -1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, -1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, 1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, -1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, -1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, -1.0f, 1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, 1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(-1.0f, 1.0f, -1.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, -1.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, -1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, -1.0f, 1.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, -1.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(1.0f, 1.0f, 1.0f), Vector2f(1.0f, 1.0f))
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::core::Vector2f(1.0f, 1.0f))
     };
 
     const std::array<compages::renderer::MeshVertex, 6u> floor{
-        meshVertex(Vector3f(5.0f, -1.5f, 5.0f), Vector2f(0.0f, 0.0f)),
-        meshVertex(Vector3f(-5.0f, -1.5f, 5.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-5.0f, -1.5f, -5.0f), Vector2f(0.0f, 1.0f)),
-        meshVertex(Vector3f(5.0f, -1.5f, 5.0f), Vector2f(1.0f, 0.0f)),
-        meshVertex(Vector3f(-5.0f, -1.5f, -5.0f), Vector2f(1.0f, 1.0f)),
-        meshVertex(Vector3f(5.0f, -1.5f, -5.0f), Vector2f(0.0f, 1.0f))
+        meshVertex(compages::core::Vector3f(5.0f, -1.5f, 5.0f),
+                   compages::core::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, 5.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, -5.0f),
+                   compages::core::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(5.0f, -1.5f, 5.0f),
+                   compages::core::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, -5.0f),
+                   compages::core::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::core::Vector3f(5.0f, -1.5f, -5.0f),
+                   compages::core::Vector2f(0.0f, 1.0f))
     };
 
     // The cube and the floor are two drawables of the same shader, each with
@@ -202,7 +250,8 @@ compages::gpu::Status PostProcess::setUp()
     m_cube["texID"] = m_crate_texture;
     m_floor.vertices<compages::renderer::MeshVertex>(floor);
     m_floor["texID"] = m_floor_texture;
-    m_floor["model"] = Matrix44f(compages::matrix::Identity);
+    m_floor["model"] =
+        compages::core::Matrix44f(compages::core::matrix::Identity);
 
     // Two triangles covering the screen, by name.
     COMPAGES_TRY(m_screen.load(SCREEN_VS, SCREEN_FS));
@@ -211,11 +260,11 @@ compages::gpu::Status PostProcess::setUp()
     m_screen["uv"] = { { 0, 1 }, { 0, 0 }, { 1, 0 },
                        { 0, 1 }, { 1, 0 }, { 1, 1 } };
     m_screen["texID"] = m_color_target;
-    return compages::gpu::success();
+    return compages::success();
 }
 
 //------------------------------------------------------------------------------
-void PostProcess::draw(Frame const& p_frame)
+void PostProcess::draw(compages::world::ViewFrame const& p_frame)
 {
     if (!compages::gpu::check(ensureTarget(p_frame.width, p_frame.height)))
     {
@@ -223,25 +272,26 @@ void PostProcess::draw(Frame const& p_frame)
     }
 
     // Shared by the cube and the floor; only the cube's model turns.
-    const Matrix44f projection =
-        compages::matrix::perspective(50.0_deg, aspect(p_frame), 0.1f, 10.0f);
-    const Matrix44f view = compages::matrix::lookAt(Vector3f(3.0f, 3.0f, 3.0f),
-                                          Vector3f(0.0f, 0.0f, 0.0f),
-                                          Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::core::Matrix44f projection =
+        compages::core::perspective(50.0_deg, aspect(p_frame), 0.1f, 10.0f);
+    const compages::core::Matrix44f view =
+        compages::core::lookAt(compages::core::Vector3f(3.0f, 3.0f, 3.0f),
+                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     for (compages::gpu::Drawable* scene : { &m_cube, &m_floor })
     {
         (*scene)["view"] = view;
         (*scene)["projection"] = projection;
     }
-    m_cube["model"] =
-        compages::matrix::rotate(Matrix44f(compages::matrix::Identity),
-                       units::angle::radian_t(p_frame.total * 0.7f),
-                       Vector3f(0.0f, 1.0f, 0.0f));
+    m_cube["model"] = compages::core::rotate(
+        compages::core::Matrix44f(compages::core::matrix::Identity),
+        units::angle::radian_t(p_frame.total * 0.7f),
+        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
 
     // Into the framebuffer, over the window pass.
     {
-        compages::gpu::RenderPass offscreen(m_fbo,
-                                  { .color = { 0.0f, 0.0f, 0.4f, 1.0f } });
+        compages::gpu::RenderPass offscreen(
+            m_fbo, { .color = { 0.0f, 0.0f, 0.4f, 1.0f } });
         m_floor.draw();
         m_cube.draw();
     }

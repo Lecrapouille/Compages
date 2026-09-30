@@ -21,8 +21,12 @@
 #include "Compages/World/Entity.hpp"
 #include "main.hpp"
 
+
 #include "Compages/World/Controllers/Controls.hpp"
+#include "Compages/World/Controllers/ViewFrame.hpp"
 #include "Compages/World/World.hpp"
+
+
 
 namespace
 {
@@ -70,18 +74,18 @@ struct Velocity
     float x = 0.0f;
 };
 
-compages::world::Frame frameOf(float p_dt)
+compages::core::Frame frameOf(float p_dt)
 {
-    compages::world::Frame frame;
+    compages::core::Frame frame;
     frame.width = 640u;
     frame.height = 480u;
     frame.elapsed = p_dt;
     return frame;
 }
 
-float distanceBetween(Vector3f const& p_a, Vector3f const& p_b)
+float distanceBetween(compages::core::Vector3f const& p_a, compages::core::Vector3f const& p_b)
 {
-    const Vector3f d = p_a - p_b;
+    const compages::core::Vector3f d = p_a - p_b;
     return std::sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
 }
 
@@ -187,15 +191,15 @@ TEST(Entity, EachVisitsEntitiesWithEveryComponent)
 //------------------------------------------------------------------------------
 TEST(Orbit, StartsFromWhereTheCameraWasPlaced)
 {
-    const Vector3f targets[] = { Vector3f(0.0f, 0.0f, 0.0f),
-                                 Vector3f(0.0f, 8.0f, 0.0f),
-                                 Vector3f(1.0f, 2.0f, -3.0f) };
-    const Vector3f places[] = { Vector3f(0.0f, 7.0f, 14.0f),
-                                Vector3f(0.0f, 25.0f, 90.0f),
-                                Vector3f(-6.0f, 1.0f, 4.0f) };
-    for (Vector3f const& target : targets)
+    const compages::core::Vector3f targets[] = { compages::core::Vector3f(0.0f, 0.0f, 0.0f),
+                                 compages::core::Vector3f(0.0f, 8.0f, 0.0f),
+                                 compages::core::Vector3f(1.0f, 2.0f, -3.0f) };
+    const compages::core::Vector3f places[] = { compages::core::Vector3f(0.0f, 7.0f, 14.0f),
+                                compages::core::Vector3f(0.0f, 25.0f, 90.0f),
+                                compages::core::Vector3f(-6.0f, 1.0f, 4.0f) };
+    for (compages::core::Vector3f const& target : targets)
     {
-        for (Vector3f const& place : places)
+        for (compages::core::Vector3f const& place : places)
         {
             compages::world::World world;
             compages::world::Entity camera =
@@ -216,13 +220,47 @@ TEST(Fly, KeepsTheDirectionTheCameraWasLooking)
     compages::world::World world;
     compages::world::Entity camera = world.entity("Camera").position(0.0f, 3.0f, 10.0f);
     camera.lookAt(2.0f, 0.0f, 0.0f);
-    const Quatf before = camera.rotation();
-    const Vector3f forward_before = before * Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::core::Quatf before = camera.rotation();
+    const compages::core::Vector3f forward_before = before * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
 
     camera.add<compages::world::Fly>();
     world.update(frameOf(0.016f));
 
-    const Vector3f forward_after = camera.rotation() * Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::core::Vector3f forward_after = camera.rotation() * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
     EXPECT_LT(distanceBetween(forward_before, forward_after), 1.0e-3f);
-    EXPECT_LT(distanceBetween(camera.position(), Vector3f(0.0f, 3.0f, 10.0f)), 1.0e-3f);
+    EXPECT_LT(distanceBetween(camera.position(), compages::core::Vector3f(0.0f, 3.0f, 10.0f)), 1.0e-3f);
+}
+
+//------------------------------------------------------------------------------
+// Regression: a headless update(compages::core::Frame) kept the keys and the mouse of the last
+// update(compages::world::ViewFrame), so a behavior saw them held forever.
+struct InputProbe : compages::world::Behavior
+{
+    bool left = false;
+    bool forward = false;
+
+    void update(float /*p_dt*/) override
+    {
+        left = input().mouse_left;
+        forward = input().down(compages::world::Key::W);
+    }
+};
+
+TEST(WorldInput, HeadlessUpdateDoesNotKeepTheInputOfTheLastViewFrame)
+{
+    compages::world::World world;
+    compages::world::Entity probe = world.entity("Probe").add<InputProbe>();
+
+    compages::world::ViewFrame view;
+    view.elapsed = 0.016f;
+    view.input.mouse_left = true;
+    view.input.set(compages::world::Key::W, true);
+    world.update(view);
+    EXPECT_TRUE(probe.get<InputProbe>().left);
+    EXPECT_TRUE(probe.get<InputProbe>().forward);
+
+    world.update(frameOf(0.016f));
+    EXPECT_FALSE(probe.get<InputProbe>().left);
+    EXPECT_FALSE(probe.get<InputProbe>().forward);
+    EXPECT_FALSE(world.input().mouse_left);
 }
