@@ -42,14 +42,13 @@
 namespace compages::world
 {
 
-
-
 // ------------------------------------------------------------------------
 //! \brief Set \c p_rotation so local \c -Z points from \c p_position at
 //! \c p_target.
 //!
-//! Builds a view matrix with \c compages::core::lookAt(), then stores the inverse as
-//! a quaternion — the same convention as \c Object3D.lookAt() in three.js.
+//! Builds a view matrix with \c compages::core::lookAt(), then stores the
+//! inverse as a quaternion — the same convention as \c Object3D.lookAt() in
+//! three.js.
 //! \c p_position is read only; on a degenerate direction the rotation is left
 //! unchanged.
 //!
@@ -69,8 +68,10 @@ inline void applyLookAt(compages::core::Vector3f const& p_position,
         return;
     }
 
-    const compages::core::Matrix44f view = compages::core::lookAt(p_position, p_target, p_up);
-    p_rotation = compages::core::Quatf::fromMatrix(compages::core::inverse(view));
+    const compages::core::Matrix44f view =
+        compages::core::lookAt(p_position, p_target, p_up);
+    p_rotation =
+        compages::core::Quatf::fromMatrix(compages::core::inverse(view));
 }
 
 // ------------------------------------------------------------------------
@@ -81,7 +82,8 @@ inline void applyLookAt(compages::core::Vector3f const& p_position,
 // ------------------------------------------------------------------------
 inline void lookAt(LocalTransform& p_transform,
                    compages::core::Vector3f const& p_target,
-                   compages::core::Vector3f const& p_up = compages::core::Vector3f(0.0f, 1.0f, 0.0f))
+                   compages::core::Vector3f const& p_up =
+                       compages::core::Vector3f(0.0f, 1.0f, 0.0f))
 {
     applyLookAt(p_transform.position, p_transform.rotation, p_target, p_up);
 }
@@ -94,7 +96,8 @@ inline void lookAt(LocalTransform& p_transform,
 // ------------------------------------------------------------------------
 inline void lookAt(LocalTransformView p_transform,
                    compages::core::Vector3f const& p_target,
-                   compages::core::Vector3f const& p_up = compages::core::Vector3f(0.0f, 1.0f, 0.0f))
+                   compages::core::Vector3f const& p_up =
+                       compages::core::Vector3f(0.0f, 1.0f, 0.0f))
 {
     applyLookAt(p_transform.position, p_transform.rotation, p_target, p_up);
 }

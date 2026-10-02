@@ -351,12 +351,11 @@ public:
         return *this;
     }
 
-    //! \brief Set the orientation to an angle, in radians, around an axis.
-    Entity& rotation(float p_radians, compages::core::Vector3f const& p_axis)
+    //! \brief Set the orientation to an angle around an axis.
+    Entity& rotation(Radians p_radians, compages::core::Vector3f const& p_axis)
     {
         return rotation(compages::core::Quatf::fromAngleAxis(
-            units::angle::radian_t(p_radians),
-            compages::core::vector::normalize(p_axis)));
+            p_radians, compages::core::vector::normalize(p_axis)));
     }
 
     [[nodiscard]] compages::core::Quatf rotation() const
@@ -368,8 +367,8 @@ public:
         return world().transforms().rotation(m_id);
     }
 
-    //! \brief Turn by an angle, in radians, around an axis of the entity.
-    Entity& rotate(float p_radians, compages::core::Vector3f const& p_axis)
+    //! \brief Turn by an angle around an axis of the entity.
+    Entity& rotate(Radians p_radians, compages::core::Vector3f const& p_axis)
     {
         place().rotate(p_radians, p_axis);
         return *this;

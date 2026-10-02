@@ -82,7 +82,7 @@ void SplitViews::draw(compages::world::ViewFrame const& p_frame)
 {
     // The pillar turns, the World moves once, then each camera draws its half.
     // draw() would update and render together, and there are two cameras.
-    m_pillar.rotate(0.6f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
+    m_pillar.rotate(Radians(0.6f * p_frame.elapsed), { 0.0f, 1.0f, 0.0f });
     m_scene.update(p_frame);
     m_scene.render(m_eye);
     m_map.render(m_top);

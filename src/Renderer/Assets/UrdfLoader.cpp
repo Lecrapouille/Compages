@@ -477,7 +477,7 @@ public:
         {
             robot.parent(compages::world::Entity(m_world, p_parent));
         }
-        robot.rotation(-0.5f * std::numbers::pi_v<float>,
+        robot.rotation(Radians(-0.5f * std::numbers::pi_v<float>),
                        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
         Status built = addLink(*root_link, robot.child(root_link->name));
         if (!built)

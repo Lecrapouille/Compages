@@ -44,7 +44,7 @@ compages::Status ThreeJsLike::setUp()
 void ThreeJsLike::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns; the orbit behavior turns the camera from the mouse.
-    m_cube.rotate(p_frame.elapsed, { 0.4f, 1.0f, 0.0f });
+    m_cube.rotate(Radians(p_frame.elapsed), { 0.4f, 1.0f, 0.0f });
     m_scene.draw(p_frame);
 }
 

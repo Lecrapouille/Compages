@@ -158,7 +158,7 @@ compages::core::Matrix44f TransformStore::localMatrix(EntityId p_entity) const
     assert(has(p_entity) &&
            "TransformStore::localMatrix on an entity without one");
     const std::size_t index = p_entity.index();
-    return composeLocalMatrix(
+    return compages::core::composeTrsMatrix(
         m_position[index], m_rotation[index], m_scale[index]);
 }
 

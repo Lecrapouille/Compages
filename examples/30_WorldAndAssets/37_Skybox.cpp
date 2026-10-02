@@ -60,8 +60,8 @@ compages::Status Skybox::setUp()
 void Skybox::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns. The sky only turns when the camera does.
-    m_cube.rotate(0.9f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f })
-        .rotate(0.5f * p_frame.elapsed, { 1.0f, 0.0f, 0.0f });
+    m_cube.rotate(Radians(0.9f * p_frame.elapsed), { 0.0f, 1.0f, 0.0f })
+        .rotate(Radians(0.5f * p_frame.elapsed), { 1.0f, 0.0f, 0.0f });
     m_scene.draw(p_frame);
 }
 

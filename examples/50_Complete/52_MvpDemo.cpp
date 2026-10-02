@@ -60,7 +60,7 @@ struct Bounce: compages::world::Behavior
                 speed = 0.0f;
             }
         }
-        entity().position(position).rotate(p_dt, { 1.0f, 0.0f, 0.0f });
+        entity().position(position).rotate(Radians(p_dt), { 1.0f, 0.0f, 0.0f });
     }
 
     compages::core::Vector3f from;
@@ -83,7 +83,7 @@ struct MvpDemo::Spin: compages::world::Behavior
 {
     void update(float p_dt) override
     {
-        transform().rotateY(0.9f * p_dt);
+        transform().rotateY(Radians(0.9f * p_dt));
     }
 };
 

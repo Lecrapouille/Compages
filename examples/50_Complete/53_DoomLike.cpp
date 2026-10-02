@@ -372,7 +372,7 @@ void DoomLike::placeTorch(std::size_t p_column, std::size_t p_row)
         "Flame", compages::renderer::color(4.0f, 1.8f, 0.5f));
     flame.position(base.x, 2.3f, base.z)
         .scale(0.18f, 0.3f, 0.18f)
-        .rotate(0.785f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+        .rotate(Radians(0.785f), compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     const compages::core::Vector3f glow =
         at + (toward * ((CELL * 0.5f) - 0.5f));
     compages::world::Entity light = m_level_scene.scene->lamp(

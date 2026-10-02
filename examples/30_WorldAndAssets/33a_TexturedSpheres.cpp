@@ -66,8 +66,9 @@ void TexturedSpheres::draw(compages::world::ViewFrame const& p_frame)
     // Each sphere a little faster than the one before it.
     for (std::size_t i = 0u; i < m_spheres.size(); ++i)
     {
-        m_spheres[i].rotate((0.4f + 0.1f * float(i)) * p_frame.elapsed,
-                            { 0.0f, 1.0f, 0.0f });
+        m_spheres[i].rotate(
+            Radians((0.4f + 0.1f * float(i)) * p_frame.elapsed),
+            { 0.0f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);
 }

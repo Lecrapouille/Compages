@@ -36,6 +36,7 @@
 // *****************************************************************************
 
 #include "Compages/Core/Matrix.hpp"
+#include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Vector.hpp"
 
 #include <cassert>
@@ -371,6 +372,24 @@ Matrix<T, 3u, 3u> normalMatrix(Matrix<T, 4u, 4u> const& modelMatrix,
         p_matrix * Vector4f(p_point.x, p_point.y, p_point.z, 1.0f);
     const float w = (std::abs(h.w) < 1.0e-8f) ? 1.0f : h.w;
     return Vector3f(h.x / w, h.y / w, h.z / w);
+}
+
+// --------------------------------------------------------------------------
+//! \brief Local TRS matrix: translate, then rotate, then scale.
+//!
+//! Order matches \c M = T * R * S applied as \c (T * R * S) * x on column
+//! vectors. Shared by world \c LocalTransform, \c TransformStore and
+//! \c TransformSystem so SoA fields compose without packing a struct first.
+// --------------------------------------------------------------------------
+[[nodiscard]] inline Matrix44f composeTrsMatrix(Vector3f const& p_translation,
+                                                Quatf const& p_rotation,
+                                                Vector3f const& p_scale)
+{
+    Matrix44f matrix = translate(Matrix44f(matrix::Identity), p_translation);
+    Quatf turning = p_rotation;
+    matrix = rotate(matrix, turning.angle(), turning.axis());
+    matrix = scale(matrix, p_scale);
+    return matrix;
 }
 
 } // namespace compages::core

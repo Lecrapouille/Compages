@@ -29,8 +29,6 @@
 namespace compages::world
 {
 
-
-
 // ****************************************************************************
 //! \brief Place, attitude and size of an entity relative to its parent.
 //!
@@ -51,37 +49,6 @@ struct LocalTransform
 };
 
 // ****************************************************************************
-//! \brief Build the local TRS matrix: translate, then rotate, then scale.
-//!
-//! Shared by \c LocalTransform, \c LocalTransformView and \c TransformSystem
-//! so a hot update never packs SoA fields back into a struct first.
-// ****************************************************************************
-[[nodiscard]] inline compages::core::Matrix44f composeLocalMatrix(compages::core::Vector3f const& p_position,
-                                                  compages::core::Quatf const& p_rotation,
-                                                  compages::core::Vector3f const& p_scale)
-{
-    compages::core::Matrix44f matrix =
-        compages::core::translate(compages::core::Matrix44f(compages::core::matrix::Identity), p_position);
-    compages::core::Quatf turning = p_rotation;
-    matrix = compages::core::rotate(matrix, turning.angle(), turning.axis());
-    matrix = compages::core::scale(matrix, p_scale);
-    return matrix;
-}
-
-// ****************************************************************************
-//! \brief Local matrix of a TRS snapshot.
-//!
-//! \code
-//! compages::world::LocalTransform pose{ .position = { 0, 1, 0 }, .scale = { 2, 2, 2 } };
-//! compages::core::Matrix44f M = compages::world::localMatrix(pose);
-//! \endcode
-// ****************************************************************************
-[[nodiscard]] inline compages::core::Matrix44f localMatrix(LocalTransform const& p_pose)
-{
-    return composeLocalMatrix(p_pose.position, p_pose.rotation, p_pose.scale);
-}
-
-// ****************************************************************************
 //! \brief Mutable alias of one entity's TRS inside \c TransformStore.
 //!
 //! The three references are not a \c LocalTransform& : storage is structure-of-
@@ -92,8 +59,8 @@ struct LocalTransform
 //! \code
 //! compages::world::LocalTransformView t = world.transform(entity);
 //! t.position = { 1, 0, 0 };
-//! t.rotateY(world.frame().elapsed);
-//! compages::core::Matrix44f M = compages::world::localMatrix(static_cast<compages::world::LocalTransform>(t));
+//! t.rotateY(Radians(world.frame().elapsed));
+//! compages::core::Matrix44f M = compages::world::localMatrix(t);
 //! \endcode
 // ****************************************************************************
 class LocalTransformView
@@ -141,30 +108,32 @@ public:
         return LocalTransform{ position, rotation, scale };
     }
 
-    //! \brief Rotate around an axis in the entity's local frame (three.js style).
-    LocalTransformView& rotate(float p_radians, compages::core::Vector3f const& p_axis)
+    //! \brief Rotate around an axis in the entity's local frame (three.js
+    //! style).
+    LocalTransformView& rotate(Radians p_radians,
+                               compages::core::Vector3f const& p_axis)
     {
-        rotation =
-            rotation * compages::core::Quatf::fromAngleAxis(units::angle::radian_t(p_radians),
-                                            compages::core::vector::normalize(p_axis));
+        rotation = rotation *
+                   compages::core::Quatf::fromAngleAxis(
+                       p_radians, compages::core::vector::normalize(p_axis));
         rotation.normalize();
         return *this;
     }
 
     //! \brief Turn around the entity's own y axis (like a spinning top).
-    LocalTransformView& rotateY(float p_radians)
+    LocalTransformView& rotateY(Radians p_radians)
     {
         return rotate(p_radians, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
     }
 
     //! \brief Rotate around local +X.
-    LocalTransformView& rotateX(float p_radians)
+    LocalTransformView& rotateX(Radians p_radians)
     {
         return rotate(p_radians, compages::core::Vector3f(1.0f, 0.0f, 0.0f));
     }
 
     //! \brief Rotate around local +Z.
-    LocalTransformView& rotateZ(float p_radians)
+    LocalTransformView& rotateZ(Radians p_radians)
     {
         return rotate(p_radians, compages::core::Vector3f(0.0f, 0.0f, 1.0f));
     }
@@ -177,7 +146,15 @@ public:
     }
 };
 
-[[nodiscard]] inline compages::core::Matrix44f localMatrix(LocalTransformView const& p_view)
+[[nodiscard]] inline compages::core::Matrix44f
+localMatrix(LocalTransform const& p_trs)
+{
+    return compages::core::composeTrsMatrix(
+        p_trs.position, p_trs.rotation, p_trs.scale);
+}
+
+[[nodiscard]] inline compages::core::Matrix44f
+localMatrix(LocalTransformView const& p_view)
 {
     return localMatrix(static_cast<LocalTransform>(p_view));
 }

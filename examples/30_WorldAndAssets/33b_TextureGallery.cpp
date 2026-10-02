@@ -87,7 +87,7 @@ void TextureGallery::draw(compages::world::ViewFrame const& p_frame)
     // The same turn for every box, so the grid stays aligned.
     for (compages::world::Entity& box : m_boxes)
     {
-        box.rotate(0.5f * p_frame.elapsed, { 0.3f, 1.0f, 0.0f });
+        box.rotate(Radians(0.5f * p_frame.elapsed), { 0.3f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);
 }

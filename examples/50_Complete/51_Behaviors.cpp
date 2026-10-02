@@ -37,7 +37,7 @@ struct Behaviors::Spin: compages::world::Behavior
     void update(float p_dt) override
     {
         // Around its own vertical axis, at the speed it was given.
-        transform().rotateY(speed * p_dt);
+        transform().rotateY(Radians(speed * p_dt));
     }
 
     float speed;

@@ -100,7 +100,7 @@ void GeometryShowcase::draw(compages::world::ViewFrame const& p_frame)
     // The shapes turn; the plateau stays.
     for (compages::world::Entity& prop : m_props)
     {
-        prop.rotate(0.45f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
+        prop.rotate(Radians(0.45f * p_frame.elapsed), { 0.0f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);
 }
