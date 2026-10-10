@@ -236,6 +236,14 @@ public:
     // ------------------------------------------------------------------------
     void look(compages::world::EntityId p_entity, Look const& p_look);
 
+    // ------------------------------------------------------------------------
+    //! \brief Draw an entity with a dynamic albedo map already in the catalog.
+    //!
+    //! Used with \c CanvasTexture after \ref CanvasTexture::bind: the texture
+    //! is sampled as \c PbrMinimal base colour.
+    // ------------------------------------------------------------------------
+    void look(compages::world::EntityId p_entity, TextureAssetId p_albedo);
+
     // --- Cameras and lights --------------------------------------------------
 
     // ------------------------------------------------------------------------

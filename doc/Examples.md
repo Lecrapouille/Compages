@@ -134,6 +134,7 @@ Checks that the manifest (`examples/Common/ExampleManifest.hpp`) and the pedagog
 | `36b_GltfAnimation`   | animation clips from `Soldier.glb`         |
 | `37_Skybox`           | six faces, sky rotates with the camera     |
 | `38_RobotArm`         | URDF IRB 2400, forward kinematics          |
+| `39a_CanvasPaint`     | dynamic albedo: CPU brush, `CanvasTexture` |
 
 Demos using files require you to run `make download-external-libs` (repository `Compages-data`).
 

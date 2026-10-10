@@ -387,6 +387,41 @@ void Scene::look(compages::world::EntityId p_entity, Look const& p_look)
     }
 }
 
+void Scene::look(compages::world::EntityId p_entity, TextureAssetId p_albedo)
+{
+    Look look;
+    look.family = ShaderFamily::PbrMinimal;
+    look.color = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
+    MaterialInstance instance = instanceOf(look);
+    instance.base_color_texture = p_albedo;
+
+    compages::renderer::MeshRenderer* renderer =
+        m_world.tryGet<compages::renderer::MeshRenderer>(p_entity);
+    if (renderer == nullptr)
+    {
+        return compages::gpu::reportError(
+            "look() on an entity that is not drawn: make it with box(), "
+            "sphere(), mesh()...");
+    }
+    auto id = m_assets->addMaterialInstance({}, instance);
+    if (!id)
+    {
+        return compages::gpu::reportError(id.error());
+    }
+    const MaterialInstanceId old = renderer->material_instance;
+    renderer->material_instance = id.value();
+
+    bool worn = false;
+    m_world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId,
+            compages::renderer::MeshRenderer const& p_other)
+        { worn = worn || (p_other.material_instance == old); });
+    if (!worn && m_assets->materialInstanceName(old).empty())
+    {
+        m_assets->removeMaterialInstance(old);
+    }
+}
+
 compages::world::Entity Scene::camera(std::string p_name)
 {
     compages::world::Entity camera =

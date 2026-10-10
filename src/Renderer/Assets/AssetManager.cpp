@@ -280,6 +280,11 @@ TextureAsset const* AssetManager::texture(TextureAssetId p_id) const
     return lookup<TextureAssetId, TextureAsset>(m_textures, p_id);
 }
 
+TextureAsset* AssetManager::texture(TextureAssetId p_id)
+{
+    return lookupMutable<TextureAssetId, TextureAsset>(m_textures, p_id);
+}
+
 TextureAssetId AssetManager::findTexture(std::string_view p_name) const
 {
     return findByName<TextureAssetId>(m_textures, p_name);

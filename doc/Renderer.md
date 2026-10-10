@@ -42,6 +42,10 @@ compages::renderer::depth(near, far);    // distance, black to white
 
 `33c_GeometryShowcase` aligns the primitives using these four modes. `33a_TexturedSpheres` shows: color, photo, and tinted photo.
 
+### Dynamic canvas
+
+For a texture you rewrite every frame (robotic easel, height field editor, CPU simulation displayed on a quad), use `CanvasTexture`: CPU RGBA8 buffer, circular stamps, partial upload via `Texture::write`, then `scene.look(entity, texture_id)` or `canvas.applyLook(scene, entity)`. Details: [CanvasTexture.md](CanvasTexture.md). Demo: `39a_CanvasPaint`.
+
 Assets are searched under `external/Compages-data/` and `external/Compages-data/`, or via `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 
 ## A Frame in Detail

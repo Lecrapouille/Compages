@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
+#include "Compages/Renderer/Assets/CanvasTexture.hpp"
 #include "Compages/Renderer/Assets/GltfLoader.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
 #include "Compages/Renderer/Assets/UrdfLoader.hpp"

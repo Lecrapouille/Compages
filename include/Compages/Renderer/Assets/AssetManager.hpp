@@ -119,6 +119,7 @@ public:
     //! \brief Look up a texture.
     // ------------------------------------------------------------------------
     [[nodiscard]] TextureAsset const* texture(TextureAssetId p_id) const;
+    [[nodiscard]] TextureAsset* texture(TextureAssetId p_id);
 
     // ------------------------------------------------------------------------
     //! \brief Look up a prefab.

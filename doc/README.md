@@ -18,6 +18,7 @@ From here, the order is up to you.
 |-----------------------------|---------------------------------|
 | Quick function reference    | [CheatSheet.md](CheatSheet.md)  |
 | Pick a demo to read         | [Examples.md](Examples.md)       |
+| Paint on a live texture     | [CanvasTexture.md](CanvasTexture.md) |
 | Explore the `src/` codebase | [Architecture.md](Architecture.md) |
 | Build on Ubuntu or Fedora, install | [Install.md](Install.md)  |
 | Debug black frame, GL trace | [Debug.md](Debug.md)            |
