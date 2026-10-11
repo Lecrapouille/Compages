@@ -338,12 +338,18 @@ public:
         return *this;
     }
 
+    //! \brief Set the orientation to an angle around an axis.
+    Entity& rotation(units::angle::radian_t p_radians,
+                     compages::core::Vector3f const& p_axis)
+    {
+        return rotation(compages::core::Quatf::fromAngleAxis(
+            p_radians, compages::core::vector::normalize(p_axis)));
+    }
+
     //! \brief Set the orientation to an angle, in radians, around an axis.
     Entity& rotation(float p_radians, compages::core::Vector3f const& p_axis)
     {
-        return rotation(compages::core::Quatf::fromAngleAxis(
-            units::angle::radian_t(p_radians),
-            compages::core::vector::normalize(p_axis)));
+        return rotation(units::angle::radian_t(p_radians), p_axis);
     }
 
     [[nodiscard]] compages::core::Quatf rotation() const

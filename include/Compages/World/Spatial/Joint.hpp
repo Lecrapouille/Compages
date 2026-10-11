@@ -82,25 +82,29 @@ struct Bounded
 //! s.velocity.max = 2.0_rad_s;
 //! \endcode
 // ****************************************************************************
-template <class Pos, class Vel, class Acc>
+template <class Pos, class Vel, class Acc, class Eff>
 struct JointState
 {
     Bounded<Pos> position;
     Bounded<Vel> velocity;
     Bounded<Acc> acceleration;
+    //! \brief Largest torque or force the actuator may apply.
+    Bounded<Eff> effort;
 };
 
-//! \brief Angle, angular velocity and acceleration bounds for a revolute joint.
+//! \brief Angle, angular velocity, acceleration and torque bounds.
 using RevoluteState =
     JointState<units::angle::radian_t,
                units::angular_velocity::radians_per_second_t,
-               units::angular_acceleration::radians_per_second_squared_t>;
+               units::angular_acceleration::radians_per_second_squared_t,
+               units::torque::newton_meter_t>;
 
-//! \brief Offset, linear velocity and acceleration bounds for a prismatic joint.
+//! \brief Offset, linear velocity, acceleration and force bounds.
 using PrismaticState =
     JointState<units::length::meter_t,
                units::velocity::meters_per_second_t,
-               units::acceleration::meters_per_second_squared_t>;
+               units::acceleration::meters_per_second_squared_t,
+               units::force::newton_t>;
 
 // ****************************************************************************
 //! \brief Turns its link around an axis of the joint frame. A URDF

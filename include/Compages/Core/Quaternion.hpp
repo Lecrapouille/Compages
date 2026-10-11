@@ -228,6 +228,14 @@ public:
         operator*=(*this, 1 / n);
     }
 
+    //! \brief Copy of this quaternion scaled to unit length.
+    [[nodiscard]] Quat normalized() const
+    {
+        Quat copy(*this);
+        copy.normalize();
+        return copy;
+    }
+
     //--------------------------------------------------------------------------
     //! \brief Complex conjugate quaternion.
     //--------------------------------------------------------------------------
@@ -514,18 +522,15 @@ Quat<T> operator*(Quat<T> const& q0, Quat<T> const& q1)
     return lhs;
 }
 
-//! \brief Rotation of a vector by a quaternion
+//! \brief Rotation of a vector by a quaternion.
 template <typename T>
-Vector3f operator*(Quat<T> const& q, const Vector3f& v)
+Vector<T, 3u> operator*(Quat<T> const& q, Vector<T, 3u> const& v)
 {
-    Vector3f uv, uuv;
-    Vector3f qvec(q.b, q.c, q.d);
-
-    uv = qvec % v; // Cross product
-    uuv = qvec % uv;
+    Vector<T, 3u> qvec(q.b, q.c, q.d);
+    Vector<T, 3u> uv = qvec % v;
+    Vector<T, 3u> uuv = qvec % uv;
     uv *= (T(2) * q.a);
     uuv *= T(2);
-
     return v + uv + uuv;
 }
 
