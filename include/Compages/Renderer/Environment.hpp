@@ -9,6 +9,8 @@
 
 #include "Compages/Core/Vector.hpp"
 
+#include <cstdint>
+
 #include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
@@ -42,6 +44,13 @@ struct Environment
     //! no fog; around 0.1 hides what is twenty units away.
     compages::core::Vector3f fog_color{ 0.0f, 0.0f, 0.0f };
     float fog_density = 0.0f;
+
+    //! \brief The sun casts shadows: a depth picture of the scene seen from
+    //! the sun, fitted to the objects that cast (not those with
+    //! \c RenderFlags::NoShadowCaster, such as a floor).
+    bool shadows = true;
+    //! \brief Pixels across the shadow picture: sharper, but more memory.
+    std::uint32_t shadow_resolution = 2048u;
 };
 
 } // namespace compages::renderer

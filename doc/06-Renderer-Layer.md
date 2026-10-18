@@ -127,6 +127,16 @@ scene.activeCamera(id);
   scene.camera().position(1.6f, 1.2f, 1.6f).add<compages::world::Rig>(compages::core::Vector3f(0.35f, 0.0f, 0.0f));
   ```
 
+**Light and shadow.** The lit and PBR materials share one shading: the sun,
+a hemisphere ambient (faces turned up get more sky than faces turned down),
+a soft fill light from the eye, a small highlight, and a soft tone curve.
+The sun casts shadows: before drawing, the renderer draws the depth of the
+scene seen from the sun into a picture (`Environment::shadow_resolution`,
+2048 by default), fitted to the objects that cast; the materials read it
+with a 3 × 3 filter, so the edges are soft. A floor should not cast
+(`RenderFlags::NoShadowCaster` on its `MeshRenderer`): it would make the
+fitted box huge and the shadows blurred. `Environment::shadows = false`
+turns them off.
 
 ---
 

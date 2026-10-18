@@ -129,9 +129,44 @@ constexpr char const* LIT_FRAGMENT_TAIL = R"(
 // - a soft fill light from the eye: faces away from the sun keep their
 //   shape instead of one flat colour;
 // - a small highlight (Blinn-Phong) that shows the curvature;
+// - the shadow of the sun (sunVisibility), on the sun light only;
 // - two-sided normals (open meshes, inverted STL faces) and a soft tone
 //   curve, so bright colours do not burn to flat white.
 
+// Shadow of the sun: the depth seen from the sun (shadow map), read with a
+// 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
+uniform int shadowEnabled;
+uniform mat4 lightViewProj;
+uniform sampler2D shadowMap;
+uniform float shadowTexel;
+uniform float shadowBias;
+
+float sunVisibility(vec3 n, vec3 toLight, vec3 worldPos)
+{
+    if (shadowEnabled == 0)
+    {
+        return 1.0;
+    }
+    // Pushed along the normal by a texel: no acne on lit faces.
+    vec4 clip = lightViewProj * vec4(worldPos + n * (shadowTexel * 1.5), 1.0);
+    vec3 at = clip.xyz / clip.w * 0.5 + 0.5;
+    if (at.x <= 0.0 || at.x >= 1.0 || at.y <= 0.0 || at.y >= 1.0 || at.z >= 1.0)
+    {
+        return 1.0;
+    }
+    float bias = shadowBias * (1.0 + 2.0 * (1.0 - max(dot(n, toLight), 0.0)));
+    vec2 step = 1.0 / vec2(textureSize(shadowMap, 0));
+    float lit = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float nearest = texture(shadowMap, at.xy + vec2(x, y) * step).r;
+            lit += (at.z - bias <= nearest) ? 1.0 : 0.0;
+        }
+    }
+    return lit / 9.0;
+}
 
 vec3 shade(vec3 base, vec3 n, vec3 worldPos)
 {
@@ -143,7 +178,7 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     }
     float sky = 0.5 + 0.5 * n.y;
     vec3 ambientLight = ambient * mix(0.45, 1.3, sky);
-    float diffuse = max(dot(n, toLight), 0.0);
+    float diffuse = max(dot(n, toLight), 0.0) * sunVisibility(n, toLight, worldPos);
     float fill = 0.22 * max(dot(n, toEye), 0.0);
     vec3 halfway = normalize(toLight + toEye);
     float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
@@ -230,9 +265,44 @@ constexpr char const* PBR_FRAGMENT_TAIL = R"(
 // - a soft fill light from the eye: faces away from the sun keep their
 //   shape instead of one flat colour;
 // - a small highlight (Blinn-Phong) that shows the curvature;
+// - the shadow of the sun (sunVisibility), on the sun light only;
 // - two-sided normals (open meshes, inverted STL faces) and a soft tone
 //   curve, so bright colours do not burn to flat white.
 
+// Shadow of the sun: the depth seen from the sun (shadow map), read with a
+// 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
+uniform int shadowEnabled;
+uniform mat4 lightViewProj;
+uniform sampler2D shadowMap;
+uniform float shadowTexel;
+uniform float shadowBias;
+
+float sunVisibility(vec3 n, vec3 toLight, vec3 worldPos)
+{
+    if (shadowEnabled == 0)
+    {
+        return 1.0;
+    }
+    // Pushed along the normal by a texel: no acne on lit faces.
+    vec4 clip = lightViewProj * vec4(worldPos + n * (shadowTexel * 1.5), 1.0);
+    vec3 at = clip.xyz / clip.w * 0.5 + 0.5;
+    if (at.x <= 0.0 || at.x >= 1.0 || at.y <= 0.0 || at.y >= 1.0 || at.z >= 1.0)
+    {
+        return 1.0;
+    }
+    float bias = shadowBias * (1.0 + 2.0 * (1.0 - max(dot(n, toLight), 0.0)));
+    vec2 step = 1.0 / vec2(textureSize(shadowMap, 0));
+    float lit = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float nearest = texture(shadowMap, at.xy + vec2(x, y) * step).r;
+            lit += (at.z - bias <= nearest) ? 1.0 : 0.0;
+        }
+    }
+    return lit / 9.0;
+}
 
 vec3 shade(vec3 base, vec3 n, vec3 worldPos)
 {
@@ -244,7 +314,7 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     }
     float sky = 0.5 + 0.5 * n.y;
     vec3 ambientLight = ambient * mix(0.45, 1.3, sky);
-    float diffuse = max(dot(n, toLight), 0.0);
+    float diffuse = max(dot(n, toLight), 0.0) * sunVisibility(n, toLight, worldPos);
     float fill = 0.22 * max(dot(n, toEye), 0.0);
     vec3 halfway = normalize(toLight + toEye);
     float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
@@ -269,6 +339,34 @@ void main()
 }
 )";
 
+constexpr char const* SHADOW_VERTEX = R"(#version 450 core
+in vec3 position;
+in ivec4 joints;
+in vec4 weights;
+uniform int uJointCount;
+uniform mat4 uJoints[64];
+uniform mat4 model;
+uniform mat4 lightViewProj;
+
+mat4 skinMatrix()
+{
+    if (uJointCount <= 0) { return mat4(1.0); }
+    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
+           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
+}
+
+void main()
+{
+    gl_Position = lightViewProj * model * skinMatrix() * vec4(position, 1.0);
+}
+)";
+
+constexpr char const* SHADOW_FRAGMENT = R"(#version 450 core
+void main()
+{
+}
+)";
+
 std::string concat3(char const* a, char const* b, char const* c)
 {
     return std::string(a) + b + c;
@@ -284,6 +382,10 @@ char const* litFragment()
         concat3(LIT_FRAGMENT, POINT_LIGHT_UNIFORMS, LIT_FRAGMENT_TAIL);
     return source.c_str();
 }
+
+char const* shadowVertex() { return SHADOW_VERTEX; }
+
+char const* shadowFragment() { return SHADOW_FRAGMENT; }
 
 char const* pbrVertex() { return PBR_VERTEX; }
 

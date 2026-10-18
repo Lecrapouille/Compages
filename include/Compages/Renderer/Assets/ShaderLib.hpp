@@ -28,6 +28,10 @@ inline constexpr int MAX_JOINTS = 64;
 [[nodiscard]] char const* pbrVertex();
 [[nodiscard]] char const* pbrFragment();
 
+//! \brief Depth seen from the sun: the shadow map of the lit materials.
+[[nodiscard]] char const* shadowVertex();
+[[nodiscard]] char const* shadowFragment();
+
 [[nodiscard]] char const* depthVertex();
 [[nodiscard]] char const* depthFragment();
 

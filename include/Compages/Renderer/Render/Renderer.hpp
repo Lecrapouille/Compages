@@ -8,6 +8,9 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
+#include "Compages/GPU/Framebuffer.hpp"
+#include "Compages/GPU/Pipeline.hpp"
+#include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Render/RenderQueue.hpp"
 #include "Compages/Renderer/Render/RenderSnapshot.hpp"
@@ -54,9 +57,29 @@ public:
         return m_queue;
     }
 
+    //! \brief The shadow of the sun, as the lit materials read it.
+    struct Shadow
+    {
+        bool enabled = false;
+        compages::core::Matrix44f light_view_projection{ compages::core::matrix::Identity };
+        //! World size of one pixel of the shadow picture.
+        float texel = 0.0f;
+        //! Depth tolerance, in the units of the shadow picture.
+        float bias = 0.0f;
+    };
+
 private:
 
+    //! \brief Draws the depth seen from the sun into the shadow picture.
+    [[nodiscard]] Status renderShadow(RenderSnapshot const& p_snapshot,
+                                      compages::renderer::AssetManager& p_assets);
+
     RenderQueue m_queue;
+    Shadow m_shadow;
+    compages::gpu::Texture m_shadow_depth;
+    compages::gpu::Framebuffer m_shadow_target;
+    compages::gpu::Program m_shadow_program;
+    compages::gpu::Pipeline m_shadow_pipeline;
     //! \brief One white pixel, sampled by a textured material drawn without
     //! its picture, so that its sampler never reads an empty unit.
     compages::gpu::Texture m_white;

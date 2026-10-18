@@ -12,7 +12,13 @@
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/ShaderLib.hpp"
 
+#include "Compages/Core/Transformation.hpp"
+#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/Renderer/Components/MeshRenderer.hpp"
+
 #include <algorithm>
+#include <cmath>
+#include <utility>
 #include <array>
 #include <span>
 #include <string>
@@ -50,22 +56,40 @@ Status bindCamera(compages::renderer::Material& p_material,
     return success();
 }
 
+//! \brief Direction the light of the sun travels, and its colour: the first
+//! directional light, else the default of the environment.
+std::pair<compages::core::Vector3f, compages::core::Vector3f> sunOf(RenderSnapshot const& p_snapshot)
+{
+    if (!p_snapshot.directional_lights.empty())
+    {
+        DirectionalLightFrame const& sun = p_snapshot.directional_lights.front();
+        return { sun.direction, sun.color * sun.intensity };
+    }
+    return { p_snapshot.environment.default_light_direction, p_snapshot.environment.default_light_color };
+}
+
+//! \brief The shadow uniforms; the shadow picture on texture unit 1.
+void bindShadow(compages::renderer::Material& p_material,
+                Renderer::Shadow const& p_shadow,
+                compages::gpu::Texture const& p_depth)
+{
+    p_material.program.set("shadowEnabled", p_shadow.enabled ? 1 : 0);
+    p_material.program.set("lightViewProj", p_shadow.light_view_projection);
+    p_material.program.set("shadowTexel", p_shadow.texel);
+    p_material.program.set("shadowBias", p_shadow.bias);
+    if (p_shadow.enabled)
+    {
+        p_depth.bind(1u);
+    }
+    p_material.program.set("shadowMap", 1);
+}
+
 Status bindLighting(compages::renderer::Material& p_material,
                     RenderSnapshot const& p_snapshot)
 {
     COMPAGES_TRY(bindCamera(p_material, p_snapshot));
 
-    compages::core::Vector3f light_direction =
-        p_snapshot.environment.default_light_direction;
-    compages::core::Vector3f light_color =
-        p_snapshot.environment.default_light_color;
-    if (!p_snapshot.directional_lights.empty())
-    {
-        DirectionalLightFrame const& sun =
-            p_snapshot.directional_lights.front();
-        light_direction = sun.direction;
-        light_color = sun.color * sun.intensity;
-    }
+    auto const [light_direction, light_color] = sunOf(p_snapshot);
 
     p_material.program.set("lightDir", light_direction);
     p_material.program.set("lightColor", light_color);
@@ -109,12 +133,15 @@ Status bindLighting(compages::renderer::Material& p_material,
 }
 
 Status bindMaterialFrame(compages::renderer::Material& p_material,
-                         RenderSnapshot const& p_snapshot)
+                         RenderSnapshot const& p_snapshot,
+                         Renderer::Shadow const& p_shadow,
+                         compages::gpu::Texture const& p_depth)
 {
     switch (p_material.family)
     {
         case compages::renderer::ShaderFamily::Lit:
         case compages::renderer::ShaderFamily::PbrMinimal:
+            bindShadow(p_material, p_shadow, p_depth);
             return bindLighting(p_material, p_snapshot);
         case compages::renderer::ShaderFamily::Depth:
         case compages::renderer::ShaderFamily::Normals:
@@ -140,6 +167,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
     {
         return success();
     }
+    COMPAGES_TRY(renderShadow(p_snapshot, p_assets));
 
     compages::renderer::MaterialId bound_material;
     compages::renderer::Material* material = nullptr;
@@ -164,7 +192,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                 continue;
             }
             bound_material = instance->material;
-            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot));
+            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadow, m_shadow_depth));
         }
 
         if (material == nullptr)
@@ -253,6 +281,108 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                                    mesh->index_type,
                                    mesh->index_count);
     }
+    return success();
+}
+
+Status Renderer::renderShadow(RenderSnapshot const& p_snapshot,
+                              compages::renderer::AssetManager& p_assets)
+{
+    m_shadow.enabled = false;
+    Environment const& environment = p_snapshot.environment;
+    if (!environment.shadows || environment.shadow_resolution == 0u)
+    {
+        return success();
+    }
+
+    // What casts a shadow, and how big it is: the box of the sun fits it.
+    compages::core::AABB casters;
+    for (RenderItem const& item : p_snapshot.items)
+    {
+        if (!has(item.flags, RenderFlags::NoShadowCaster) && !has(item.flags, RenderFlags::Overlay) &&
+            !item.world_bounds.empty())
+        {
+            casters = casters.merged(item.world_bounds);
+        }
+    }
+    if (casters.empty())
+    {
+        return success();
+    }
+
+    // The picture and the program, made once (again when the size changes).
+    const std::uint32_t size = environment.shadow_resolution;
+    if (!m_shadow_depth.valid() || m_shadow_depth.width() != size)
+    {
+        compages::gpu::TextureDesc depth = compages::gpu::TextureDesc::image(size, size);
+        depth.format = compages::gpu::PixelFormat::Depth32F;
+        depth.filter(compages::gpu::Filter::Nearest);
+        COMPAGES_TRY_ASSIGN(m_shadow_depth, compages::gpu::Texture::create(depth));
+        const compages::gpu::Attachment none[1]{};
+        COMPAGES_TRY_ASSIGN(m_shadow_target,
+                            compages::gpu::Framebuffer::create(std::span<const compages::gpu::Attachment>(none, 0u),
+                                                               compages::gpu::Attachment{ m_shadow_depth.handle() }));
+    }
+    if (!m_shadow_pipeline.valid())
+    {
+        COMPAGES_TRY_ASSIGN(m_shadow_program,
+                            compages::gpu::Program::fromSources(shaders::shadowVertex(), shaders::shadowFragment()));
+        compages::gpu::RenderState state;
+        state.depth_test = true;
+        state.cull = compages::gpu::CullMode::None;
+        COMPAGES_TRY_ASSIGN(m_shadow_pipeline,
+                            compages::gpu::Pipeline::create<MeshVertex>(
+                                m_shadow_program, compages::gpu::VertexLayout::of<MeshVertex>(), state));
+    }
+
+    // The sun looks at the middle of the casters from beyond them.
+    const compages::core::Vector3f center = (casters.min + casters.max) * 0.5f;
+    const compages::core::Vector3f half = (casters.max - casters.min) * 0.5f;
+    const float radius = std::max(compages::core::vector::norm(half), 0.01f);
+    compages::core::Vector3f travel = sunOf(p_snapshot).first;
+    if (compages::core::vector::norm(travel) < 1.0e-6f)
+    {
+        return success();
+    }
+    travel = compages::core::vector::normalize(travel);
+    const compages::core::Vector3f up =
+        std::abs(travel.y) > 0.99f ? compages::core::Vector3f(1.0f, 0.0f, 0.0f) : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+    const compages::core::Matrix44f view = compages::core::lookAt(center - (travel * (2.0f * radius)), center, up);
+    const compages::core::Matrix44f projection =
+        compages::core::ortho(-radius, radius, -radius, radius, 0.01f * radius, 4.0f * radius);
+    m_shadow.light_view_projection = projection * view;
+    m_shadow.texel = (2.0f * radius) / static_cast<float>(size);
+    // About one texel of depth, in the [0, 1] depth of the picture.
+    m_shadow.bias = (m_shadow.texel / (4.0f * radius)) * 1.5f;
+
+    compages::gpu::RenderPass const pass(m_shadow_target, compages::gpu::PassDesc{ .clear_color = false });
+    m_shadow_program.set("lightViewProj", m_shadow.light_view_projection);
+    for (RenderItem const& item : p_snapshot.items)
+    {
+        if (has(item.flags, RenderFlags::NoShadowCaster) || has(item.flags, RenderFlags::Overlay))
+        {
+            continue;
+        }
+        COMPAGES_TRY(p_assets.prepare(item.mesh));
+        compages::renderer::MeshAsset const* mesh = p_assets.mesh(item.mesh);
+        if (mesh == nullptr)
+        {
+            continue;
+        }
+        m_shadow_program.set("model", item.world_matrix);
+        const int joints = static_cast<int>(std::min(static_cast<std::size_t>(item.joint_count),
+                                                     static_cast<std::size_t>(shaders::MAX_JOINTS)));
+        m_shadow_program.set("uJointCount", joints);
+        if (joints > 0)
+        {
+            m_shadow_program.set("uJoints",
+                                 std::span<const compages::core::Matrix44f>(
+                                     p_snapshot.joint_palette.data() + item.joint_offset,
+                                     static_cast<std::size_t>(joints)));
+        }
+        compages::gpu::drawIndexed(m_shadow_pipeline, mesh->vertices.handle(), mesh->indexBuffer(),
+                                   mesh->index_type, mesh->index_count);
+    }
+    m_shadow.enabled = true;
     return success();
 }
 
