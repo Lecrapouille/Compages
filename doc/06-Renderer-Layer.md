@@ -209,5 +209,6 @@ Performance:
 | `20b_ManyCubes` | sorting and culling |
 | `39a_CanvasPaint` | painting on a live texture |
 | `53_DoomLike` | the three layers together |
+| `54_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 
 Next: [07-Architecture.md](07-Architecture.md), or the full list of demos in [09-Examples.md](09-Examples.md).

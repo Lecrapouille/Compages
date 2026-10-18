@@ -145,12 +145,21 @@ Demos that read files need `make download-external-libs` (the `Compages-data` re
 | `51_Behaviors` | three cubes, three behaviors; Space for the green one |
 | `52_MvpDemo` | falling cubes, a lamp, debug boxes |
 | `53_DoomLike` | the game: glTF, particles, fog, two levels |
+| `54_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh |
 
 ![Cube](images/50_ThreeJsLike.png)
 
 ![Doom-like](images/53_DoomLike.png)
 
 `53_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the torch, L for the lantern. The green light leaves the level.
+
+`54_SweatAndDecals`: the head of the three.js `webgl_decals` demo (Lee Perry-Smith). Nothing is simulated in 3D. The mesh is drawn into its own UV map (`gl_Position = uv`), so one texel of a texture is one small piece of skin:
+
+1. Force pass: gravity projected on the skin. `dFdx` and `dFdy` of the world position give the two tangents of the UV map, so the slope is written in texels per second. The pass also writes where the skin faces down (drops fall there) and where it sweats (the forehead).
+2. Water pass (ping-pong): pores fill small beads. A texel holds one drop and the place of the drop inside the texel, so drops glide instead of jumping. A bead heavier than a threshold runs down the force field; when it crosses the border of its texel it goes to that neighbour (diagonals too) and leaves a thin wet film. It stops when it has left most of its water behind, at a threshold that changes from texel to texel (rough skin). Each texel computes what its eight neighbours send it, so water is never created on the way.
+3. Decal pass: a box in front of the click is projected on the skin it contains, like `DecalGeometry` in three.js, and the picture is baked into a decal map.
+
+The skin material is the PBR shader of the Renderer (`shaders::pbrFragment()`) with another `main()`: normal map, decals, darker wet skin. Each drop is drawn as a small round cap at its place (radius from the cube root of its water), so drops stay round and merge when they touch. Left click paints a decal or drops water (Try it panel), right drag turns. Pitch and Roll tilt the head, and the drops change their way. Water stops at the seams of the UV map: it does not cross from one island to the next.
 
 ---
 

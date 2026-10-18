@@ -55,6 +55,7 @@
 #include "50_Complete/51_Behaviors.hpp"
 #include "50_Complete/52_MvpDemo.hpp"
 #include "50_Complete/53_DoomLike.hpp"
+#include "50_Complete/54_SweatAndDecals.hpp"
 
 // One record per active source, in gallery order:
 // type, runtime name, conceptual target, source, former demos covered,
@@ -105,7 +106,8 @@
     X(ThreeJsLike, "50_ThreeJsLike", "50_ThreeJsLike", "50_Complete/50_ThreeJsLike.cpp", "-", 15, "ThreeJsLike::setUp|ThreeJsLike::draw") \
     X(Behaviors, "51_Behaviors", "51_Behaviors", "50_Complete/51_Behaviors.cpp", "17_MovingRobot", 0, "-") \
     X(MvpDemo, "52_MvpDemo", "52_Simulation", "50_Complete/52_MvpDemo.cpp", "24_MvpDemo", 20, "MvpDemo::draw") \
-    X(DoomLike, "53_DoomLike", "53_DoomLike", "50_Complete/53_DoomLike.cpp", "-", 0, "-")
+    X(DoomLike, "53_DoomLike", "53_DoomLike", "50_Complete/53_DoomLike.cpp", "-", 0, "-") \
+    X(SweatAndDecals, "54_SweatAndDecals", "54_SurfaceFluid", "50_Complete/54_SweatAndDecals.cpp", "-", 0, "-")
 
 namespace examples
 {
