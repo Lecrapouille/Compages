@@ -1,8 +1,6 @@
-# Examples
+# 🖼 Examples
 
-`./build/Compages-examples` opens the full gallery: viewport, demo source code, GPU counters, and leak tests.
-
-The commented catalog, with screenshots, is available at [doc/Examples.md](../doc/Examples.md).
+`./build/Compages-examples` opens the whole gallery: viewport, source of the demo, GPU counters and leak checks. The commented catalog, with screenshots and keys, is [doc/09-Examples.md](../doc/09-Examples.md).
 
 ```sh
 make -j"$(nproc)"
@@ -11,14 +9,17 @@ make -j"$(nproc)"
 ./build/Compages-examples --check
 ```
 
-Browse the source folders in order. Each demo builds on the previous one and introduces a new idea.
+Read the folders in order: each demo adds one idea to the previous one.
 
-| Folders                                    | Layer                  | Guide                                                  |
-|---------------------------------------------|------------------------|--------------------------------------------------------|
-| `00_GettingStarted/`, `10_ScientificAndCompute/` | GPU                   | [doc/GPU.md](../doc/GPU.md)                            |
-| `30_HeadlessWorld`, then the rest of `30_WorldAndAssets/` | World, then renderer   | [doc/World.md](../doc/World.md), [doc/Renderer.md](../doc/Renderer.md) |
-| `50_Complete/`                              | All three layers       | [doc/Renderer.md](../doc/Renderer.md)                  |
+| Folders | Layer | Guide |
+|---------|-------|-------|
+| `00_GettingStarted/`, `10_ScientificAndCompute/` | 🟧 GPU | [doc/04-GPU-Layer.md](../doc/04-GPU-Layer.md) |
+| `20_Performance/` | GPU, then Renderer | [doc/04-GPU-Layer.md](../doc/04-GPU-Layer.md), [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
+| `30_HeadlessWorld`, then the rest of `30_WorldAndAssets/` | 🟦 World, then Renderer | [doc/05-World-Layer.md](../doc/05-World-Layer.md), [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
+| `50_Complete/` | 🟩 the three layers | [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
 
-Textures, glTF, and URDF files are located in `external/Compages-data/`, which are downloaded using `make download-external-libs`. More details: [doc/Install.md](../doc/Install.md).
+Textures, glTF and URDF files come from `external/Compages-data/`, downloaded by `make download-external-libs` ([doc/02-Getting-Started.md](../doc/02-Getting-Started.md)).
 
-PgUp / PgDn switch between demos, F1 hides panels, F5 reloads, and Esc exits. The complete list of keyboard shortcuts is in [doc/CheatSheet.md](../doc/CheatSheet.md).
+PgUp / PgDn change demo, F1 hides the panels, F5 restarts, Esc quits.
+
+To add a demo: a `.hpp`/`.cpp` pair in the right folder, and an entry in `Common/ExampleManifest.hpp` (the manifest is the list of demos).

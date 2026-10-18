@@ -26,7 +26,7 @@
 //!
 //! Nothing here exposes the graphics API in use. That is deliberate and
 //! enforced: the only file allowed to include glad is the private header of the
-//! backend. See doc/Philosophy.md and doc/Architecture.md.
+//! backend. See doc/01-Introduction.md and doc/07-Architecture.md.
 // ****************************************************************************
 
 #include "Compages/GPU/Buffer.hpp"

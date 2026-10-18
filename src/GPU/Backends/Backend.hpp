@@ -49,7 +49,7 @@
 //! \endcode
 //! Binding an object merely to configure it is what Direct State Access
 //! removed, and it is also what makes the order of calls fragile. Only the 4.5
-//! backend is implemented; see doc/Philosophy.md.
+//! backend is implemented; see doc/01-Introduction.md.
 // ****************************************************************************
 
 namespace compages::gpu::backend
