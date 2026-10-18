@@ -10,6 +10,7 @@
 #include "Compages/World/Controllers/CameraInput.hpp"
 #include "Compages/World/Controllers/FlyController.hpp"
 #include "Compages/World/Controllers/OrbitController.hpp"
+#include "Compages/World/Controllers/RigController.hpp"
 #include "Compages/World/World.hpp"
 
 // ****************************************************************************
@@ -60,6 +61,33 @@ struct Orbit : Behavior
     //! \brief Radians a second the camera turns by itself while the user
     //! does not turn it, like a turntable. Zero keeps it still.
     float spin = 0.0f;
+};
+
+// ****************************************************************************
+//! \brief A strategy-game camera: the left button drags the ground, the
+//! right or middle button turns, the wheel zooms; W A S D or the arrows
+//! move, Q and E turn, R and F zoom, Shift runs. The camera glides to the
+//! wanted pose (see \c RigController).
+//!
+//! \code
+//! scene.camera().position(2, 1.5, 2).add<compages::world::Rig>(compages::core::Vector3f{ 0, 0, 0 });
+//! \endcode
+// ****************************************************************************
+struct Rig : Behavior
+{
+    //! \brief The tuning: the target, the speeds, the limits.
+    RigController controller;
+
+    Rig() = default;
+    explicit Rig(compages::core::Vector3f p_target) { controller.target = p_target; }
+
+    //! \brief Seed the wanted pose from where the camera stands, looking at
+    //! the target; the ground passes through the target.
+    void start() override;
+
+    //! \brief Apply the input and glide.
+    //! \param[in] p_dt Seconds since the previous frame.
+    void update(float p_dt) override;
 };
 
 // ****************************************************************************

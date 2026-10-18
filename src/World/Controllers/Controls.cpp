@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/World/Controllers/Controls.hpp"
+#include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/Entity.hpp"
 
 #include <algorithm>
@@ -62,6 +63,30 @@ void Orbit::update(float p_dt)
         controller.yaw += spin * p_dt;
     }
     controller.apply(world(), entity(), camera);
+}
+
+void Rig::start()
+{
+    const compages::core::Vector3f offset = entity().position() - controller.target;
+    const float distance = std::sqrt(offset.x * offset.x + offset.y * offset.y +
+                                     offset.z * offset.z);
+    // The zoom limits follow the size of the scene the camera was placed for.
+    controller.min_distance = std::min(controller.min_distance, distance * 0.1f);
+    controller.max_distance = std::max(controller.max_distance, distance * 4.0f);
+    controller.distance = distance;
+    controller.ground = controller.target.y;
+    yawPitchOf(-offset, controller.yaw, controller.pitch);
+    controller.snap(world(), entity());
+}
+
+void Rig::update(float p_dt)
+{
+    float fov = 0.785398f;
+    if (Camera const* camera = entity().find<Camera>())
+    {
+        fov = static_cast<float>(units::angle::radian_t(camera->fov).value());
+    }
+    controller.apply(world(), entity(), rigInput(input(), frame(), fov), p_dt);
 }
 
 void Fly::start()

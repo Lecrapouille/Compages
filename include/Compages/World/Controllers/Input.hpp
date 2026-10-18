@@ -100,6 +100,7 @@ struct Input
     bool mouse_over = false;
     bool mouse_left = false;
     bool mouse_right = false;
+    bool mouse_middle = false;
     //! \brief Left button transitioned to down this frame.
     bool mouse_left_pressed = false;
     //! \brief Relative mode: all motion counts as look.
