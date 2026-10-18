@@ -37,7 +37,7 @@ constexpr int STEPS_PER_FRAME = 6;
 //! \brief Water left behind by a running drop: the wet trail.
 constexpr float FILM = 0.008f;
 //! \brief Water a still bead holds before it starts to run.
-constexpr float START = 0.35f;
+constexpr float START = 0.25f;
 
 // ----------------------------------------------------------------------------
 // The mesh drawn into its own texture: the position on screen is the uv.
@@ -302,6 +302,39 @@ void main()
 )";
 
 // ----------------------------------------------------------------------------
+// Pass 4, sweat washes the decals. Where a drop runs, the paint is carried
+// down with it (read from upstream): it leaves streaks of colour. Wherever
+// there is water, the paint fades.
+// ----------------------------------------------------------------------------
+constexpr char const* WASH_FRAGMENT = R"(#version 450 core
+uniform sampler2D paint;      // rgb premultiplied by a
+uniform sampler2D fluidMap;
+uniform sampler2D forces;
+uniform float dt;
+uniform float speed;
+uniform float film;
+uniform float washing;        // fraction of the paint dissolved per second
+out vec4 oColor;
+
+void main()
+{
+    vec2 uv = gl_FragCoord.xy / vec2(textureSize(paint, 0));
+    vec2 cells = vec2(textureSize(fluidMap, 0));
+    ivec2 cell = ivec2(uv * cells);
+    vec4 water = texelFetch(fluidMap, cell, 0);
+    vec2 flow = texelFetch(forces, cell, 0).rg * speed / cells;   // uv per second
+    float wet = smoothstep(film, 0.2, texture(fluidMap, uv).r);
+
+    vec4 color = texture(paint, uv);
+    if (dot(water.ba, water.ba) > 0.0)   // a drop that runs
+    {
+        color = mix(color, texture(paint, uv - flow * dt), wet);
+    }
+    oColor = color * (1.0 - washing * wet * dt);
+}
+)";
+
+// ----------------------------------------------------------------------------
 // The skin: the PBR shader of the Renderer up to its main(), then this one.
 // ----------------------------------------------------------------------------
 constexpr char const* SKIN_MAIN = R"(
@@ -353,7 +386,7 @@ void main()
             {
                 continue;
             }
-            float radius = min(1.8 * pow(water, 1.0 / 3.0), 2.0);
+            float radius = min(1.2 * pow(water, 1.0 / 3.0), 1.6);
             vec2 d = at - (vec2(q) + 0.5 + cell.ba);
             float r2 = dot(d, d) / (radius * radius);
             if (r2 < 1.0)
@@ -375,7 +408,7 @@ void main()
         albedo *= texture(baseColorMap, vUv).rgb;
     }
     vec4 decal = texture(decalMap, vUv);
-    albedo = mix(albedo, decal.rgb, clamp(decal.a, 0.0, 1.0));
+    albedo = albedo * (1.0 - clamp(decal.a, 0.0, 1.0)) + decal.rgb;   // premultiplied
     // Wet skin is darker, and a bead darker still: light goes through it.
     albedo *= mix(1.0, 0.8, wet) * mix(1.0, 0.7, bead);
 
@@ -550,9 +583,12 @@ compages::Status SweatAndDecals::makeTargets()
     field.format = compages::gpu::PixelFormat::RGBA16F;
     field.width = DECAL_SIZE;
     field.height = DECAL_SIZE;
-    COMPAGES_TRY(m_decals.allocate(field));
-    COMPAGES_TRY(m_decals_target.attach(m_decals));
-    clear(m_decals_target);
+    for (int i = 0; i < 2; ++i)
+    {
+        COMPAGES_TRY(m_decals[i].allocate(field));
+        COMPAGES_TRY(m_decals_target[i].attach(m_decals[i]));
+        clear(m_decals_target[i]);
+    }
 
     // UV passes: no depth, both faces (the winding in UV space is any).
     const compages::gpu::RenderState flat{ .depth_test = false,
@@ -573,6 +609,9 @@ compages::Status SweatAndDecals::makeTargets()
     m_decal_pass.state() = flat;
     m_decal_pass.blend(compages::gpu::Blend::alpha());
     m_decal_pass["picture"] = m_decal_image;
+
+    COMPAGES_TRY(m_wash_pass.load(SCREEN_VERTEX, WASH_FRAGMENT));
+    m_wash_pass["film"] = FILM;
 
     COMPAGES_TRY(m_fluid_pass.load(SCREEN_VERTEX, FLUID_FRAGMENT));
     m_fluid_pass["film"] = FILM;
@@ -620,7 +659,8 @@ void SweatAndDecals::simulate(float p_dt)
     const float dt =
         std::min(p_dt, 0.05f * float(steps / STEPS_PER_FRAME)) / float(steps);
     m_fluid_pass["dt"] = dt;
-    m_fluid_pass["speed"] = m_flow_speed * height;
+    m_speed = m_flow_speed * height;
+    m_fluid_pass["speed"] = m_speed;
     m_fluid_pass["poreRate"] = m_sweat ? m_pore_rate : 0.0f;
     m_fluid_pass["evaporation"] = m_evaporation;
     m_fluid_pass["forces"] = m_forces;
@@ -638,6 +678,21 @@ void SweatAndDecals::simulate(float p_dt)
         m_current = next;
     }
     m_drop = compages::core::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+}
+
+void SweatAndDecals::wash(float p_dt)
+{
+    const int next = 1 - m_paint;
+    m_wash_pass["paint"] = m_decals[m_paint];
+    m_wash_pass["fluidMap"] = m_fluid[m_current];
+    m_wash_pass["forces"] = m_forces;
+    m_wash_pass["dt"] = std::min(p_dt, 0.05f);
+    m_wash_pass["speed"] = m_speed;
+    m_wash_pass["washing"] = m_washing;
+    compages::gpu::RenderPass const pass(
+        m_decals_target[next], { .clear_color = false, .clear_depth = false });
+    m_wash_pass.draw(3u);
+    m_paint = next;
 }
 
 std::optional<SweatAndDecals::Hit>
@@ -741,7 +796,8 @@ void SweatAndDecals::stampDecal(Hit const& p_hit)
                                  0.2f + 0.8f * unit(m_random),
                                  0.2f + 0.8f * unit(m_random));
     compages::gpu::RenderPass const pass(
-        m_decals_target, { .clear_color = false, .clear_depth = false });
+        m_decals_target[m_paint],
+        { .clear_color = false, .clear_depth = false });
     m_decal_pass.draw();
 }
 
@@ -761,7 +817,8 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
     }
     if (m_peel)
     {
-        clear(m_decals_target);
+        clear(m_decals_target[0]);
+        clear(m_decals_target[1]);
         m_peel = false;
     }
     if (p_frame.input.mouse_left_pressed && p_frame.input.mouse_over)
@@ -803,11 +860,15 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
     computeForces();
     // The first frame runs a few seconds of sweat: the face is already wet.
     simulate(m_warm ? p_frame.elapsed : 6.0f);
+    if (m_warm)
+    {
+        wash(p_frame.elapsed);
+    }
     m_warm = true;
 
     // The extra maps of the skin, on the units its shader was given.
     m_normal_map.bind(2u);
-    m_decals.bind(3u);
+    m_decals[m_paint].bind(3u);
     m_fluid[m_current].bind(4u);
     if (compages::renderer::Material* skin = m_scene.assets().material(m_skin))
     {
@@ -830,6 +891,7 @@ void SweatAndDecals::controls()
     ImGui::SliderFloat(
         "Flow speed", &m_flow_speed, 0.01f, 0.5f, "%.2f heads/s");
     ImGui::SliderFloat("Evaporation", &m_evaporation, 0.0f, 0.3f, "%.2f /s");
+    ImGui::SliderFloat("Washing", &m_washing, 0.0f, 2.0f, "%.2f /s");
     ImGui::SliderAngle("Pitch", &m_pitch, -60.0f, 60.0f);
     ImGui::SliderAngle("Roll", &m_roll, -60.0f, 60.0f);
 

@@ -49,6 +49,8 @@ private:
 
     //! \brief Run the shader once over every number, and read the bars back.
     void step();
+    //! \brief Write the GPU results and the CPU copy to the standard output.
+    void printToConsole();
 
     compages::gpu::ComputeProgram m_step;
     compages::gpu::Buffer<int> m_values;

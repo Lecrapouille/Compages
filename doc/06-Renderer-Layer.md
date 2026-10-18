@@ -138,6 +138,28 @@ with a 3 × 3 filter, so the edges are soft. A floor should not cast
 fitted box huge and the shadows blurred. `Environment::shadows = false`
 turns them off.
 
+A lamp (point light) casts shadows when its `PointLight::shadows` is true
+(off by default):
+
+```cpp
+scene.lamp("Torch", { 1.0f, 0.55f, 0.22f }, 3.0f, 11.0f)
+    .get<compages::world::PointLight>().shadows = true;
+```
+
+A lamp shines in every direction, so one picture is not enough: the renderer
+draws the distance to the lamp six times, as six cameras of 90 degrees looking
+along +X, −X, +Y, −Y, +Z and −Z (the six faces of a cube). The six faces of
+the four lamps the shaders receive (the nearest to the camera) sit in one
+depth picture, an atlas of 6 × 4 tiles of `Environment::lamp_shadow_resolution`
+texels (512 by default, zero turns them off). The material takes the face the
+point is in, reads the distance of the nearest surface, and compares it with
+its own, with the same 3 × 3 filter as the sun. Only what is within the range
+of the lamp is drawn into its faces. The cost is six more draws of the
+nearby scene per lamp: turn it on for the lamps that matter. Something that
+holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
+(`RenderFlags::NoShadowCaster`), or it hides the lamp from everything.
+`52_MvpDemo` (one lamp) and `53_DoomLike` (the torches) use them.
+
 ---
 
 ## 🎨 5. Paint on a texture: `CanvasTexture`

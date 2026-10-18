@@ -51,6 +51,9 @@ struct Environment
     bool shadows = true;
     //! \brief Pixels across the shadow picture: sharper, but more memory.
     std::uint32_t shadow_resolution = 2048u;
+    //! \brief Pixels across each of the six faces of the shadow cube of a
+    //! lamp (PointLight::shadows). Zero turns the shadows of lamps off.
+    std::uint32_t lamp_shadow_resolution = 512u;
 };
 
 } // namespace compages::renderer

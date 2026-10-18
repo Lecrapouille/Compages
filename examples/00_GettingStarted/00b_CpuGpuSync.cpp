@@ -9,6 +9,8 @@
 
 #include "Common/Gui.hpp"
 
+#include <iostream>
+
 namespace examples
 {
 
@@ -110,6 +112,31 @@ void CpuGpuSync::controls()
         ImGui::Text("%3d", value);
     }
     ImGui::TextDisabled("GPU room: %zu numbers", m_values.deviceCapacity());
+
+    if (ImGui::Button("Print both copies to the console"))
+    {
+        printToConsole();
+    }
+}
+
+void CpuGpuSync::printToConsole()
+{
+    // The CPU copy is a plain array; the GPU copy is read back first, so that
+    // what is printed is what the device really holds.
+    readBack();
+    std::cout << "[00b_CpuGpuSync] CPU:";
+    for (int value : m_values.elements())
+    {
+        std::cout << ' ' << value;
+    }
+    std::cout << "\n[00b_CpuGpuSync] GPU:";
+    for (int value : m_on_gpu)
+    {
+        std::cout << ' ' << value;
+    }
+    std::cout << "\n[00b_CpuGpuSync] waiting for upload(): "
+              << (m_values.pending().empty() ? 0u : m_values.pending().count())
+              << " number(s)" << std::endl;
 }
 
 } // namespace examples

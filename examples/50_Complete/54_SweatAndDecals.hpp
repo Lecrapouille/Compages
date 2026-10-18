@@ -69,6 +69,7 @@ private:
     raycast(compages::core::Vector2f p_pixel) const;
     void computeForces();
     void simulate(float p_dt);
+    void wash(float p_dt);
     void stampDecal(Hit const& p_hit);
     void clear(compages::gpu::Framebuffer const& p_target);
 
@@ -95,13 +96,16 @@ private:
     compages::gpu::Texture m_fluid[2];
     compages::gpu::Framebuffer m_fluid_target[2];
     int m_current = 0;
-    //! \brief Painted decals, premultiplied by nothing: rgb + coverage.
-    compages::gpu::Texture m_decals;
-    compages::gpu::Framebuffer m_decals_target;
+    //! \brief Painted decals, rgb premultiplied by the coverage a. Two, since
+    //! the sweat washes them (ping-pong).
+    compages::gpu::Texture m_decals[2];
+    compages::gpu::Framebuffer m_decals_target[2];
+    int m_paint = 0;
 
     compages::gpu::Drawable m_force_pass;
     compages::gpu::Drawable m_fluid_pass;
     compages::gpu::Drawable m_decal_pass;
+    compages::gpu::Drawable m_wash_pass;
 
     std::mt19937 m_random{ 54u };
     compages::core::Vector4f m_drop{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -113,6 +117,9 @@ private:
     float m_pore_rate = 0.2f;
     float m_flow_speed = 0.06f;
     float m_evaporation = 0.03f;
+    float m_washing = 0.3f;
+    //! \brief Speed of the water down a wall, in world units per second.
+    float m_speed = 0.0f;
     float m_pitch = 0.0f;
     float m_roll = 0.0f;
     bool m_warm = false;

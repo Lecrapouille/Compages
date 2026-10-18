@@ -51,6 +51,8 @@ private:
 
     //! \brief Read what the GPU holds into m_on_gpu, for the bars.
     void readBack();
+    //! \brief Write the CPU copy and the GPU copy to the standard output.
+    void printToConsole();
 
     compages::gpu::Buffer<int> m_values;
     //! \brief What the GPU held when last asked.

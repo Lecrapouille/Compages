@@ -33,6 +33,7 @@
 #include "10_ScientificAndCompute/13_Galaxy.hpp"
 #include "10_ScientificAndCompute/14_SpiralGalaxy.hpp"
 #include "10_ScientificAndCompute/15_Lorenz.hpp"
+#include "10_ScientificAndCompute/16_NeuralNetwork.hpp"
 #include "20_Performance/20a_SpriteBatch.hpp"
 #include "20_Performance/20b_ManyCubes.hpp"
 #include "20_Performance/21_IndirectDraw.hpp"
@@ -85,6 +86,7 @@
     X(Galaxy, "13_Galaxy", "13_NBodyGalaxy", "10_ScientificAndCompute/13_Galaxy.cpp", "14_Galaxy", 0, "-") \
     X(SpiralGalaxy, "14_SpiralGalaxy", "14_DensityWave", "10_ScientificAndCompute/14_SpiralGalaxy.cpp", "-", 0, "-") \
     X(Lorenz, "15_Lorenz", "15_StreamedCurves", "10_ScientificAndCompute/15_Lorenz.cpp", "12_Lorenz", 0, "-") \
+    X(NeuralNetwork, "16_NeuralNetwork", "16_NeuralNetwork", "10_ScientificAndCompute/16_NeuralNetwork.cpp", "-", 0, "-") \
     X(SpriteBatch, "20a_SpriteBatch", "20_Instancing", "20_Performance/20a_SpriteBatch.cpp", "15_SpriteBatch", 0, "-") \
     X(ManyCubes, "20b_ManyCubes", "20_Instancing", "20_Performance/20b_ManyCubes.cpp", "18_ManyCubes", 0, "-") \
     X(IndirectDraw, "21_IndirectDraw", "21_IndirectCulling", "20_Performance/21_IndirectDraw.cpp", "16_IndirectDraw", 0, "-") \

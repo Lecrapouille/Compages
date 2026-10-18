@@ -9,6 +9,8 @@
 
 #include "Common/Gui.hpp"
 
+#include <iostream>
+
 namespace examples
 {
 
@@ -124,6 +126,29 @@ void IntroCompute::controls()
     }
     ImGui::TextDisabled(m_stale ? "The CPU copy is out of date."
                                 : "Both copies agree.");
+
+    if (ImGui::Button("Print the results to the console"))
+    {
+        printToConsole();
+    }
+}
+
+void IntroCompute::printToConsole()
+{
+    // What the shader computed, read back from the GPU, next to the CPU copy
+    // (out of date until download()).
+    std::cout << "[00c_Compute] GPU:";
+    for (int value : m_on_gpu)
+    {
+        std::cout << ' ' << value;
+    }
+    std::cout << "\n[00c_Compute] CPU:";
+    for (int value : m_values.elements())
+    {
+        std::cout << ' ' << value;
+    }
+    std::cout << (m_stale ? "   (out of date: press download())" : "")
+              << std::endl;
 }
 
 } // namespace examples

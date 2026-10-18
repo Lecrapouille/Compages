@@ -78,6 +78,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | scene | `Scene scene(world);` or `Scene scene(world, assets)` |
 | background, light | `scene.background(r, g, b)` `scene.ambient(r, g, b)` |
 | camera, sun, lamp | `scene.camera()` `scene.sun(name, color, intensity)` `scene.lamp(…)` |
+| shadows | `environment().shadows` (sun), `PointLight::shadows` (one lamp), `environment().shadow_resolution`, `environment().lamp_shadow_resolution` |
 | primitives | `scene.box(name, look)` `sphere` `plane` `cylinder` `cone` `pyramid` |
 | looks | `color(r, g, b)` `texture("a.jpg")` `normals()` `depth(near, far)` |
 | file | `scene.load("model.glb")` → `Result<Entity>` |

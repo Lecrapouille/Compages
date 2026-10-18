@@ -242,6 +242,7 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
             frame.color = light.color;
             frame.intensity = light.intensity;
             frame.range = light.range;
+            frame.shadows = light.shadows;
             snapshot.point_lights.emplace_back(frame);
         });
 

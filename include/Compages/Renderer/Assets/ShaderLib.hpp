@@ -32,6 +32,10 @@ inline constexpr int MAX_JOINTS = 64;
 [[nodiscard]] char const* shadowVertex();
 [[nodiscard]] char const* shadowFragment();
 
+//! \brief Distance to a lamp: one face of the shadow cube of a lamp.
+[[nodiscard]] char const* lampShadowVertex();
+[[nodiscard]] char const* lampShadowFragment();
+
 [[nodiscard]] char const* depthVertex();
 [[nodiscard]] char const* depthFragment();
 

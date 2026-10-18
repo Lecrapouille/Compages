@@ -13,6 +13,7 @@
 #include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Units.hpp"
 #include "Compages/Renderer/Components/Animator.hpp"
+#include "Compages/Renderer/Components/MeshRenderer.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -341,21 +342,28 @@ void DoomLike::placeTorch(std::size_t p_column, std::size_t p_row)
 
     const compages::core::Vector3f base =
         at + (toward * ((CELL * 0.5f) - 0.15f));
-    m_level_scene.scene
-        ->box("Bracket", compages::renderer::color(0.12f, 0.1f, 0.08f))
-        .position(base.x, pole ? 1.05f : 1.9f, base.z)
+    compages::world::Entity bracket = m_level_scene.scene->box(
+        "Bracket", compages::renderer::color(0.12f, 0.1f, 0.08f));
+    bracket.position(base.x, pole ? 1.05f : 1.9f, base.z)
         .scale(0.14f, pole ? 2.1f : 0.6f, 0.14f);
     compages::world::Entity flame = m_level_scene.scene->box(
         "Flame", compages::renderer::color(4.0f, 1.8f, 0.5f));
     flame.position(base.x, 2.3f, base.z)
         .scale(0.18f, 0.3f, 0.18f)
         .rotate(0.785f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    // The flame and what holds it hide nothing from the torch next to them.
+    flame.get<compages::renderer::MeshRenderer>().flags =
+        compages::renderer::RenderFlags::NoShadowCaster;
+    bracket.get<compages::renderer::MeshRenderer>().flags =
+        compages::renderer::RenderFlags::NoShadowCaster;
     const compages::core::Vector3f glow =
         at + (toward * ((CELL * 0.5f) - 0.5f));
     compages::world::Entity light = m_level_scene.scene->lamp(
         "Torch", compages::core::Vector3f(1.0f, 0.55f, 0.22f), 3.0f, 11.0f);
     light.position(glow.x, 2.3f, glow.z)
         .add<Flicker>(float((p_row * 7u) + p_column));
+    // The soldiers, the robots and the barrels cast shadows on the walls.
+    light.get<compages::world::PointLight>().shadows = true;
     m_cast.torches.emplace_back(
         Torch{ light, flame, compages::core::Vector3f(base.x, 2.3f, base.z) });
 }

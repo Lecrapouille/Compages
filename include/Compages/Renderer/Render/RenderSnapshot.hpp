@@ -66,6 +66,7 @@ struct PointLightFrame
     compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
     float range = 100.0f;
+    bool shadows = false;
 };
 
 // ****************************************************************************

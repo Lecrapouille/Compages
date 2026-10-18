@@ -113,7 +113,7 @@ TEST_F(SceneSerializerTest, SaveSceneRoundTripsPresentationAndPointLight)
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
     compages::world::EntityId lamp = world.create("Lamp");
-    world.add(lamp, compages::world::PointLight{ compages::core::Vector3f(1.0f, 0.5f, 0.2f), 2.0f, 15.0f });
+    world.add(lamp, compages::world::PointLight{ compages::core::Vector3f(1.0f, 0.5f, 0.2f), 2.0f, 15.0f, true });
     compages::world::EntityId box = world.create("Box");
     world.add(box, compages::renderer::MeshRenderer{ mesh.value(), instance.value() });
     compages::world::EntityId camera = world.create("Camera");
@@ -144,6 +144,7 @@ TEST_F(SceneSerializerTest, SaveSceneRoundTripsPresentationAndPointLight)
     ASSERT_TRUE(loaded_lamp.valid());
     ASSERT_TRUE(loaded_camera.valid());
     ASSERT_TRUE(loaded_world.has<compages::world::PointLight>(loaded_lamp));
+    ASSERT_TRUE(loaded_world.get<compages::world::PointLight>(loaded_lamp).shadows);
     ASSERT_NEAR(loaded_scene.renderSettings().clear_color.y, 0.2f, 1.0e-5f);
     ASSERT_EQ(loaded_scene.activeCamera(), loaded_camera);
 

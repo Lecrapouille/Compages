@@ -68,11 +68,28 @@ std::pair<compages::core::Vector3f, compages::core::Vector3f> sunOf(RenderSnapsh
     return { p_snapshot.environment.default_light_direction, p_snapshot.environment.default_light_color };
 }
 
-//! \brief The shadow uniforms; the shadow picture on texture unit 1.
+//! \brief Texture unit of the shadow atlas of the lamps. Far from the units
+//! the materials use (0 colour, 1 sun), so that a custom material derived
+//! from the PBR one keeps a few for its own maps.
+constexpr std::uint32_t LAMP_SHADOW_UNIT = 7u;
+
+//! \brief The shadow uniforms; the shadow picture on texture unit 1, the
+//! atlas of the lamps on LAMP_SHADOW_UNIT.
 void bindShadow(compages::renderer::Material& p_material,
                 Renderer::Shadow const& p_shadow,
-                compages::gpu::Texture const& p_depth)
+                compages::gpu::Texture const& p_depth,
+                Renderer::LampShadows const& p_lamps,
+                compages::gpu::Texture const& p_lamp_depth)
 {
+    p_material.program.set("lampShadows", p_lamps.enabled);
+    p_material.program.set("lampFaces",
+                           std::span<const compages::core::Matrix44f>(p_lamps.faces.data(), p_lamps.faces.size()));
+    if (p_lamps.any)
+    {
+        p_lamp_depth.bind(LAMP_SHADOW_UNIT);
+    }
+    p_material.program.set("lampShadowMap", int(LAMP_SHADOW_UNIT));
+
     p_material.program.set("shadowEnabled", p_shadow.enabled ? 1 : 0);
     p_material.program.set("lightViewProj", p_shadow.light_view_projection);
     p_material.program.set("shadowTexel", p_shadow.texel);
@@ -135,13 +152,15 @@ Status bindLighting(compages::renderer::Material& p_material,
 Status bindMaterialFrame(compages::renderer::Material& p_material,
                          RenderSnapshot const& p_snapshot,
                          Renderer::Shadow const& p_shadow,
-                         compages::gpu::Texture const& p_depth)
+                         compages::gpu::Texture const& p_depth,
+                         Renderer::LampShadows const& p_lamps,
+                         compages::gpu::Texture const& p_lamp_depth)
 {
     switch (p_material.family)
     {
         case compages::renderer::ShaderFamily::Lit:
         case compages::renderer::ShaderFamily::PbrMinimal:
-            bindShadow(p_material, p_shadow, p_depth);
+            bindShadow(p_material, p_shadow, p_depth, p_lamps, p_lamp_depth);
             return bindLighting(p_material, p_snapshot);
         case compages::renderer::ShaderFamily::Depth:
         case compages::renderer::ShaderFamily::Normals:
@@ -168,6 +187,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
         return success();
     }
     COMPAGES_TRY(renderShadow(p_snapshot, p_assets));
+    COMPAGES_TRY(renderLampShadows(p_snapshot, p_assets));
 
     compages::renderer::MaterialId bound_material;
     compages::renderer::Material* material = nullptr;
@@ -192,7 +212,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                 continue;
             }
             bound_material = instance->material;
-            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadow, m_shadow_depth));
+            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadow, m_shadow_depth, m_lamps, m_lamp_depth));
         }
 
         if (material == nullptr)
@@ -383,6 +403,128 @@ Status Renderer::renderShadow(RenderSnapshot const& p_snapshot,
                                    mesh->index_type, mesh->index_count);
     }
     m_shadow.enabled = true;
+    return success();
+}
+
+Status Renderer::renderLampShadows(RenderSnapshot const& p_snapshot,
+                                   compages::renderer::AssetManager& p_assets)
+{
+    m_lamps = LampShadows{};
+    const std::uint32_t size = p_snapshot.environment.lamp_shadow_resolution;
+    const std::size_t lamps =
+        std::min(p_snapshot.point_lights.size(), static_cast<std::size_t>(shaders::MAX_POINT_LIGHTS));
+    bool wanted = false;
+    for (std::size_t i = 0u; i < lamps; ++i)
+    {
+        wanted = wanted || p_snapshot.point_lights[i].shadows;
+    }
+    if (!wanted || (size == 0u))
+    {
+        return success();
+    }
+
+    // One depth picture for every lamp: a row per lamp, a column per face.
+    if (!m_lamp_depth.valid() || (m_lamp_depth.width() != 6u * size))
+    {
+        compages::gpu::TextureDesc depth = compages::gpu::TextureDesc::image(
+            6u * size, static_cast<std::uint32_t>(shaders::MAX_POINT_LIGHTS) * size);
+        depth.format = compages::gpu::PixelFormat::Depth32F;
+        depth.filter(compages::gpu::Filter::Nearest);
+        COMPAGES_TRY_ASSIGN(m_lamp_depth, compages::gpu::Texture::create(depth));
+        const compages::gpu::Attachment none[1]{};
+        COMPAGES_TRY_ASSIGN(m_lamp_target,
+                            compages::gpu::Framebuffer::create(std::span<const compages::gpu::Attachment>(none, 0u),
+                                                               compages::gpu::Attachment{ m_lamp_depth.handle() }));
+    }
+    if (!m_lamp_pipeline.valid())
+    {
+        COMPAGES_TRY_ASSIGN(m_lamp_program,
+                            compages::gpu::Program::fromSources(shaders::lampShadowVertex(),
+                                                                shaders::lampShadowFragment()));
+        compages::gpu::RenderState state;
+        state.depth_test = true;
+        state.cull = compages::gpu::CullMode::None;
+        COMPAGES_TRY_ASSIGN(m_lamp_pipeline,
+                            compages::gpu::Pipeline::create<MeshVertex>(
+                                m_lamp_program, compages::gpu::VertexLayout::of<MeshVertex>(), state));
+    }
+
+    // The six faces of a cube, as a camera of 90 degrees looking along each axis.
+    using compages::core::Vector3f;
+    const std::array<Vector3f, 6u> along{ Vector3f(1.0f, 0.0f, 0.0f), Vector3f(-1.0f, 0.0f, 0.0f),
+                                          Vector3f(0.0f, 1.0f, 0.0f), Vector3f(0.0f, -1.0f, 0.0f),
+                                          Vector3f(0.0f, 0.0f, 1.0f), Vector3f(0.0f, 0.0f, -1.0f) };
+    const std::array<Vector3f, 6u> up{ Vector3f(0.0f, 1.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f),
+                                       Vector3f(0.0f, 0.0f, 1.0f), Vector3f(0.0f, 0.0f, 1.0f),
+                                       Vector3f(0.0f, 1.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f) };
+
+    for (std::size_t i = 0u; i < lamps; ++i)
+    {
+        PointLightFrame const& lamp = p_snapshot.point_lights[i];
+        if (!lamp.shadows || (lamp.range <= 0.0f))
+        {
+            continue;
+        }
+        const float near = std::max(0.01f, lamp.range * 0.002f);
+        const compages::core::Matrix44f projection =
+            compages::core::perspective(units::angle::radian_t(0.5f * 3.14159265f), 1.0f, near, lamp.range);
+        m_lamp_program.set("lampPos", lamp.position);
+        m_lamp_program.set("lampRange", lamp.range);
+        for (std::size_t face = 0u; face < 6u; ++face)
+        {
+            const compages::core::Matrix44f view_projection =
+                projection * compages::core::lookAt(lamp.position, lamp.position + along[face], up[face]);
+            m_lamps.faces[(6u * i) + face] = view_projection;
+
+            compages::gpu::RenderPass const pass(m_lamp_target,
+                                                 compages::gpu::PassDesc{ .x = std::uint32_t(face) * size,
+                                                                          .y = std::uint32_t(i) * size,
+                                                                          .width = size,
+                                                                          .height = size,
+                                                                          .clear_color = false });
+            m_lamp_program.set("lightViewProj", view_projection);
+            for (RenderItem const& item : p_snapshot.items)
+            {
+                if (has(item.flags, RenderFlags::NoShadowCaster) || has(item.flags, RenderFlags::Overlay))
+                {
+                    continue;
+                }
+                // Beyond the range nothing is lit: nothing there casts a shadow.
+                if (!item.world_bounds.empty())
+                {
+                    const Vector3f nearest(std::clamp(lamp.position.x, item.world_bounds.min.x, item.world_bounds.max.x),
+                                           std::clamp(lamp.position.y, item.world_bounds.min.y, item.world_bounds.max.y),
+                                           std::clamp(lamp.position.z, item.world_bounds.min.z, item.world_bounds.max.z));
+                    if (compages::core::vector::norm(nearest - lamp.position) > lamp.range)
+                    {
+                        continue;
+                    }
+                }
+                COMPAGES_TRY(p_assets.prepare(item.mesh));
+                compages::renderer::MeshAsset const* mesh = p_assets.mesh(item.mesh);
+                if (mesh == nullptr)
+                {
+                    continue;
+                }
+                m_lamp_program.set("model", item.world_matrix);
+                const int joints = static_cast<int>(std::min(static_cast<std::size_t>(item.joint_count),
+                                                             static_cast<std::size_t>(shaders::MAX_JOINTS)));
+                m_lamp_program.set("uJointCount", joints);
+                if (joints > 0)
+                {
+                    m_lamp_program.set("uJoints",
+                                       std::span<const compages::core::Matrix44f>(
+                                           p_snapshot.joint_palette.data() + item.joint_offset,
+                                           static_cast<std::size_t>(joints)));
+                }
+                compages::gpu::drawIndexed(m_lamp_pipeline, mesh->vertices.handle(), mesh->indexBuffer(),
+                                           mesh->index_type, mesh->index_count);
+            }
+        }
+        float* enabled[4] = { &m_lamps.enabled.x, &m_lamps.enabled.y, &m_lamps.enabled.z, &m_lamps.enabled.w };
+        *enabled[i] = 1.0f;
+        m_lamps.any = true;
+    }
     return success();
 }
 

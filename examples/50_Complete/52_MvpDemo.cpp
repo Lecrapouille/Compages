@@ -90,7 +90,12 @@ compages::Status MvpDemo::setUp()
         .add<compages::world::Orbit>(
             compages::core::Vector3f(0.0f, 2.0f, 0.0f));
     m_scene.sun("Sun", { 1.0f, 0.96f, 0.88f }, 0.8f);
-    m_scene.lamp("Lamp", { 1.0f, 0.85f, 0.5f }, 2.0f, 20.0f).add<Circle>();
+    // The lamp casts shadows too: the cubes are drawn six more times, once
+    // per face of a cube of 90 degree views around it.
+    m_scene.lamp("Lamp", { 1.0f, 0.85f, 0.5f }, 2.0f, 20.0f)
+        .add<Circle>()
+        .get<compages::world::PointLight>()
+        .shadows = true;
 
     // The floor is a thin box. The spinner and the falling cubes sit on it.
     m_scene.box("Floor", compages::renderer::color(0.2f, 0.5f, 0.95f))

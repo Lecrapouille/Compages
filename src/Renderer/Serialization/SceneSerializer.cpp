@@ -121,7 +121,8 @@ json serializeEntity(compages::world::World const& p_world,
     {
         node["point_light"] = { { "color", vec3(point->color) },
                                 { "intensity", point->intensity },
-                                { "range", point->range } };
+                                { "range", point->range },
+                                { "shadows", point->shadows } };
     }
 
     if (PrefabInstance const* prefab = p_world.tryGet<PrefabInstance>(p_entity))
@@ -193,6 +194,7 @@ Status applyComponents(compages::world::World& p_world,
         point.color = readVec3(light.at("color"));
         point.intensity = light.at("intensity").get<float>();
         point.range = light.value("range", 100.0f);
+        point.shadows = light.value("shadows", false);
         p_world.add(p_entity, point);
     }
 
