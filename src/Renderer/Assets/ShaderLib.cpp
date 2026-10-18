@@ -122,14 +122,43 @@ vec3 applyFog(vec3 shaded, vec3 worldPos)
 
 constexpr char const* LIT_FRAGMENT_TAIL = R"(
 
+// Shading shared by the lit and PBR materials. One sun gives form; the rest
+// keeps every face readable:
+// - a hemisphere ambient: faces turned up get more sky than faces turned
+//   down, so the sides of a box differ even in the shadow of the sun;
+// - a soft fill light from the eye: faces away from the sun keep their
+//   shape instead of one flat colour;
+// - a small highlight (Blinn-Phong) that shows the curvature;
+// - two-sided normals (open meshes, inverted STL faces) and a soft tone
+//   curve, so bright colours do not burn to flat white.
+
+
+vec3 shade(vec3 base, vec3 n, vec3 worldPos)
+{
+    vec3 toLight = normalize(-lightDir);
+    vec3 toEye = normalize(cameraPos - worldPos);
+    if (dot(n, toEye) < 0.0)
+    {
+        n = -n;
+    }
+    float sky = 0.5 + 0.5 * n.y;
+    vec3 ambientLight = ambient * mix(0.45, 1.3, sky);
+    float diffuse = max(dot(n, toLight), 0.0);
+    float fill = 0.22 * max(dot(n, toEye), 0.0);
+    vec3 halfway = normalize(toLight + toEye);
+    float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
+    vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
+    vec3 shaded = base * light + lightColor * specular;
+    // Soft shoulder above 0.8: keeps the hue of bright surfaces.
+    vec3 over = max(shaded - 0.8, 0.0);
+    return min(shaded, 0.8) + over / (1.0 + over * 2.5);
+}
+
 out vec4 oColor;
 
 void main()
 {
-    vec3 n = normalize(vNormal);
-    vec3 toLight = normalize(-lightDir);
-    vec3 lit = lightColor * max(dot(n, toLight), 0.0) + pointLightsContribution(n, vWorldPos);
-    vec3 shaded = applyFog(color * (ambient + lit), vWorldPos);
+    vec3 shaded = applyFog(shade(color, normalize(vNormal), vWorldPos), vWorldPos);
     oColor = vec4(pow(shaded, vec3(1.0 / 2.2)), 1.0);
 }
 )";
@@ -194,6 +223,38 @@ vec3 applyFog(vec3 shaded, vec3 worldPos)
 
 constexpr char const* PBR_FRAGMENT_TAIL = R"(
 
+// Shading shared by the lit and PBR materials. One sun gives form; the rest
+// keeps every face readable:
+// - a hemisphere ambient: faces turned up get more sky than faces turned
+//   down, so the sides of a box differ even in the shadow of the sun;
+// - a soft fill light from the eye: faces away from the sun keep their
+//   shape instead of one flat colour;
+// - a small highlight (Blinn-Phong) that shows the curvature;
+// - two-sided normals (open meshes, inverted STL faces) and a soft tone
+//   curve, so bright colours do not burn to flat white.
+
+
+vec3 shade(vec3 base, vec3 n, vec3 worldPos)
+{
+    vec3 toLight = normalize(-lightDir);
+    vec3 toEye = normalize(cameraPos - worldPos);
+    if (dot(n, toEye) < 0.0)
+    {
+        n = -n;
+    }
+    float sky = 0.5 + 0.5 * n.y;
+    vec3 ambientLight = ambient * mix(0.45, 1.3, sky);
+    float diffuse = max(dot(n, toLight), 0.0);
+    float fill = 0.22 * max(dot(n, toEye), 0.0);
+    vec3 halfway = normalize(toLight + toEye);
+    float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
+    vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
+    vec3 shaded = base * light + lightColor * specular;
+    // Soft shoulder above 0.8: keeps the hue of bright surfaces.
+    vec3 over = max(shaded - 0.8, 0.0);
+    return min(shaded, 0.8) + over / (1.0 + over * 2.5);
+}
+
 out vec4 oColor;
 
 void main()
@@ -203,10 +264,7 @@ void main()
     {
         albedo *= texture(baseColorMap, vUv).rgb;
     }
-    vec3 n = normalize(vNormal);
-    vec3 toLight = normalize(-lightDir);
-    vec3 lit = lightColor * max(dot(n, toLight), 0.0) + pointLightsContribution(n, vWorldPos);
-    vec3 shaded = applyFog(albedo * (ambient + lit), vWorldPos);
+    vec3 shaded = applyFog(shade(albedo, normalize(vNormal), vWorldPos), vWorldPos);
     oColor = vec4(pow(shaded, vec3(1.0 / 2.2)), 1.0);
 }
 )";
