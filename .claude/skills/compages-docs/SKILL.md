@@ -14,7 +14,7 @@ in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
 
 | File | Holds |
 |------|-------|
-| README.md | pitch, three-layer table, code at a glance, quick start, doc table |
+| README.md | what it is for (no jargon), the story, why Compages (comparison), code at a glance, quick start, doc table |
 | doc/README.md | index: Learn (1–3), layers (4–6), Reference (7–11), quick paths |
 | 01-Introduction.md | glossary, three layers and what each leaves out, error moments, OpenGL versions |
 | 02-Getting-Started.md | tools per OS, build, third parties, gallery, tests/CI, install |
@@ -24,7 +24,7 @@ in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
 | 08-API-Reference.md | calls of the three layers |
 | 09-Examples.md | gallery window, options, every demo |
 | 10-Debugging.md | library/driver messages, apitrace, RenderDoc, CI, common problems |
-| 11-Credits.md | history, inspirations, third parties, license |
+| 11-Credits.md | technical lessons, inspirations, third parties, license (the story is in README.md) |
 
 Put a fact in one place and link to it. README.md and doc/README.md hold the
 chapter tables: keep them in sync. Code comments point to chapters
@@ -32,6 +32,10 @@ chapter tables: keep them in sync. Code comments point to chapters
 
 ## Rules
 
+- The README sells before it teaches: what the library is for in plain words
+  (no jargon, no code), the story (why it exists, what was wrong with the
+  others), why it is better (comparison table), and only then code, quick
+  start and the doc table. Never open a README with API details.
 - Code excerpts come from real files (`examples/...`) or are compiled: World
   snippets build headless with
   `g++ -std=c++20 x.cpp -I include -isystem external/units/include -isystem external/entt/src build/libCompages.a`;
