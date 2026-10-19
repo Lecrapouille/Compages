@@ -22,3 +22,32 @@ using radians_per_second_squared = units::compound_unit<
     units::inverse<units::squared<units::time::seconds>>>;
 using radians_per_second_squared_t = units::unit_t<radians_per_second_squared>;
 } // namespace units::angular_acceleration
+
+// ****************************************************************************
+//! \brief Short names of the physical quantities, in SI units.
+//!
+//! A value carries its unit in its type: adding a duration to a length does
+//! not compile, and a function asking for an angle cannot be given metres by
+//! mistake. Read the plain number back with \c value().
+//!
+//! \code
+//! using namespace compages::si;
+//! Seconds const dt(0.01);
+//! Radians const angle(1.57);
+//! Length const reach(0.8);
+//! double const raw = dt.value();
+//! \endcode
+// ****************************************************************************
+namespace compages::si
+{
+using Seconds = ::units::time::second_t;                       //!< Duration (s).
+using Radians = ::units::angle::radian_t;                      //!< Angle (rad).
+using Length = ::units::length::meter_t;                       //!< Distance (m).
+using LinearVelocity = ::units::velocity::meters_per_second_t; //!< Speed (m/s).
+using AngularVelocity =
+    ::units::angular_velocity::radians_per_second_t; //!< Turn rate (rad/s).
+using AngularAcceleration =
+    ::units::angular_acceleration::radians_per_second_squared_t; //!< (rad/s²).
+using Force = ::units::force::newton_t;         //!< Force (N).
+using Torque = ::units::torque::newton_meter_t; //!< Torque (N.m).
+} // namespace compages::si

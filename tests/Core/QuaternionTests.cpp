@@ -289,3 +289,54 @@ TEST(TestQuaternions, testoperations)
         ASSERT_EQ(-4.0f, q1[3]);
     }
 }
+
+//--------------------------------------------------------------------------
+TEST(TestQuaternions, angleAxisNormalizesTheAxis)
+{
+    using compages::core::Quatd;
+    using compages::core::Vector3g;
+    // A long axis gives the same rotation as a unit one.
+    Quatd const q = Quatd::fromAngleAxis(units::angle::radian_t(1.0), Vector3g(0.0, 0.0, 5.0));
+    Quatd const r = Quatd::fromAngleAxis(units::angle::radian_t(1.0), Vector3g(0.0, 0.0, 1.0));
+    EXPECT_NEAR(q.w, r.w, 1e-12);
+    EXPECT_NEAR(q.z, r.z, 1e-12);
+    // A null axis gives the identity.
+    Quatd const id = Quatd::fromAngleAxis(units::angle::radian_t(1.0), Vector3g(0.0, 0.0, 0.0));
+    EXPECT_DOUBLE_EQ(id.w, 1.0);
+    EXPECT_DOUBLE_EQ(id.z, 0.0);
+}
+
+//--------------------------------------------------------------------------
+TEST(TestQuaternions, rpyAndYaw)
+{
+    using compages::core::Quatd;
+    Quatd const q = Quatd::fromRpy(units::angle::radian_t(0.0),
+                                   units::angle::radian_t(0.0),
+                                   units::angle::radian_t(0.7));
+    EXPECT_NEAR(compages::core::yaw(q).value(), 0.7, 1e-12);
+    // Roll then pitch then yaw about the fixed axes: X is turned to -Y by
+    // a yaw of -pi/2 after a roll that keeps X in place.
+    Quatd const r = Quatd::fromRpy(units::angle::radian_t(0.5),
+                                   units::angle::radian_t(0.0),
+                                   units::angle::radian_t(-1.5707963267948966));
+    compages::core::Vector3g const x = r * compages::core::Vector3g(1.0, 0.0, 0.0);
+    EXPECT_NEAR(x.x, 0.0, 1e-12);
+    EXPECT_NEAR(x.y, -1.0, 1e-12);
+    EXPECT_NEAR(x.z, 0.0, 1e-12);
+}
+
+//--------------------------------------------------------------------------
+TEST(TestQuaternions, basisAndDot)
+{
+    using compages::core::Quatd;
+    using compages::core::Vector3g;
+    // Frame with X along world Y, Y along -X, Z up: a quarter turn about Z.
+    Quatd const q = Quatd::fromBasis(Vector3g(0.0, 1.0, 0.0),
+                                     Vector3g(-1.0, 0.0, 0.0),
+                                     Vector3g(0.0, 0.0, 1.0));
+    EXPECT_NEAR(compages::core::yaw(q).value(), 1.5707963267948966, 1e-12);
+    // dot keeps double precision.
+    Quatd const a(1.0 / 3.0, 0.0, 0.0, 0.0);
+    double const d = compages::core::dot(a, a);
+    EXPECT_DOUBLE_EQ(d, (1.0 / 3.0) * (1.0 / 3.0)); // a float result would differ
+}

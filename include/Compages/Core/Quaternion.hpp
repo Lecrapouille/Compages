@@ -160,18 +160,69 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Creates a rotation which rotates angle degrees around axis.
+    //! \brief Creates a rotation of \c angle around \c v (right-hand rule).
+    //! \param[in] angle Angle of the rotation.
+    //! \param[in] v Rotation axis; it does not need to be of length 1.
+    //! \return The rotation, or the identity when the axis is (almost) null.
     //--------------------------------------------------------------------------
     static Quat<T> fromAngleAxis(units::angle::radian_t const angle,
                                  Vector<T, 3u> const& v)
     {
-        T const s = std::sin(angle.to<T>() * static_cast<T>(0.5));
-        Quat<T> q(std::cos(angle.to<T>() * static_cast<T>(0.5)),
-                  v.x * s,
-                  v.y * s,
-                  v.z * s);
-        q.normalize();
-        return q;
+        T const length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        if (length < std::numeric_limits<T>::epsilon() * 10)
+        {
+            return Quat<T>();
+        }
+        T const s = std::sin(angle.to<T>() * static_cast<T>(0.5)) / length;
+        return Quat<T>(std::cos(angle.to<T>() * static_cast<T>(0.5)),
+                       v.x * s,
+                       v.y * s,
+                       v.z * s);
+    }
+
+    //--------------------------------------------------------------------------
+    //! \brief Creates a rotation from roll, pitch and yaw (URDF and ROS
+    //! convention): roll about X, then pitch about Y, then yaw about Z, all
+    //! about the fixed axes.
+    //! \code
+    //! auto const down = compages::core::Quatd::fromRpy(
+    //!     units::angle::radian_t(3.1416), units::angle::radian_t(0),
+    //!     units::angle::radian_t(0)); // tool pointing down
+    //! \endcode
+    //! \return The rotation Rz * Ry * Rx.
+    //--------------------------------------------------------------------------
+    static Quat<T> fromRpy(units::angle::radian_t const roll,
+                           units::angle::radian_t const pitch,
+                           units::angle::radian_t const yaw)
+    {
+        Quat<T> const rx = rotation(roll, T(1), T(0), T(0));
+        Quat<T> const ry = rotation(pitch, T(0), T(1), T(0));
+        Quat<T> const rz = rotation(yaw, T(0), T(0), T(1));
+        return rz * ry * rx;
+    }
+
+    //--------------------------------------------------------------------------
+    //! \brief Creates the rotation whose columns are the given axes: the
+    //! rotated frame has its X along \c x, its Y along \c y, its Z along \c z.
+    //! \param[in] x Unit X axis of the new frame.
+    //! \param[in] y Unit Y axis, orthogonal to \c x.
+    //! \param[in] z Unit Z axis, orthogonal to both.
+    //--------------------------------------------------------------------------
+    static Quat<T> fromBasis(Vector<T, 3u> const& x,
+                             Vector<T, 3u> const& y,
+                             Vector<T, 3u> const& z)
+    {
+        Matrix<T, 4u, 4u> m(matrix::Identity);
+        m(0, 0) = x.x;
+        m(1, 0) = x.y;
+        m(2, 0) = x.z;
+        m(0, 1) = y.x;
+        m(1, 1) = y.y;
+        m(2, 1) = y.z;
+        m(0, 2) = z.x;
+        m(1, 2) = z.y;
+        m(2, 2) = z.z;
+        return fromMatrix(m);
     }
 
     //--------------------------------------------------------------------------
@@ -305,8 +356,8 @@ public:
     //--------------------------------------------------------------------------
     void integrateRungeKutta4(const Quat& q0, T dt, bool normalize = true)
     {
-        const static T half = static_cast<T>(0.5);
-        const static T two = static_cast<T>(2);
+        static constexpr T half = static_cast<T>(0.5);
+        static constexpr T two = static_cast<T>(2);
 
         Quat& q = *this;
         Quat qw = q * q0 * half;
@@ -636,11 +687,22 @@ Quat<T>& operator-=(Quat<T>& q1, Quat<T> const& q2)
     return q1;
 }
 
-//! \brief Dot product
+//! \brief Dot product, in the precision of the quaternions.
 template <typename T>
-float dot(Quat<T> const& q1, Quat<T> const& q2)
+T dot(Quat<T> const& q1, Quat<T> const& q2)
 {
     return q1.a * q2.a + q1.b * q2.b + q1.c * q2.c + q1.d * q2.d;
+}
+
+//! \brief Heading about Z: where the X axis of the rotated frame points in the
+//! horizontal plane (Z up).
+//! \return The yaw angle in (-pi, pi].
+template <typename T>
+units::angle::radian_t yaw(Quat<T> const& q)
+{
+    T const siny = T(2) * (q.w * q.z + q.x * q.y);
+    T const cosy = T(1) - T(2) * (q.y * q.y + q.z * q.z);
+    return units::angle::radian_t(std::atan2(siny, cosy));
 }
 
 } // namespace compages::core
