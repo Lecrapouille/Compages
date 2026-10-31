@@ -77,6 +77,10 @@ jobs:
             MESA_GLSL_VERSION_OVERRIDE=450 \
             ${{ steps.info.outputs.build }}/bin/Compages-examples --check
 
+      # Before the installation: sudo writes in the build folder.
+      - name: Gather the build artifacts
+        run: make dist
+
       - name: Install Compages
         run: |
           sudo make install MYMAKEFILE_CACHE="$HOME/.cache/mymakefile"
@@ -98,9 +102,6 @@ jobs:
             -o /tmp/compages-consumer \
             $(pkg-config --cflags --libs Compages)
           /tmp/compages-consumer
-
-      - name: Gather the build artifacts
-        run: make dist
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v6
@@ -153,6 +154,10 @@ jobs:
       - name: Build and run unit tests
         run: gmake check
 
+      # Before the installation: sudo writes in the build folder.
+      - name: Gather the build artifacts
+        run: gmake dist
+
       - name: Install Compages
         run: sudo gmake install MYMAKEFILE_CACHE="$HOME/.cache/mymakefile"
 
@@ -171,9 +176,6 @@ jobs:
             -o /tmp/compages-consumer \
             $(pkg-config --cflags --libs Compages)
           DYLD_LIBRARY_PATH=/usr/local/lib /tmp/compages-consumer
-
-      - name: Gather the build artifacts
-        run: gmake dist
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v6
