@@ -119,6 +119,10 @@ protected:
     void SetUp() override
     {
         GPUTest::SetUp();
+        if (IsSkipped())
+        {
+            return;
+        }
         auto ready = compages::gpu::init(GPUContext::procAddress());
         ASSERT_TRUE(bool(ready)) << ready.error();
     }

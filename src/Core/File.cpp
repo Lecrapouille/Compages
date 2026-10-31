@@ -9,10 +9,8 @@
 
 #include <algorithm>
 #include <cerrno>
-#include <chrono>
 #include <ctime>
 #include <cstring>
-#include <format>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -54,48 +52,20 @@ bool File::readAllFile(std::string const& p_filename, std::string& p_buffer)
 std::string File::generateTempFileName(std::string const& p_root_path,
                                        std::string const& p_extension)
 {
-#if defined(__EMSCRIPTEN__)
+    // localtime_r and strftime: the libc++ of macOS and of the browsers has
+    // no time-zone database for std::chrono::zoned_time.
     std::time_t const now = std::time(nullptr);
-    std::tm utc{};
-    if (::gmtime_r(&now, &utc) == nullptr)
+    std::tm local{};
+    if (::localtime_r(&now, &local) == nullptr)
     {
         return p_root_path + p_extension;
     }
     char stamp[32];
-    if (std::strftime(stamp, sizeof(stamp), "%Y-%m-%d/%Hh-%Mm-%Ss", &utc) == 0)
+    if (std::strftime(stamp, sizeof(stamp), "%Y-%m-%d/%Hh-%Mm-%Ss", &local) == 0)
     {
         return p_root_path + p_extension;
     }
     return p_root_path + stamp + p_extension;
-#else
-    try
-    {
-        std::chrono::zoned_time const local{
-            std::chrono::current_zone(),
-            std::chrono::floor<std::chrono::seconds>(
-                std::chrono::system_clock::now())
-        };
-
-        std::string path = p_root_path;
-        path += std::format("{:%Y-%m-%d/}", local);
-        path += std::format("{:%H}", local);
-        path += 'h';
-        path += std::format("-{:%M}", local);
-        path += 'm';
-        path += std::format("-{:%S}", local);
-        path += 's';
-        path += p_extension;
-        return path;
-    }
-    catch (std::format_error const&)
-    {
-        return p_root_path + p_extension;
-    }
-    catch (std::runtime_error const&)
-    {
-        return p_root_path + p_extension;
-    }
-#endif
 }
 
 bool File::mkdir(std::string_view const& p_path, mode_t p_mode)

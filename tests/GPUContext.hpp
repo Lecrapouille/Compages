@@ -10,6 +10,7 @@
 #include "main.hpp"
 
 #include <GLFW/glfw3.h>
+#include <cstdlib>
 #include <string>
 
 namespace tests
@@ -45,12 +46,11 @@ public:
     // ------------------------------------------------------------------------
     explicit GPUContext(int p_width = 1, int p_height = 1)
     {
-        if (glfwInit() == GLFW_FALSE)
+        if (!glfwReady())
         {
             m_error = "GLFW could not be initialized. No display?";
             return;
         }
-        m_glfw_ready = true;
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -69,17 +69,14 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Destroy the window and shut GLFW down.
+    //! \brief Destroy the window. GLFW stays initialized until the end of the
+    //! tests.
     // ------------------------------------------------------------------------
     ~GPUContext()
     {
         if (m_window != nullptr)
         {
             glfwDestroyWindow(m_window);
-        }
-        if (m_glfw_ready)
-        {
-            glfwTerminate();
         }
     }
 
@@ -126,8 +123,26 @@ public:
 
 private:
 
+    // ------------------------------------------------------------------------
+    //! \brief Initialize GLFW once for all the tests. An X server (Xvfb in a
+    //! CI) accepts a limited number of clients, and each glfwInit() of a test
+    //! cost one of them.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static bool glfwReady()
+    {
+        static bool const ready = []()
+        {
+            if (glfwInit() == GLFW_FALSE)
+            {
+                return false;
+            }
+            std::atexit(glfwTerminate);
+            return true;
+        }();
+        return ready;
+    }
+
     GLFWwindow* m_window = nullptr;
-    bool m_glfw_ready = false;
     std::string m_error;
 };
 

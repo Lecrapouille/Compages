@@ -36,6 +36,10 @@ protected:
     void SetUp() override
     {
         GPUTest::SetUp();
+        if (IsSkipped())
+        {
+            return;
+        }
         g_messages.clear();
         compages::gpu::logger(&collectingLogger);
     }
