@@ -3,7 +3,7 @@
 # their VERSION.
 
 Compages-data.LOCKED_REF := HEAD
-Compages-data.LOCKED := 0eb24771c36ce3aa944b0a0241890a7fd6a3ff30
+Compages-data.LOCKED := 7243dedfef1bf565ecb125b8d7ebfcda045588db
 backward-cpp.LOCKED_REF := HEAD
 backward-cpp.LOCKED := 78b2541c9d3c44bc81e2c5f4f34aa3503ac985de
 cgltf.LOCKED_REF := HEAD
