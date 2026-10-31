@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #include "./src/gl.c"
 #pragma GCC diagnostic pop

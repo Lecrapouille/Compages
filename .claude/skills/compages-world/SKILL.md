@@ -50,6 +50,6 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
   `gpu::reportError` inside the gallery only).
 
 Quick check without the gallery (verified):
-`g++ -std=c++20 x.cpp -I include -isystem external/units/include -isystem external/entt/src build/libCompages.a`.
+`g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`.
 
 Reference: doc/05-World-Layer.md, doc/03-Tutorial.md §2.

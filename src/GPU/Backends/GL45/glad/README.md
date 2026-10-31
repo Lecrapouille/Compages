@@ -6,7 +6,7 @@ It is committed rather than downloaded so that building the project needs no net
 
 ## Why it is vendored here and not in external/
 
-`external/` holds dependencies listed in the manifest and cloned by `make download-external-libs`. glad is different: it is generated output, tied to the exact OpenGL version this backend targets. It therefore belongs to the backend that uses it, next to the code calling it.
+`external/external.mk` declares the dependencies fetched by MyMakefile. glad is different: it is generated output, tied to the exact OpenGL version this backend targets. It therefore belongs to the backend that uses it, next to the code calling it.
 
 ## Regenerating
 

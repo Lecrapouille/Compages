@@ -34,7 +34,7 @@ In the gallery they also appear in the console panel, filtered by level. A drive
 ## 🔍 3. apitrace: every OpenGL call
 
 ```sh
-apitrace trace --api gl ./build/Compages-examples 04_DepthAndTransforms
+apitrace trace --api gl ./build/linux-gcc-debug/bin/Compages-examples 04_DepthAndTransforms
 qapitrace Compages-examples.trace
 ```
 
@@ -44,7 +44,7 @@ When a trace of the same name exists, apitrace writes `.1.trace`, `.2.trace`… 
 
 ## 📸 4. RenderDoc: one frame in detail
 
-Capture single frames: shaders, render targets, draw calls. Target: `build/Compages-examples`.
+Capture single frames: shaders, render targets, draw calls. Target: `build/linux-gcc-debug/bin/Compages-examples`.
 
 The ImGui panels use their own backend **after** the Compages flush. `gpu::forgetRenderState()` makes sure the state left by ImGui does not hide the state of the demo: the demo stays fully inspectable.
 
@@ -59,7 +59,7 @@ xvfb-run -a env \
     LIBGL_ALWAYS_SOFTWARE=1 \
     MESA_GL_VERSION_OVERRIDE=4.5 \
     MESA_GLSL_VERSION_OVERRIDE=450 \
-    ./build/Compages-examples --check
+    ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
 ---
@@ -72,6 +72,6 @@ xvfb-run -a env \
 | particles flicker or lag one frame | a missing `barrier(...)` after `dispatchItems` ([chapter 4 §5](04-GPU-Layer.md#-5-compute)) |
 | the demo panel looks wrong after your ImGui code | call `gpu::forgetRenderState()` after ImGui |
 | `libCompages.so` not found after install (Fedora) | `/usr/local/lib` missing from the loader ([chapter 2 §5](02-Getting-Started.md#-5-install-on-your-system)) |
-| textures missing | `make download-external-libs`, or `COMPAGES_DATA_PATH` |
+| textures missing | `make` fetches `Compages-data`; or set `COMPAGES_DATA_PATH` |
 
 Next: [11-Credits.md](11-Credits.md).

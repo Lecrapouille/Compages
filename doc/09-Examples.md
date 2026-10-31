@@ -4,9 +4,9 @@ One binary, `Compages-examples`, holds every demo: viewport, list, inspector, so
 
 ```sh
 make -j"$(nproc)"
-./build/Compages-examples
-./build/Compages-examples 01b_Triangle
-./build/Compages-examples --check
+./build/linux-gcc-debug/bin/Compages-examples
+./build/linux-gcc-debug/bin/Compages-examples 01b_Triangle
+./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
 A short guide of the folders is in [examples/README.md](../examples/README.md).
@@ -37,10 +37,10 @@ The viewport draws the demo into a texture: the panels never hide part of the im
 | `--no-overlay` | starts with the panels hidden |
 
 ```sh
-./build/Compages-examples --check --shots external/Compages-data/doc/examples
+./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 
-This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository; five of these images are copied in `doc/images/` for the documentation.
+This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository; five of these images are copied in `doc/images/` for the documentation. It writes in a clone of yours, not in the copy fetched by MyMakefile: `git clone https://github.com/Lecrapouille/Compages-data.git external/Compages-data` first.
 
 The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new demo is a `.hpp`/`.cpp` pair in its folder plus one line there.
 
@@ -57,7 +57,7 @@ The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new 
 
 `30_HeadlessWorld` ends before any `Scene` code.
 
-Demos that read files need `make download-external-libs` (the `Compages-data` repository).
+Demos that read files need the `Compages-data` repository, fetched by `make` with the other third parties.
 
 ---
 

@@ -52,10 +52,10 @@ stderr (KHR_debug).
 ## Rules
 
 - No `GLenum`/`gl*` in public headers; GL calls only in
-  `src/GPU/Backends/GL45/` (selected by `GPU_BACKEND` in `Makefile.common`).
+  `src/GPU/Backends/GL45/` (selected by `GPU_BACKEND` in the `Makefile`).
 - `gpu` includes only `Core`, never `World`/`Renderer`.
 - Handles are pooled (index + generation); `Buffer<T>` is not copyable;
-  `./build/Compages-examples --check` must report no leftover handle.
+  `./build/linux-gcc-debug/bin/Compages-examples --check` must report no leftover handle.
 - Tests: `tests/GPU/` (need a GL 4.5 context; use the xvfb + Mesa command of
   AGENTS.md without screen).
 

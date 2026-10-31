@@ -53,14 +53,12 @@ The CI then exports the Homebrew paths (`USER_CXXFLAGS`, `USER_LDFLAGS`, `PKG_CO
 ```sh
 git clone --recurse-submodules https://github.com/Lecrapouille/Compages.git
 cd Compages
-make download-external-libs      # once: clones the third parties of external/manifest
-make compile-external-libs       # once: builds the ones that need it
-make -j"$(nproc)"                # the library and the gallery
+make                             # the library and the gallery
 ```
 
-`--recurse-submodules` fetches `.makefile`, the build system. Without it, `make` has no rules.
+`--recurse-submodules` fetches `.makefile`, the build system ([MyMakefile](https://github.com/Lecrapouille/MyMakefile)). Without it, `make` has no rules. `make` uses all the cores.
 
-The third-party libraries are not git submodules. `external/manifest` lists them, one GitHub repository per line:
+The third-party libraries are not git submodules. `external/external.mk` declares them; the first `make` fetches them at the commits of `external/versions.lock`, in a cache shared by all your projects (`~/.cache/mymakefile`):
 
 | Repository | Role |
 |------------|------|
@@ -72,27 +70,28 @@ The third-party libraries are not git submodules. `external/manifest` lists them
 | `zeux/pugixml` | URDF files |
 | `ocornut/imgui` | the panels of the gallery |
 | `Lecrapouille/Compages-data` | textures, glTF and URDF files of the demos |
-| `DanielChappuis/reactphysics3d` | `attic/Physics/` only |
+| `DanielChappuis/reactphysics3d` | `attic/Physics/` only: not fetched |
 
-The assets land in `external/Compages-data/`. The demos also look at the `COMPAGES_DATA_PATH` environment variable.
+The demos find the assets in the cache, then in `external/Compages-data/` (a clone of yours, to regenerate the screenshots) and in the `COMPAGES_DATA_PATH` environment variable.
 
-After the build:
+After the build, in `build/linux-gcc-debug/` (`make COMPILATION_MODE=release` builds in `build/linux-gcc-release/`):
 
 | Path | Contents |
 |------|----------|
-| `build/libCompages.a` | the static library |
-| `build/libCompages.so` | the shared library |
-| `build/Compages-examples` | the gallery |
+| `lib/libCompages.a` | the static library |
+| `lib/libCompages.so` | the shared library |
+| `lib/pkgconfig/Compages.pc` | its flags, to build against it without installing it |
+| `bin/Compages-examples` | the gallery |
 
-`make help` lists the variables (`GPU_BACKEND`, `PREFIX`, …). `GPU_BACKEND` is `GL45` in `Makefile.common`. The day a second backend exists, you will change it there, not in the code that calls `gpu::`.
+`make help` lists the variables (`GPU_BACKEND`, `PREFIX`, …). `GPU_BACKEND` is `GL45` in the `Makefile`. The day a second backend exists, you will change it there, not in the code that calls `gpu::`.
 
 ---
 
 ## 📷 3. Open the gallery
 
 ```sh
-./build/Compages-examples                 # every demo, with panels
-./build/Compages-examples 13_Galaxy       # start on one demo
+./build/linux-gcc-debug/bin/Compages-examples                 # every demo, with panels
+./build/linux-gcc-debug/bin/Compages-examples 13_Galaxy       # start on one demo
 ```
 
 One window holds a viewport, the list of demos, an inspector, the source of the demo, a console and GPU counters. **PgUp / PgDn** change demo, **F1** hides the panels, **Esc** quits. All keys: [chapter 9](09-Examples.md#-1-the-window).
@@ -102,7 +101,7 @@ One window holds a viewport, the list of demos, an inspector, the source of the 
 Check that every demo builds, draws and frees its GPU objects:
 
 ```sh
-./build/Compages-examples --check
+./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
 `--check` runs each demo for a few frames, closes it, and fails if a GPU handle is left.
@@ -112,10 +111,10 @@ Check that every demo builds, draws and frees its GPU objects:
 ## 🧪 4. Tests, and a machine without screen
 
 ```sh
-make tests -j"$(nproc)"
+make check
 ```
 
-The tests binary is `build/Compages-UnitTest`. Local coverage: `make -C tests coverage`.
+The tests binary is `build/linux-gcc-debug/bin/Compages-UnitTest`. Local coverage: `make coverage`.
 
 On a Linux machine without screen (CI, server), give a software OpenGL to the program:
 
@@ -124,10 +123,10 @@ xvfb-run -a env \
     LIBGL_ALWAYS_SOFTWARE=1 \
     MESA_GL_VERSION_OVERRIDE=4.5 \
     MESA_GLSL_VERSION_OVERRIDE=450 \
-    ./build/Compages-examples --check
+    ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
-The same prefix works for `./build/Compages-UnitTest`. A program that only uses the **World** layer needs none of this: it never touches the GPU ([chapter 3 §2](03-Tutorial.md#-2-a-world-without-a-screen)).
+The same prefix works for `./build/linux-gcc-debug/bin/Compages-UnitTest`. A program that only uses the **World** layer needs none of this: it never touches the GPU ([chapter 3 §2](03-Tutorial.md#-2-a-world-without-a-screen)).
 
 ---
 

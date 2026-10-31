@@ -25,23 +25,22 @@ Read only what the task needs. Load a skill instead of reading the docs:
 ```text
 include/Compages/   public, installed: Core/ GPU/ World/ Renderer/ + Compages.hpp
 src/                implementation; src/GPU/Backends/GL45/ is the only place with glad/gl*
-examples/           the gallery (one binary build/Compages-examples);
+examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp
-tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/Compages-UnitTest)
+tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
 attic/Physics/      ReactPhysics3D adapter, out of the build
-external/           third parties from external/manifest (do not edit);
+external/           external.mk declares the third parties, versions.lock their commits;
                     external/Compages-data/ = demo assets
 ```
 
 ## Commands
 
 ```bash
-make download-external-libs && make compile-external-libs   # once
-make -j"$(nproc)"                         # lib + gallery
-make tests -j"$(nproc)"                   # unit tests
-./build/Compages-examples [name]          # gallery; --check = run all, fail on GPU leaks/errors
+make                                      # lib + gallery (fetches the third parties)
+make check                                # unit tests
+./build/linux-gcc-debug/bin/Compages-examples [name]          # gallery; --check = run all, fail on GPU leaks/errors
 xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
-    MESA_GLSL_VERSION_OVERRIDE=450 ./build/Compages-examples --check   # no screen
+    MESA_GLSL_VERSION_OVERRIDE=450 ./build/linux-gcc-debug/bin/Compages-examples --check   # no screen
 ```
 
 ## Rules that are easy to break

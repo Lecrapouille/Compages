@@ -73,7 +73,7 @@ flowchart TB
 #include <Compages/Renderer/Scene.hpp> // layer 3
 ```
 
-The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` variable of `Makefile.common` chooses which backend folder is compiled; callers of `gpu::` change nothing.
+The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` variable of the `Makefile` chooses which backend folder is compiled; callers of `gpu::` change nothing.
 
 ---
 
@@ -93,7 +93,7 @@ src/
 examples/                  the gallery, one binary; Common/ holds the window and the manifest
 tests/                     GPU, World, Renderer
 attic/Physics/             ReactPhysics3D adapter, not in the build
-external/manifest          the third-party repositories
+external/external.mk       the third-party repositories, locked in external/versions.lock
 ```
 
 `include/` is the contract; `src/` is not installed.
@@ -191,10 +191,8 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 Install and options: [chapter 2](02-Getting-Started.md).
 
 ```text
-make download-external-libs
-make compile-external-libs
-make -j"$(nproc)"
-make tests -j"$(nproc)"
+make
+make check
 ```
 
 Next: [08-API-Reference.md](08-API-Reference.md).

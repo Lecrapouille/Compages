@@ -32,7 +32,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 
 ## 🧭 Quick paths
 
-- *"I just want to see something."* → [2. Getting started](02-Getting-Started.md), then `./build/Compages-examples`
+- *"I just want to see something."* → [2. Getting started](02-Getting-Started.md), then `./build/linux-gcc-debug/bin/Compages-examples`
 - *"I have a shader and numbers."* → [3. Tutorial §1](03-Tutorial.md#-1-a-triangle-named-by-the-shader), then [4. GPU](04-GPU-Layer.md)
 - *"I simulate things, no window needed."* → [3. Tutorial §2](03-Tutorial.md#-2-a-world-without-a-screen), then [5. World](05-World-Layer.md)
 - *"I want a 3D scene in ten lines."* → [3. Tutorial §3](03-Tutorial.md#-3-a-picture-of-the-world), then [6. Renderer](06-Renderer-Layer.md)
@@ -44,7 +44,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 Five screenshots live in `doc/images/` so that the pages render without the assets repository. The full gallery is written into the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository by:
 
 ```sh
-./build/Compages-examples --check --shots external/Compages-data/doc/examples
+./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 
 ## 🌍 A note on the language

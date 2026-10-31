@@ -5,54 +5,24 @@
 # for users who cannot use the GPL, under a commercial license.
 # See LICENSING.md for details.
 
-# Location of the project directory and Makefiles
-#
-P := .
-M := $(P)/.makefile
+PROJECT_NAME := Compages
+PROJECT_VERSION := 1.0.0
+CXX_STANDARD := c++20
+COMPILATION_MODE ?= debug
 
-###################################################
-# Project definition
+###############################################################################
+# The library (Compages.mk, also read by the projects embedding Compages:
+# CompagesProject.MAKEFILES := Compages.mk external/external.mk), its third
+# parties, the tests and the gallery.
 #
-include $(P)/Makefile.common
-TARGET_NAME := $(PROJECT_NAME)
-TARGET_DESCRIPTION := C++ Wrapper allowing to write OpenGL Core applications in few lines
-include $(M)/project/Makefile
+SUBMAKEFILES := Compages.mk external/external.mk tests/tests.mk examples/examples.mk
 
-###################################################
-# Compile shared and static libraries
-#
-# Exactly one GPU backend is compiled. Selecting another one is a matter of
-# changing GPU_BACKEND in Makefile.common.
-#
-LIB_FILES := $(filter-out src/GPU/Backends/%,$(call rwildcard,src,*.cpp))
-LIB_FILES += $(call rwildcard,src/GPU/Backends/$(GPU_BACKEND),*.cpp)
-DEFINES += -DGPU_BACKEND_$(GPU_BACKEND)
-INCLUDES := $(P)/include $(P)/src $(THIRD_PARTIES_DIR)
-INCLUDES += $(THIRD_PARTIES_DIR)/units/include
-INCLUDES += $(THIRD_PARTIES_DIR)/stb
-INCLUDES += $(THIRD_PARTIES_DIR)/cgltf
-INCLUDES += $(THIRD_PARTIES_DIR)/json/include
-INCLUDES += $(THIRD_PARTIES_DIR)/entt/src
-INCLUDES += $(THIRD_PARTIES_DIR)/pugixml/src
-INCLUDES += $(P)/src/GPU/Backends/$(GPU_BACKEND)/glad/include
-VPATH := $(P)/src
+M ?= .makefile
+include $(M)/MyMakefile.mk
 
-###################################################
-# Generic Makefile rules
-#
-include $(M)/rules/Makefile
-
-###################################################
-# Extra rules
-#
-post-build:: build-examples
-
+# The headers of entt and units are included by the public headers of
+# Compages: installed beside them.
 install::
-	$(Q)install -d -m 755 $(INSTALL_LIBDIR)
-	$(Q)install -d -m 755 $(INSTALL_INCLUDEDIR)/entt
-	$(Q)cp -R $(THIRD_PARTIES_DIR)/entt/src/entt/. $(INSTALL_INCLUDEDIR)/entt/
-	$(Q)install -m 644 $(THIRD_PARTIES_DIR)/units/include/units.h $(INSTALL_INCLUDEDIR)/
-
-.PHONY: build-examples
-build-examples: $(TARGET_STATIC_LIB_NAME)
-	$(Q)$(MAKE) --no-print-directory --directory=examples all
+	$(Q)$(call make-dir,$(DESTDIR)$(INCLUDEDIR)/entt)
+	$(Q)cp -R $(entt.DIR)src/entt/. $(DESTDIR)$(INCLUDEDIR)/entt/
+	$(Q)$(call copy-files,$(units.DIR)include/units.h,$(DESTDIR)$(INCLUDEDIR)/)

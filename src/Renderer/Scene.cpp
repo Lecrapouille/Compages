@@ -28,6 +28,7 @@
 #include <cctype>
 #include <cmath>
 #include <filesystem>
+#include <initializer_list>
 
 namespace compages::renderer
 {
@@ -625,9 +626,13 @@ Scene& Scene::skybox(std::array<std::string, 6u> const& p_faces)
     }
     // A cube around the camera, seen from the inside. Drawn first and
     // without the depth test, it is behind whatever comes after.
-    m_sky["position"] = { { -1, -1, -1 }, { 1, -1, -1 }, { 1, 1, -1 },
-                          { -1, 1, -1 },  { -1, -1, 1 }, { 1, -1, 1 },
-                          { 1, 1, 1 },    { -1, 1, 1 } };
+    // The element type is written out: a bare braced list is ambiguous
+    // between the int and the float slots under Clang.
+    m_sky["position"] = std::initializer_list<std::initializer_list<float>>{
+        { -1.f, -1.f, -1.f }, { 1.f, -1.f, -1.f }, { 1.f, 1.f, -1.f },
+        { -1.f, 1.f, -1.f },  { -1.f, -1.f, 1.f }, { 1.f, -1.f, 1.f },
+        { 1.f, 1.f, 1.f },    { -1.f, 1.f, 1.f }
+    };
     m_sky.indices({ 0, 1, 2, 2, 3, 0, 4, 6, 5, 6, 4, 7, 0, 3, 7, 7, 4, 0,
                     1, 5, 6, 6, 2, 1, 3, 2, 6, 6, 7, 3, 0, 4, 5, 5, 1, 0 });
     m_sky["sky"] = m_sky_texture;

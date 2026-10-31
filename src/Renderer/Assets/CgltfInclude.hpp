@@ -18,7 +18,7 @@
 #    pragma GCC diagnostic ignored "-Wswitch-enum"
 #elif defined(__clang__)
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Warith-conversion"
+#    pragma clang diagnostic ignored "-Wcast-align"
 #    pragma clang diagnostic ignored "-Wcast-qual"
 #    pragma clang diagnostic ignored "-Wconversion"
 #    pragma clang diagnostic ignored "-Wfloat-equal"

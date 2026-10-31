@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <ctime>
 #include <cstring>
 #include <format>
 #include <fstream>
@@ -53,6 +54,20 @@ bool File::readAllFile(std::string const& p_filename, std::string& p_buffer)
 std::string File::generateTempFileName(std::string const& p_root_path,
                                        std::string const& p_extension)
 {
+#if defined(__EMSCRIPTEN__)
+    std::time_t const now = std::time(nullptr);
+    std::tm utc{};
+    if (::gmtime_r(&now, &utc) == nullptr)
+    {
+        return p_root_path + p_extension;
+    }
+    char stamp[32];
+    if (std::strftime(stamp, sizeof(stamp), "%Y-%m-%d/%Hh-%Mm-%Ss", &utc) == 0)
+    {
+        return p_root_path + p_extension;
+    }
+    return p_root_path + stamp + p_extension;
+#else
     try
     {
         std::chrono::zoned_time const local{
@@ -80,6 +95,7 @@ std::string File::generateTempFileName(std::string const& p_root_path,
     {
         return p_root_path + p_extension;
     }
+#endif
 }
 
 bool File::mkdir(std::string_view const& p_path, mode_t p_mode)

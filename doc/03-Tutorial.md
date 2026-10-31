@@ -2,7 +2,7 @@
 
 In this page you write three programs, one per layer: a triangle drawn from a shader, a world that moves without any screen, and a 3D scene in ten lines. Go only as far as the first layer that does your job.
 
-The first and third programs are demos of the gallery: open them with `./build/Compages-examples 01b_Triangle` and `./build/Compages-examples 50_ThreeJsLike`, and read their source in the **Source** panel. The second one runs in a terminal; its output below is real.
+The first and third programs are demos of the gallery: open them with `./build/linux-gcc-debug/bin/Compages-examples 01b_Triangle` and `./build/linux-gcc-debug/bin/Compages-examples 50_ThreeJsLike`, and read their source in the **Source** panel. The second one runs in a terminal; its output below is real.
 
 ---
 
@@ -170,9 +170,9 @@ int main()
 Build it from the root of your clone, against the static library, and run it:
 
 ```sh
-g++ -std=c++20 world.cpp -I include \
-    -isystem external/units/include -isystem external/entt/src \
-    build/libCompages.a -o world
+export PKG_CONFIG_PATH=$PWD/build/linux-gcc-debug/lib/pkgconfig
+g++ -std=c++20 world.cpp $(pkg-config --cflags Compages) \
+    build/linux-gcc-debug/lib/libCompages.a -o world
 ./world
 ```
 

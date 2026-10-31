@@ -5,7 +5,7 @@ description: Add, rename or change a demo of the Compages gallery (examples/, Co
 
 # Compages gallery demos
 
-One binary, `build/Compages-examples`, runs every demo. Folders by layer:
+One binary, `build/linux-gcc-debug/bin/Compages-examples`, runs every demo. Folders by layer:
 `00_GettingStarted/`, `10_ScientificAndCompute/` (GPU), `20_Performance/`,
 `30_WorldAndAssets/` (World, then World + Renderer), `50_Complete/` (all three).
 
@@ -27,8 +27,8 @@ One binary, `build/Compages-examples`, runs every demo. Folders by layer:
 2. Include it and add one `X(Type, "NN_Name", "<target>", "<Folder>/NN_Name.cpp", "<legacy>", <line budget>, "<scope>")`
    line to `COMPAGES_EXAMPLE_MANIFEST` in `examples/Common/ExampleManifest.hpp`
    (the manifest is the list of demos; budget 0 = none).
-3. `make -j"$(nproc)" && ./build/Compages-examples NN_Name`, then
-   `./build/Compages-examples --check` (fails on frame errors and leftover GPU handles).
+3. `make && ./build/linux-gcc-debug/bin/Compages-examples NN_Name`, then
+   `./build/linux-gcc-debug/bin/Compages-examples --check` (fails on frame errors and leftover GPU handles).
 4. Document it in doc/09-Examples.md (and the layer chapter if it introduces a call).
 
 ## Rules
@@ -39,6 +39,6 @@ One binary, `build/Compages-examples`, runs every demo. Folders by layer:
   fail), like `30_HeadlessWorld`.
 - Only `examples/Common/Window.cpp` talks to GLFW; demos never create windows.
 - Assets come from `external/Compages-data/` (`Common/DataPath.hpp`).
-- Screenshots: `./build/Compages-examples --check --shots external/Compages-data/doc/examples`
+- Screenshots: `./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples`
   (`--shots-with-panels` keeps the panels). Only five images are copied into
   `doc/images/`.

@@ -38,7 +38,7 @@ chapter tables: keep them in sync. Code comments point to chapters
   start and the doc table. Never open a README with API details.
 - Code excerpts come from real files (`examples/...`) or are compiled: World
   snippets build headless with
-  `g++ -std=c++20 x.cpp -I include -isystem external/units/include -isystem external/entt/src build/libCompages.a`;
+  `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`;
   paste the real output.
 - Namespaces in snippets: `compages::core::Vector3f`, `compages::core::Frame`,
   `compages::world::...`, `compages::renderer::...`, `compages::gpu::...`.

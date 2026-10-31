@@ -1,0 +1,24 @@
+# Commits of the third parties of Compages, written by MyMakefile:
+# commit this file. 'make update-externals' moves them to the last commit of
+# their VERSION.
+
+Compages-data.LOCKED_REF := HEAD
+Compages-data.LOCKED := 0eb24771c36ce3aa944b0a0241890a7fd6a3ff30
+backward-cpp.LOCKED_REF := HEAD
+backward-cpp.LOCKED := 78b2541c9d3c44bc81e2c5f4f34aa3503ac985de
+cgltf.LOCKED_REF := HEAD
+cgltf.LOCKED := 85cd62382dfea638278962690cf515023f33ed00
+dbg-macro.LOCKED_REF := HEAD
+dbg-macro.LOCKED := a94fa67eca61e245cf33bdd340110329ea9f1b05
+entt.LOCKED_REF := v4.0.0
+entt.LOCKED := 85c6bba014049b5de8fad49d25424df2f1f6a8c1
+imgui.LOCKED_REF := docking
+imgui.LOCKED := 778992face67ecefaa5c2932db4b2101545ea4df
+json.LOCKED_REF := HEAD
+json.LOCKED := f8b47ff6f6de8b80bea03d685d646eb93b66b98d
+pugixml.LOCKED_REF := v1.16
+pugixml.LOCKED := c8033ce9d039e7f9d134877c363397b3cfe20816
+stb.LOCKED_REF := HEAD
+stb.LOCKED := 2c980bb59875b0d32144a71867fbdebb2f77cd20
+units.LOCKED_REF := v2.3.3
+units.LOCKED := b04d436aaae198939e46194a43ea65b32e44ca6e

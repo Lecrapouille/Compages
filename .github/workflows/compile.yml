@@ -31,11 +31,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache the third parties
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mymakefile
+          key: mymakefile-${{ runner.os }}-${{ hashFiles('external/versions.lock') }}
+
       - name: Install packages
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
-            build-essential cmake git pkg-config \
+            build-essential cmake git pkg-config ccache \
             libgl1-mesa-dev libgl1-mesa-dri libglfw3-dev \
             libdw-dev lcov \
             mesa-utils xvfb xauth
@@ -48,29 +54,20 @@ jobs:
           cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON .
           sudo make install
 
-      - name: Prepare third-party dependencies
-        run: |
-          make download-external-libs
-          V=1 make compile-external-libs
-
-      - name: Check gallery parity and budgets
-        run: make -C examples check-contracts
+      - name: Describe the build
+        id: info
+        run: make -s ci-info >> "$GITHUB_OUTPUT"
 
       - name: Build Compages and gallery
-        run: V=1 make -j"$(nproc --all)" all
+        run: make all
 
-      - name: Build unit tests
-        run: |
-          cd tests
-          V=1 make -j"$(nproc --all)" all
-
-      - name: Run unit tests with llvmpipe
+      - name: Build and run unit tests with llvmpipe
         run: |
           xvfb-run -a env \
             LIBGL_ALWAYS_SOFTWARE=1 \
             MESA_GL_VERSION_OVERRIDE=4.5 \
             MESA_GLSL_VERSION_OVERRIDE=450 \
-            ./build/Compages-UnitTest
+            make check
 
       - name: Check all gallery examples with llvmpipe
         run: |
@@ -78,11 +75,11 @@ jobs:
             LIBGL_ALWAYS_SOFTWARE=1 \
             MESA_GL_VERSION_OVERRIDE=4.5 \
             MESA_GLSL_VERSION_OVERRIDE=450 \
-            ./build/Compages-examples --check
+            ${{ steps.info.outputs.build }}/bin/Compages-examples --check
 
       - name: Install Compages
         run: |
-          sudo make install
+          sudo make install MYMAKEFILE_CACHE="$HOME/.cache/mymakefile"
           sudo ldconfig
 
       - name: Build and run an installed consumer
@@ -94,7 +91,7 @@ jobs:
 
           int main()
           {
-              return gpu::initialized() ? 1 : 0;
+              return compages::gpu::initialized() ? 1 : 0;
           }
           CPP
           c++ -std=c++20 /tmp/compages-consumer.cpp \
@@ -102,14 +99,14 @@ jobs:
             $(pkg-config --cflags --libs Compages)
           /tmp/compages-consumer
 
-      - name: Stage build artifacts
-        run: bash .github/scripts/stage-artifacts.sh linux
+      - name: Gather the build artifacts
+        run: make dist
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v6
         with:
           name: compages-linux-x86_64
-          path: ci-artifacts/linux/
+          path: ${{ steps.info.outputs.dist_dir }}/
           if-no-files-found: error
 
   # ============================================================================
@@ -127,9 +124,15 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache the third parties
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mymakefile
+          key: mymakefile-${{ runner.os }}-${{ hashFiles('external/versions.lock') }}
+
       - name: Install packages
         run: |
-          brew install cmake glfw pkg-config lcov
+          brew install make cmake glfw pkg-config lcov ccache
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix)/share/pkgconfig" >> "$GITHUB_ENV"
 
       - name: Download, configure and install Google test
@@ -140,31 +143,18 @@ jobs:
           cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON .
           sudo make install
 
-      - name: Configure Homebrew paths for GLFW
-        run: |
-          glfw_prefix="$(brew --prefix glfw)"
-          echo "USER_CXXFLAGS=-I${glfw_prefix}/include" >> "$GITHUB_ENV"
-          echo "USER_LDFLAGS=-L${glfw_prefix}/lib -Wl,-rpath,${glfw_prefix}/lib" >> "$GITHUB_ENV"
-
-      - name: Prepare third-party dependencies
-        run: |
-          make download-external-libs
-          make compile-external-libs
-
-      - name: Check gallery parity and budgets
-        run: make -C examples check-contracts
+      - name: Describe the build
+        id: info
+        run: gmake -s ci-info >> "$GITHUB_OUTPUT"
 
       - name: Build Compages and gallery
-        run: make -j"$(sysctl -n hw.logicalcpu)" all
+        run: gmake all
 
       - name: Build and run unit tests
-        run: |
-          cd tests
-          make -j"$(sysctl -n hw.logicalcpu)" all
-          ../build/Compages-UnitTest
+        run: gmake check
 
       - name: Install Compages
-        run: sudo make install
+        run: sudo gmake install MYMAKEFILE_CACHE="$HOME/.cache/mymakefile"
 
       - name: Build and run an installed consumer
         run: |
@@ -174,7 +164,7 @@ jobs:
 
           int main()
           {
-              return gpu::initialized() ? 1 : 0;
+              return compages::gpu::initialized() ? 1 : 0;
           }
           CPP
           c++ -std=c++20 /tmp/compages-consumer.cpp \
@@ -182,14 +172,14 @@ jobs:
             $(pkg-config --cflags --libs Compages)
           DYLD_LIBRARY_PATH=/usr/local/lib /tmp/compages-consumer
 
-      - name: Stage build artifacts
-        run: bash .github/scripts/stage-artifacts.sh macos
+      - name: Gather the build artifacts
+        run: gmake dist
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v6
         with:
           name: compages-macos-arm64
-          path: ci-artifacts/macos/
+          path: ${{ steps.info.outputs.dist_dir }}/
           if-no-files-found: error
 
   # ============================================================================
@@ -212,7 +202,7 @@ jobs:
       - name: Read version
         id: version
         run: |
-          VERSION=$(grep '^PROJECT_VERSION' Makefile.common | awk '{print $3}')
+          VERSION=$(grep '^PROJECT_VERSION' Makefile | awk '{print $3}')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts

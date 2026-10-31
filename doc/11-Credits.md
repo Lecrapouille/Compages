@@ -28,7 +28,7 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 
 The list and the install are in [chapter 2](02-Getting-Started.md#-2-build). In short: EnTT, units, cgltf, nlohmann/json, stb, pugixml, ImGui (gallery), glad (private to the backend), GLFW (gallery and tests).
 
-Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), cloned into `external/Compages-data/` by `make download-external-libs`.
+Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), fetched by `make` with the other third parties.
 
 ---
 

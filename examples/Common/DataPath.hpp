@@ -37,6 +37,10 @@ namespace detail
         }
     }
 
+#if defined(COMPAGES_DATA_DIR)
+    // Compages-data fetched by MyMakefile, in its cache.
+    roots.emplace_back(COMPAGES_DATA_DIR);
+#endif
     for (const char* relative : { "external/Compages-data/",
                                   "../external/Compages-data/",
                                   "../../external/Compages-data/",

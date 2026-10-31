@@ -148,11 +148,9 @@ git clone --recurse-submodules https://github.com/Lecrapouille/Compages.git
 
 cd Compages
 
-make download-external-libs
-make compile-external-libs
-make -j"$(nproc)"
+make
 
-./build/Compages-examples   # the gallery: every demo, its source, GPU counters
+make run-Compages-examples   # the gallery: every demo, its source, GPU counters
 ```
 
 Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels.
