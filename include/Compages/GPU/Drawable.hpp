@@ -147,18 +147,11 @@ public:
         //! \endcode
         //!
         //! Whole numbers are welcome for a float attribute: the list is
-        //! converted to what the shader declares.
+        //! converted to what the shader declares. (No overload for lists of
+        //! int: clang finds it as good as this one, so ambiguous.)
         // --------------------------------------------------------------------
         Slot&
         operator=(std::initializer_list<std::initializer_list<float>> p_values)
-        {
-            m_drawable.assignNested(m_name, p_values);
-            return *this;
-        }
-
-        //! \brief Same, when every value is written as a whole number.
-        Slot&
-        operator=(std::initializer_list<std::initializer_list<int>> p_values)
         {
             m_drawable.assignNested(m_name, p_values);
             return *this;

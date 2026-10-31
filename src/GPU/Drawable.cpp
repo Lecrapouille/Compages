@@ -391,9 +391,6 @@ void Drawable::assignNested(
 template void Drawable::assignNested<float>(
     std::string const&,
     std::initializer_list<std::initializer_list<float>>);
-template void
-Drawable::assignNested<int>(std::string const&,
-                            std::initializer_list<std::initializer_list<int>>);
 
 void Drawable::assignFlat(std::string const& p_name,
                           std::initializer_list<float> p_values)

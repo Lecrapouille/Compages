@@ -13,6 +13,7 @@
 #include "Compages/GPU/RenderPass.hpp"
 
 #include <cmath>
+#include <numbers>
 #include <vector>
 
 using namespace units::literals;
@@ -57,11 +58,11 @@ compages::Status PointSphere::setUp()
     for (std::uint32_t i = 0u; i < lat; ++i)
     {
         const float v = static_cast<float>(i) / static_cast<float>(lat - 1u);
-        const float phi = (v - 0.5f) * M_PIf;
+        const float phi = (v - 0.5f) * std::numbers::pi_v<float>;
         for (std::uint32_t j = 0u; j < lon; ++j)
         {
             const float u = static_cast<float>(j) / static_cast<float>(lon);
-            const float theta = u * 2.0f * M_PIf;
+            const float theta = u * 2.0f * std::numbers::pi_v<float>;
             points.emplace_back(PointVertex{ compages::core::Vector3f(
                 radius * std::cos(phi) * std::cos(theta),
                 radius * std::sin(phi),
