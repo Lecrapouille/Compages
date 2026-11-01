@@ -131,6 +131,8 @@ private:
     [[nodiscard]] bool live(Entry const& p_entry) const;
     void sortIfNeeded();
     void refresh();
+    //! \brief Advance the timers of a routine, calling those that are due.
+    void tick(Entry const& p_entry, float p_dt);
     //! \brief onDisable() if active, then onDestroy().
     static void retire(Routine& p_routine);
 

@@ -417,3 +417,79 @@ TEST(Routine, StepWithoutMovingAnythingSkipsTheMatrices)
     world.update();
     EXPECT_FALSE(world.transforms().anyDirty());
 }
+
+namespace
+{
+
+struct Clock : compages::world::Routine
+{
+    void start() override
+    {
+        after(0.25f, [this] { ++once; });
+        tick = every(0.1f, [this] { ++ticks; });
+    }
+
+    void stop()
+    {
+        cancel(tick);
+    }
+
+    int once = 0;
+    int ticks = 0;
+    TimerId tick = 0u;
+};
+
+struct SelfDestruct : compages::world::Routine
+{
+    void start() override
+    {
+        after(0.1f, [this] { entity().destroy(); });
+        after(0.1f, [this] { ++never; });
+    }
+
+    int never = 0;
+};
+
+} // namespace
+
+TEST(Routine, TimersCallOnceOrEveryPeriod)
+{
+    compages::world::World world;
+    Clock& clock = world.entity("e").add<Clock>().get<Clock>();
+    world.update(frameOf(0.0f)); // start(): timers set
+    for (int i = 0; i < 3; ++i)
+    {
+        world.update(frameOf(0.1f));
+    }
+    EXPECT_EQ(clock.once, 1);
+    EXPECT_EQ(clock.ticks, 3);
+    world.update(frameOf(0.1f));
+    EXPECT_EQ(clock.once, 1);
+    EXPECT_EQ(clock.ticks, 4);
+    clock.stop();
+    world.update(frameOf(0.1f));
+    EXPECT_EQ(clock.ticks, 4);
+}
+
+TEST(Routine, TimersWaitWhileTheirRoutineIsNotActive)
+{
+    compages::world::World world;
+    compages::world::Entity e = world.entity("e").add<Clock>();
+    Clock& clock = e.get<Clock>();
+    world.update(frameOf(0.0f));
+    e.enable(false);
+    world.update(frameOf(1.0f));
+    EXPECT_EQ(clock.once, 0);
+    e.enable(true);
+    world.update(frameOf(0.3f));
+    EXPECT_EQ(clock.once, 1);
+}
+
+TEST(Routine, ATimerMayDestroyItsOwnEntity)
+{
+    compages::world::World world;
+    (void)world.entity("e").add<SelfDestruct>();
+    world.update(frameOf(0.0f));
+    world.update(frameOf(0.2f));
+    EXPECT_EQ(world.living(), 0u);
+}

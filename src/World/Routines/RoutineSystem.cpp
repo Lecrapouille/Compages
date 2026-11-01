@@ -208,6 +208,54 @@ void RoutineSystem::update(float p_dt)
             entry.routine->update(p_dt);
         }
     }
+
+    for (Entry const& entry : m_order)
+    {
+        if (live(entry) && entry.routine->m_active)
+        {
+            tick(entry, p_dt);
+        }
+    }
+}
+
+void RoutineSystem::tick(Entry const& p_entry, float p_dt)
+{
+    // A call may add or cancel timers, or remove the routine itself: the
+    // timers are found again by id, and the routine checked, after each call.
+    std::vector<Routine::TimerId> due;
+    for (Routine::Timer& timer : p_entry.routine->m_timers)
+    {
+        timer.remaining -= p_dt;
+        if (timer.remaining <= 0.0f)
+        {
+            due.push_back(timer.id);
+        }
+    }
+    for (Routine::TimerId const id : due)
+    {
+        if (!live(p_entry))
+        {
+            return;
+        }
+        std::vector<Routine::Timer>& timers = p_entry.routine->m_timers;
+        auto timer = std::find_if(timers.begin(), timers.end(),
+                                  [id](Routine::Timer const& p_timer) { return p_timer.id == id; });
+        if (timer == timers.end())
+        {
+            continue; // cancelled by an earlier call
+        }
+        std::function<void()> call = timer->call;
+        if (timer->period > 0.0f)
+        {
+            // A slow step calls it once, not once per period it missed.
+            timer->remaining = std::max(timer->remaining + timer->period, 0.0f);
+        }
+        else
+        {
+            timers.erase(timer);
+        }
+        call();
+    }
 }
 
 void RoutineSystem::lateUpdate(float p_dt)

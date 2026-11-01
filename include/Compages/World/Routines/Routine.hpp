@@ -13,6 +13,8 @@
 #include "Compages/World/Spatial/LocalTransform.hpp"
 
 #include <cstdint>
+#include <functional>
+#include <vector>
 
 namespace compages::world
 {
@@ -49,6 +51,7 @@ class Entity;
 //! fixedUpdate(dt)   0, 1 or more times, dt being RoutineSystem::fixedStep()
 //! update(dt)        once, dt being the time of the frame
 //!   ... joints, animation, world matrices ...
+//!   ... timers set by after() and every() ...
 //! lateUpdate(dt)    once, the world matrices being up to date
 //! onDisable()       when it stops being active
 //! onDestroy()       once, before it is removed or its entity destroyed
@@ -152,6 +155,31 @@ protected:
     // ------------------------------------------------------------------------
     [[nodiscard]] compages::core::Frame const& frame() const;
 
+    //! \brief Names a timer, to cancel it.
+    using TimerId = std::uint32_t;
+
+    // ------------------------------------------------------------------------
+    //! \brief Call a function once, after some seconds of steps. The time
+    //! stops while the routine is not active.
+    //!
+    //! \code
+    //! after(2.0f, [this] { entity().destroy(); });   // gone in two seconds
+    //! \endcode
+    // ------------------------------------------------------------------------
+    TimerId after(float p_seconds, std::function<void()> p_call);
+
+    // ------------------------------------------------------------------------
+    //! \brief Call a function every some seconds, until cancel().
+    //!
+    //! \code
+    //! every(0.5f, [this] { blink(); });
+    //! \endcode
+    // ------------------------------------------------------------------------
+    TimerId every(float p_seconds, std::function<void()> p_call);
+
+    //! \brief Stop a timer. Nothing happens for a timer already done.
+    void cancel(TimerId p_timer);
+
 private:
 
     friend class RoutineSystem;
@@ -164,6 +192,19 @@ private:
     //! \brief Was onEnable() called without onDisable() since?
     bool m_active = false;
     bool m_started = false;
+
+    struct Timer
+    {
+        TimerId id;
+        //! \brief Seconds before the next call.
+        float remaining;
+        //! \brief Seconds between two calls; zero for a single call.
+        float period;
+        std::function<void()> call;
+    };
+
+    std::vector<Timer> m_timers;
+    TimerId m_next_timer = 1u;
 };
 
 } // namespace compages::world
