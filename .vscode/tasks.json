@@ -1,14 +1,243 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "build with bear",
-			"type": "shell",
-			"command": "bear -- make -j8",
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		}
-	]
+    // Tasks calling MyMakefile: 'make help' lists every goal. MyMakefile
+    // already uses all the cores (JOBS=4 to keep some free).
+    // Ctrl+Shift+B: build; Ctrl+Shift+P > "Run Test Task": the unit tests.
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}"
+    },
+    "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false
+    },
+    "tasks": [
+        // --------------------------------------------------------------------
+        // Build
+        // --------------------------------------------------------------------
+        {
+            "label": "Build",
+            "detail": "Library and gallery, then compile_commands.json for IntelliSense",
+            "type": "shell",
+            "command": "make all compile-commands",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Build unit tests",
+            "type": "shell",
+            "command": "make Compages-UnitTest",
+            "group": "build",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Build with sanitizers",
+            "detail": "AddressSanitizer and UndefinedBehaviorSanitizer, in build/linux-gcc-debug-address-undefined",
+            "type": "shell",
+            "command": "make all Compages-UnitTest SANITIZER=address,undefined",
+            "group": "build",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Build release",
+            "type": "shell",
+            "command": "make all COMPILATION_MODE=release",
+            "group": "build",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Rebuild",
+            "type": "shell",
+            "command": "make rebuild",
+            "group": "build",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "compile_commands.json",
+            "type": "shell",
+            "command": "make compile-commands",
+            "problemMatcher": []
+        },
+
+        // --------------------------------------------------------------------
+        // Tests and checks
+        // --------------------------------------------------------------------
+        {
+            "label": "Unit tests",
+            "type": "shell",
+            "command": "make check",
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Gallery --check",
+            "detail": "Every example for a few frames: fails on GPU errors or leaks",
+            "type": "shell",
+            "command": "make run-Compages-examples ARGS=--check",
+            "group": "test",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Unit tests in valgrind",
+            "type": "shell",
+            "command": "make memcheck",
+            "group": "test",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Coverage",
+            "detail": "doc/code-coverage/index.html, shown in the editor by Coverage Gutters",
+            "type": "shell",
+            "command": "make coverage",
+            "group": "test",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+
+        // --------------------------------------------------------------------
+        // Run
+        // --------------------------------------------------------------------
+        {
+            "label": "Gallery",
+            "type": "shell",
+            "command": "make run-Compages-examples",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Gallery: one example",
+            "type": "shell",
+            "command": "make run-Compages-examples ARGS='${input:example}'",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Gallery: cycle",
+            "detail": "The next example every five seconds, for a second screen",
+            "type": "shell",
+            "command": "make run-Compages-examples ARGS=--cycle",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Gallery: screenshots",
+            "detail": "One picture per example in build/shots",
+            "type": "shell",
+            "command": "mkdir -p build/shots && make run-Compages-examples ARGS='--check --shots build/shots'",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+
+        // --------------------------------------------------------------------
+        // Code quality and documentation
+        // --------------------------------------------------------------------
+        {
+            "label": "Format",
+            "type": "shell",
+            "command": "make format",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check format",
+            "type": "shell",
+            "command": "make check-format",
+            "problemMatcher": []
+        },
+        {
+            "label": "clang-tidy",
+            "type": "shell",
+            "command": "make tidy",
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Doxygen",
+            "type": "shell",
+            "command": "make doc",
+            "problemMatcher": []
+        },
+
+        // --------------------------------------------------------------------
+        // Project
+        // --------------------------------------------------------------------
+        {
+            "label": "Targets and flags",
+            "type": "shell",
+            "command": "make list-targets show-flags",
+            "problemMatcher": []
+        },
+        {
+            "label": "Update the third parties",
+            "detail": "Moves them to the last commit of their VERSION, rewrites external/versions.lock",
+            "type": "shell",
+            "command": "make update-externals",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "make clean",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean everything",
+            "detail": "veryclean: builds, third parties, documentation, reports",
+            "type": "shell",
+            "command": "make veryclean",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "example",
+            "type": "pickString",
+            "description": "Example to start from (PgUp/PgDn in the window change it); the names of examples/Common/ExampleManifest.hpp",
+            "default": "01b_Triangle",
+            "options": [
+                "00a_Dummy",
+                "00b_CpuGpuSync",
+                "00c_Compute",
+                "01a_ClearScreen",
+                "01b_Triangle",
+                "01c_InterleavedTriangle",
+                "02_DynamicGeometry",
+                "03a_TexturedQuad",
+                "03b_MultiTextureBlend",
+                "04_DepthAndTransforms",
+                "05a_MultiPassMesh",
+                "05b_RenderToTexture",
+                "05c_PostProcess",
+                "06a_Mandelbrot",
+                "06b_ComplexShader",
+                "07_PointClouds",
+                "10a_HeightMap",
+                "10b_Terrain3D",
+                "11a_GameOfLife",
+                "11b_GrayScott",
+                "12_ComputeParticles",
+                "13_Galaxy",
+                "14_SpiralGalaxy",
+                "15_Lorenz",
+                "16_NeuralNetwork",
+                "20a_SpriteBatch",
+                "20b_ManyCubes",
+                "21_IndirectDraw",
+                "30_HeadlessWorld",
+                "31_MovingRobot",
+                "32a_SplitViews",
+                "32b_CameraPick",
+                "32c_MiscLookAt",
+                "33a_TexturedSpheres",
+                "33b_TextureGallery",
+                "33c_GeometryShowcase",
+                "34_GltfModel",
+                "35_PrefabAndSave",
+                "36a_AnimatedModel",
+                "36b_GltfAnimation",
+                "37_Skybox",
+                "38_RobotArm",
+                "39a_CanvasPaint",
+                "50_ThreeJsLike",
+                "51_Behaviors",
+                "52_MvpDemo",
+                "53_DoomLike",
+                "54_SweatAndDecals"
+            ]
+        }
+    ]
 }

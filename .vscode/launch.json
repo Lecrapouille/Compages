@@ -1,45 +1,185 @@
 {
+    // F5: build with the task named in preLaunchTask, then debug in gdb.
+    // The binaries are those of COMPILATION_MODE=debug (the default of the
+    // Makefile): build/linux-gcc-debug/bin.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Compages-tests with gdb",
+            "name": "Gallery",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Compages-tests",
+            "program": "${workspaceFolder}/build/linux-gcc-debug/bin/Compages-examples",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
+            "preLaunchTask": "Build",
             "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
             "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": false
-                }
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true },
+                { "description": "Intel syntax for the disassembly", "text": "-gdb-set disassembly-flavor intel", "ignoreFailures": true }
             ]
         },
         {
-            "name": "Compages examples with gdb",
+            "name": "Gallery: one example",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Compages-examples",
-            "args": [
-                "sandbox.ogs"
-            ],
-            "stopAtEntry": true,
+            "program": "${workspaceFolder}/build/linux-gcc-debug/bin/Compages-examples",
+            "args": ["${input:example}"],
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
+            "preLaunchTask": "Build",
             "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
             "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": false
-                }
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true },
+                { "description": "Intel syntax for the disassembly", "text": "-gdb-set disassembly-flavor intel", "ignoreFailures": true }
             ]
+        },
+        {
+            "name": "Gallery --check",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux-gcc-debug/bin/Compages-examples",
+            "args": ["--check"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
+            "setupCommands": [
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        },
+        {
+            "name": "Unit tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux-gcc-debug/bin/Compages-UnitTest",
+            "args": ["--gtest_filter=${input:gtestFilter}", "--gtest_break_on_failure"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build unit tests",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
+            "setupCommands": [
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        },
+        {
+            "name": "Gallery with sanitizers",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux-gcc-debug-address-undefined/bin/Compages-examples",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build with sanitizers",
+            // Stop in gdb at the first error found by ASan or UBSan.
+            "environment": [
+                { "name": "ASAN_OPTIONS", "value": "abort_on_error=1:detect_leaks=0" },
+                { "name": "UBSAN_OPTIONS", "value": "print_stacktrace=1:halt_on_error=1:abort_on_error=1" }
+            ],
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
+            "setupCommands": [
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        },
+        {
+            "name": "Unit tests with sanitizers",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux-gcc-debug-address-undefined/bin/Compages-UnitTest",
+            "args": ["--gtest_filter=${input:gtestFilter}"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build with sanitizers",
+            "environment": [
+                { "name": "ASAN_OPTIONS", "value": "abort_on_error=1:detect_leaks=0" },
+                { "name": "UBSAN_OPTIONS", "value": "print_stacktrace=1:halt_on_error=1:abort_on_error=1" }
+            ],
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "externalConsole": false,
+            "setupCommands": [
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        },
+        {
+            "name": "Attach to a running program",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/build/linux-gcc-debug/bin/Compages-examples",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                { "description": "Pretty printers of the STL", "text": "-enable-pretty-printing", "ignoreFailures": true }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "example",
+            "type": "pickString",
+            "description": "Example to start from (PgUp/PgDn in the window change it); the names of examples/Common/ExampleManifest.hpp",
+            "default": "01b_Triangle",
+            "options": [
+                "00a_Dummy",
+                "00b_CpuGpuSync",
+                "00c_Compute",
+                "01a_ClearScreen",
+                "01b_Triangle",
+                "01c_InterleavedTriangle",
+                "02_DynamicGeometry",
+                "03a_TexturedQuad",
+                "03b_MultiTextureBlend",
+                "04_DepthAndTransforms",
+                "05a_MultiPassMesh",
+                "05b_RenderToTexture",
+                "05c_PostProcess",
+                "06a_Mandelbrot",
+                "06b_ComplexShader",
+                "07_PointClouds",
+                "10a_HeightMap",
+                "10b_Terrain3D",
+                "11a_GameOfLife",
+                "11b_GrayScott",
+                "12_ComputeParticles",
+                "13_Galaxy",
+                "14_SpiralGalaxy",
+                "15_Lorenz",
+                "16_NeuralNetwork",
+                "20a_SpriteBatch",
+                "20b_ManyCubes",
+                "21_IndirectDraw",
+                "30_HeadlessWorld",
+                "31_MovingRobot",
+                "32a_SplitViews",
+                "32b_CameraPick",
+                "32c_MiscLookAt",
+                "33a_TexturedSpheres",
+                "33b_TextureGallery",
+                "33c_GeometryShowcase",
+                "34_GltfModel",
+                "35_PrefabAndSave",
+                "36a_AnimatedModel",
+                "36b_GltfAnimation",
+                "37_Skybox",
+                "38_RobotArm",
+                "39a_CanvasPaint",
+                "50_ThreeJsLike",
+                "51_Behaviors",
+                "52_MvpDemo",
+                "53_DoomLike",
+                "54_SweatAndDecals"
+            ]
+        },
+        {
+            "id": "gtestFilter",
+            "type": "promptString",
+            "description": "Google Test filter, such as 'Vector*' or 'Frame.*'",
+            "default": "*"
         }
     ]
 }

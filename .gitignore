@@ -42,3 +42,4 @@ examples/external/assets/
 *.out
 *.app
 doc/code-coverage
+compile_commands.json

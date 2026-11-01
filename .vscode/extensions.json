@@ -1,0 +1,24 @@
+{
+    // Proposed when the folder is opened (Extensions > Recommended).
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "xaver.clang-format",
+        "ms-vscode.makefile-tools",
+        "slevesque.shader",
+        "arthurwang.vsc-prolog",
+        "usernamehw.errorlens",
+        "ryanluker.vscode-coverage-gutters",
+        "gruntfuggly.todo-tree",
+        "streetsidesoftware.code-spell-checker",
+        "sonarsource.sonarlint-vscode",
+        "eamodio.gitlens",
+        "github.vscode-github-actions",
+        "davidanson.vscode-markdownlint",
+        "anthropic.claude-code"
+    ],
+    // Its own IntelliSense and build would fight those of MyMakefile.
+    "unwantedRecommendations": [
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+    ]
+}

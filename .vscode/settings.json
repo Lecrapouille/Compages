@@ -1,8 +1,148 @@
 {
-    // clang-format
+    // ------------------------------------------------------------------------
+    // C++: IntelliSense of cpptools from compile_commands.json, written by
+    // MyMakefile ('make compile-commands', also done by the default build
+    // task). No bear needed.
+    // ------------------------------------------------------------------------
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.cStandard": "c17",
+    "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.doxygen.generatedStyle": "//!",
+    // The project is built by MyMakefile: Makefile Tools must not run its own
+    // dry run nor configure IntelliSense.
+    "makefile.configureOnOpen": false,
+    "makefile.configureOnEdit": false,
+    "makefile.configureAfterCommand": false,
+
+    // ------------------------------------------------------------------------
+    // Formatting: the system clang-format, the same as 'make format', with
+    // the .clang-format of the project.
+    // ------------------------------------------------------------------------
     "clang-format.executable": "clang-format",
-    "editor.formatOnSave": true,
-    // Remove trailing whitespace
+    "clang-format.style": "file",
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format",
+        "editor.formatOnSave": true
+    },
+    "[c]": {
+        "editor.defaultFormatter": "xaver.clang-format",
+        "editor.formatOnSave": true
+    },
+    "[makefile]": {
+        "editor.insertSpaces": false,
+        "editor.detectIndentation": false
+    },
+    "[markdown]": {
+        "files.trimTrailingWhitespace": false,
+        "editor.wordWrap": "on"
+    },
+
+    // ------------------------------------------------------------------------
+    // Editor
+    // ------------------------------------------------------------------------
+    "editor.rulers": [80],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.renderWhitespace": "trailing",
+    "editor.guides.bracketPairs": "active",
+    "editor.stickyScroll.enabled": true,
     "files.trimTrailingWhitespace": true,
-    }
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.eol": "\n",
+    "files.associations": {
+        "*.mk": "makefile",
+        "*.pl": "prolog",
+        "ChangeLog": "plaintext",
+        "*.vert": "glsl",
+        "*.frag": "glsl",
+        "*.geom": "glsl",
+        "*.comp": "glsl",
+        "*.urdf": "xml",
+        "*.inl": "cpp",
+        "*.tpp": "cpp"
+    },
+
+    // ------------------------------------------------------------------------
+    // Neither show nor search the objects, the builds, the clones of the
+    // third parties and the caches.
+    // ------------------------------------------------------------------------
+    "files.exclude": {
+        "**/*.o": true,
+        "**/*.d": true,
+        "**/*.gcda": true,
+        "**/*.gcno": true
+    },
+    "search.exclude": {
+        "build/**": true,
+        "external/*/**": true,
+        ".cache/**": true,
+        "doc/code-coverage/**": true,
+        "compile_commands.json": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/external/*/**": true,
+        "**/.cache/**": true
+    },
+    // A .hpp under its .cpp.
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "*.cpp": "${capture}.hpp, ${capture}.h"
+    },
+
+    // ------------------------------------------------------------------------
+    // Terminal and tasks
+    // ------------------------------------------------------------------------
+    "terminal.integrated.scrollback": 10000,
+    "task.problemMatchers.neverPrompt": true,
+
+    // ------------------------------------------------------------------------
+    // Extensions
+    // ------------------------------------------------------------------------
+    // SonarLint: its settings belong here, VS Code does not read a
+    // sonarlint.json.
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}/compile_commands.json",
+    "sonarlint.disableTelemetry": true,
+
+    // Coverage Gutters: the report of 'make coverage'.
+    "coverage-gutters.coverageBaseDir": "doc/code-coverage",
+    "coverage-gutters.coverageFileNames": ["lcov.info"],
+
+    // Todo Tree
+    "todo-tree.general.tags": ["TODO", "FIXME", "XXX", "HACK", "BUG", "NOTE"],
+    "todo-tree.filtering.excludeGlobs": [
+        "**/build/**",
+        "**/external/*/**",
+        "**/.makefile/**"
+    ],
+
+    // Error Lens: the errors and warnings at the end of their line.
+    "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+
+    // Code Spell Checker: the comments are in English.
+    "cSpell.language": "en",
+    "cSpell.words": [
+        "cgltf",
+        "Compages",
+        "entt",
+        "glad",
+        "glfw",
+        "GLSL",
+        "gmock",
+        "gtest",
+        "imgui",
+        "pugixml",
+        "RobotIK",
+        "URDF"
+    ],
+    "cSpell.ignorePaths": [
+        "build/**",
+        "external/**",
+        ".makefile/**",
+        "compile_commands.json"
+    ]
 }
