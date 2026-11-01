@@ -75,7 +75,7 @@ void HeadlessWorld::draw(compages::world::ViewFrame const& p_frame)
         compages::gpu::reportError(
             "the movement system did not move the player");
     }
-    if (m_world.routineCount(m_world.lookup("Simulation/Worker")) != 1u)
+    if (m_world.routines().count(m_world.lookup("Simulation/Worker")) != 1u)
     {
         compages::gpu::reportError("the worker lost its routine");
     }

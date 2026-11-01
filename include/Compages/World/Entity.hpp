@@ -120,7 +120,7 @@ public:
     {
         if constexpr (std::is_base_of_v<Routine, T>)
         {
-            world().addRoutine(
+            world().routines().add(
                 m_id, std::make_unique<T>(std::forward<Args>(p_args)...));
         }
         else if constexpr (std::is_constructible_v<T, Args...>)
@@ -142,7 +142,7 @@ public:
     {
         if constexpr (std::is_base_of_v<Routine, T>)
         {
-            world().template removeRoutines<T>(m_id);
+            world().routines().template remove<T>(m_id);
         }
         else
         {
@@ -199,7 +199,7 @@ public:
         }
         if constexpr (std::is_base_of_v<Routine, T>)
         {
-            return m_world->template routine<T>(m_id);
+            return m_world->routines().template find<T>(m_id);
         }
         else
         {

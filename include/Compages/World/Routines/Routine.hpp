@@ -97,7 +97,7 @@ protected:
 
 private:
 
-    friend class World;
+    friend class RoutineSystem;
 
     World* m_world = nullptr;
     EntityId m_entity{};

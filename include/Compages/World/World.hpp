@@ -14,7 +14,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/Core/Vector.hpp"
-#include "Compages/World/Routines/Routine.hpp"
+#include "Compages/World/Routines/RoutineSystem.hpp"
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 #include "Compages/World/Entt.hpp"
@@ -89,9 +89,11 @@ class World: private compages::core::NotCopiable
 {
 public:
 
+    //! \brief A World cannot be moved: its entities and routines keep a
+    //! pointer to it.
     World() = default;
-    World(World&&) = default;
-    World& operator=(World&&) = default;
+    World(World&&) = delete;
+    World& operator=(World&&) = delete;
 
     // ------------------------------------------------------------------------
     //! \brief Create an entity, named or not.
@@ -336,50 +338,18 @@ public:
         return m_registry.get<T>(p_entity.native());
     }
 
-    //! \brief Attach a routine to an entity. What Entity::add<T>() does when
-    //! T derives from Routine.
-    Routine& addRoutine(EntityId p_entity,
-                          std::unique_ptr<Routine> p_behavior);
-
-    //! \brief How many routines an entity has.
-    [[nodiscard]] std::size_t routineCount(EntityId p_entity) const;
-
-    //! \brief The first routine of type T of an entity, or nullptr.
-    template <typename T>
-    [[nodiscard]] T* routine(EntityId p_entity)
+    //! \brief The routines of the entities: code run at each step.
+    [[nodiscard]] RoutineSystem& routines()
     {
-        Routines* routines = tryGet<Routines>(p_entity);
-        if (routines == nullptr)
-        {
-            return nullptr;
-        }
-        for (std::unique_ptr<Routine> const& routine : routines->list)
-        {
-            if (T* found = dynamic_cast<T*>(routine.get()))
-            {
-                return found;
-            }
-        }
-        return nullptr;
+        return m_routines;
     }
 
-    //! \brief Take the routines of type T off an entity. Not from inside one
-    //! of them: it would be destroyed while it runs.
-    template <typename T>
-    void removeRoutines(EntityId p_entity)
+    [[nodiscard]] RoutineSystem const& routines() const
     {
-        if (Routines* routines = tryGet<Routines>(p_entity))
-        {
-            std::erase_if(
-                routines->list,
-                [](std::unique_ptr<Routine> const& p_behavior)
-                { return dynamic_cast<T*>(p_behavior.get()) != nullptr; });
-        }
+        return m_routines;
     }
 
 private:
-
-    void runRoutines();
 
     struct Name
     {
@@ -390,16 +360,6 @@ private:
     {
     };
 
-    //! \brief The routines of one entity, as a component.
-    struct Routines: compages::core::NotCopiable
-    {
-        Routines() = default;
-        Routines(Routines&&) = default;
-        Routines& operator=(Routines&&) = default;
-
-        std::vector<std::unique_ptr<Routine>> list;
-    };
-
     entt::registry m_registry;
     std::size_t m_living = 0u;
     SpatialGraph m_graph;
@@ -408,6 +368,7 @@ private:
     TransformSystem m_transform_system;
     compages::core::Frame m_frame{};
     Input m_input{};
+    RoutineSystem m_routines{ *this };
 
     static const std::string s_empty_name;
 };

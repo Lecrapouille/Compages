@@ -301,7 +301,7 @@ void World::update(compages::core::Frame const& p_frame)
     // A headless step has no input: do not keep the keys and the mouse of a
     // previous update(ViewFrame), or routines would see them held forever.
     m_input = Input{};
-    runRoutines();
+    m_routines.update(m_frame.elapsed);
     update();
 }
 
@@ -309,7 +309,7 @@ void World::step(ViewFrame const& p_view)
 {
     m_frame = p_view;
     m_input = p_view.input;
-    runRoutines();
+    m_routines.update(m_frame.elapsed);
 }
 
 void World::update(ViewFrame const& p_view)
@@ -342,68 +342,6 @@ Entity World::lookup(std::string_view p_path)
         return Entity(*this, root);
     }
     return Entity(*this, find(root, p_path.substr(slash + 1u)));
-}
-
-Routine& World::addRoutine(EntityId p_entity,
-                             std::unique_ptr<Routine> p_behavior)
-{
-    assert(alive(p_entity) && "a routine added to a dead entity");
-    p_behavior->m_world = this;
-    p_behavior->m_entity = p_entity;
-    Routines& routines =
-        m_registry.get_or_emplace<Routines>(p_entity.native());
-    routines.list.emplace_back(std::move(p_behavior));
-    return *routines.list.back();
-}
-
-std::size_t World::routineCount(EntityId p_entity) const
-{
-    Routines const* routines = tryGet<Routines>(p_entity);
-    return (routines == nullptr) ? 0u : routines->list.size();
-}
-
-void World::runRoutines()
-{
-    // A routine may create or destroy entities, or add routines: the list
-    // of who runs this frame is taken first.
-    struct Running
-    {
-        EntityId entity;
-        Routine* routine;
-    };
-    std::vector<Running> running;
-    for (auto [native, routines] : m_registry.view<Routines>().each())
-    {
-        if (!enabledInHierarchy(EntityId(native)))
-        {
-            continue;
-        }
-        for (std::unique_ptr<Routine> const& routine : routines.list)
-        {
-            running.emplace_back(Running{ EntityId(native), routine.get() });
-        }
-    }
-    for (Running const& run : running)
-    {
-        // Gone if an earlier routine of this same frame destroyed it: the
-        // pointer is only followed once found again in its entity.
-        Routines const* owner = tryGet<Routines>(run.entity);
-        if ((owner == nullptr) ||
-            std::none_of(owner->list.begin(),
-                         owner->list.end(),
-                         [&run](std::unique_ptr<Routine> const& p_kept)
-                         { return p_kept.get() == run.routine; }))
-        {
-            continue;
-        }
-        Routine* routine = run.routine;
-        if (!routine->m_started)
-        {
-            routine->m_started = true;
-            routine->start();
-        }
-        routine->update(m_frame.elapsed);
-    }
 }
 
 } // namespace compages::world
