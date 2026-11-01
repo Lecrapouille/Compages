@@ -9,7 +9,7 @@
 #include "main.hpp"
 
 
-#include "Compages/Renderer/Assets/UrdfLoader.hpp"
+#include "Compages/World/Import/UrdfLoader.hpp"
 
 #include <cmath>
 #include <filesystem>
@@ -130,7 +130,7 @@ TEST(UrdfLoader, BuildsTheChainOfLinks)
 {
     const UrdfFile file(IRB2400);
     compages::world::World world;
-    auto robot = compages::renderer::loadUrdf(world, file.path());
+    auto robot = compages::world::loadUrdf(world, file.path());
     ASSERT_TRUE(bool(robot)) << robot.error();
 
     EXPECT_EQ(robot.value().name(), "irb2400");
@@ -151,7 +151,7 @@ TEST(UrdfLoader, ReadsTheLimitsOfTheJoints)
 {
     const UrdfFile file(IRB2400);
     compages::world::World world;
-    auto robot = compages::renderer::loadUrdf(world, file.path());
+    auto robot = compages::world::loadUrdf(world, file.path());
     ASSERT_TRUE(bool(robot)) << robot.error();
 
     compages::world::Entity link_2 = robot.value().lookup("base_link/link_1/link_2");
@@ -169,7 +169,7 @@ TEST(UrdfLoader, ForwardKinematicsOfTheIrb2400)
 {
     const UrdfFile file(IRB2400);
     compages::world::World world;
-    auto robot = compages::renderer::loadUrdf(world, file.path());
+    auto robot = compages::world::loadUrdf(world, file.path());
     ASSERT_TRUE(bool(robot)) << robot.error();
     compages::world::Entity tool = robot.value().lookup(TOOL0);
 
@@ -212,7 +212,7 @@ TEST(UrdfLoader, ReadsRollPitchYawAndOtherJointTypes)
   </joint>
 </robot>)");
     compages::world::World world;
-    auto robot = compages::renderer::loadUrdf(world, file.path());
+    auto robot = compages::world::loadUrdf(world, file.path());
     ASSERT_TRUE(bool(robot)) << robot.error();
 
     compages::world::Entity tip = robot.value().lookup("base/arm/tip");
@@ -234,7 +234,7 @@ TEST(UrdfLoader, HangsUnderAParent)
     const UrdfFile file(IRB2400);
     compages::world::World world;
     compages::world::Entity cell = world.entity("Cell").position(5, 0, 0);
-    auto robot = compages::renderer::loadUrdf(world, file.path(), cell);
+    auto robot = compages::world::loadUrdf(world, file.path(), cell);
     ASSERT_TRUE(bool(robot)) << robot.error();
     EXPECT_EQ(robot.value().parent(), cell);
     world.update();
@@ -246,26 +246,26 @@ TEST(UrdfLoader, RefusesBrokenFilesWithoutLeavingEntities)
 {
     compages::world::World world;
 
-    auto missing = compages::renderer::loadUrdf(world, "/does/not/exist.urdf");
+    auto missing = compages::world::loadUrdf(world, "/does/not/exist.urdf");
     EXPECT_FALSE(missing);
 
     const UrdfFile floating(R"(<robot name="r"><link name="a"/><link name="b"/>
   <joint name="j" type="floating"><parent link="a"/><child link="b"/></joint>
 </robot>)");
-    auto unsupported = compages::renderer::loadUrdf(world, floating.path());
+    auto unsupported = compages::world::loadUrdf(world, floating.path());
     ASSERT_FALSE(unsupported);
     EXPECT_NE(unsupported.error().find("floating"), std::string::npos);
 
     const UrdfFile two_roots(R"(<robot name="r"><link name="a"/><link name="b"/></robot>)");
-    EXPECT_FALSE(compages::renderer::loadUrdf(world, two_roots.path()));
+    EXPECT_FALSE(compages::world::loadUrdf(world, two_roots.path()));
 
     const UrdfFile unknown(R"(<robot name="r"><link name="a"/>
   <joint name="j" type="fixed"><parent link="a"/><child link="ghost"/></joint>
 </robot>)");
-    EXPECT_FALSE(compages::renderer::loadUrdf(world, unknown.path()));
+    EXPECT_FALSE(compages::world::loadUrdf(world, unknown.path()));
 
     const UrdfFile not_robot(R"(<scene/>)");
-    EXPECT_FALSE(compages::renderer::loadUrdf(world, not_robot.path()));
+    EXPECT_FALSE(compages::world::loadUrdf(world, not_robot.path()));
 
     EXPECT_EQ(world.living(), 0u);
 }

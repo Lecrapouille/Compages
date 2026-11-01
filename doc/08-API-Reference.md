@@ -69,6 +69,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | joint | `.revolute(axis, min, max)` `.joint().angle(a)` `.prismatic(axis, min, max)` `.joint().offset(o)` |
 | joint value | `.joint().angle()` `.joint().offset()` (applied, inside the limits), `.joint().commandedAngle()` `.joint().commandedOffset()` (as set) |
 | who writes the pose | `.set(PoseDriver{ PoseDriver::External })` — also `Kinematic`, `Animation` |
+| URDF robot, headless | `compages::world::loadUrdf(world, "robot.urdf")` |
 | step without matrices | `world.step(viewFrame)`, then `world.update()` |
 | life | `if (entity)`, `entity.enable(false)` |
 

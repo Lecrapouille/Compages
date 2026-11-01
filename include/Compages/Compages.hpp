@@ -11,7 +11,7 @@
 #include "Compages/Renderer/Assets/CanvasTexture.hpp"
 #include "Compages/Renderer/Assets/GltfLoader.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
-#include "Compages/Renderer/Assets/UrdfLoader.hpp"
+#include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"

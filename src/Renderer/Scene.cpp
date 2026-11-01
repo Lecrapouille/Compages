@@ -12,7 +12,7 @@
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
-#include "Compages/Renderer/Assets/UrdfLoader.hpp"
+#include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/Renderer/Components/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Prefab/PrefabInstantiate.hpp"

@@ -100,7 +100,7 @@ map.render(top);         // a minimap
 | `scene.clips(model)` | the clip names, in file order |
 | `scene.copy(entity)` | draws another entity with the same mesh and look (cheap duplicates) |
 
-`load` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`38_RobotArm`).
+`load` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`38_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
 
 - `34_GltfModel` loads `Duck.glb` and frames the camera.
 - `36b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).

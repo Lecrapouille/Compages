@@ -27,7 +27,7 @@ cgltf.PUBLIC_INCLUDES := .
 json.GIT := https://github.com/nlohmann/json.git
 json.PUBLIC_INCLUDES := include
 
-# Compiled by src/Renderer/Assets/PugixmlImpl.cpp.
+# Compiled by src/World/Import/PugixmlImpl.cpp.
 pugixml.GIT := https://github.com/zeux/pugixml.git
 pugixml.VERSION := v1.16
 pugixml.PUBLIC_INCLUDES := src

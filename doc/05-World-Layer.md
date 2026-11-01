@@ -110,6 +110,8 @@ A joint keeps two values. The **commanded** value is the one you set; it may be 
 
 `31_MovingRobot` builds three robots from boxes this way. `38_RobotArm` loads a URDF (ABB IRB 2400): one entity per link, one revolute joint between each, and sliders to set the angles within their limits. This is forward kinematics, still independent of the rendering: the demo only uses a `Scene` to look at the arm.
 
+A URDF describes a robot, not only its look, so the chain belongs to the World: `compages::world::loadUrdf(world, path)` (`World/Import/UrdfLoader.hpp`) builds it headless. `parseUrdf` reads the file without creating anything, and `buildUrdf` builds it with a callback for each link: the renderer uses that callback to add the visuals.
+
 ---
 
 ## 🎯 5. Who writes the pose: `PoseDriver`
