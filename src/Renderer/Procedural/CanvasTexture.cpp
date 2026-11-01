@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/CanvasTexture.hpp"
+#include "Compages/Renderer/Procedural/CanvasTexture.hpp"
 
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/GPU/Core/Enums.hpp"

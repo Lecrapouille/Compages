@@ -98,7 +98,7 @@ arm.joint().angle(30.0_deg);
 
 `update` (through `update(Frame)`) runs `KinematicSystem`, which sets the local transform from the joint value, then `TransformSystem`, which propagates from parents to children. Turning a joint moves everything below it.
 
-`entity.joint()` gives a `JointHandle` (`World/Spatial/JointHandle.hpp`): it sets and reads the joint value. `.revolute()` and `.prismatic()` stay on `Entity`, to chain while building.
+`entity.joint()` gives a `JointHandle` (`World/Kinematics/JointHandle.hpp`): it sets and reads the joint value. `.revolute()` and `.prismatic()` stay on `Entity`, to chain while building.
 
 A joint keeps two values. The **commanded** value is the one you set; it may be outside the limits. The **applied** value is the commanded one kept inside the limits: it is the one that moves the link. `arm.joint().angle()` gives the applied angle, `arm.joint().commandedAngle()` the commanded one (`offset()` and `commandedOffset()` for a slider). In the component, `state.position.value` is the command and `state.position.applied()` the effect. A zero axis gives a joint that does not move.
 

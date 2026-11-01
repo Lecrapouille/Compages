@@ -8,9 +8,9 @@
 #pragma once
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/CanvasTexture.hpp"
-#include "Compages/Renderer/Assets/GltfLoader.hpp"
-#include "Compages/Renderer/Assets/StlLoader.hpp"
+#include "Compages/Renderer/Procedural/CanvasTexture.hpp"
+#include "Compages/Renderer/Import/GltfLoader.hpp"
+#include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"

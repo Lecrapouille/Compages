@@ -5,11 +5,11 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Systems/AnimationSystem.hpp"
+#include "Compages/Renderer/Animation/AnimationSystem.hpp"
 
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Components/Animator.hpp"
+#include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/Components/PoseDriver.hpp"
 #include "Compages/World/Components/SkinInstance.hpp"

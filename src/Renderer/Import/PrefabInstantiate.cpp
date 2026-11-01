@@ -5,11 +5,11 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Prefab/PrefabInstantiate.hpp"
+#include "Compages/Renderer/Import/PrefabInstantiate.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/Prefab.hpp"
-#include "Compages/Renderer/Components/Animator.hpp"
+#include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Components/PrefabInstance.hpp"
 #include "Compages/World/Components/Camera.hpp"

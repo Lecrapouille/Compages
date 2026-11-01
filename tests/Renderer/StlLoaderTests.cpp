@@ -7,7 +7,7 @@
 
 #include "main.hpp"
 
-#include "Compages/Renderer/Assets/StlLoader.hpp"
+#include "Compages/Renderer/Import/StlLoader.hpp"
 
 #include <cstdint>
 #include <cstring>

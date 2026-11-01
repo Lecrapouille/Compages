@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/Renderer/Assets/AnimationClip.hpp"
+#include "Compages/Renderer/Animation/AnimationClip.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/Components/Light.hpp"

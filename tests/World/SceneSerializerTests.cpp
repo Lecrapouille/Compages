@@ -8,7 +8,7 @@
 #include "GPUContext.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Scene.hpp"
 #include "Compages/Renderer/Serialization/SceneSerializer.hpp"

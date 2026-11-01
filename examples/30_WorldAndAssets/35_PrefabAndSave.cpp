@@ -8,7 +8,7 @@
 #include "30_WorldAndAssets/35_PrefabAndSave.hpp"
 #include "Compages/World/Entity.hpp"
 
-#include "Compages/Renderer/Assets/Prefabs.hpp"
+#include "Compages/Renderer/Procedural/Prefabs.hpp"
 #include "Compages/Renderer/Serialization/SceneSerializer.hpp"
 
 #include <cmath>

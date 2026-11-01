@@ -7,7 +7,7 @@
 
 #include "30_WorldAndAssets/32c_MiscLookAt.hpp"
 
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 
 #include <cmath>
 #include <random>

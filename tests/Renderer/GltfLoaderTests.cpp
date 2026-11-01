@@ -10,7 +10,7 @@
 #include "GPUContext.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/GltfLoader.hpp"
+#include "Compages/Renderer/Import/GltfLoader.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Core/AABB.hpp"

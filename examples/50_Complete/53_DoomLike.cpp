@@ -12,7 +12,7 @@
 #include "Common/Gui.hpp"
 #include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Units.hpp"
-#include "Compages/Renderer/Components/Animator.hpp"
+#include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 
 #include <algorithm>

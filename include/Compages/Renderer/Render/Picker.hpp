@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Compages/Core/Ray.hpp"
-#include "Compages/Renderer/Query/Raycast.hpp"
+#include "Compages/Renderer/Render/Raycast.hpp"
 
 #include <cstdint>
 #include <optional>

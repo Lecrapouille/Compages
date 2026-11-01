@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/Prefabs.hpp"
+#include "Compages/Renderer/Procedural/Prefabs.hpp"
 
 namespace compages::renderer
 {

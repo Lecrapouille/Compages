@@ -5,12 +5,12 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Scene/Looks.hpp"
+#include "Compages/Renderer/Assets/Looks.hpp"
 
 #include "Compages/Core/AABB.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/Entity.hpp"
 

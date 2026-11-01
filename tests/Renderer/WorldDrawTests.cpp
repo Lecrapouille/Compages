@@ -9,7 +9,7 @@
 
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/Renderer/Render/Picker.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"

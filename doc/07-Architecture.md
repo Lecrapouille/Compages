@@ -170,7 +170,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 | triangle | `GPU/Drawable.hpp` | `01b_Triangle` |
 | compute | `GPU/Compute.hpp` | `12_ComputeParticles` |
 | headless world | `World/World.hpp` | `30_HeadlessWorld` |
-| joints | `World/Spatial/Joint.hpp` | `38_RobotArm` |
+| joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
 | scene | `Renderer/Scene.hpp` | `50_ThreeJsLike` |
 | extraction | `Renderer/Render/SceneExtractor.hpp` | renderer tests |
 | assets | `Renderer/Assets/` | `34_GltfModel` |

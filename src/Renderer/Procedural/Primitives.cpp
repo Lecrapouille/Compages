@@ -5,11 +5,11 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 
 #include "Compages/Core/Maths.hpp"
 #include "Compages/GPU/Core/Layout.hpp"
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
 #include <array>
 #include <cmath>

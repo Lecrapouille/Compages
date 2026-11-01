@@ -8,7 +8,7 @@
 #include "GPUContext.hpp"
 
 #include "Compages/GPU/GPU.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 
 using namespace tests;
 

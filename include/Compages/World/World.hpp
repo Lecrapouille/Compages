@@ -18,7 +18,7 @@
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 #include "Compages/World/Entt.hpp"
-#include "Compages/World/Spatial/KinematicSystem.hpp"
+#include "Compages/World/Kinematics/KinematicSystem.hpp"
 #include "Compages/World/Spatial/LocalTransform.hpp"
 #include "Compages/World/Spatial/SpatialGraph.hpp"
 #include "Compages/World/Spatial/TransformStore.hpp"

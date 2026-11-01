@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/World/Spatial/JointHandle.hpp"
+#include "Compages/World/Kinematics/JointHandle.hpp"
 #include "Compages/World/Spatial/LookAt.hpp"
 #include "Compages/World/World.hpp"
 

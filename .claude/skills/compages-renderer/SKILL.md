@@ -35,7 +35,7 @@ scene.draw(frame);                       // = update(frame) + render()
 - Frame order: `World::update(frame)` (behaviors) → `AnimationSystem` →
   `World::update()` (joints, matrices) → skinning → `SceneExtractor` →
   `RenderSnapshot` (sorted by material then mesh, culled) → `Renderer`.
-- Live texture (`Renderer/Assets/CanvasTexture.hpp`, demo `39a_CanvasPaint`):
+- Live texture (`Renderer/Procedural/CanvasTexture.hpp`, demo `39a_CanvasPaint`):
   `create(w, h)`, `setMapping(AABB local, flip_u, flip_v)`, `bind(scene.assets(), "name")`,
   `applyLook(scene, entity)`, `paintWorld(point, worldMatrix, color, radius_m)` /
   `paintLocal` / `paintLineWorld`, then `sync()` (dirty rectangle only). Rows from

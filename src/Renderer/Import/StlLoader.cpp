@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/StlLoader.hpp"
+#include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/GPU/Device.hpp"
 
 #include <array>

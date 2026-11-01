@@ -5,9 +5,9 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/World/Spatial/KinematicSystem.hpp"
+#include "Compages/World/Kinematics/KinematicSystem.hpp"
 #include "Compages/World/Components/PoseDriver.hpp"
-#include "Compages/World/Spatial/Joint.hpp"
+#include "Compages/World/Kinematics/Joint.hpp"
 #include "Compages/World/Spatial/TransformStore.hpp"
 
 #include "Compages/World/Entt.hpp"

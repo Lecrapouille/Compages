@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/World/Spatial/JointHandle.hpp"
+#include "Compages/World/Kinematics/JointHandle.hpp"
 #include "Compages/World/World.hpp"
 
 namespace compages::world

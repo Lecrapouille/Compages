@@ -9,7 +9,7 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/Renderer/Assets/CanvasTexture.hpp"
+#include "Compages/Renderer/Procedural/CanvasTexture.hpp"
 #include "Compages/Renderer/Scene.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/World/Controllers/Input.hpp"

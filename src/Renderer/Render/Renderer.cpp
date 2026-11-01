@@ -9,7 +9,7 @@
 
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 

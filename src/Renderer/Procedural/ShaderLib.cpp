@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
 #include <string>
 

@@ -7,10 +7,10 @@
 
 #include "GltfConvert.hpp"
 
-#include "Compages/Renderer/Assets/AnimationClip.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Animation/AnimationClip.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/Renderer/Assets/Skin.hpp"
-#include "Compages/Renderer/Components/Animator.hpp"
+#include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/Components/SkinInstance.hpp"
 #include "Compages/World/World.hpp"

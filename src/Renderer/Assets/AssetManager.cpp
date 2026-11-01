@@ -6,8 +6,8 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/GltfLoader.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Import/GltfLoader.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 
 #include <cstdint>
 #include <string>

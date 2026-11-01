@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
-#include "Compages/Renderer/Assets/AnimationClip.hpp"
+#include "Compages/Renderer/Animation/AnimationClip.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"

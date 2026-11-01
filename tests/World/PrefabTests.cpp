@@ -8,12 +8,12 @@
 #include "GPUContext.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
-#include "Compages/Renderer/Assets/Prefabs.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Prefabs.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Components/PrefabInstance.hpp"
-#include "Compages/Renderer/Prefab/PrefabInstantiate.hpp"
+#include "Compages/Renderer/Import/PrefabInstantiate.hpp"
 #include "Compages/World/World.hpp"
 
 

@@ -6,7 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
-#include "Compages/Renderer/Assets/StlLoader.hpp"
+#include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/Renderer/Scene.hpp"
 
 #include <algorithm>

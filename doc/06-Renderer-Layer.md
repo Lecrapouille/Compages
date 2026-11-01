@@ -166,7 +166,7 @@ holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
 
 For a texture you change while the simulation runs (a robot that paints on a canvas, a height-field editor, a CPU simulation shown on a quad), use `compages::renderer::CanvasTexture`: an RGBA8 image in CPU memory, registered as a texture asset, sent to the GPU in part only.
 
-📁 header `<Compages/Renderer/Assets/CanvasTexture.hpp>` · demo `39a_CanvasPaint`
+📁 header `<Compages/Renderer/Procedural/CanvasTexture.hpp>` · demo `39a_CanvasPaint`
 
 ```cpp
 compages::renderer::CanvasTexture canvas;

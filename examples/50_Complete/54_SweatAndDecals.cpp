@@ -13,7 +13,7 @@
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Assets/ShaderLib.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 
 #include <algorithm>

@@ -9,7 +9,7 @@
 
 #include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Units.hpp"
-#include "Compages/Renderer/Systems/AnimationSystem.hpp"
+#include "Compages/Renderer/Animation/AnimationSystem.hpp"
 
 #include <algorithm>
 #include <cmath>

@@ -7,7 +7,7 @@
 
 #include "30_WorldAndAssets/33c_GeometryShowcase.hpp"
 
-#include "Compages/Renderer/Assets/Primitives.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 
 namespace examples
 {
