@@ -24,7 +24,9 @@ Read only what the task needs. Load a skill instead of reading the docs:
 
 ```text
 include/Compages/   public, installed: Core/ GPU/ World/ Renderer/ + Compages.hpp
-src/                implementation; src/GPU/Backends/GL45/ is the only place with glad/gl*
+                    World/: Components/ Spatial/ Kinematics/ Import/ Controllers/
+                    Renderer/: Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
+src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp
 tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
@@ -52,6 +54,10 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
   receives a ready context. GLFW lives in `examples/Common/Window.cpp`.
 - A world component never holds a GPU pointer, only asset ids; the renderer
   draws from a `RenderSnapshot`, never from the `World` directly.
+- No physics engine (and no audio) in Compages: an outside engine writes the
+  poses of entities marked `PoseDriver::External` (`40_ExternalPhysics`).
+- Classes stay small and focused; no PIMPL. A helper used only by one `.cpp`
+  lives in `src/` next to it.
 - Errors: load-time failures return `compages::Status` / `Result<T>`
   (`COMPAGES_TRY`, `COMPAGES_TRY_ASSIGN`); per-frame errors are recorded
   (`gpu::reportError`, read by `takeFrameError`), never thrown.

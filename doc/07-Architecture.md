@@ -83,12 +83,22 @@ The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` 
 include/Compages/          the public interface, installed
   Core/                    vectors, matrices, Result, Frame, AABB, units
   GPU/                     Drawable, Buffer, Compute, Texture, Pipeline...
-  World/                   World, Entity, Behavior, Components/, Spatial/ (joints), Controllers/
-  Renderer/                Scene, Assets/, Render/ (extraction, snapshot, renderer)
-src/
-  GPU/                     implementation + Backends/GL45/ (glad is private here)
-  World/                   World, Entity, Spatial/, Controllers/
-  Renderer/                Scene, Assets/, Render/, Systems/
+  World/                   World, Entity, EntityId, Behavior
+    Components/            Camera, Light, SkinInstance, PoseDriver
+    Spatial/               SpatialGraph, TransformStore, TransformSystem
+    Kinematics/            Joint, JointHandle, KinematicSystem
+    Import/                URDF: read the file, build the chain
+    Controllers/           Orbit, Fly, FPS, input
+  Renderer/                Scene, Environment, RenderSettings
+    Assets/                AssetManager, meshes, materials, textures, skins, prefabs, Looks
+    Import/                glTF, STL, URDF visuals, prefab instantiation
+    Procedural/            primitives, shader library, CanvasTexture
+    Animation/             clips, Animator, AnimationSystem
+    Render/                extraction, snapshot, queue, Renderer, ShadowPass, Skybox, picking
+    Components/            MeshRenderer, PrefabInstance
+    Serialization/         saving a scene to JSON
+src/                       the same folders as include/, plus GPU/Backends/GL45/ (glad is private here)
+                           and the private helpers of a folder (Renderer/Import/GltfConvert.hpp)
 examples/                  the gallery, one binary; Common/ holds the window and the manifest
 tests/                     GPU, World, Renderer
 external/external.mk       the third-party repositories, locked in external/versions.lock
@@ -173,7 +183,8 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 | joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
 | scene | `Renderer/Scene.hpp` | `50_ThreeJsLike` |
 | extraction | `Renderer/Render/SceneExtractor.hpp` | renderer tests |
-| assets | `Renderer/Assets/` | `34_GltfModel` |
+| assets | `Renderer/Assets/`, `Renderer/Import/` | `34_GltfModel` |
+| physics engine | `World/Components/PoseDriver.hpp` | `40_ExternalPhysics` |
 
 ---
 

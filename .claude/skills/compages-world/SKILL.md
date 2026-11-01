@@ -33,9 +33,16 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
   `world()`, `input()`, `frame()`; skipped when `enable(false)`. Prefer `each`
   for many entities (virtual calls, cache misses).
 - Joints (`using namespace units::literals;`):
-  `child.revolute({0,0,1}, -90.0_deg, 90.0_deg).angle(30.0_deg)` (clamped to
-  limits; no limits = continuous), `prismatic(axis, 0.0_m, 0.3_m).offset(0.1_m)`.
-  `update()` runs `KinematicSystem` then `TransformSystem`.
+  `child.revolute({0,0,1}, -90.0_deg, 90.0_deg)` then `child.joint().angle(30.0_deg)`
+  (`World/Kinematics/JointHandle.hpp`; no limits = continuous),
+  `prismatic(axis, 0.0_m, 0.3_m)` then `.joint().offset(0.1_m)`. `joint().angle()`
+  is the applied value (inside the limits), `commandedAngle()` the one set.
+  `update()` runs `KinematicSystem` then `TransformSystem` (loops, no recursion).
+- Who writes a pose: `PoseDriver { Kinematic, Animation, External }`
+  (`World/Components/PoseDriver.hpp`). A physics engine is outside Compages: it
+  marks its bodies `External` and writes their pose each step (`40_ExternalPhysics`).
+  `world.step(viewFrame)` runs the behaviors only; `world.update()` the matrices.
+- URDF headless: `compages::world::loadUrdf(world, path)` (`World/Import/`).
 - `ViewFrame` = `Frame` + keyboard/mouse, for behaviors such as `Orbit`, `Fly`
   (`World/Controllers/Controls.hpp`); `FPSController` is applied, not a behavior.
 - Camera, Light, SkinInstance components are simulation data
