@@ -10,7 +10,7 @@
 #include "Common/Example.hpp"
 #include "Compages/World/Entity.hpp"
 
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 
 #include <vector>

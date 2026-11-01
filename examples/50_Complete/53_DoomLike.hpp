@@ -11,7 +11,7 @@
 #include "50_Complete/DoomLike/Map.hpp"
 #include "Common/Example.hpp"
 
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 
 #include <filesystem>
 #include <memory>

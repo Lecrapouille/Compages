@@ -70,7 +70,7 @@ flowchart TB
 #include <Compages/GPU/GPU.hpp>        // layer 1
 #include <Compages/World/World.hpp>    // ids, each, update
 #include <Compages/World/Entity.hpp>   // chaining
-#include <Compages/Renderer/Scene.hpp> // layer 3
+#include <Compages/Renderer/Scene/Scene.hpp> // layer 3
 ```
 
 The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` variable of the `Makefile` chooses which backend folder is compiled; callers of `gpu::` change nothing.
@@ -89,8 +89,9 @@ include/Compages/          the public interface, installed
     Kinematics/            Joint, JointHandle, KinematicSystem
     Import/                URDF: read the file, build the chain
     Controllers/           Orbit, Fly, FPS, input
-  Renderer/                Scene, Environment, RenderSettings
-    Assets/                AssetManager, meshes, materials, textures, skins, prefabs, Looks
+  Renderer/
+    Scene/                 Scene (the facade), Looks, Environment, RenderSettings
+    Assets/                AssetManager, meshes, materials, textures, skins, prefabs
     Import/                glTF, STL, URDF visuals, prefab instantiation
     Procedural/            primitives, shader library, CanvasTexture
     Animation/             clips, Animator, AnimationSystem
@@ -182,7 +183,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 | compute | `GPU/Compute.hpp` | `12_ComputeParticles` |
 | headless world | `World/World.hpp` | `30_HeadlessWorld` |
 | joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
-| scene | `Renderer/Scene.hpp` | `50_ThreeJsLike` |
+| scene | `Renderer/Scene/Scene.hpp` | `50_ThreeJsLike` |
 | extraction | `Renderer/Render/SceneExtractor.hpp` | renderer tests |
 | assets | `Renderer/Assets/`, `Renderer/Import/` | `34_GltfModel` |
 | physics engine | `World/Components/PoseDriver.hpp` | `40_ExternalPhysics` |

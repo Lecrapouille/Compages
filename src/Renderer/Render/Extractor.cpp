@@ -12,7 +12,7 @@
 #include "Compages/Core/Units.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/Components/Light.hpp"
 #include "Compages/World/Components/SkinInstance.hpp"

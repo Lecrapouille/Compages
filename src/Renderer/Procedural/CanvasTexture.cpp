@@ -12,7 +12,7 @@
 #include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/TextureAsset.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/World/Entity.hpp"
 

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Compages/GPU/Drawable.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 
 #include <array>
 #include <deque>

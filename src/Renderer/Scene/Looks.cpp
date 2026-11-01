@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Assets/Looks.hpp"
+#include "Compages/Renderer/Scene/Looks.hpp"
 
 #include "Compages/Core/AABB.hpp"
 #include "Compages/GPU/Errors.hpp"

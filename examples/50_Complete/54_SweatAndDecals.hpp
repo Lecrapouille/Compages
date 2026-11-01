@@ -10,7 +10,7 @@
 #include "Common/Example.hpp"
 
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 
 #include <cstdint>

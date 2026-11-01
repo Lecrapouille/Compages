@@ -13,7 +13,7 @@
 #include "Compages/Renderer/Render/Picker.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/World.hpp"

@@ -5,9 +5,9 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
-#include "Render/Skybox.hpp"
+#include "../Render/Skybox.hpp"
 #include "Compages/World/Entity.hpp"
 
 #include "Compages/Core/AABB.hpp"

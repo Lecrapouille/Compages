@@ -9,7 +9,7 @@
 
 #include "Common/Example.hpp"
 
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 
 #include <vector>
 

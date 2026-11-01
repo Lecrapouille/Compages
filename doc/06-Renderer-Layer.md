@@ -5,7 +5,7 @@ The third layer turns a `world::World` into an image: camera, lights, materials,
 | | |
 |---|---|
 | **Entry point** | `compages::renderer::Scene` |
-| **Headers** | `<Compages/Compages.hpp>` (the whole stack) or `<Compages/Renderer/Scene.hpp>` |
+| **Headers** | `<Compages/Compages.hpp>` (the whole stack) or `<Compages/Renderer/Scene/Scene.hpp>` |
 | **Code** | `include/Compages/Renderer/`, `src/Renderer/` |
 | **Behind it** | an asset catalog, a snapshot of the world, then `gpu::` calls |
 

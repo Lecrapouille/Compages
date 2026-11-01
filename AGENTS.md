@@ -25,7 +25,7 @@ Read only what the task needs. Load a skill instead of reading the docs:
 ```text
 include/Compages/   public, installed: Core/ GPU/ World/ Renderer/ + Compages.hpp
                     World/: Components/ Spatial/ Kinematics/ Import/ Controllers/
-                    Renderer/: Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
+                    Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp

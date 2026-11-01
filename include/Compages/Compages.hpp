@@ -16,5 +16,5 @@
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Entity.hpp"

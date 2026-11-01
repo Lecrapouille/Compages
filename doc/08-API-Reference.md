@@ -12,7 +12,7 @@ Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, m
 #include <Compages/Compages.hpp>         // the whole stack
 #include <Compages/GPU/GPU.hpp>
 #include <Compages/World/Entity.hpp>     // includes World
-#include <Compages/Renderer/Scene.hpp>
+#include <Compages/Renderer/Scene/Scene.hpp>
 ```
 
 ---

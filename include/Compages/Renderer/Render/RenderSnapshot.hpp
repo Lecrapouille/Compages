@@ -11,7 +11,7 @@
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
-#include "Compages/Renderer/Environment.hpp"
+#include "Compages/Renderer/Scene/Environment.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/EntityId.hpp"
 

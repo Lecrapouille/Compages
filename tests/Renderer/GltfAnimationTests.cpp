@@ -12,7 +12,7 @@
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Import/GltfLoader.hpp"
 #include "Compages/GPU/GPU.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/Renderer/Animation/AnimationSystem.hpp"
 #include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"

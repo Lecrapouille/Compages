@@ -10,7 +10,7 @@
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/GPU/GPU.hpp"
-#include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/Renderer/Serialization/SceneSerializer.hpp"
 #include "Compages/World/Components/Light.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"

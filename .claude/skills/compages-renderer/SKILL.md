@@ -35,7 +35,7 @@ scene.draw(frame);                       // = update(frame) + render()
 - Frame order: `World::step(frame)` (behaviors) → `AnimationSystem` →
   `World::update()` once (joints, matrices) → skinning → `SceneExtractor` →
   `RenderSnapshot` (sorted by material then mesh, culled) → `Renderer`
-  (`ShadowPass` for the shadows, `Skybox` behind). Folders: `Assets/` (+ `Looks`),
+  (`ShadowPass` for the shadows, `Skybox` behind). Folders: `Scene/` (Scene, Looks, Environment, RenderSettings), `Assets/`,
   `Import/` (glTF, STL, URDF visuals), `Procedural/`, `Animation/`, `Render/`.
 - Live texture (`Renderer/Procedural/CanvasTexture.hpp`, demo `39a_CanvasPaint`):
   `create(w, h)`, `setMapping(AABB local, flip_u, flip_v)`, `bind(scene.assets(), "name")`,
