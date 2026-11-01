@@ -28,8 +28,9 @@ constexpr std::size_t BALL_COUNT = 12u;
 
 void ExternalPhysics::TinyEngine::step(float p_dt)
 {
-    // Gravity, then a bounce on the floor and on the four walls. A real engine
-    // does far more; what matters here is that it owns its bodies.
+    // Gravity, a bounce on the floor and on the four walls, then the balls
+    // against each other. A real engine does far more; what matters here is
+    // that it owns its bodies.
     for (Body& body : bodies)
     {
         body.velocity[1] += gravity * p_dt;
@@ -52,12 +53,59 @@ void ExternalPhysics::TinyEngine::step(float p_dt)
             }
         }
     }
+    collide();
+}
+
+void ExternalPhysics::TinyEngine::collide()
+{
+    // Every pair of balls, same mass: push the two apart until they touch,
+    // then exchange the speeds along the line between their centres.
+    for (std::size_t i = 0u; i < bodies.size(); ++i)
+    {
+        for (std::size_t j = i + 1u; j < bodies.size(); ++j)
+        {
+            Body& a = bodies[i];
+            Body& b = bodies[j];
+            std::array<float, 3> normal{};
+            float distance2 = 0.0f;
+            for (std::size_t k = 0u; k < 3u; ++k)
+            {
+                normal[k] = b.position[k] - a.position[k];
+                distance2 += normal[k] * normal[k];
+            }
+            const float touch = a.radius + b.radius;
+            if ((distance2 >= touch * touch) || (distance2 < 1.0e-12f))
+            {
+                continue;
+            }
+            const float distance = std::sqrt(distance2);
+            float closing = 0.0f;
+            for (std::size_t k = 0u; k < 3u; ++k)
+            {
+                normal[k] /= distance;
+                const float push = 0.5f * (touch - distance) * normal[k];
+                a.position[k] -= push;
+                b.position[k] += push;
+                closing += (a.velocity[k] - b.velocity[k]) * normal[k];
+            }
+            if (closing <= 0.0f)
+            {
+                continue; // already moving apart
+            }
+            const float impulse = 0.5f * (1.0f + bounce) * closing;
+            for (std::size_t k = 0u; k < 3u; ++k)
+            {
+                a.velocity[k] -= impulse * normal[k];
+                b.velocity[k] += impulse * normal[k];
+            }
+        }
+    }
 }
 
 std::string ExternalPhysics::description() const
 {
     return "Compages has no physics engine: a small engine of the demo moves "
-           "the balls, and writes their places into entities marked "
+           "the balls (gravity, floor, walls, balls against balls), and writes their places into entities marked "
            "PoseDriver::External. Compages only computes the world matrices "
            "and draws. Right drag turns the camera.";
 }
@@ -83,7 +131,9 @@ compages::Status ExternalPhysics::setUp()
     m_scene.camera().position(0.0f, 4.0f, 9.0f).lookAt(0.0f, 1.0f, 0.0f)
         .add<compages::world::Orbit>();
     m_scene.sun();
+    // The plane is built standing in XY: laid down, it is the floor y = 0.
     m_scene.plane("Floor", compages::renderer::color(0.3f, 0.32f, 0.36f))
+        .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
         .scale(2.0f * m_engine.half_box);
 
     throwBalls();

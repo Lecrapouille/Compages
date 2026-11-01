@@ -60,6 +60,7 @@ private:
         };
 
         void step(float p_dt);
+        void collide();
 
         std::vector<Body> bodies;
         float gravity = -9.81f;
