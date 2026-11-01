@@ -593,7 +593,9 @@ void Gallery::drawTryItPanel()
         ImGui::PushID("controls");
         m_current->controls();
         ImGui::PopID();
-        if (ImGui::GetCursorPosY() == before)
+        // The cursor only goes down: "not below" is "unchanged", without a
+        // float == (-Wfloat-equal).
+        if (!(ImGui::GetCursorPosY() > before))
         {
             ImGui::TextDisabled("Nothing to change in this example.");
         }

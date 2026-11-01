@@ -193,7 +193,7 @@ private:                                                                       \
                                                                                \
     /* Disallow bool conversions (without this, they'd happen */               \
     /* implicitly via the array conversions) */                                \
-    operator bool() = delete;
+    operator bool() = delete
 
 // *****************************************************************************
 //! \brief A mathematic element to represent coordinates in space. A Vector is

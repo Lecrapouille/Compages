@@ -408,8 +408,9 @@ public:
         assert(!m_borrowing && "these vertices live on the GPU only");
         m_dirty.addAll(m_bytes.size());
         // The storage is a std::vector<std::byte>, whose memory comes from
-        // operator new and is therefore aligned for any vertex field.
-        return { reinterpret_cast<Vertex*>(m_bytes.data()), m_count };
+        // operator new and is therefore aligned for any vertex field. The cast
+        // goes through void* to say so to -Wcast-align.
+        return { static_cast<Vertex*>(static_cast<void*>(m_bytes.data())), m_count };
     }
 
     // ------------------------------------------------------------------------
@@ -423,7 +424,7 @@ public:
         assert(!m_borrowing && "these vertices live on the GPU only");
         assert((p_index < m_count) && "vertex() past the last vertex");
         m_dirty.add(p_index * sizeof(Vertex), sizeof(Vertex));
-        return reinterpret_cast<Vertex*>(m_bytes.data())[p_index];
+        return static_cast<Vertex*>(static_cast<void*>(m_bytes.data()))[p_index];
     }
 
     // ------------------------------------------------------------------------
