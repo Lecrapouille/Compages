@@ -119,6 +119,19 @@ public:
     //! \brief Needs a world-matrix update?
     [[nodiscard]] bool isDirty(EntityId p_entity) const;
 
+    //! \brief Was any entity marked dirty (or made) since clearAnyDirty()?
+    //! When not, the TransformSystem has nothing to walk.
+    [[nodiscard]] bool anyDirty() const
+    {
+        return m_any_dirty;
+    }
+
+    //! \brief Every world matrix is up to date again.
+    void clearAnyDirty()
+    {
+        m_any_dirty = false;
+    }
+
     //! \brief Number of entity slots (alive or free).
     [[nodiscard]] std::size_t capacity() const
     {
@@ -138,6 +151,8 @@ private:
     std::vector<compages::core::Vector3f> m_scale;
     std::vector<compages::core::Matrix44f> m_world;
     std::vector<std::uint8_t> m_flags;
+    //! \brief Was any entity marked dirty since the last clearAnyDirty()?
+    bool m_any_dirty = false;
     std::vector<std::uint16_t> m_generation;
 };
 

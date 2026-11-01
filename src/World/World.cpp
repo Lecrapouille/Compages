@@ -65,14 +65,27 @@ void World::destroy(EntityId p_entity)
     {
         m_graph.forEachDfs(node, [&](NodeId p_each)
                            { subtree.push_back(m_graph.entityOf(p_each)); });
-        m_graph.destroy(node);
     }
     else
     {
         subtree.push_back(p_entity);
     }
+    // onDestroy() of the routines while the whole subtree is still alive.
     for (auto it = subtree.rbegin(); it != subtree.rend(); ++it)
     {
+        m_routines.release(*it);
+    }
+    if (node.valid())
+    {
+        m_graph.destroy(node);
+    }
+    for (auto it = subtree.rbegin(); it != subtree.rend(); ++it)
+    {
+        // An onDestroy() may already have destroyed one of them.
+        if (!m_registry.valid(it->native()))
+        {
+            continue;
+        }
         m_transforms.release(*it);
         m_registry.destroy(it->native());
         --m_living;
@@ -295,14 +308,18 @@ void World::update()
     m_transform_system.update(m_graph, m_transforms);
 }
 
-void World::update(compages::core::Frame const& p_frame)
+World::~World()
+{
+    m_routines.clear();
+}
+
+void World::step(compages::core::Frame const& p_frame)
 {
     m_frame = p_frame;
     // A headless step has no input: do not keep the keys and the mouse of a
     // previous update(ViewFrame), or routines would see them held forever.
     m_input = Input{};
     m_routines.update(m_frame.elapsed);
-    update();
 }
 
 void World::step(ViewFrame const& p_view)
@@ -312,10 +329,24 @@ void World::step(ViewFrame const& p_view)
     m_routines.update(m_frame.elapsed);
 }
 
+void World::endStep()
+{
+    m_routines.lateUpdate(m_frame.elapsed);
+    update();
+}
+
+void World::update(compages::core::Frame const& p_frame)
+{
+    step(p_frame);
+    update();
+    endStep();
+}
+
 void World::update(ViewFrame const& p_view)
 {
     step(p_view);
     update();
+    endStep();
 }
 
 Entity World::lookup(std::string_view p_path)

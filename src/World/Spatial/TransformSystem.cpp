@@ -34,6 +34,12 @@ struct Pending
 void TransformSystem::update(SpatialGraph const& p_graph,
                              TransformStore& p_transforms) const
 {
+    // Nothing moved since the last pass: every world matrix is still right.
+    if (!p_transforms.anyDirty())
+    {
+        return;
+    }
+
     // An explicit stack instead of recursion: a very deep chain cannot
     // overflow the call stack. Parents are still visited before children.
     std::vector<Pending> stack;
@@ -74,6 +80,7 @@ void TransformSystem::update(SpatialGraph const& p_graph,
             }
         }
     });
+    p_transforms.clearAnyDirty();
 }
 
 } // namespace compages::world

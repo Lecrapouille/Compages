@@ -94,6 +94,8 @@ public:
     World() = default;
     World(World&&) = delete;
     World& operator=(World&&) = delete;
+    //! \brief onDisable() and onDestroy() of every routine, entities alive.
+    ~World();
 
     // ------------------------------------------------------------------------
     //! \brief Create an entity, named or not.
@@ -139,28 +141,37 @@ public:
             { std::invoke(p_callback, EntityId(p_entity), p_components...); });
     }
 
-    //! \brief Headless step: run routines, then propagate transforms.
+    //! \brief A whole headless step: step(), update(), endStep().
     void update(compages::core::Frame const& p_frame);
 
-    //! \brief Interactive step without the transforms: only store the timing
-    //! and the input, and run the routines. Another writer (an animation, a
-    //! physics engine) can then change poses before one update() computes
-    //! the world matrices of all of them.
-    //!
-    //! \code
-    //! world.step(viewFrame);
-    //! engine.writePoses(world);
-    //! world.update();
-    //! \endcode
-    void step(ViewFrame const& p_view);
-
-    //! \brief Interactive step: timing plus input for routines and
-    //! controllers.
+    //! \brief A whole interactive step, with the keyboard and the mouse:
+    //! step(), update(), endStep().
     //!
     //! \code
     //! world.update(viewFrame);   // gallery / Scene path
     //! \endcode
     void update(ViewFrame const& p_view);
+
+    //! \brief First part of a step: store the timing and the input, and run
+    //! the routines (fixedUpdate(), update()). Another writer (an animation,
+    //! a physics engine) can then change poses before one update() computes
+    //! the world matrices of all of them; endStep() closes the step.
+    //!
+    //! \code
+    //! world.step(viewFrame);
+    //! engine.writePoses(world);
+    //! world.update();
+    //! world.endStep();
+    //! \endcode
+    void step(ViewFrame const& p_view);
+
+    //! \brief Same, headless: no keyboard and no mouse.
+    void step(compages::core::Frame const& p_frame);
+
+    //! \brief Last part of a step: lateUpdate() of the routines, then the
+    //! world matrices of what they moved (nothing to do if they moved
+    //! nothing).
+    void endStep();
 
     // ------------------------------------------------------------------------
     //! \brief Only compute the places in the world of the entities that moved,

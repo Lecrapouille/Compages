@@ -12,6 +12,7 @@
 #include "Compages/World/Routines/Routine.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -37,10 +38,13 @@ struct RoutineList: compages::core::NotCopiable
 //! \brief Keeps and runs the routines of a World.
 //!
 //! Given by World::routines(). Entity::add<T>(), remove<T>(), find<T>() go
-//! through it when T derives from Routine, so most code never calls it.
+//! through it when T derives from Routine, so most code never calls it. The
+//! World calls update() in World::step() and lateUpdate() in
+//! World::endStep(); see Routine for the order of the calls.
 //!
 //! \code
-//! compages::world::Orbit* orbit = world.routines().find<compages::world::Orbit>(camera);
+//! world.routines().fixedStep(1.0f / 120.0f);   // fixedUpdate() at 120 Hz
+//! auto* orbit = world.routines().find<compages::world::Orbit>(camera);
 //! \endcode
 // ****************************************************************************
 class RoutineSystem: private compages::core::NotCopiable
@@ -52,7 +56,7 @@ public:
     RoutineSystem& operator=(RoutineSystem&&) = delete;
 
     //! \brief Attach a routine to an entity. What Entity::add<T>() does when
-    //! T derives from Routine.
+    //! T derives from Routine. It becomes active at the next step.
     Routine& add(EntityId p_entity, std::unique_ptr<Routine> p_routine);
 
     //! \brief How many routines an entity has.
@@ -75,8 +79,9 @@ public:
         return nullptr;
     }
 
-    //! \brief Take the routines of type T off an entity. Not from inside one
-    //! of them: it would be destroyed while it runs.
+    //! \brief Take the routines of type T off an entity, after their
+    //! onDisable() and onDestroy(). Not from inside one of them: it would be
+    //! destroyed while it runs.
     template <typename T>
     void remove(EntityId p_entity)
     {
@@ -85,16 +90,60 @@ public:
                  { return dynamic_cast<T const*>(p_routine) != nullptr; });
     }
 
-    //! \brief Run the routines of the enabled entities: start() on the new
-    //! ones, then update().
+    //! \brief The pace of fixedUpdate(), in seconds. 1/60 by default.
+    void fixedStep(float p_seconds);
+
+    //! \brief The pace of fixedUpdate(), in seconds.
+    [[nodiscard]] float fixedStep() const
+    {
+        return m_fixed_step;
+    }
+
+    //! \brief onEnable(), onDisable() and start() where needed, then
+    //! fixedUpdate() as many times as the elapsed time holds fixed steps, then
+    //! update(). Called by World::step().
     void update(float p_dt);
+
+    //! \brief lateUpdate() of the active routines. Called by World::endStep().
+    void lateUpdate(float p_dt);
+
+    //! \brief onDisable() and onDestroy() of the routines of an entity, then
+    //! drop them. Called by World::destroy() while the entity is alive.
+    void release(EntityId p_entity);
+
+    //! \brief release() every entity. Called when the World is destroyed.
+    void clear();
 
 private:
 
+    //! \brief A routine in the running order. The rank tells it from another
+    //! routine made later at the same address.
+    struct Entry
+    {
+        EntityId entity;
+        Routine* routine;
+        std::uint64_t rank;
+    };
+
     [[nodiscard]] RoutineList const* listOf(EntityId p_entity) const;
     void removeIf(EntityId p_entity, bool (*p_match)(Routine const*));
+    //! \brief Is the routine of an entry still there, and still the same one?
+    [[nodiscard]] bool live(Entry const& p_entry) const;
+    void sortIfNeeded();
+    void refresh();
+    //! \brief onDisable() if active, then onDestroy().
+    static void retire(Routine& p_routine);
+
+    //! \brief At most this many fixedUpdate() per step: past it, a slow
+    //! frame drops the time it could not catch up with.
+    static constexpr int MAX_FIXED_STEPS = 8;
 
     World& m_world;
+    std::vector<Entry> m_order;
+    bool m_sorted = true;
+    std::uint64_t m_next_rank = 0u;
+    float m_fixed_step = 1.0f / 60.0f;
+    float m_accumulator = 0.0f;
 };
 
 } // namespace compages::world

@@ -64,6 +64,7 @@ void TransformStore::allocate(EntityId p_entity)
     }
 
     m_flags[index] = static_cast<std::uint8_t>(FLAG_PRESENT | FLAG_DIRTY);
+    m_any_dirty = true;
     m_generation[index] = p_entity.generation();
 }
 
@@ -157,6 +158,7 @@ void TransformStore::markDirty(EntityId p_entity)
         return;
     }
     m_flags[p_entity.index()] |= FLAG_DIRTY;
+    m_any_dirty = true;
 }
 
 void TransformStore::markClean(EntityId p_entity)

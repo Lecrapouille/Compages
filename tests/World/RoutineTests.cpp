@@ -13,6 +13,10 @@
 #include "Compages/World/Controllers/ViewFrame.hpp"
 #include "Compages/World/World.hpp"
 
+#include <memory>
+#include <string>
+#include <vector>
+
 
 
 namespace
@@ -76,6 +80,49 @@ float distanceBetween(compages::core::Vector3f const& p_a, compages::core::Vecto
     return std::sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
 }
 
+//! \brief Writes each call it receives into a shared log.
+struct Logger : compages::world::Routine
+{
+    Logger(std::shared_ptr<std::vector<std::string>> p_log, std::string p_name, int p_priority = 0)
+        : log(std::move(p_log)), name(std::move(p_name)), rank(p_priority)
+    {
+    }
+
+    void onEnable() override { log->push_back(name + ".onEnable"); }
+    void start() override { log->push_back(name + ".start"); }
+    void update(float) override { log->push_back(name + ".update"); }
+    void onDisable() override { log->push_back(name + ".onDisable"); }
+    void onDestroy() override { log->push_back(name + ".onDestroy"); }
+    [[nodiscard]] int priority() const override { return rank; }
+
+    std::shared_ptr<std::vector<std::string>> log;
+    std::string name;
+    int rank;
+};
+
+struct FixedCounter : compages::world::Routine
+{
+    void fixedUpdate(float p_dt) override
+    {
+        ++calls;
+        last_dt = p_dt;
+    }
+
+    int calls = 0;
+    float last_dt = 0.0f;
+};
+
+//! \brief Reads, in lateUpdate(), where its entity is in the world.
+struct Follower : compages::world::Routine
+{
+    void lateUpdate(float) override
+    {
+        seen = entity().worldPosition();
+    }
+
+    compages::core::Vector3f seen{ 0.0f, 0.0f, 0.0f };
+};
+
 } // namespace
 
 TEST(Routine, StartsOnceThenUpdatesEveryFrame)
@@ -129,7 +176,7 @@ TEST(Routine, CanRemoveItselfWhileRunning)
     EXPECT_EQ(actor.get<Counter>().updates, 1);
 }
 
-TEST(Routine, HasAndFindTellBehaviorsFromComponents)
+TEST(Routine, HasAndFindTellRoutinesFromComponents)
 {
     compages::world::World world;
     compages::world::Entity actor = world.entity("Actor").set(Velocity{ 3.0f });
@@ -240,4 +287,133 @@ TEST(WorldInput, HeadlessUpdateDoesNotKeepTheInputOfTheLastViewFrame)
     EXPECT_FALSE(probe.get<InputProbe>().left);
     EXPECT_FALSE(probe.get<InputProbe>().forward);
     EXPECT_FALSE(world.input().mouse_left);
+}
+
+TEST(Routine, FixedUpdateKeepsItsPaceWhateverTheFrames)
+{
+    compages::world::World world;
+    world.routines().fixedStep(0.1f);
+    FixedCounter& counter = world.entity("e").add<FixedCounter>().get<FixedCounter>();
+
+    world.update(frameOf(0.25f)); // 0.25 s: two steps, 0.05 s left
+    EXPECT_EQ(counter.calls, 2);
+    EXPECT_FLOAT_EQ(counter.last_dt, 0.1f);
+    world.update(frameOf(0.06f)); // 0.11 s: one more
+    EXPECT_EQ(counter.calls, 3);
+    world.update(frameOf(0.01f)); // 0.02 s: none
+    EXPECT_EQ(counter.calls, 3);
+}
+
+TEST(Routine, FixedUpdateDropsWhatASlowFrameCannotCatchUp)
+{
+    compages::world::World world;
+    world.routines().fixedStep(0.01f);
+    FixedCounter& counter = world.entity("e").add<FixedCounter>().get<FixedCounter>();
+    world.update(frameOf(10.0f));
+    EXPECT_EQ(counter.calls, 8);
+    world.update(frameOf(0.0f)); // the ten seconds are not owed any more
+    EXPECT_LE(counter.calls, 9);
+}
+
+TEST(Routine, LateUpdateSeesTheWorldMatricesOfThisStep)
+{
+    compages::world::World world;
+    compages::world::Entity parent = world.entity("parent").add<Mover>(1.0f);
+    Follower& follower = parent.child("child").add<Follower>().get<Follower>();
+    world.update(frameOf(0.5f));
+    EXPECT_FLOAT_EQ(follower.seen.x, 0.5f);
+    world.update(frameOf(0.5f));
+    EXPECT_FLOAT_EQ(follower.seen.x, 1.0f);
+}
+
+TEST(Routine, RunsByPriorityThenInTheOrderOfAddition)
+{
+    auto log = std::make_shared<std::vector<std::string>>();
+    compages::world::World world;
+    compages::world::Entity a = world.entity("a");
+    compages::world::Entity b = world.entity("b");
+    b.add<Logger>(log, "b1");
+    a.add<Logger>(log, "a1");
+    b.add<Logger>(log, "early", -1);
+    a.add<Logger>(log, "late", 1);
+    world.update(frameOf(0.1f));
+    log->clear();
+    world.update(frameOf(0.1f));
+    const std::vector<std::string> expected{ "early.update", "b1.update", "a1.update", "late.update" };
+    EXPECT_EQ(*log, expected);
+}
+
+TEST(Routine, FollowsItsLifeFromEnableToDestroy)
+{
+    auto log = std::make_shared<std::vector<std::string>>();
+    compages::world::World world;
+    compages::world::Entity e = world.entity("e").add<Logger>(log, "r");
+
+    world.update(frameOf(0.1f));
+    EXPECT_EQ(*log, (std::vector<std::string>{ "r.onEnable", "r.start", "r.update" }));
+
+    log->clear();
+    e.enable(false);
+    world.update(frameOf(0.1f));
+    e.enable(true);
+    world.update(frameOf(0.1f));
+    EXPECT_EQ(*log, (std::vector<std::string>{ "r.onDisable", "r.onEnable", "r.update" }));
+
+    log->clear();
+    e.get<Logger>().enabled(false);
+    world.update(frameOf(0.1f));
+    EXPECT_EQ(*log, (std::vector<std::string>{ "r.onDisable" }));
+
+    log->clear();
+    e.get<Logger>().enabled(true);
+    world.update(frameOf(0.1f));
+    e.destroy();
+    EXPECT_EQ(*log, (std::vector<std::string>{ "r.onEnable", "r.update", "r.onDisable", "r.onDestroy" }));
+}
+
+TEST(Routine, IsDestroyedWhenRemovedOrWhenItsWorldGoes)
+{
+    auto log = std::make_shared<std::vector<std::string>>();
+    {
+        compages::world::World world;
+        compages::world::Entity e = world.entity("e").add<Logger>(log, "kept");
+        world.entity("f").add<Logger>(log, "gone");
+        world.update(frameOf(0.1f));
+        log->clear();
+        world.lookup("f").remove<Logger>();
+        EXPECT_EQ(*log, (std::vector<std::string>{ "gone.onDisable", "gone.onDestroy" }));
+        log->clear();
+        (void)e;
+    }
+    EXPECT_EQ(*log, (std::vector<std::string>{ "kept.onDisable", "kept.onDestroy" }));
+}
+
+TEST(Routine, OnDestroySeesItsEntityAndChildrenAlive)
+{
+    struct Checker : compages::world::Routine
+    {
+        explicit Checker(bool* p_ok) : ok(p_ok) {}
+        void onDestroy() override
+        {
+            *ok = world().alive(entity().id()) && entity().lookup("child");
+        }
+        bool* ok;
+    };
+    bool ok = false;
+    compages::world::World world;
+    compages::world::Entity e = world.entity("e").add<Checker>(&ok);
+    (void)e.child("child");
+    e.destroy();
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(world.living(), 0u);
+}
+
+TEST(Routine, StepWithoutMovingAnythingSkipsTheMatrices)
+{
+    compages::world::World world;
+    (void)world.entity("e").position(1.0f, 0.0f, 0.0f);
+    world.update();
+    EXPECT_FALSE(world.transforms().anyDirty());
+    world.update();
+    EXPECT_FALSE(world.transforms().anyDirty());
 }

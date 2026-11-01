@@ -420,6 +420,7 @@ void Scene::update(compages::world::ViewFrame const& p_frame)
     compages::gpu::check(compages::renderer::AnimationSystem::sample(
         m_world, *m_assets, p_frame.elapsed));
     m_world.update();
+    m_world.endStep();
     compages::gpu::check(
         compages::renderer::AnimationSystem::pose(m_world, *m_assets));
 }

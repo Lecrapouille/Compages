@@ -12,6 +12,8 @@
 #include "Compages/Core/Frame.hpp"
 #include "Compages/World/Spatial/LocalTransform.hpp"
 
+#include <cstdint>
+
 namespace compages::world
 {
 
@@ -19,28 +21,40 @@ class World;
 class Entity;
 
 // ****************************************************************************
-//! \brief A piece of code attached to an entity and run every frame, the way
-//! a Unity MonoBehaviour is.
+//! \brief Code attached to an entity and run at each step of its World, the
+//! way a Unity MonoBehaviour is.
 //!
-//! Derive from it, override update(), and add it to an entity like a
+//! Derive from it, override what you need, and add it to an entity like a
 //! component:
 //! \code
 //! struct Spin: compages::world::Routine
 //! {
-//!     float speed = 1.0f;
 //!     explicit Spin(float p_speed) : speed(p_speed) {}
 //!
 //!     void update(float p_dt) override
 //!     {
 //!         transform().rotateY(speed * p_dt);
 //!     }
+//!
+//!     float speed;
 //! };
 //!
 //! cube.add<Spin>(2.0f);    // turns two radians a second
 //! \endcode
 //!
-//! World::update() runs them, in the order they were added, after calling
-//! start() once on the ones that are new. An entity can have several.
+//! A step of the World calls, for each routine of an enabled entity:
+//! \code
+//! onEnable()        when it becomes active (added, or its entity enabled)
+//! start()           once, before its first fixedUpdate() or update()
+//! fixedUpdate(dt)   0, 1 or more times, dt being RoutineSystem::fixedStep()
+//! update(dt)        once, dt being the time of the frame
+//!   ... joints, animation, world matrices ...
+//! lateUpdate(dt)    once, the world matrices being up to date
+//! onDisable()       when it stops being active
+//! onDestroy()       once, before it is removed or its entity destroyed
+//! \endcode
+//! Routines run by priority() (smaller first), then in the order they were
+//! added, whatever their entity: a run is the same each time.
 // ****************************************************************************
 class Routine
 {
@@ -48,21 +62,64 @@ public:
 
     virtual ~Routine() = default;
 
-    // ------------------------------------------------------------------------
-    //! \brief Called once, at the first update after the routine was added.
-    // ------------------------------------------------------------------------
-    virtual void start()
+    //! \brief Called when the routine becomes active: added to an enabled
+    //! entity, its entity enabled again, or enabled(true).
+    virtual void onEnable() {}
+
+    //! \brief Called once, at the first step where the routine is active,
+    //! before its first fixedUpdate() or update().
+    virtual void start() {}
+
+    //! \brief Called at a fixed pace, 0, 1 or more times per step, to keep a
+    //! simulation the same whatever the frame rate: a controller, a physics
+    //! engine, a behavior tree.
+    //! \param[in] p_dt RoutineSystem::fixedStep(), in seconds.
+    virtual void fixedUpdate(float p_dt)
     {
-        /* do nothing */
+        (void)p_dt;
     }
 
-    // ------------------------------------------------------------------------
-    //! \brief Called at every update of the World.
-    //! \param[in] p_dt the seconds since the previous frame.
-    // ------------------------------------------------------------------------
+    //! \brief Called once per step.
+    //! \param[in] p_dt the seconds since the previous step.
     virtual void update(float p_dt)
     {
         (void)p_dt;
+    }
+
+    //! \brief Called once per step, after the joints, the animation and the
+    //! world matrices: what a camera following an object needs.
+    //! \param[in] p_dt the seconds since the previous step.
+    virtual void lateUpdate(float p_dt)
+    {
+        (void)p_dt;
+    }
+
+    //! \brief Called when the routine stops being active: its entity
+    //! disabled, enabled(false), or before onDestroy().
+    virtual void onDisable() {}
+
+    //! \brief Called once, before the routine is removed, its entity destroyed
+    //! or its World destroyed. The entity is still alive here.
+    virtual void onDestroy() {}
+
+    //! \brief The order of the routine in a step: smaller runs first. Routines
+    //! with the same priority run in the order they were added.
+    [[nodiscard]] virtual int priority() const
+    {
+        return 0;
+    }
+
+    //! \brief Switch the routine on or off, without its entity. Taken into
+    //! account at the next step (onEnable() or onDisable() then).
+    void enabled(bool p_enabled)
+    {
+        m_enabled = p_enabled;
+    }
+
+    //! \brief Is the routine switched on? Its entity may still be disabled.
+    [[nodiscard]] bool enabled() const
+    {
+        return m_enabled;
     }
 
 protected:
@@ -91,7 +148,7 @@ protected:
     [[nodiscard]] Input const& input() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Timing from the last World update (size and delta time).
+    //! \brief Timing from the last World step (size and delta time).
     // ------------------------------------------------------------------------
     [[nodiscard]] compages::core::Frame const& frame() const;
 
@@ -101,6 +158,11 @@ private:
 
     World* m_world = nullptr;
     EntityId m_entity{};
+    //! \brief Rank of addition in the World, for a stable order.
+    std::uint64_t m_rank = 0u;
+    bool m_enabled = true;
+    //! \brief Was onEnable() called without onDisable() since?
+    bool m_active = false;
     bool m_started = false;
 };
 
