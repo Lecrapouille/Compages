@@ -258,6 +258,22 @@ void RoutineSystem::tick(Entry const& p_entry, float p_dt)
     }
 }
 
+void RoutineSystem::deliver(EntityId p_to, Message const& p_message)
+{
+    // Not sorted again here: a send may come from inside a pass over the
+    // order. Every active routine is already in it (they become active only
+    // after a sort). Copied: a routine may add or remove routines.
+    const std::vector<Entry> order = m_order;
+    for (Entry const& entry : order)
+    {
+        if ((p_to.valid() && !(entry.entity == p_to)) || !live(entry) || !entry.routine->m_active)
+        {
+            continue;
+        }
+        entry.routine->onMessage(p_message);
+    }
+}
+
 void RoutineSystem::lateUpdate(float p_dt)
 {
     for (Entry const& entry : m_order)

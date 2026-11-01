@@ -493,3 +493,56 @@ TEST(Routine, ATimerMayDestroyItsOwnEntity)
     world.update(frameOf(0.2f));
     EXPECT_EQ(world.living(), 0u);
 }
+
+namespace
+{
+
+struct Hit
+{
+    float damage = 0.0f;
+};
+
+struct Life : compages::world::Routine
+{
+    void onMessage(compages::world::Message const& p_message) override
+    {
+        if (Hit const* hit = p_message.as<Hit>())
+        {
+            life -= hit->damage;
+            from = p_message.from;
+        }
+        if (p_message.as<compages::world::Contact>() != nullptr)
+        {
+            ++contacts;
+        }
+    }
+
+    float life = 100.0f;
+    int contacts = 0;
+    compages::world::EntityId from;
+};
+
+} // namespace
+
+TEST(Routine, ReceivesTheMessagesSentToItsEntity)
+{
+    compages::world::World world;
+    compages::world::Entity enemy = world.entity("enemy").add<Life>();
+    compages::world::Entity other = world.entity("other").add<Life>();
+    compages::world::Entity player = world.entity("player");
+    world.update(frameOf(0.1f));
+
+    world.routines().send(enemy, Hit{ 30.0f }, player);
+    EXPECT_FLOAT_EQ(enemy.get<Life>().life, 70.0f);
+    EXPECT_EQ(enemy.get<Life>().from, player.id());
+    EXPECT_FLOAT_EQ(other.get<Life>().life, 100.0f);
+
+    world.routines().broadcast(compages::world::Contact{});
+    EXPECT_EQ(enemy.get<Life>().contacts, 1);
+    EXPECT_EQ(other.get<Life>().contacts, 1);
+
+    enemy.enable(false);
+    world.update(frameOf(0.1f));
+    world.routines().send(enemy, Hit{ 30.0f });
+    EXPECT_FLOAT_EQ(enemy.get<Life>().life, 70.0f); // not active: not received
+}

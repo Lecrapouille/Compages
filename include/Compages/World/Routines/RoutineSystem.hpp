@@ -90,6 +90,25 @@ public:
                  { return dynamic_cast<T const*>(p_routine) != nullptr; });
     }
 
+    //! \brief Send a value to the active routines of an entity: their
+    //! onMessage() is called right away, in the running order.
+    //!
+    //! \code
+    //! world.routines().send(ball, compages::world::Contact{ wall, point, normal, speed });
+    //! \endcode
+    template <typename T>
+    void send(EntityId p_to, T p_value, EntityId p_from = {})
+    {
+        deliver(p_to, Message{ p_from, std::any(std::move(p_value)) });
+    }
+
+    //! \brief Send a value to the active routines of every entity.
+    template <typename T>
+    void broadcast(T p_value, EntityId p_from = {})
+    {
+        deliver({}, Message{ p_from, std::any(std::move(p_value)) });
+    }
+
     //! \brief The pace of fixedUpdate(), in seconds. 1/60 by default.
     void fixedStep(float p_seconds);
 
@@ -130,6 +149,9 @@ private:
     //! \brief Is the routine of an entry still there, and still the same one?
     [[nodiscard]] bool live(Entry const& p_entry) const;
     void sortIfNeeded();
+    //! \brief Give a message to the active routines of an entity, or of all
+    //! when \c p_to is empty.
+    void deliver(EntityId p_to, Message const& p_message);
     void refresh();
     //! \brief Advance the timers of a routine, calling those that are due.
     void tick(Entry const& p_entry, float p_dt);

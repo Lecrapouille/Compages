@@ -9,6 +9,7 @@
 
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
+#include "Compages/World/Routines/Message.hpp"
 #include "Compages/Core/Frame.hpp"
 #include "Compages/World/Spatial/LocalTransform.hpp"
 
@@ -95,6 +96,13 @@ public:
     virtual void lateUpdate(float p_dt)
     {
         (void)p_dt;
+    }
+
+    //! \brief Called when a value is sent to the entity of the routine with
+    //! RoutineSystem::send(), right away, if the routine is active.
+    virtual void onMessage(Message const& p_message)
+    {
+        (void)p_message;
     }
 
     //! \brief Called when the routine stops being active: its entity
