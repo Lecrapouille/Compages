@@ -28,10 +28,17 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 - Components: `.set(T{})`, `.add<T>(args)`, `.get<T>()`, `.has<T>()`, `.remove<T>()`.
   Transform (graph) ≠ your `Position` component: `.position()`, `.rotate(rad, axis)`,
   `.scale()`, `.lookAt()`, `.worldMatrix()`, `.worldPosition()`.
-- Routine: `struct Spin: compages::world::Routine { void update(float dt) override; }`,
-  `entity.add<Spin>(2.0f)`; `start()` once; access `entity()`, `transform()`,
-  `world()`, `input()`, `frame()`; skipped when `enable(false)`. Prefer `each`
-  for many entities (virtual calls, cache misses).
+- Routine (`World/Routines/`, ex-Behavior; never call it Behavior: BlackThorn
+  behavior trees): `struct Spin: compages::world::Routine { void update(float dt) override; }`,
+  `entity.add<Spin>(2.0f)`. Life: `onEnable`, `start` (once), `fixedUpdate`
+  (`world.routines().fixedStep(s)`, max 8 per step), `update`, timers
+  (`after/every/cancel`), `lateUpdate` (after the matrices), `onDisable`,
+  `onDestroy` (entity still alive). Order: `priority()` then order of addition.
+  `enabled(bool)` per routine. Messages: `world.routines().send(e, value)` →
+  `onMessage(m)`, `m.as<T>()`; `Contact` = shock from an outside engine (no
+  `onCollision`). `RoutineSystem` holds them; `World` is not movable. Access
+  `entity()`, `transform()`, `world()`, `input()`, `frame()`. Prefer `each`
+  for many entities. Tutorial: doc/05-World-Layer.md §3.
 - Joints (`using namespace units::literals;`):
   `child.revolute({0,0,1}, -90.0_deg, 90.0_deg)` then `child.joint().angle(30.0_deg)`
   (`World/Kinematics/JointHandle.hpp`; no limits = continuous),
@@ -41,7 +48,8 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 - Who writes a pose: `PoseDriver { Kinematic, Animation, External }`
   (`World/Components/PoseDriver.hpp`). A physics engine is outside Compages: it
   marks its bodies `External` and writes their pose each step (`40_ExternalPhysics`).
-  `world.step(viewFrame)` runs the routines only; `world.update()` the matrices.
+  `world.step(frame)` runs the routines, `world.update()` the matrices,
+  `world.endStep()` lateUpdate; `world.update(frame)` does the three.
 - URDF headless: `compages::world::loadUrdf(world, path)` (`World/Import/`).
 - `ViewFrame` = `Frame` + keyboard/mouse, for routines such as `Orbit`, `Fly`
   (`World/Controllers/Controls.hpp`); `FPSController` is applied, not a routine.

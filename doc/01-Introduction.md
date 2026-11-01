@@ -55,7 +55,7 @@ Compages keeps the two jobs apart, so that you can simulate without showing, or 
 | **Transform** | The position, rotation and scale of an entity, relative to its parent. |
 | **World matrix** | The final placement of an entity in the world, computed from all its parents. |
 | **Joint** | A child that moves in one way only: a **revolute** joint turns (an elbow), a **prismatic** joint slides. |
-| **Routine** | A small piece of code attached to one entity, called every frame (`update(dt)`). |
+| **Routine** | A small piece of code attached to one entity, called at each step (`update(dt)`, `fixedUpdate(dt)`…), like a Unity `MonoBehaviour`. Not a behavior tree: a routine can host one. |
 | **Frame** | One step of time: the time since the last step (`elapsed`) and since the start (`total`). |
 
 ### On the Renderer side

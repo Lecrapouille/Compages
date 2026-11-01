@@ -66,11 +66,15 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | system (loop) | `world.each<A, B>([](Entity e, A& a, B& b) { … })` |
 | step | `compages::core::Frame step; step.elapsed = dt; world.update(step);` |
 | routine | `struct X: Routine { void update(float dt) override; };` then `.add<X>(…)` |
+| routine life | `onEnable` `start` `fixedUpdate` `update` `lateUpdate` `onDisable` `onDestroy`, `priority()`, `enabled(bool)` |
+| fixed pace | `world.routines().fixedStep(1.0f / 120.0f)` |
+| timers (in a routine) | `after(s, fn)` `every(s, fn)` `cancel(id)` |
+| messages | `world.routines().send(entity, value)`, `broadcast(value)`; `onMessage(m)`, `m.as<T>()`; `Contact` for shocks |
+| step in parts | `world.step(frame)`, `world.update()`, `world.endStep()` |
 | joint | `.revolute(axis, min, max)` `.joint().angle(a)` `.prismatic(axis, min, max)` `.joint().offset(o)` |
 | joint value | `.joint().angle()` `.joint().offset()` (applied, inside the limits), `.joint().commandedAngle()` `.joint().commandedOffset()` (as set) |
 | who writes the pose | `.set(PoseDriver{ PoseDriver::External })` — also `Kinematic`, `Animation` |
 | URDF robot, headless | `compages::world::loadUrdf(world, "robot.urdf")` |
-| step without matrices | `world.step(viewFrame)`, then `world.update()` |
 | life | `if (entity)`, `entity.enable(false)` |
 
 ---
