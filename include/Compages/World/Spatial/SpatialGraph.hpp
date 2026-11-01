@@ -39,14 +39,21 @@ class NodeId
 {
 public:
 
-    static constexpr std::uint32_t MAX_COUNT = 0xFFFFu;
-
     constexpr NodeId() = default;
 
-    constexpr NodeId(std::uint16_t p_index, std::uint16_t p_generation)
-        : m_bits((static_cast<std::uint32_t>(p_generation) << 16u) |
-                 static_cast<std::uint32_t>(p_index))
+    //! \brief A node at a slot index, with the generation of that slot. Both
+    //! use 32 bits; generation zero is the empty node.
+    constexpr NodeId(std::uint32_t p_index, std::uint32_t p_generation)
+        : m_bits((static_cast<std::uint64_t>(p_generation) << 32u) |
+                 static_cast<std::uint64_t>(p_index))
     {
+    }
+
+    //! \brief Rebuild a node from the value of \c bits().
+    [[nodiscard]] static constexpr NodeId fromBits(std::uint64_t p_bits)
+    {
+        return NodeId(static_cast<std::uint32_t>(p_bits & 0xFFFFFFFFu),
+                      static_cast<std::uint32_t>(p_bits >> 32u));
     }
 
     [[nodiscard]] constexpr bool valid() const
@@ -57,15 +64,15 @@ public:
     {
         return valid();
     }
-    [[nodiscard]] constexpr std::uint16_t index() const
+    [[nodiscard]] constexpr std::uint32_t index() const
     {
-        return static_cast<std::uint16_t>(m_bits & 0xFFFFu);
+        return static_cast<std::uint32_t>(m_bits & 0xFFFFFFFFu);
     }
-    [[nodiscard]] constexpr std::uint16_t generation() const
+    [[nodiscard]] constexpr std::uint32_t generation() const
     {
-        return static_cast<std::uint16_t>(m_bits >> 16u);
+        return static_cast<std::uint32_t>(m_bits >> 32u);
     }
-    [[nodiscard]] constexpr std::uint32_t bits() const
+    [[nodiscard]] constexpr std::uint64_t bits() const
     {
         return m_bits;
     }
@@ -85,7 +92,7 @@ public:
 
 private:
 
-    std::uint32_t m_bits = 0u;
+    std::uint64_t m_bits = 0u;
 };
 
 // ****************************************************************************
@@ -221,7 +228,9 @@ public:
     //! \brief Walk a subtree parents-before-children.
     //!
     //! \c TransformSystem needs this: a child's world matrix depends on its
-    //! parent's, so parents must be visited first.
+    //! parent's, so parents must be visited first. The walk follows the
+    //! parent and sibling links, without recursion, so a very deep chain
+    //! cannot overflow the stack.
     //!
     //! \tparam F a callable receiving a NodeId by value.
     // ------------------------------------------------------------------------
@@ -232,7 +241,29 @@ public:
         {
             return;
         }
-        dfs(p_root, std::forward<F>(p_callback));
+        NodeId node = p_root;
+        while (true)
+        {
+            p_callback(node);
+            const Node& record = m_nodes[node.index()];
+            if (record.first_child.valid())
+            {
+                node = record.first_child;
+                continue;
+            }
+            // No child: go to the next sibling, climbing up until one exists
+            // or the root is reached again.
+            while ((node != p_root) &&
+                   !m_nodes[node.index()].next_sibling.valid())
+            {
+                node = m_nodes[node.index()].parent;
+            }
+            if (node == p_root)
+            {
+                return;
+            }
+            node = m_nodes[node.index()].next_sibling;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -251,7 +282,7 @@ public:
             {
                 continue;
             }
-            p_callback(NodeId(static_cast<std::uint16_t>(i), m_generation[i]));
+            p_callback(NodeId(static_cast<std::uint32_t>(i), m_generation[i]));
         }
     }
 
@@ -290,38 +321,25 @@ private:
 
     void ensureEntitySparse(std::size_t p_index);
     [[nodiscard]] bool slotAlive(std::size_t p_index) const;
-    std::uint16_t bumpGeneration(std::size_t p_index);
+    std::uint32_t bumpGeneration(std::size_t p_index);
     void unlink(NodeId p_node);
     void link(NodeId p_child, NodeId p_parent);
-    void destroySlot(std::size_t p_index);
+    void destroyLeaf(std::size_t p_index);
 
-    template <typename F>
-    void dfs(NodeId p_node, F& p_callback) const
-    {
-        p_callback(p_node);
-        NodeId child = m_nodes[p_node.index()].first_child;
-        while (child.valid())
-        {
-            const NodeId next = m_nodes[child.index()].next_sibling;
-            dfs(child, p_callback);
-            child = next;
-        }
-    }
-
-    static constexpr std::uint32_t NO_NODE = 0u;
+    static constexpr std::uint64_t NO_NODE = 0u;
 
     //! \brief All the nodes, indexed by \c NodeId::index(). Slot 0 is a live
     //! slot: it is generation 0 that means "empty".
     std::vector<Node> m_nodes;
     //! \brief Current generation of each slot. Zero when the slot is free.
-    std::vector<std::uint16_t> m_generation;
+    std::vector<std::uint32_t> m_generation;
     //! \brief Whether a slot is currently on the free list.
     std::vector<std::uint8_t> m_slot_free;
     //! \brief Free node slots.
-    std::vector<std::uint16_t> m_free;
+    std::vector<std::uint32_t> m_free;
     //! \brief Sparse array \c EntityId::index() -> \c NodeId::bits(). Zero
     //! means "no node for this entity".
-    std::vector<std::uint32_t> m_entity_to_node;
+    std::vector<std::uint64_t> m_entity_to_node;
     std::size_t m_living = 0u;
 };
 

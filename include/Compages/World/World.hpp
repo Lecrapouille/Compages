@@ -367,7 +367,6 @@ public:
 
 private:
 
-    void destroyRecursive(EntityId p_entity);
     void runBehaviors();
 
     struct Name

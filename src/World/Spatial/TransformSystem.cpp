@@ -11,6 +11,8 @@
 #include "Compages/World/Spatial/SpatialGraph.hpp"
 #include "Compages/World/Spatial/TransformStore.hpp"
 
+#include <vector>
+
 namespace compages::world
 {
 
@@ -19,48 +21,58 @@ namespace
 
 const compages::core::Matrix44f IDENTITY(compages::core::matrix::Identity);
 
-void updateNode(SpatialGraph const& p_graph,
-                TransformStore& p_transforms,
-                NodeId p_node,
-                compages::core::Matrix44f const& p_parent_world,
-                bool p_parent_was_dirty)
+//! \brief A node waiting to be visited, with what its parent left for it.
+struct Pending
 {
-    const EntityId entity = p_graph.entityOf(p_node);
-    compages::core::Matrix44f world_matrix = p_parent_world;
-    const bool has_transform = entity.valid() && p_transforms.has(entity);
-    const bool node_dirty = has_transform && p_transforms.isDirty(entity);
-    const bool dirty = p_parent_was_dirty || node_dirty;
-
-    if (has_transform)
-    {
-        if (dirty)
-        {
-            world_matrix = p_parent_world * p_transforms.localMatrix(entity);
-            p_transforms.setWorld(entity, world_matrix);
-            p_transforms.markClean(entity);
-        }
-        else
-        {
-            world_matrix = p_transforms.world(entity);
-        }
-    }
-
-    NodeId child = p_graph.firstChild(p_node);
-    while (child.valid())
-    {
-        const NodeId next = p_graph.nextSibling(child);
-        updateNode(p_graph, p_transforms, child, world_matrix, dirty);
-        child = next;
-    }
-}
+    NodeId node;
+    compages::core::Matrix44f parent_world;
+    bool parent_was_dirty;
+};
 
 } // namespace
 
 void TransformSystem::update(SpatialGraph const& p_graph,
                              TransformStore& p_transforms) const
 {
+    // An explicit stack instead of recursion: a very deep chain cannot
+    // overflow the call stack. Parents are still visited before children.
+    std::vector<Pending> stack;
     p_graph.forEachRoot([&](NodeId p_root) {
-        updateNode(p_graph, p_transforms, p_root, IDENTITY, false);
+        stack.push_back(Pending{ p_root, IDENTITY, false });
+        while (!stack.empty())
+        {
+            const Pending pending = stack.back();
+            stack.pop_back();
+
+            const EntityId entity = p_graph.entityOf(pending.node);
+            compages::core::Matrix44f world_matrix = pending.parent_world;
+            const bool has_transform =
+                entity.valid() && p_transforms.has(entity);
+            const bool dirty = pending.parent_was_dirty ||
+                               (has_transform && p_transforms.isDirty(entity));
+
+            if (has_transform)
+            {
+                if (dirty)
+                {
+                    world_matrix =
+                        pending.parent_world * p_transforms.localMatrix(entity);
+                    p_transforms.setWorld(entity, world_matrix);
+                    p_transforms.markClean(entity);
+                }
+                else
+                {
+                    world_matrix = p_transforms.world(entity);
+                }
+            }
+
+            for (NodeId child = p_graph.firstChild(pending.node);
+                 child.valid();
+                 child = p_graph.nextSibling(child))
+            {
+                stack.push_back(Pending{ child, world_matrix, dirty });
+            }
+        }
     });
 }
 

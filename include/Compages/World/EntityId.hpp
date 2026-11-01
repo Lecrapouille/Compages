@@ -41,8 +41,10 @@ class EntityId
 {
 public:
 
-    //! \brief How many entities can be alive at the same time.
-    static constexpr std::uint32_t MAX_COUNT = 0xFFFFu;
+    //! \brief How many entities can be alive at the same time: the 20-bit
+    //! index of an EnTT entity, about one million.
+    static constexpr std::uint32_t MAX_COUNT =
+        entt::entt_traits<entt::entity>::entity_mask;
 
     // ------------------------------------------------------------------------
     //! \brief An empty entity, naming nothing.
@@ -63,7 +65,7 @@ public:
     //! \param[in] p_generation how many times that slot has been used, starting
     //! at 1. Zero is what makes an entity empty, so it is never a live value.
     // ------------------------------------------------------------------------
-    constexpr EntityId(std::uint16_t p_index, std::uint16_t p_generation)
+    constexpr EntityId(std::uint32_t p_index, std::uint16_t p_generation)
         : m_value(entt::entt_traits<entt::entity>::construct(
               p_index, p_generation))
     {

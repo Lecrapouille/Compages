@@ -139,18 +139,47 @@ TEST(WorldHierarchy, KeepWorldReparentPreservesRotatedAndScaledPose)
     }
 }
 
-// Regression: past 65535 living entities the spatial graph (16-bit node index)
-// silently linked the wrong nodes in release builds.
-TEST(WorldHierarchy, RefusesMoreLivingEntitiesThanTheGraphCanIndex)
+// Regression: the spatial graph used 16-bit node indices and the World
+// refused more than 65535 living entities.
+TEST(WorldHierarchy, HoldsMoreThan65535LinkedEntities)
 {
+    constexpr std::uint32_t COUNT = 70000u;
     compages::world::World world;
-    for (std::uint32_t i = 0u; i < compages::world::EntityId::MAX_COUNT; ++i)
+    compages::world::EntityId root = world.create("root");
+    compages::world::EntityId last;
+    for (std::uint32_t i = 0u; i < COUNT; ++i)
     {
-        (void)world.create();
+        last = world.create();
+        ASSERT_TRUE(world.setParent(last, root));
     }
-    ASSERT_EQ(world.living(), compages::world::EntityId::MAX_COUNT);
-    EXPECT_THROW((void)world.create(), std::length_error);
-    ASSERT_EQ(world.living(), compages::world::EntityId::MAX_COUNT);
+    ASSERT_EQ(world.living(), COUNT + 1u);
+    ASSERT_EQ(world.parent(last), root);
+    ASSERT_EQ(world.descendantCount(root), COUNT + 1u);
+    world.destroy(root);
+    ASSERT_EQ(world.living(), 0u);
+}
+
+// A chain deeper than the call stack allows with recursion: update and
+// destroy must walk it with a loop.
+TEST(WorldHierarchy, UpdatesAndDestroysAVeryDeepChain)
+{
+    constexpr std::uint32_t DEPTH = 200000u;
+    compages::world::World world;
+    compages::world::Entity root = world.entity("root");
+    compages::world::Entity tip = root;
+    for (std::uint32_t i = 0u; i < DEPTH; ++i)
+    {
+        tip = tip.child();
+    }
+    root.position(1.0f, 2.0f, 3.0f);
+    world.update();
+    const compages::core::Matrix44f at = world.worldMatrix(tip.id());
+    EXPECT_FLOAT_EQ(at(0, 3), 1.0f);
+    EXPECT_FLOAT_EQ(at(1, 3), 2.0f);
+    EXPECT_FLOAT_EQ(at(2, 3), 3.0f);
+    ASSERT_EQ(world.descendantCount(root.id()), DEPTH + 1u);
+    world.destroy(root.id());
+    ASSERT_EQ(world.living(), 0u);
 }
 
 TEST(WorldHierarchy, EntitySetParentReportsFailureInsteadOfAsserting)

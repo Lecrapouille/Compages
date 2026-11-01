@@ -31,13 +31,13 @@ Entity World::entity(EntityId p_id)
 
 EntityId World::create(std::string p_name)
 {
-    // The spatial graph indexes its nodes with 16 bits: past MAX_COUNT living
-    // entities it would silently link the wrong nodes. Fail loudly, in release
-    // builds too (an assert is compiled out by NDEBUG).
+    // EnTT indexes its entities with 20 bits. Fail loudly past that, in
+    // release builds too (an assert is compiled out by NDEBUG).
     if (m_living >= EntityId::MAX_COUNT)
     {
         throw std::length_error("compages::world::World: too many living "
-                                "entities (limit is 65535)");
+                                "entities (limit is " +
+                                std::to_string(EntityId::MAX_COUNT) + ")");
     }
     EntityId entity(m_registry.create());
     ++m_living;
@@ -56,25 +56,27 @@ void World::destroy(EntityId p_entity)
     {
         return;
     }
-    destroyRecursive(p_entity);
-}
 
-void World::destroyRecursive(EntityId p_entity)
-{
-    // Walk children first so their components and transform slots are cleaned
-    // up before their parent is.
-    EntityId child = firstChild(p_entity);
-    while (child.valid())
+    // List the subtree first, then destroy it children first. No recursion,
+    // so a deep chain cannot overflow the stack.
+    std::vector<EntityId> subtree;
+    const NodeId node = m_graph.nodeOf(p_entity);
+    if (node.valid())
     {
-        const EntityId next = nextSibling(child);
-        destroyRecursive(child);
-        child = next;
+        m_graph.forEachDfs(node, [&](NodeId p_each)
+                           { subtree.push_back(m_graph.entityOf(p_each)); });
+        m_graph.destroy(node);
     }
-
-    m_graph.detach(p_entity);
-    m_transforms.release(p_entity);
-    m_registry.destroy(p_entity.native());
-    --m_living;
+    else
+    {
+        subtree.push_back(p_entity);
+    }
+    for (auto it = subtree.rbegin(); it != subtree.rend(); ++it)
+    {
+        m_transforms.release(*it);
+        m_registry.destroy(it->native());
+        --m_living;
+    }
 }
 
 bool World::alive(EntityId p_entity) const

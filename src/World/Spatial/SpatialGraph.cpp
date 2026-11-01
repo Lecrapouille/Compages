@@ -36,9 +36,9 @@ bool SpatialGraph::slotAlive(std::size_t p_index) const
     return m_generation[p_index] != 0u;
 }
 
-std::uint16_t SpatialGraph::bumpGeneration(std::size_t p_index)
+std::uint32_t SpatialGraph::bumpGeneration(std::size_t p_index)
 {
-    std::uint16_t next = static_cast<std::uint16_t>(m_generation[p_index] + 1u);
+    std::uint32_t next = m_generation[p_index] + 1u;
     if (next == 0u)
     {
         next = 1u;
@@ -68,22 +68,19 @@ NodeId SpatialGraph::attach(EntityId p_entity)
 
     // One node per entity: return the existing one instead of making a
     // parallel record.
-    if (const std::uint32_t existing = m_entity_to_node[p_entity.index()];
+    if (const std::uint64_t existing = m_entity_to_node[p_entity.index()];
         existing != NO_NODE)
     {
-        const std::uint16_t index =
-            static_cast<std::uint16_t>(existing & 0xFFFFu);
-        const std::uint16_t generation =
-            static_cast<std::uint16_t>(existing >> 16u);
-        if ((index < m_nodes.size()) && slotAlive(index) &&
-            (m_generation[index] == generation) &&
-            (m_nodes[index].entity == p_entity))
+        const NodeId node = NodeId::fromBits(existing);
+        if (slotAlive(node.index()) &&
+            (m_generation[node.index()] == node.generation()) &&
+            (m_nodes[node.index()].entity == p_entity))
         {
-            return NodeId(index, generation);
+            return node;
         }
     }
 
-    std::uint16_t slot = 0u;
+    std::uint32_t slot = 0u;
     if (!m_free.empty())
     {
         slot = m_free.back();
@@ -93,57 +90,39 @@ NodeId SpatialGraph::attach(EntityId p_entity)
     }
     else
     {
-        slot = static_cast<std::uint16_t>(m_nodes.size());
+        slot = static_cast<std::uint32_t>(m_nodes.size());
         m_nodes.emplace_back();
         m_generation.emplace_back(1u);
         m_slot_free.emplace_back(0u);
     }
 
     m_nodes[slot].entity = p_entity;
-    m_entity_to_node[p_entity.index()] =
-        (static_cast<std::uint32_t>(m_generation[slot]) << 16u) |
-        static_cast<std::uint32_t>(slot);
+    const NodeId node(slot, m_generation[slot]);
+    m_entity_to_node[p_entity.index()] = node.bits();
     ++m_living;
-    return NodeId(slot, m_generation[slot]);
+    return node;
 }
 
-void SpatialGraph::destroySlot(std::size_t p_index)
+void SpatialGraph::destroyLeaf(std::size_t p_index)
 {
-    // Destroy children first, then this slot itself. Order matters: after we
-    // clear the parent's first_child, we still need to walk the children to
-    // clean up their sparse entries.
-    NodeId child = m_nodes[p_index].first_child;
-    while (child.valid())
-    {
-        const NodeId next = m_nodes[child.index()].next_sibling;
-        destroySlot(child.index());
-        child = next;
-    }
-
     // Detach from parent's sibling list.
-    const NodeId self(static_cast<std::uint16_t>(p_index),
+    const NodeId self(static_cast<std::uint32_t>(p_index),
                       m_generation[p_index]);
     unlink(self);
 
     // Clear the sparse mapping only if it still points at us: a slot reused by
     // another entity in between must not be dropped by our destruction.
     const EntityId entity = m_nodes[p_index].entity;
-    if (entity.valid() && (entity.index() < m_entity_to_node.size()))
+    if (entity.valid() && (entity.index() < m_entity_to_node.size()) &&
+        (m_entity_to_node[entity.index()] == self.bits()))
     {
-        const std::uint32_t stored = m_entity_to_node[entity.index()];
-        const std::uint32_t self_bits =
-            (static_cast<std::uint32_t>(m_generation[p_index]) << 16u) |
-            static_cast<std::uint32_t>(p_index);
-        if (stored == self_bits)
-        {
-            m_entity_to_node[entity.index()] = NO_NODE;
-        }
+        m_entity_to_node[entity.index()] = NO_NODE;
     }
 
     m_nodes[p_index] = Node{};
     bumpGeneration(p_index);
     m_slot_free[p_index] = 1u;
-    m_free.emplace_back(static_cast<std::uint16_t>(p_index));
+    m_free.emplace_back(static_cast<std::uint32_t>(p_index));
     --m_living;
 }
 
@@ -153,7 +132,15 @@ void SpatialGraph::destroy(NodeId p_node)
     {
         return;
     }
-    destroySlot(p_node.index());
+    // Children before parents: list the subtree parents-first, then destroy
+    // it backwards, so every node is a leaf when its turn comes. No recursion,
+    // so a deep chain cannot overflow the stack.
+    std::vector<NodeId> subtree;
+    forEachDfs(p_node, [&subtree](NodeId p_each) { subtree.push_back(p_each); });
+    for (auto it = subtree.rbegin(); it != subtree.rend(); ++it)
+    {
+        destroyLeaf(it->index());
+    }
 }
 
 void SpatialGraph::detach(EntityId p_entity)
@@ -162,14 +149,12 @@ void SpatialGraph::detach(EntityId p_entity)
     {
         return;
     }
-    const std::uint32_t bits = m_entity_to_node[p_entity.index()];
+    const std::uint64_t bits = m_entity_to_node[p_entity.index()];
     if (bits == NO_NODE)
     {
         return;
     }
-    const std::uint16_t index = static_cast<std::uint16_t>(bits & 0xFFFFu);
-    const std::uint16_t generation = static_cast<std::uint16_t>(bits >> 16u);
-    destroy(NodeId(index, generation));
+    destroy(NodeId::fromBits(bits));
 }
 
 NodeId SpatialGraph::nodeOf(EntityId p_entity) const
@@ -178,14 +163,7 @@ NodeId SpatialGraph::nodeOf(EntityId p_entity) const
     {
         return {};
     }
-    const std::uint32_t bits = m_entity_to_node[p_entity.index()];
-    if (bits == NO_NODE)
-    {
-        return {};
-    }
-    const std::uint16_t index = static_cast<std::uint16_t>(bits & 0xFFFFu);
-    const std::uint16_t generation = static_cast<std::uint16_t>(bits >> 16u);
-    return NodeId(index, generation);
+    return NodeId::fromBits(m_entity_to_node[p_entity.index()]);
 }
 
 EntityId SpatialGraph::entityOf(NodeId p_node) const
@@ -252,6 +230,12 @@ bool SpatialGraph::wouldCycle(NodeId p_child, NodeId p_parent) const
     if (p_child == p_parent)
     {
         return true;
+    }
+    // A node without children is nobody's ancestor. This keeps building a
+    // long chain linear instead of walking it up at each new link.
+    if (!m_nodes[p_child.index()].first_child.valid())
+    {
+        return false;
     }
     NodeId walk = p_parent;
     while (walk.valid())
@@ -410,13 +394,8 @@ std::size_t SpatialGraph::descendantCount(NodeId p_node) const
     {
         return 0u;
     }
-    std::size_t count = 1u;
-    NodeId child = m_nodes[p_node.index()].first_child;
-    while (child.valid())
-    {
-        count += descendantCount(child);
-        child = m_nodes[child.index()].next_sibling;
-    }
+    std::size_t count = 0u;
+    forEachDfs(p_node, [&count](NodeId) { ++count; });
     return count;
 }
 
