@@ -19,7 +19,9 @@
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 #include "Compages/Renderer/Render/DebugDraw.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
+#include "Compages/Renderer/Render/Skybox.hpp"
 #include "Compages/Renderer/RenderSettings.hpp"
+#include "Compages/Renderer/Scene/Looks.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
 #include "Compages/World/Entity.hpp"
 
@@ -35,82 +37,6 @@
 #include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
-
-// ****************************************************************************
-//! \brief What a shape looks like: a plain colour, a picture, its normals or
-//! its depth.
-//!
-//! Made by the small functions below rather than filled by hand:
-//! \code
-//! m_scene.box("crate",
-//! compages::renderer::texture("textures/wooden-crate.jpg"));
-//! m_scene.sphere("ball", compages::renderer::color(1.0f, 0.3f, 0.2f));
-//! \endcode
-// ****************************************************************************
-struct Look
-{
-    //! \brief Which of the built-in shaders draws it.
-    ShaderFamily family = ShaderFamily::Lit;
-    //! \brief The colour, or what the picture is multiplied by.
-    compages::core::Vector3f color{ 0.8f, 0.8f, 0.8f };
-    //! \brief The picture file, for a textured look. Loaded once whatever the
-    //! number of shapes wearing it.
-    std::string texture;
-    //! \brief What the depth look maps to black and to white.
-    float depth_near = 1.0f;
-    float depth_far = 100.0f;
-    //! \brief One is solid.
-    float opacity = 1.0f;
-};
-
-//! \brief A plain colour, lit by the lights of the scene.
-[[nodiscard]] inline Look color(float p_red, float p_green, float p_blue)
-{
-    Look look;
-    look.color = compages::core::Vector3f(p_red, p_green, p_blue);
-    return look;
-}
-
-//! \brief A picture, lit by the lights of the scene.
-[[nodiscard]] inline Look texture(std::string p_path)
-{
-    Look look;
-    look.family = ShaderFamily::PbrMinimal;
-    look.color = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
-    look.texture = std::move(p_path);
-    return look;
-}
-
-//! \brief The normals as colours: what shows that a mesh is built right.
-[[nodiscard]] inline Look normals()
-{
-    Look look;
-    look.family = ShaderFamily::Normals;
-    return look;
-}
-
-//! \brief The distance to the camera, black at \c p_near, white at \c p_far.
-[[nodiscard]] inline Look depth(float p_near = 1.0f, float p_far = 100.0f)
-{
-    Look look;
-    look.family = ShaderFamily::Depth;
-    look.depth_near = p_near;
-    look.depth_far = p_far;
-    return look;
-}
-
-// ****************************************************************************
-//! \brief The built-in shapes.
-// ****************************************************************************
-enum class Shape
-{
-    Box,
-    Sphere,
-    Plane,
-    Cylinder,
-    Cone,
-    Pyramid,
-};
 
 // ****************************************************************************
 //! \brief Shows a compages::world::World: shapes, cameras, lights, and the
@@ -222,13 +148,19 @@ public:
     //! the name of the shape: "box", "sphere", "plane", "cylinder", "cone",
     //! "pyramid". What a prefab refers to it by.
     // ------------------------------------------------------------------------
-    MeshAssetId shapeMesh(Shape p_shape);
+    MeshAssetId shapeMesh(Shape p_shape)
+    {
+        return m_looks.shapeMesh(p_shape);
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Keep a look under a name, so that a prefab or a saved file can
     //! refer to it.
     // ------------------------------------------------------------------------
-    MaterialInstanceId material(std::string p_name, Look const& p_look);
+    MaterialInstanceId material(std::string p_name, Look const& p_look)
+    {
+        return m_looks.material(std::move(p_name), p_look);
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Change what an entity drawn by this Scene looks like. Its
@@ -408,9 +340,6 @@ public:
 
 private:
 
-    MaterialId familyMaterial(ShaderFamily p_family);
-    TextureAssetId pictureTexture(std::string const& p_path);
-    MaterialInstance instanceOf(Look const& p_look);
     compages::world::Entity
     drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look);
 
@@ -419,14 +348,14 @@ private:
     compages::world::World& m_world;
     std::unique_ptr<AssetManager> m_owned_assets;
     AssetManager* m_assets;
+    Looks m_looks;
     Renderer m_renderer;
     DebugDraw m_debug;
     compages::world::EntityId m_active_camera{};
     RenderSettings m_settings{};
     Environment m_environment{};
     CameraFrame m_last_camera{};
-    compages::gpu::Texture m_sky_texture;
-    compages::gpu::Drawable m_sky;
+    Skybox m_sky;
 };
 
 } // namespace compages::renderer

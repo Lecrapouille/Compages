@@ -11,8 +11,6 @@
 #include "Compages/Core/AABB.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/RenderPass.hpp"
-#include "Compages/Renderer/Assets/AnimationClip.hpp"
-#include "Compages/Renderer/Assets/Primitives.hpp"
 #include "Compages/Renderer/Assets/StlLoader.hpp"
 #include "Compages/Renderer/Assets/UrdfLoader.hpp"
 #include "Compages/Renderer/Components/Animator.hpp"
@@ -28,7 +26,6 @@
 #include <cctype>
 #include <cmath>
 #include <filesystem>
-#include <initializer_list>
 
 namespace compages::renderer
 {
@@ -36,249 +33,28 @@ namespace compages::renderer
 namespace
 {
 
-//! \brief The name a built-in asset is kept under: what a second Scene sharing
-//! the assets finds it by, and what a prefab refers to it by.
-char const* shapeName(Shape p_shape)
-{
-    switch (p_shape)
-    {
-        case Shape::Box:
-            return "box";
-        case Shape::Sphere:
-            return "sphere";
-        case Shape::Plane:
-            return "plane";
-        case Shape::Cylinder:
-            return "cylinder";
-        case Shape::Cone:
-            return "cone";
-        case Shape::Pyramid:
-            return "pyramid";
-    }
-    return "shape";
-}
-
-//! \brief Turn a mesh built along Z so that it stands along Y, the way the
-//! shapes of the Scene all stand.
-Result<MeshAsset> standUp(Result<MeshAsset> p_mesh)
-{
-    if (!p_mesh)
-    {
-        return p_mesh;
-    }
-    MeshAsset mesh = p_mesh.take();
-    compages::core::AABB bounds;
-    for (MeshVertex& vertex : mesh.source_vertices)
-    {
-        vertex.position = compages::core::Vector3f(
-            vertex.position.x, -vertex.position.z, vertex.position.y);
-        vertex.normal = compages::core::Vector3f(
-            vertex.normal.x, -vertex.normal.z, vertex.normal.y);
-        bounds.expand(vertex.position);
-    }
-    mesh.local_bounds = bounds;
-    // The primitive was uploaded lying down; prepare() sends it again upright.
-    mesh.releaseGpu();
-    return mesh;
-}
-
-Result<MeshAsset> buildShape(Shape p_shape)
-{
-    switch (p_shape)
-    {
-        case Shape::Box:
-            return makeCube();
-        case Shape::Sphere:
-            return makeSphere(0.5f, 24u, 32u);
-        case Shape::Plane:
-            return makePlane(1.0f, 1.0f);
-        case Shape::Cylinder:
-            return standUp(makeCylinder(0.5f, 1.0f, 32u));
-        case Shape::Cone:
-            return standUp(makeCone(0.5f, 0.0f, 1.0f, 32u));
-        case Shape::Pyramid:
-            return standUp(makePyramid(0.5f, 1.0f));
-    }
-    return failure("unknown shape");
-}
-
-char const* familyName(ShaderFamily p_family)
-{
-    switch (p_family)
-    {
-        case ShaderFamily::Lit:
-            return "lit";
-        case ShaderFamily::PbrMinimal:
-            return "textured";
-        case ShaderFamily::Depth:
-            return "depth";
-        case ShaderFamily::Normals:
-            return "normals";
-    }
-    return "material";
-}
-
-Result<Material> buildFamily(ShaderFamily p_family)
-{
-    switch (p_family)
-    {
-        case ShaderFamily::Lit:
-            return makeLitMaterial();
-        case ShaderFamily::PbrMinimal:
-            return makePbrMaterial();
-        case ShaderFamily::Depth:
-            return makeDepthMaterial();
-        case ShaderFamily::Normals:
-            return makeNormalsMaterial();
-    }
-    return failure("unknown material family");
-}
-
-constexpr char const* SKY_VERTEX = R"(#version 450 core
-in vec3 position;
-uniform mat4 view;
-uniform mat4 projection;
-out vec3 vDirection;
-
-void main()
-{
-    vDirection = position;
-    // The camera turns but never moves away from the sky: the translation
-    // of the view is dropped.
-    gl_Position = projection * mat4(mat3(view)) * vec4(position, 1.0);
-}
-)";
-
-constexpr char const* SKY_FRAGMENT = R"(#version 450 core
-in vec3 vDirection;
-uniform samplerCube sky;
-out vec4 oColor;
-
-void main()
-{
-    oColor = texture(sky, normalize(vDirection));
-}
-)";
-
 } // namespace
 
 Scene::Scene(compages::world::World& p_world)
     : m_world(p_world),
       m_owned_assets(std::make_unique<AssetManager>()),
-      m_assets(m_owned_assets.get())
+      m_assets(m_owned_assets.get()),
+      m_looks(*m_assets)
 {
 }
 
 Scene::Scene(compages::world::World& p_world, AssetManager& p_assets)
-    : m_world(p_world), m_assets(&p_assets)
+    : m_world(p_world), m_assets(&p_assets), m_looks(p_assets)
 {
 }
 
 Scene::~Scene() = default;
 
-MeshAssetId Scene::shapeMesh(Shape p_shape)
-{
-    const MeshAssetId known = m_assets->findMesh(shapeName(p_shape));
-    if (known.valid())
-    {
-        return known;
-    }
-    auto mesh = buildShape(p_shape);
-    if (!mesh)
-    {
-        compages::gpu::reportError(mesh.error());
-        return {};
-    }
-    auto id = m_assets->addMesh(shapeName(p_shape), mesh.take());
-    if (!id)
-    {
-        compages::gpu::reportError(id.error());
-        return {};
-    }
-    return id.value();
-}
-
-MaterialId Scene::familyMaterial(ShaderFamily p_family)
-{
-    const MaterialId known = m_assets->findMaterial(familyName(p_family));
-    if (known.valid())
-    {
-        return known;
-    }
-    auto material = buildFamily(p_family);
-    if (!material)
-    {
-        compages::gpu::reportError(material.error());
-        return {};
-    }
-    auto id = m_assets->addMaterial(familyName(p_family), material.take());
-    if (!id)
-    {
-        compages::gpu::reportError(id.error());
-        return {};
-    }
-    return id.value();
-}
-
-TextureAssetId Scene::pictureTexture(std::string const& p_path)
-{
-    const TextureAssetId known = m_assets->findTexture(p_path);
-    if (known.valid())
-    {
-        return known;
-    }
-    TextureAsset picture;
-    picture.name = p_path;
-    // A picture is a colour for the eye: stored in sRGB, the GPU turns it
-    // back to linear light when the shader samples it.
-    compages::gpu::LoadOptions options;
-    options.srgb = true;
-    if (!compages::gpu::check(picture.texture.load(p_path, options)))
-    {
-        return {};
-    }
-    auto id = m_assets->addTexture(p_path, std::move(picture));
-    if (!id)
-    {
-        compages::gpu::reportError(id.error());
-        return {};
-    }
-    return id.value();
-}
-
-MaterialInstance Scene::instanceOf(Look const& p_look)
-{
-    MaterialInstance instance;
-    instance.material = familyMaterial(p_look.family);
-    instance.color = p_look.color;
-    instance.base_color_factor = p_look.color;
-    instance.depth_near = p_look.depth_near;
-    instance.depth_far = p_look.depth_far;
-    instance.opacity = p_look.opacity;
-    if (!p_look.texture.empty())
-    {
-        instance.base_color_texture = pictureTexture(p_look.texture);
-    }
-    return instance;
-}
-
-MaterialInstanceId Scene::material(std::string p_name, Look const& p_look)
-{
-    auto id =
-        m_assets->addMaterialInstance(std::move(p_name), instanceOf(p_look));
-    if (!id)
-    {
-        compages::gpu::reportError(id.error());
-        return {};
-    }
-    return id.value();
-}
-
 compages::world::Entity
 Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
 {
     compages::world::Entity entity = m_world.entity(std::move(p_name));
-    auto instance = m_assets->addMaterialInstance({}, instanceOf(p_look));
+    auto instance = m_assets->addMaterialInstance({}, m_looks.instanceOf(p_look));
     if (!instance)
     {
         compages::gpu::reportError(instance.error());
@@ -291,7 +67,7 @@ Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
 compages::world::Entity
 Scene::shape(Shape p_shape, std::string p_name, Look const& p_look)
 {
-    return drawn(shapeMesh(p_shape), std::move(p_name), p_look);
+    return drawn(m_looks.shapeMesh(p_shape), std::move(p_name), p_look);
 }
 
 compages::world::Entity Scene::box(std::string p_name, Look const& p_look)
@@ -359,68 +135,14 @@ compages::world::Entity Scene::copy(compages::world::EntityId p_entity,
 
 void Scene::look(compages::world::EntityId p_entity, Look const& p_look)
 {
-    compages::renderer::MeshRenderer* renderer =
-        m_world.tryGet<compages::renderer::MeshRenderer>(p_entity);
-    if (renderer == nullptr)
-    {
-        return compages::gpu::reportError(
-            "look() on an entity that is not drawn: make it with box(), "
-            "sphere(), mesh()...");
-    }
-    // A new instance rather than a change of the old one, which copies may
-    // share. The old one goes if nothing else wears it.
-    auto id = m_assets->addMaterialInstance({}, instanceOf(p_look));
-    if (!id)
-    {
-        return compages::gpu::reportError(id.error());
-    }
-    const MaterialInstanceId old = renderer->material_instance;
-    renderer->material_instance = id.value();
-
-    bool worn = false;
-    m_world.each<compages::renderer::MeshRenderer>(
-        [&](compages::world::EntityId,
-            compages::renderer::MeshRenderer const& p_other)
-        { worn = worn || (p_other.material_instance == old); });
-    if (!worn && m_assets->materialInstanceName(old).empty())
-    {
-        m_assets->removeMaterialInstance(old);
-    }
+    m_looks.wear(m_world, p_entity, m_looks.instanceOf(p_look));
 }
 
 void Scene::look(compages::world::EntityId p_entity, TextureAssetId p_albedo)
 {
-    Look look;
-    look.family = ShaderFamily::PbrMinimal;
-    look.color = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
-    MaterialInstance instance = instanceOf(look);
+    MaterialInstance instance = m_looks.instanceOf(texture({}));
     instance.base_color_texture = p_albedo;
-
-    compages::renderer::MeshRenderer* renderer =
-        m_world.tryGet<compages::renderer::MeshRenderer>(p_entity);
-    if (renderer == nullptr)
-    {
-        return compages::gpu::reportError(
-            "look() on an entity that is not drawn: make it with box(), "
-            "sphere(), mesh()...");
-    }
-    auto id = m_assets->addMaterialInstance({}, instance);
-    if (!id)
-    {
-        return compages::gpu::reportError(id.error());
-    }
-    const MaterialInstanceId old = renderer->material_instance;
-    renderer->material_instance = id.value();
-
-    bool worn = false;
-    m_world.each<compages::renderer::MeshRenderer>(
-        [&](compages::world::EntityId,
-            compages::renderer::MeshRenderer const& p_other)
-        { worn = worn || (p_other.material_instance == old); });
-    if (!worn && m_assets->materialInstanceName(old).empty())
-    {
-        m_assets->removeMaterialInstance(old);
-    }
+    m_looks.wear(m_world, p_entity, instance);
 }
 
 compages::world::Entity Scene::camera(std::string p_name)
@@ -548,56 +270,17 @@ Result<compages::world::Entity> Scene::load(std::string const& p_path,
 
 bool Scene::play(compages::world::EntityId p_model, std::string_view p_clip)
 {
-    compages::renderer::Animator* animator =
-        m_world.tryGet<compages::renderer::Animator>(p_model);
-    if (animator == nullptr)
-    {
-        return false;
-    }
-    for (AnimationClipId const id : animator->clips)
-    {
-        AnimationClip const* clip = m_assets->animation(id);
-        if ((clip != nullptr) && (clip->name == p_clip))
-        {
-            if (!(animator->clip == id))
-            {
-                animator->clip = id;
-                animator->time = 0.0f;
-            }
-            animator->playing = true;
-            return true;
-        }
-    }
-    return false;
+    return AnimationSystem::play(m_world, *m_assets, p_model, p_clip);
 }
 
 std::vector<std::string> Scene::clips(compages::world::EntityId p_model) const
 {
-    std::vector<std::string> names;
-    compages::renderer::Animator const* animator =
-        m_world.tryGet<compages::renderer::Animator>(p_model);
-    if (animator == nullptr)
-    {
-        return names;
-    }
-    for (AnimationClipId const id : animator->clips)
-    {
-        AnimationClip const* clip = m_assets->animation(id);
-        if (clip != nullptr)
-        {
-            names.emplace_back(clip->name);
-        }
-    }
-    return names;
+    return AnimationSystem::clips(m_world, *m_assets, p_model);
 }
 
 std::string Scene::playing(compages::world::EntityId p_model) const
 {
-    compages::renderer::Animator const* animator =
-        m_world.tryGet<compages::renderer::Animator>(p_model);
-    AnimationClip const* clip =
-        (animator == nullptr) ? nullptr : m_assets->animation(animator->clip);
-    return (clip == nullptr) ? std::string() : clip->name;
+    return AnimationSystem::playing(m_world, *m_assets, p_model);
 }
 
 Scene& Scene::background(float p_red, float p_green, float p_blue)
@@ -615,28 +298,7 @@ Scene& Scene::ambient(float p_red, float p_green, float p_blue)
 
 Scene& Scene::skybox(std::array<std::string, 6u> const& p_faces)
 {
-    compages::gpu::LoadOptions options;
-    options.flip_vertically = false;
-    options.srgb = true;
-    options.wrap = compages::gpu::Wrap::ClampToEdge;
-    if (!compages::gpu::check(m_sky_texture.loadCube(p_faces, options)) ||
-        !compages::gpu::check(m_sky.load(SKY_VERTEX, SKY_FRAGMENT)))
-    {
-        return *this;
-    }
-    // A cube around the camera, seen from the inside. Drawn first and
-    // without the depth test, it is behind whatever comes after.
-    // The element type is written out: a bare braced list is ambiguous
-    // between the int and the float slots under Clang.
-    m_sky["position"] = std::initializer_list<std::initializer_list<float>>{
-        { -1.f, -1.f, -1.f }, { 1.f, -1.f, -1.f }, { 1.f, 1.f, -1.f },
-        { -1.f, 1.f, -1.f },  { -1.f, -1.f, 1.f }, { 1.f, -1.f, 1.f },
-        { 1.f, 1.f, 1.f },    { -1.f, 1.f, 1.f }
-    };
-    m_sky.indices({ 0, 1, 2, 2, 3, 0, 4, 6, 5, 6, 4, 7, 0, 3, 7, 7, 4, 0,
-                    1, 5, 6, 6, 2, 1, 3, 2, 6, 6, 7, 3, 0, 4, 5, 5, 1, 0 });
-    m_sky["sky"] = m_sky_texture;
-    m_sky.depthTest(false);
+    compages::gpu::check(m_sky.load(p_faces));
     return *this;
 }
 
@@ -741,12 +403,7 @@ void Scene::render(compages::world::EntityId p_camera)
     m_last_camera.viewport_x = float(part.x - where.x);
     m_last_camera.viewport_y = float(part.y - where.y);
 
-    if (m_sky_texture.valid())
-    {
-        m_sky["view"] = snapshot.value().camera.view;
-        m_sky["projection"] = snapshot.value().camera.projection;
-        m_sky.draw();
-    }
+    m_sky.draw(snapshot.value().camera);
 
     compages::gpu::check(m_renderer.render(snapshot.value(), *m_assets));
     compages::gpu::check(m_debug.flush(snapshot.value().camera));

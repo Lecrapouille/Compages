@@ -16,6 +16,7 @@
 #include "Compages/World/EntityId.hpp"
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "Compages/Core/Quaternion.hpp"
@@ -87,5 +88,19 @@ struct RenderSnapshot
     std::vector<compages::core::Matrix44f> joint_palette;
     compages::renderer::Environment environment{};
 };
+
+//! \brief Direction the light of the sun travels, and its colour: the first
+//! directional light, else the default of the environment.
+[[nodiscard]] inline std::pair<compages::core::Vector3f, compages::core::Vector3f>
+sunOf(RenderSnapshot const& p_snapshot)
+{
+    if (!p_snapshot.directional_lights.empty())
+    {
+        DirectionalLightFrame const& sun = p_snapshot.directional_lights.front();
+        return { sun.direction, sun.color * sun.intensity };
+    }
+    return { p_snapshot.environment.default_light_direction,
+             p_snapshot.environment.default_light_color };
+}
 
 } // namespace compages::renderer

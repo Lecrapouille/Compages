@@ -8,6 +8,11 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
+#include "Compages/World/EntityId.hpp"
+
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace compages::world
 {
@@ -55,6 +60,26 @@ public:
     //! are current.
     [[nodiscard]] static Status pose(compages::world::World& p_world,
                                      AssetManager const& p_assets);
+
+    //! \brief Play the clip of that name on a model with an Animator, from
+    //! its start unless it is already the current clip.
+    //! \return false when the model has no Animator or no such clip.
+    static bool play(compages::world::World& p_world,
+                     AssetManager const& p_assets,
+                     compages::world::EntityId p_model,
+                     std::string_view p_clip);
+
+    //! \brief The names of the clips of a model, empty without an Animator.
+    [[nodiscard]] static std::vector<std::string>
+    clips(compages::world::World const& p_world,
+          AssetManager const& p_assets,
+          compages::world::EntityId p_model);
+
+    //! \brief The name of the current clip of a model, or empty.
+    [[nodiscard]] static std::string
+    playing(compages::world::World const& p_world,
+            AssetManager const& p_assets,
+            compages::world::EntityId p_model);
 
     //! \brief CPU vertex deformation. Prototype only.
     [[nodiscard]] static Status skin(compages::world::World& p_world,

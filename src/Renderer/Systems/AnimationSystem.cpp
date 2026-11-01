@@ -404,3 +404,67 @@ Status compages::renderer::AnimationSystem::tick(
 }
 
 } // namespace compages::renderer
+
+bool compages::renderer::AnimationSystem::play(
+    compages::world::World& p_world,
+    compages::renderer::AssetManager const& p_assets,
+    compages::world::EntityId p_model,
+    std::string_view p_clip)
+{
+    compages::renderer::Animator* animator =
+        p_world.tryGet<compages::renderer::Animator>(p_model);
+    if (animator == nullptr)
+    {
+        return false;
+    }
+    for (compages::renderer::AnimationClipId const id : animator->clips)
+    {
+        compages::renderer::AnimationClip const* clip = p_assets.animation(id);
+        if ((clip != nullptr) && (clip->name == p_clip))
+        {
+            if (!(animator->clip == id))
+            {
+                animator->clip = id;
+                animator->time = 0.0f;
+            }
+            animator->playing = true;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<std::string> compages::renderer::AnimationSystem::clips(
+    compages::world::World const& p_world,
+    compages::renderer::AssetManager const& p_assets,
+    compages::world::EntityId p_model)
+{
+    std::vector<std::string> names;
+    compages::renderer::Animator const* animator =
+        p_world.tryGet<compages::renderer::Animator>(p_model);
+    if (animator == nullptr)
+    {
+        return names;
+    }
+    for (compages::renderer::AnimationClipId const id : animator->clips)
+    {
+        compages::renderer::AnimationClip const* clip = p_assets.animation(id);
+        if (clip != nullptr)
+        {
+            names.emplace_back(clip->name);
+        }
+    }
+    return names;
+}
+
+std::string compages::renderer::AnimationSystem::playing(
+    compages::world::World const& p_world,
+    compages::renderer::AssetManager const& p_assets,
+    compages::world::EntityId p_model)
+{
+    compages::renderer::Animator const* animator =
+        p_world.tryGet<compages::renderer::Animator>(p_model);
+    compages::renderer::AnimationClip const* clip =
+        (animator == nullptr) ? nullptr : p_assets.animation(animator->clip);
+    return (clip == nullptr) ? std::string() : clip->name;
+}
