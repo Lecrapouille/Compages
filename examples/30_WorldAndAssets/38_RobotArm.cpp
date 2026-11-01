@@ -48,7 +48,7 @@ std::string RobotArm::description() const
 
 compages::Status RobotArm::setUp()
 {
-    const std::string path = dataPath("irb2400.urdf");
+    const std::filesystem::path path = dataPath("irb2400.urdf");
     if (path.empty())
     {
         return compages::failure(
@@ -56,7 +56,7 @@ compages::Status RobotArm::setUp()
             "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.12f, 0.14f, 0.18f);
-    auto robot = m_scene.load(path);
+    auto robot = m_scene.load(path.string());
     if (!robot)
     {
         return compages::failure(robot.error());

@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/World/Entity.hpp"
+#include "DataPath.hpp"
 #include "GPUContext.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
@@ -21,46 +22,15 @@
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/World.hpp"
 
-#include "Compages/Core/File.hpp"
-
 #include <algorithm>
 #include <cmath>
-
-
-
+#include <filesystem>
 
 using namespace tests;
 
-namespace
-{
-
-std::string dataPath(std::string const& p_name)
-{
-    for (const char* root :
-         { "external/Compages-data/",
-           "../external/Compages-data/",
-           "external/Compages-data/",
-           "../external/Compages-data/" })
-    {
-        if (compages::core::File::exist(root + p_name))
-        {
-            return root + p_name;
-        }
-    }
-    const std::string three_js =
-        "/home/qq/three.js/examples/models/gltf/" + p_name;
-    if (compages::core::File::exist(three_js))
-    {
-        return three_js;
-    }
-    return {};
-}
-
-} // namespace
-
 TEST(GltfLoaderHeadless, LoadsReusableAssetsWithoutAWorldOrDevice)
 {
-    const std::string path = dataPath("Soldier.glb");
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Soldier.glb is missing from Compages-data";
@@ -68,7 +38,7 @@ TEST(GltfLoaderHeadless, LoadsReusableAssetsWithoutAWorldOrDevice)
     ASSERT_FALSE(compages::gpu::initialized());
 
     compages::renderer::AssetManager assets;
-    auto loaded = assets.load(path);
+    auto loaded = assets.load(path.string());
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     ASSERT_NE(assets.prefab(loaded.value()), nullptr);
     ASSERT_GT(assets.meshCount(), 0u);
@@ -109,7 +79,7 @@ protected:
 
 TEST_F(GltfLoaderTest, SeparatesLoadingFromInstantiation)
 {
-    const std::string path = dataPath("Soldier.glb");
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Soldier.glb is missing from external/Compages-data";
@@ -119,7 +89,7 @@ TEST_F(GltfLoaderTest, SeparatesLoadingFromInstantiation)
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
 
-    auto loaded = assets.load(path);
+    auto loaded = assets.load(path.string());
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     ASSERT_EQ(world.living(), 0u);
 
@@ -135,14 +105,14 @@ TEST_F(GltfLoaderTest, SeparatesLoadingFromInstantiation)
     compages::renderer::AssetManager shortcut_assets;
     compages::world::World shortcut_world;
     compages::renderer::Scene shortcut(shortcut_world, shortcut_assets);
-    auto direct = shortcut.load(path);
+    auto direct = shortcut.load(path.string());
     ASSERT_TRUE(bool(direct)) << direct.error();
     ASSERT_GT(shortcut_world.living(), 0u);
 }
 
 TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
 {
-    const std::string path = dataPath("Duck.glb");
+    const std::filesystem::path path = dataPath("Duck.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Duck.glb is missing from external/Compages-data";
@@ -151,7 +121,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene view(world, assets);
-    auto imported = view.load(path);
+    auto imported = view.load(path.string());
     ASSERT_TRUE(bool(imported)) << imported.error();
     ASSERT_TRUE(imported.value().id().valid());
     ASSERT_GT(assets.meshCount(), 0u);
@@ -221,7 +191,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
 
 TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
 {
-    const std::string path = dataPath("Duck.glb");
+    const std::filesystem::path path = dataPath("Duck.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Duck.glb is missing from external/Compages-data";
@@ -230,7 +200,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene view(world, assets);
-    auto imported = view.load(path);
+    auto imported = view.load(path.string());
     ASSERT_TRUE(bool(imported)) << imported.error();
 
     compages::core::AABB bounds;

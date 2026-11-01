@@ -330,7 +330,6 @@ void qq_lookAt(compages::core::Vector3f const &position, compages::core::Vector3
 }
 
 
-// g++ -W -Wall --std=c++14 -I/home/qq/MyGitHub/Compages/external/glm -I/home/qq/MyGitHub/Compages/external/units/include/ -I.. test_glm.cpp -o prog
 int main()
 {
     glm_lookAt(glm::vec3(1,0,0),

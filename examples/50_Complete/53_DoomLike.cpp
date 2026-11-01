@@ -67,7 +67,7 @@ compages::Status DoomLike::setUp()
     // Loaded once for both levels: each Scene built later shares them.
     auto need = [](char const* p_file) -> compages::Result<std::string>
     {
-        const std::string path = dataPath(p_file);
+        const std::filesystem::path path = dataPath(p_file);
         if (path.empty())
         {
             return compages::failure(
@@ -76,7 +76,7 @@ compages::Status DoomLike::setUp()
                 "(Shotgun.glb is written by "
                 "examples/50_Complete/DoomLike/make_shotgun.py)");
         }
-        return path;
+        return path.string();
     };
     std::string soldier;
     COMPAGES_TRY_ASSIGN(soldier, need("Soldier.glb"));
@@ -96,10 +96,10 @@ compages::Status DoomLike::setUp()
 compages::Status DoomLike::buildLevel(std::size_t p_level)
 {
     doom::LevelData const& level = doom::levels()[p_level];
-    const std::string wall_file = dataPath(level.wall);
-    const std::string floor_file = dataPath(level.floor);
-    const std::string crate_file = dataPath("wooden-crate.jpg");
-    const std::string hazard_file = dataPath("hazard.png");
+    const std::filesystem::path wall_file = dataPath(level.wall);
+    const std::filesystem::path floor_file = dataPath(level.floor);
+    const std::filesystem::path crate_file = dataPath("wooden-crate.jpg");
+    const std::filesystem::path hazard_file = dataPath("hazard.png");
     if (wall_file.empty() || floor_file.empty() || crate_file.empty() ||
         hazard_file.empty())
     {
@@ -177,22 +177,26 @@ compages::Status DoomLike::setupPlayerRig()
     return compages::success();
 }
 
-compages::Status DoomLike::scanMapGrid(doom::LevelData const& p_level,
-                                       std::string const& p_wall_file,
-                                       std::string const& p_floor_file,
-                                       std::string const& p_crate_file,
-                                       std::string const& p_hazard_file)
+compages::Status DoomLike::scanMapGrid(
+    doom::LevelData const& p_level,
+    std::filesystem::path const& p_wall_file,
+    std::filesystem::path const& p_floor_file,
+    std::filesystem::path const& p_crate_file,
+    std::filesystem::path const& p_hazard_file)
 {
-    compages::renderer::Look wall = compages::renderer::texture(p_wall_file);
+    compages::renderer::Look wall =
+        compages::renderer::texture(p_wall_file.string());
     wall.color = p_level.wall_tint;
-    compages::renderer::Look ceiling = compages::renderer::texture(p_wall_file);
+    compages::renderer::Look ceiling =
+        compages::renderer::texture(p_wall_file.string());
     ceiling.color = p_level.wall_tint * 0.35f;
-    compages::renderer::Look floor = compages::renderer::texture(p_floor_file);
+    compages::renderer::Look floor =
+        compages::renderer::texture(p_floor_file.string());
     floor.color = compages::core::Vector3f(0.75f, 0.7f, 0.7f);
     const compages::renderer::Look crate =
-        compages::renderer::texture(p_crate_file);
+        compages::renderer::texture(p_crate_file.string());
     const compages::renderer::Look hazard =
-        compages::renderer::texture(p_hazard_file);
+        compages::renderer::texture(p_hazard_file.string());
 
     std::vector<std::string> const& rows = m_content.map.rows();
     for (std::size_t row = 0u; row < rows.size(); ++row)

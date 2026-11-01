@@ -25,7 +25,7 @@ namespace examples
 //! \code
 //! m_scene.sphere("Red", compages::renderer::color(0.85f, 0.25f, 0.2f));
 //! m_scene.sphere("Grass",
-//! compages::renderer::texture(dataPath("grassFlowers.png")));
+//! compages::renderer::texture(dataPath("grassFlowers.png").string()));
 //! \endcode
 // ****************************************************************************
 class TexturedSpheres final: public Example

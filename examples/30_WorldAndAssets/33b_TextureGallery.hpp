@@ -23,10 +23,10 @@ namespace examples
 //! A picture that is not found falls back to a plain colour, which is how
 //! the example still runs with only part of the data checked out:
 //! \code
-//! const std::string path = dataPath("rocks.png");
+//! const std::filesystem::path path = dataPath("rocks.png");
 //! m_scene.box("rocks", path.empty() ? compages::renderer::color(0.55f, 0.52f,
 //! 0.48f)
-//!                                   : compages::renderer::texture(path));
+//!                                   : compages::renderer::texture(path.string()));
 //! \endcode
 // ****************************************************************************
 class TextureGallery final: public Example

@@ -88,7 +88,7 @@ compages::Status MultiTextureBlend::setUp()
 
     for (std::size_t i = 0u; i < MAPS.size(); ++i)
     {
-        const std::string path = dataPath(MAPS[i].second);
+        const std::filesystem::path path = dataPath(MAPS[i].second);
         if (path.empty())
         {
             return compages::failure("03b_MultiTextureBlend needs textures in "
@@ -97,7 +97,7 @@ compages::Status MultiTextureBlend::setUp()
         const compages::gpu::LoadOptions options =
             (i == 0u) ? compages::gpu::LoadOptions::data()
                       : compages::gpu::LoadOptions::picture();
-        COMPAGES_TRY(m_textures[i].load(path, options));
+        COMPAGES_TRY(m_textures[i].load(path.string(), options));
         m_plane[MAPS[i].first] = m_textures[i];
     }
 

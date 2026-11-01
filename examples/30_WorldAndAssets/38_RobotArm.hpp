@@ -25,7 +25,7 @@ namespace examples
 //! and its parent. Setting an angle is all it takes to move the arm; the World
 //! turns the joints into transforms at its next update:
 //! \code
-//! auto robot = m_scene.load(dataPath("irb2400.urdf"));
+//! auto robot = m_scene.load(dataPath("irb2400.urdf").string());
 //! robot.value().lookup("base_link/link_1").angle(30.0_deg);
 //! \endcode
 // ****************************************************************************

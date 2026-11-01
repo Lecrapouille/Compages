@@ -86,7 +86,6 @@ include/Compages/          the public interface, installed
   World/                   World, Entity, Behavior, Components/, Spatial/ (joints), Controllers/
   Renderer/                Scene, Assets/, Render/ (extraction, snapshot, renderer)
 src/
-  Core/                    File.cpp
   GPU/                     implementation + Backends/GL45/ (glad is private here)
   World/                   World, Entity, Spatial/, Controllers/
   Renderer/                Scene, Assets/, Render/, Systems/

@@ -6,11 +6,11 @@
 // See LICENSING.md for details.
 
 #include "Compages/World/Entity.hpp"
+#include "DataPath.hpp"
 #include "GPUContext.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/GltfLoader.hpp"
-#include "Compages/Core/File.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Scene.hpp"
 #include "Compages/Renderer/Systems/AnimationSystem.hpp"
@@ -20,37 +20,12 @@
 #include "Compages/World/World.hpp"
 
 #include <cmath>
+#include <filesystem>
 
 
 
 
 using namespace tests;
-
-namespace
-{
-
-std::string soldierPath()
-{
-    for (const char* root :
-         { "external/Compages-data/",
-           "../external/Compages-data/",
-           "external/Compages-data/",
-           "../external/Compages-data/" })
-    {
-        const std::string path = std::string(root) + "Soldier.glb";
-        if (compages::core::File::exist(path))
-        {
-            return path;
-        }
-    }
-    if (compages::core::File::exist("/home/qq/three.js/examples/models/gltf/Soldier.glb"))
-    {
-        return "/home/qq/three.js/examples/models/gltf/Soldier.glb";
-    }
-    return {};
-}
-
-} // namespace
 
 class GltfAnimationTest: public GPUTest
 {
@@ -76,7 +51,7 @@ protected:
 
 TEST_F(GltfAnimationTest, LoadsSoldierClipsAndSkins)
 {
-    const std::string path = soldierPath();
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Soldier.glb is missing";
@@ -85,7 +60,7 @@ TEST_F(GltfAnimationTest, LoadsSoldierClipsAndSkins)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto loaded = assets.load(path);
+    auto loaded = assets.load(path.string());
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     compages::renderer::Prefab const* prefab = assets.prefab(loaded.value());
     ASSERT_NE(prefab, nullptr);
@@ -112,7 +87,7 @@ TEST_F(GltfAnimationTest, LoadsSoldierClipsAndSkins)
 
 TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
 {
-    const std::string path = soldierPath();
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Soldier.glb is missing";
@@ -121,7 +96,7 @@ TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto imported = scene.load(path);
+    auto imported = scene.load(path.string());
     ASSERT_TRUE(bool(imported)) << imported.error();
 
     if (world.has<compages::renderer::Animator>(imported.value().id()))
@@ -145,7 +120,7 @@ TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
 
 TEST_F(GltfAnimationTest, WalkMovesTheMesh)
 {
-    const std::string path = soldierPath();
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         GTEST_SKIP() << "Soldier.glb is missing";
@@ -154,7 +129,7 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto imported = scene.load(path);
+    auto imported = scene.load(path.string());
     ASSERT_TRUE(bool(imported)) << imported.error();
 
     compages::renderer::MeshAsset const* body = nullptr;

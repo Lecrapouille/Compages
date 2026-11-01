@@ -5,13 +5,14 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
+#include "DataPath.hpp"
 #include "GPUContext.hpp"
 
 #include "Compages/GPU/GPU.hpp"
-#include "Compages/Core/File.hpp"
 
 #include <array>
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -30,21 +31,6 @@ std::vector<std::byte> pattern(std::size_t p_bytes)
         pixels[i] = static_cast<std::byte>((i * 7u) & 0xFFu);
     }
     return pixels;
-}
-
-//! \brief Where an image of the data repository is, whether the tests are run
-//! from the root of the project or from the tests directory.
-std::string dataPath(std::string const& p_name)
-{
-    for (const char* root :
-         { "external/Compages-data/", "../external/Compages-data/" })
-    {
-        if (compages::core::File::exist(root + p_name))
-        {
-            return root + p_name;
-        }
-    }
-    return {};
 }
 
 //! \brief Four pixels of RGBA8, spelled out.
@@ -591,13 +577,13 @@ TEST_F(TextureTest, SaysSoWhenAFileIsNotAnImage)
 // Skipped rather than failed when the data repository is not checked out.
 TEST_F(TextureTest, ReadsAnImageFile)
 {
-    const std::string path = dataPath("wooden-crate.jpg");
+    const std::filesystem::path path = dataPath("wooden-crate.jpg");
     if (path.empty())
     {
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto created = compages::gpu::Texture::fromFile(path);
+    auto created = compages::gpu::Texture::fromFile(path.string());
     ASSERT_TRUE(bool(created)) << created.error();
 
     auto texture = created.take();
@@ -614,13 +600,13 @@ TEST_F(TextureTest, ReadsAnImageFile)
 // is computed.
 TEST_F(TextureTest, ReadsAPhotographAsAdjustedForAScreen)
 {
-    const std::string path = dataPath("wooden-crate.jpg");
+    const std::filesystem::path path = dataPath("wooden-crate.jpg");
     if (path.empty())
     {
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto created = compages::gpu::Texture::fromFile(path, { .srgb = true });
+    auto created = compages::gpu::Texture::fromFile(path.string(), { .srgb = true });
     ASSERT_TRUE(bool(created)) << created.error();
     ASSERT_TRUE(compages::gpu::isSrgb(created.value().format()));
 }
@@ -631,16 +617,16 @@ TEST_F(TextureTest, ReadsAPhotographAsAdjustedForAScreen)
 // something.
 TEST_F(TextureTest, TurnsTheRowsOfAnImageOverByDefault)
 {
-    const std::string path = dataPath("hazard.png");
+    const std::filesystem::path path = dataPath("hazard.png");
     if (path.empty())
     {
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto flipped = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
+    auto flipped = compages::gpu::Texture::fromFile(path.string(), { .mipmaps = false });
     ASSERT_TRUE(bool(flipped)) << flipped.error();
     auto as_stored =
-        compages::gpu::Texture::fromFile(path, { .flip_vertically = false, .mipmaps = false });
+        compages::gpu::Texture::fromFile(path.string(), { .flip_vertically = false, .mipmaps = false });
     ASSERT_TRUE(bool(as_stored)) << as_stored.error();
 
     auto one = flipped.value().read();
@@ -654,12 +640,12 @@ TEST_F(TextureTest, TurnsTheRowsOfAnImageOverByDefault)
 // The six images of a sky box, read in one go.
 TEST_F(TextureTest, ReadsTheSixFacesOfASkyBox)
 {
-    std::array<std::string, 6u> paths{ dataPath("right.jpg"),
-                                       dataPath("left.jpg"),
-                                       dataPath("top.jpg"),
-                                       dataPath("bottom.jpg"),
-                                       dataPath("front.jpg"),
-                                       dataPath("back.jpg") };
+    std::array<std::string, 6u> paths{ dataPath("right.jpg").string(),
+                                       dataPath("left.jpg").string(),
+                                       dataPath("top.jpg").string(),
+                                       dataPath("bottom.jpg").string(),
+                                       dataPath("front.jpg").string(),
+                                       dataPath("back.jpg").string() };
     for (std::string const& path : paths)
     {
         if (path.empty())
@@ -682,31 +668,33 @@ TEST_F(TextureTest, ReadsTheSixFacesOfASkyBox)
 // different sources runs into, and it must name which file is the odd one.
 TEST_F(TextureTest, RefusesFacesOfDifferentSizes)
 {
-    const std::string square = dataPath("right.jpg");
-    const std::string other = dataPath("hazard.png");
+    const std::filesystem::path square = dataPath("right.jpg");
+    const std::filesystem::path other = dataPath("hazard.png");
     if (square.empty() || other.empty())
     {
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    std::array<std::string, 6u> paths{ square, other, square,
-                                       square, square, square };
+    std::array<std::string, 6u> paths{ square.string(), other.string(),
+                                       square.string(), square.string(),
+                                       square.string(), square.string() };
     auto created = compages::gpu::Texture::cubeFromFiles(paths);
     ASSERT_FALSE(bool(created));
-    ASSERT_THAT(created.error(), HasSubstr(other));
+    ASSERT_THAT(created.error(), HasSubstr(other.string()));
     ASSERT_EQ(compages::gpu::liveTextures(), 0u);
 }
 
 TEST_F(TextureTest, SaysSoWhenAFaceOfACubeMapIsMissing)
 {
-    const std::string square = dataPath("right.jpg");
+    const std::filesystem::path square = dataPath("right.jpg");
     if (square.empty())
     {
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    std::array<std::string, 6u> paths{ square, square, square,
-                                       square, square, "there/is/no/such.jpg" };
+    std::array<std::string, 6u> paths{ square.string(), square.string(),
+                                       square.string(), square.string(),
+                                       square.string(), "there/is/no/such.jpg" };
     auto created = compages::gpu::Texture::cubeFromFiles(paths);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("there/is/no/such.jpg"));

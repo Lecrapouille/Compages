@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include "Compages/Core/File.hpp"
-
 #include <cstdlib>
 #include <filesystem>
-#include <string>
+#include <system_error>
 #include <vector>
 
 #if defined(__linux__)
@@ -24,16 +22,15 @@ namespace examples
 namespace detail
 {
 
-[[nodiscard]] inline std::vector<std::string> dataRoots()
+[[nodiscard]] inline std::vector<std::filesystem::path> dataRoots()
 {
-    std::vector<std::string> roots;
+    std::vector<std::filesystem::path> roots;
 
     if (const char* env = std::getenv("COMPAGES_DATA_PATH"))
     {
-        roots.emplace_back(env);
-        if (roots.back().empty() || (roots.back().back() != '/'))
+        if (env[0] != '\0')
         {
-            roots.back() += '/';
+            roots.emplace_back(env);
         }
     }
 
@@ -41,12 +38,9 @@ namespace detail
     // Compages-data fetched by MyMakefile, in its cache.
     roots.emplace_back(COMPAGES_DATA_DIR);
 #endif
-    for (const char* relative : { "external/Compages-data/",
-                                  "../external/Compages-data/",
-                                  "../../external/Compages-data/",
-                                  "external/Compages-data/",
-                                  "../external/Compages-data/",
-                                  "../../external/Compages-data/" })
+    for (const char* relative : { "external/Compages-data",
+                                  "../external/Compages-data",
+                                  "../../external/Compages-data" })
     {
         roots.emplace_back(relative);
     }
@@ -59,20 +53,14 @@ namespace detail
     {
         buffer[length] = '\0';
         std::filesystem::path dir = std::filesystem::path(buffer).parent_path();
+        std::error_code error;
         for (int depth = 0; depth < 6; ++depth)
         {
-            const std::filesystem::path current =
+            const std::filesystem::path candidate =
                 dir / "external" / "Compages-data";
-            const std::filesystem::path upstream =
-                dir / "external" / "Compages-data";
-            if (std::filesystem::is_directory(current))
+            if (std::filesystem::is_directory(candidate, error))
             {
-                roots.emplace_back(current.string() + "/");
-                break;
-            }
-            if (std::filesystem::is_directory(upstream))
-            {
-                roots.emplace_back(upstream.string() + "/");
+                roots.emplace_back(candidate);
                 break;
             }
             if (!dir.has_parent_path())
@@ -96,12 +84,14 @@ namespace detail
 //! \c examples/, or from an IDE with another working directory. Set
 //! \c COMPAGES_DATA_PATH to override the search path entirely.
 // ****************************************************************************
-[[nodiscard]] inline std::string dataPath(std::string const& p_name)
+[[nodiscard]] inline std::filesystem::path
+dataPath(std::filesystem::path const& p_name)
 {
-    for (std::string const& root : detail::dataRoots())
+    std::error_code error;
+    for (std::filesystem::path const& root : detail::dataRoots())
     {
-        const std::string path = root + p_name;
-        if (compages::core::File::exist(path))
+        const std::filesystem::path path = root / p_name;
+        if (std::filesystem::exists(path, error))
         {
             return path;
         }

@@ -13,6 +13,7 @@
 
 #include "Compages/Renderer/Scene.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -266,10 +267,10 @@ private:
     void configureAtmosphere(doom::LevelData const& p_level);
     [[nodiscard]] compages::Status
     scanMapGrid(doom::LevelData const& p_level,
-                std::string const& p_wall_file,
-                std::string const& p_floor_file,
-                std::string const& p_crate_file,
-                std::string const& p_hazard_file);
+                std::filesystem::path const& p_wall_file,
+                std::filesystem::path const& p_floor_file,
+                std::filesystem::path const& p_crate_file,
+                std::filesystem::path const& p_hazard_file);
     [[nodiscard]] compages::Status
     placeCell(char p_cell,
               std::size_t p_column,

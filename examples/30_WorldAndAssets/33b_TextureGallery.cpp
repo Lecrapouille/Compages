@@ -50,12 +50,12 @@ compages::Status TextureGallery::setUp()
     for (std::size_t i = 0u; i < PICTURES.size(); ++i)
     {
         Picture const& picture = PICTURES[i];
-        const std::string path = dataPath(picture.file);
+        const std::filesystem::path path = dataPath(picture.file);
         const compages::renderer::Look look =
             path.empty() ? compages::renderer::color(picture.fallback.x,
                                                      picture.fallback.y,
                                                      picture.fallback.z)
-                         : compages::renderer::texture(path);
+                         : compages::renderer::texture(path.string());
         const float column = float(i % 3u) - 1.0f;
         const float row = float(i / 3u) - 1.0f;
         m_boxes.emplace_back(m_scene.box(picture.file, look)

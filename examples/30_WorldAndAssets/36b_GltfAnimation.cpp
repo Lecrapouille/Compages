@@ -24,14 +24,14 @@ std::string GltfAnimation::description() const
 compages::Status GltfAnimation::setUp()
 {
     // The clips live in the file. Walk is the one the example starts on.
-    const std::string path = dataPath("Soldier.glb");
+    const std::filesystem::path path = dataPath("Soldier.glb");
     if (path.empty())
     {
         return compages::failure("Soldier.glb is missing: run make download in "
                                  "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.10f, 0.12f, 0.15f);
-    COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(path));
+    COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(path.string()));
     // The model looks down -Z, away from a camera placed in front: half a turn
     // shows its face.
     m_soldier.rotation(3.14159265f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));

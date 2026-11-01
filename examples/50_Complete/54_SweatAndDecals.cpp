@@ -455,7 +455,8 @@ std::string SweatAndDecals::description() const
 
 compages::Status SweatAndDecals::setUp()
 {
-    const std::string head = dataPath("LeePerrySmith/LeePerrySmith.glb");
+    const std::filesystem::path head =
+        dataPath("LeePerrySmith/LeePerrySmith.glb");
     if (head.empty())
     {
         return compages::failure("LeePerrySmith/LeePerrySmith.glb is missing "
@@ -463,7 +464,7 @@ compages::Status SweatAndDecals::setUp()
     }
 
     m_scene.background(0.09f, 0.10f, 0.12f).ambient(0.30f, 0.30f, 0.33f);
-    COMPAGES_TRY_ASSIGN(m_root, m_scene.load(head));
+    COMPAGES_TRY_ASSIGN(m_root, m_scene.load(head.string()));
     m_world.each<compages::renderer::MeshRenderer>(
         [this](compages::world::Entity p_entity,
                compages::renderer::MeshRenderer&) { m_head = p_entity; });
@@ -517,7 +518,8 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
     // is swapped for ours. The renderer still sets every PBR uniform.
     m_scene.look(
         p_mesh.id(),
-        compages::renderer::texture(dataPath("LeePerrySmith/Map-COL.jpg")));
+        compages::renderer::texture(
+            dataPath("LeePerrySmith/Map-COL.jpg").string()));
 
     std::string source = compages::renderer::shaders::pbrFragment();
     source = source.substr(0u, source.find("out vec4 oColor;")) + SKIN_MAIN;
@@ -553,11 +555,13 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
 
     // A normal map holds directions, not colours: no sRGB.
     COMPAGES_TRY(m_normal_map.load(
-        dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")));
+        dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")
+            .string()));
     compages::gpu::LoadOptions picture;
     picture.srgb = true;
     picture.wrap = compages::gpu::Wrap::ClampToEdge;
-    return m_decal_image.load(dataPath("decal/decal-diffuse.png"), picture);
+    return m_decal_image.load(dataPath("decal/decal-diffuse.png").string(),
+                              picture);
 }
 
 compages::Status SweatAndDecals::makeTargets()

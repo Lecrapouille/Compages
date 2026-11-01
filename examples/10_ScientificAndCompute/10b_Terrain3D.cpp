@@ -159,7 +159,7 @@ compages::Status Terrain3D::setUp()
                               "rocks.png",
                               "snow.png" })
     {
-        pictures.emplace_back(dataPath(file));
+        pictures.emplace_back(dataPath(file).string());
         if (pictures.back().empty())
         {
             return compages::failure(

@@ -21,7 +21,7 @@ namespace examples
 //! A model loaded with its animations plays the first one; play() changes to
 //! another by the name it has in the file:
 //! \code
-//! COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(dataPath("Soldier.glb")));
+//! COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(dataPath("Soldier.glb").string()));
 //! ...
 //! if (p_frame.input.down(compages::world::Key::D2)) m_scene.play(m_soldier,
 //! "Walk");

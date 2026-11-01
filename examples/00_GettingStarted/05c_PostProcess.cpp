@@ -76,7 +76,7 @@ static compages::Status loadTexture(char const* p_file,
                                     compages::gpu::Texture& p_out)
 {
     // The pictures live in Compages-data, not next to the source.
-    const std::string path = dataPath(p_file);
+    const std::filesystem::path path = dataPath(p_file);
     if (path.empty())
     {
         return compages::failure(std::string("missing texture: ") + p_file);
@@ -84,7 +84,7 @@ static compages::Status loadTexture(char const* p_file,
     // sRGB so the sampled colour is linear before the wavy pass.
     compages::gpu::LoadOptions options;
     options.srgb = true;
-    return p_out.load(path, options);
+    return p_out.load(path.string(), options);
 }
 
 static compages::renderer::MeshVertex

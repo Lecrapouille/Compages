@@ -6,12 +6,17 @@
 // See LICENSING.md for details.
 
 #include "Compages/GPU/Shader.hpp"
-#include "Compages/Core/File.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "GPU/Internal/Pools.hpp"
 
 #include <algorithm>
+#include <cctype>
+#include <cerrno>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <vector>
 
 // ****************************************************************************
@@ -29,13 +34,72 @@ namespace compages::gpu
 namespace
 {
 
+// ------------------------------------------------------------------------
+//! \brief Lower-case extension without the leading dot.
+//!
+//! A trailing \c ~, the usual backup suffix, is dropped.
+// ------------------------------------------------------------------------
+std::string shaderExtension(std::filesystem::path const& p_path)
+{
+    std::string ext = p_path.extension().string();
+    if (!ext.empty() && (ext.front() == '.'))
+    {
+        ext.erase(ext.begin());
+    }
+    if (!ext.empty() && (ext.back() == '~'))
+    {
+        ext.pop_back();
+    }
+
+    for (char& ch : ext)
+    {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return ext;
+}
+
+// ------------------------------------------------------------------------
+//! \brief Read the whole file into \c p_buffer.
+// ------------------------------------------------------------------------
+bool readShaderSource(std::filesystem::path const& p_path,
+                      std::string& p_buffer)
+{
+    std::ifstream infile(p_path, std::ifstream::in);
+    if (!infile.is_open())
+    {
+        std::cerr << "Failed open file '" << p_path.string()
+                  << "': " << std::strerror(errno) << '\n';
+        return false;
+    }
+
+    infile.seekg(0, std::ios::end);
+    std::streampos const pos = infile.tellg();
+    if (pos <= 0)
+    {
+        p_buffer.clear();
+        return pos == 0;
+    }
+
+    p_buffer.resize(static_cast<std::size_t>(pos));
+    infile.seekg(0, std::ios::beg);
+    infile.read(p_buffer.data(), static_cast<std::streamsize>(p_buffer.size()));
+    if (!infile.good())
+    {
+        std::cerr << "Failed reading the whole file '" << p_path.string()
+                  << "': " << std::strerror(errno) << '\n';
+        p_buffer.clear();
+        return false;
+    }
+    return true;
+}
+
 //! \brief Which stage a file holds, going by its extension.
 //!
 //! The extensions are the ones the Khronos reference compiler established, plus
 //! the shorter forms in wide use.
 Result<ShaderStage> stageOfFile(std::string const& p_path)
 {
-    const std::string extension = compages::core::File::extension(p_path);
+    const std::string extension = shaderExtension(p_path);
 
     if ((extension == "vert") || (extension == "vs"))
     {
@@ -71,7 +135,7 @@ Result<ShaderStage> stageOfFile(std::string const& p_path)
 Result<std::string> readSource(std::string const& p_path)
 {
     std::string source;
-    if (!compages::core::File::readAllFile(p_path, source))
+    if (!readShaderSource(p_path, source))
     {
         return failure("cannot read the shader '" + p_path + "'");
     }

@@ -25,7 +25,7 @@ compages::Status Skybox::setUp()
                                        "bottom.jpg", "front.jpg", "back.jpg" };
     for (std::string& face : faces)
     {
-        face = dataPath(face);
+        face = dataPath(face).string();
         if (face.empty())
         {
             return compages::failure(

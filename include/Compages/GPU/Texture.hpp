@@ -140,7 +140,7 @@ struct LoadOptions
     //! \brief For a picture meant to be looked at, a photograph or a painted
     //! material: its colours are gamma corrected.
     //! \code
-    //! COMPAGES_TRY(m_grass.load(dataPath("grass.png"),
+    //! COMPAGES_TRY(m_grass.load(dataPath("grass.png").string(),
     //! compages::gpu::LoadOptions::picture()));
     //! \endcode
     // ------------------------------------------------------------------------
@@ -260,7 +260,7 @@ public:
     //! \brief Same as fromFile(), into this object.
     //!
     //! \code
-    //! COMPAGES_TRY(m_texture.load(dataPath("textures/wooden-crate.jpg")));
+    //! COMPAGES_TRY(m_texture.load(dataPath("textures/wooden-crate.jpg").string()));
     //! \endcode
     // ------------------------------------------------------------------------
     [[nodiscard]] Status load(std::string const& p_path,
@@ -281,8 +281,8 @@ public:
     //! A shader samples it with three coordinates; the third blends between
     //! the images, which is how a terrain goes from sand to snow:
     //! \code
-    //! COMPAGES_TRY(m_layers.loadVolume({ dataPath("sand.png"),
-    //! dataPath("snow.png") }));
+    //! COMPAGES_TRY(m_layers.loadVolume({ dataPath("sand.png").string(),
+    //! dataPath("snow.png").string() }));
     //! \endcode
     //!
     //! No mipmaps by default: the smaller levels of a 3D texture also halve
