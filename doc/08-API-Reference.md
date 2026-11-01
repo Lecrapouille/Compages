@@ -66,8 +66,8 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | system (loop) | `world.each<A, B>([](Entity e, A& a, B& b) { … })` |
 | step | `compages::core::Frame step; step.elapsed = dt; world.update(step);` |
 | behavior | `struct X: Behavior { void update(float dt) override; };` then `.add<X>(…)` |
-| joint | `.revolute(axis, min, max)` `.angle(a)` `.prismatic(axis, min, max)` `.offset(o)` |
-| joint value | `.angle()` `.offset()` (applied, inside the limits), `.commandedAngle()` `.commandedOffset()` (as set) |
+| joint | `.revolute(axis, min, max)` `.joint().angle(a)` `.prismatic(axis, min, max)` `.joint().offset(o)` |
+| joint value | `.joint().angle()` `.joint().offset()` (applied, inside the limits), `.joint().commandedAngle()` `.joint().commandedOffset()` (as set) |
 | who writes the pose | `.set(PoseDriver{ PoseDriver::External })` — also `Kinematic`, `Animation` |
 | step without matrices | `world.step(viewFrame)`, then `world.update()` |
 | life | `if (entity)`, `entity.enable(false)` |

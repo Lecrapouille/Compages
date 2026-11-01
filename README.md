@@ -114,7 +114,7 @@ world.each<Velocity>([&](compages::world::Entity e, Velocity& v) {   // a system
 world.update(step);                                       // behaviors, joints, matrices
 ```
 
-This runs in a unit test, with no OpenGL. Joints too: `.revolute(axis, -90.0_deg, 90.0_deg).angle(30.0_deg)`, and the children follow.
+This runs in a unit test, with no OpenGL. Joints too: `.revolute(axis, -90.0_deg, 90.0_deg).joint().angle(30.0_deg)`, and the children follow.
 
 ### 🟩 Renderer — a picture of that world
 

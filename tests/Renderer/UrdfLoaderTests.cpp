@@ -179,14 +179,14 @@ TEST(UrdfLoader, ForwardKinematicsOfTheIrb2400)
                yUp(0.1f + 0.258f + 0.497f + 0.085f, 0.0f, 0.615f + 0.705f + 0.135f));
 
     // Turning the base a quarter turn around z swings the arm onto y.
-    robot.value().lookup("base_link/link_1").angle(90.0_deg);
+    robot.value().lookup("base_link/link_1").joint().angle(90.0_deg);
     world.update();
     expectNear(tool.worldPosition(), yUp(0.0f, 0.94f, 1.455f));
 
     // Folding the shoulder forward a quarter turn around y lays the upper arm
     // along x: the elbow ends up 0.705 ahead of the shoulder.
-    robot.value().lookup("base_link/link_1").angle(0.0_deg);
-    robot.value().lookup("base_link/link_1/link_2").angle(90.0_deg);
+    robot.value().lookup("base_link/link_1").joint().angle(0.0_deg);
+    robot.value().lookup("base_link/link_1/link_2").joint().angle(90.0_deg);
     world.update();
     compages::world::Entity elbow = robot.value().lookup("base_link/link_1/link_2/link_3");
     expectNear(elbow.worldPosition(), yUp(0.1f + 0.705f, 0.0f, 0.615f));
@@ -220,7 +220,7 @@ TEST(UrdfLoader, ReadsRollPitchYawAndOtherJointTypes)
     world.update();
     // The yaw turns the x offset of the tip onto y.
     expectNear(tip.worldPosition(), yUp(1.0f, 1.0f, 0.0f));
-    tip.offset(1.0_m);
+    tip.joint().offset(1.0_m);
     world.update();
     expectNear(tip.worldPosition(), yUp(1.0f, 1.0f, 0.2f));
 

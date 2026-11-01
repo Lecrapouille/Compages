@@ -103,7 +103,7 @@ void RobotArm::controls()
                                    degrees(position.max, FULL_TURN),
                                    "%.1f deg"))
             {
-                joint.angle(units::angle::degree_t(angle));
+                joint.joint().angle(units::angle::degree_t(angle));
             }
         }
         else if (auto* prismatic =
@@ -117,7 +117,7 @@ void RobotArm::controls()
                                    meters(position.max, 1.0f),
                                    "%.3f m"))
             {
-                joint.offset(units::length::meter_t(offset));
+                joint.joint().offset(units::length::meter_t(offset));
             }
         }
     }

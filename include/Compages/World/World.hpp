@@ -66,7 +66,7 @@
 //! compages::world::Entity base = world.entity("Base");
 //! compages::world::Entity arm = base.child("Arm").position(0, 0, 0.5f)
 //!                         .revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg);
-//! arm.angle(30.0_deg);
+//! arm.joint().angle(30.0_deg);
 //! \endcode
 // ****************************************************************************
 

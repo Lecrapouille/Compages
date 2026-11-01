@@ -29,7 +29,7 @@ class Scene;
 //!
 //! \code
 //! auto robot = compages::renderer::loadUrdf(world, "irb2400.urdf");
-//! robot.value().lookup("base_link/link_1").angle(30.0_deg);
+//! robot.value().lookup("base_link/link_1").joint().angle(30.0_deg);
 //! \endcode
 // ****************************************************************************
 [[nodiscard]] Result<compages::world::Entity>

@@ -220,7 +220,7 @@ int main()
 
     for (auto angle : { 0.0_deg, 90.0_deg, 120.0_deg })
     {
-        shoulder.angle(angle);
+        shoulder.joint().angle(angle);
         world.update(step);
         compages::core::Vector3f p = hand.worldPosition();
         std::cout << "angle " << angle.value() << " deg -> hand at ("

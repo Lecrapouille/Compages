@@ -26,7 +26,7 @@ namespace examples
 //! turns the joints into transforms at its next update:
 //! \code
 //! auto robot = m_scene.load(dataPath("irb2400.urdf").string());
-//! robot.value().lookup("base_link/link_1").angle(30.0_deg);
+//! robot.value().lookup("base_link/link_1").joint().angle(30.0_deg);
 //! \endcode
 // ****************************************************************************
 class RobotArm final: public Example

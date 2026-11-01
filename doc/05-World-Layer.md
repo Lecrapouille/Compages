@@ -93,17 +93,19 @@ using namespace units::literals;
 compages::world::Entity arm = ship.child("Arm")
     .position(0, 0, 0.5f)
     .revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg);
-arm.angle(30.0_deg);
+arm.joint().angle(30.0_deg);
 ```
 
 `update` (through `update(Frame)`) runs `KinematicSystem`, which sets the local transform from the joint value, then `TransformSystem`, which propagates from parents to children. Turning a joint moves everything below it.
 
-A joint keeps two values. The **commanded** value is the one you set; it may be outside the limits. The **applied** value is the commanded one kept inside the limits: it is the one that moves the link. `arm.angle()` gives the applied angle, `arm.commandedAngle()` the commanded one (`offset()` and `commandedOffset()` for a slider). In the component, `state.position.value` is the command and `state.position.applied()` the effect. A zero axis gives a joint that does not move.
+`entity.joint()` gives a `JointHandle` (`World/Spatial/JointHandle.hpp`): it sets and reads the joint value. `.revolute()` and `.prismatic()` stay on `Entity`, to chain while building.
+
+A joint keeps two values. The **commanded** value is the one you set; it may be outside the limits. The **applied** value is the commanded one kept inside the limits: it is the one that moves the link. `arm.joint().angle()` gives the applied angle, `arm.joint().commandedAngle()` the commanded one (`offset()` and `commandedOffset()` for a slider). In the component, `state.position.value` is the command and `state.position.applied()` the effect. A zero axis gives a joint that does not move.
 
 | Joint | Set with | Example |
 |-------|----------|---------|
-| revolute (turns) | `.revolute(axis, min, max)`, then `.angle(a)` | `wheel.revolute({ 1, 0, 0 })`: no limits, a continuous joint |
-| prismatic (slides) | `.prismatic(axis, min, max)`, then `.offset(o)` | `slider.prismatic({ 0, 0, 1 }, 0.0_m, 0.3_m).offset(0.1_m)` |
+| revolute (turns) | `.revolute(axis, min, max)`, then `.joint().angle(a)` | `wheel.revolute({ 1, 0, 0 })`: no limits, a continuous joint |
+| prismatic (slides) | `.prismatic(axis, min, max)`, then `.joint().offset(o)` | `slider.prismatic({ 0, 0, 1 }, 0.0_m, 0.3_m).joint().offset(0.1_m)` |
 | fixed | the local transform | — |
 
 `31_MovingRobot` builds three robots from boxes this way. `38_RobotArm` loads a URDF (ABB IRB 2400): one entity per link, one revolute joint between each, and sliders to set the angles within their limits. This is forward kinematics, still independent of the rendering: the demo only uses a `Scene` to look at the arm.

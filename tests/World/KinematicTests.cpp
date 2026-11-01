@@ -64,10 +64,10 @@ TEST(Kinematics, RevoluteJointTurnsItsLink)
     world.update();
     expectNear(tip.worldPosition(), compages::core::Vector3f(1, 0, 1));
 
-    arm.angle(90.0_deg);
+    arm.joint().angle(90.0_deg);
     world.update();
     expectNear(tip.worldPosition(), compages::core::Vector3f(0, 1, 1));
-    EXPECT_NEAR(arm.angle().to<double>(), M_PI / 2.0, 1.0e-9);
+    EXPECT_NEAR(arm.joint().angle().to<double>(), M_PI / 2.0, 1.0e-9);
 }
 
 TEST(Kinematics, RevoluteJointStaysWithinItsLimits)
@@ -76,13 +76,13 @@ TEST(Kinematics, RevoluteJointStaysWithinItsLimits)
     compages::world::Entity arm = world.entity("Arm").revolute({ 0, 0, 1 }, -45.0_deg, 45.0_deg);
     compages::world::Entity tip = arm.child("Tip").position(1, 0, 0);
 
-    arm.angle(90.0_deg);
+    arm.joint().angle(90.0_deg);
     world.update();
     const float half = std::sqrt(0.5f);
     expectNear(tip.worldPosition(), compages::core::Vector3f(half, half, 0));
     // The command is kept; the applied angle is the one inside the bounds.
-    EXPECT_NEAR(units::angle::degree_t(arm.commandedAngle()).to<double>(), 90.0, 1.0e-9);
-    EXPECT_NEAR(units::angle::degree_t(arm.angle()).to<double>(), 45.0, 1.0e-9);
+    EXPECT_NEAR(units::angle::degree_t(arm.joint().commandedAngle()).to<double>(), 90.0, 1.0e-9);
+    EXPECT_NEAR(units::angle::degree_t(arm.joint().angle()).to<double>(), 45.0, 1.0e-9);
 }
 
 TEST(Kinematics, PrismaticJointSlidesItsLink)
@@ -91,11 +91,11 @@ TEST(Kinematics, PrismaticJointSlidesItsLink)
     compages::world::Entity slider =
         world.entity("Slider").position(1, 0, 0).prismatic({ 0, 0, 2 }, 0.0_m, 0.5_m);
 
-    slider.offset(0.3_m);
+    slider.joint().offset(0.3_m);
     world.update();
     expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0.3f));
 
-    slider.offset(2.0_m);
+    slider.joint().offset(2.0_m);
     world.update();
     expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0.5f));
 }
@@ -106,7 +106,7 @@ TEST(Kinematics, PrismaticAxisFollowsTheJointOrientation)
     compages::world::Entity slider = world.entity("Slider")
                                .rotation(0.5f * float(M_PI), compages::core::Vector3f(0, 0, 1))
                                .prismatic({ 1, 0, 0 });
-    slider.offset(2.0_m);
+    slider.joint().offset(2.0_m);
     world.update();
     expectNear(slider.worldPosition(), compages::core::Vector3f(0, 2, 0));
 }
@@ -123,8 +123,8 @@ TEST(Kinematics, PositionSetsTheJointOriginWhateverTheOrder)
     expectNear(after.get<compages::world::RevoluteJoint>().origin.position, compages::core::Vector3f(0, 2, 0));
     expectNear(after.position(), compages::core::Vector3f(0, 2, 0));
 
-    before.angle(30.0_deg);
-    after.angle(30.0_deg);
+    before.joint().angle(30.0_deg);
+    after.joint().angle(30.0_deg);
     world.update();
     expectNear(before.worldPosition(), compages::core::Vector3f(0, 2, 0));
     expectNear(after.worldPosition(), compages::core::Vector3f(0, 2, 0));
@@ -148,8 +148,8 @@ TEST(Kinematics, TwoLinkChainForwardKinematics)
     compages::world::Entity elbow = shoulder.child("Elbow").position(1, 0, 0).revolute({ 0, 0, 1 });
     compages::world::Entity hand = elbow.child("Hand").position(1, 0, 0);
 
-    shoulder.angle(90.0_deg);
-    elbow.angle(90.0_deg);
+    shoulder.joint().angle(90.0_deg);
+    elbow.joint().angle(90.0_deg);
     world.update();
     expectNear(elbow.worldPosition(), compages::core::Vector3f(0, 1, 0));
     expectNear(hand.worldPosition(), compages::core::Vector3f(-1, 1, 0));
@@ -157,8 +157,8 @@ TEST(Kinematics, TwoLinkChainForwardKinematics)
     // Any angles: the classic x = cos(a) + cos(a + b), y = sin(a) + sin(a + b).
     const double a = 0.3;
     const double b = -1.1;
-    shoulder.angle(units::angle::radian_t(a));
-    elbow.angle(units::angle::radian_t(b));
+    shoulder.joint().angle(units::angle::radian_t(a));
+    elbow.joint().angle(units::angle::radian_t(b));
     world.update();
     expectNear(hand.worldPosition(),
                compages::core::Vector3f(float(std::cos(a) + std::cos(a + b)),
@@ -193,8 +193,8 @@ TEST(Kinematics, ZeroAxisJointDoesNotMoveItsLink)
     compages::world::Entity arm = world.entity("Arm").position(1, 2, 3).revolute({ 0, 0, 0 });
     compages::world::Entity slider = world.entity("Slider").position(1, 0, 0).prismatic({ 0, 0, 0 });
 
-    arm.angle(90.0_deg);
-    slider.offset(0.5_m);
+    arm.joint().angle(90.0_deg);
+    slider.joint().offset(0.5_m);
     world.update();
     expectNear(arm.worldPosition(), compages::core::Vector3f(1, 2, 3));
     expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0));
@@ -210,7 +210,7 @@ TEST(Kinematics, ExternalPoseDriverKeepsThePoseWrittenFromOutside)
     compages::world::Entity tip = arm.child("Tip").position(1, 0, 0);
     arm.set(compages::world::PoseDriver{ compages::world::PoseDriver::External });
 
-    arm.angle(90.0_deg);
+    arm.joint().angle(90.0_deg);
     arm.transform().position = compages::core::Vector3f(0, 0, 5);
     world.transforms().markDirty(arm.id());
     world.update();

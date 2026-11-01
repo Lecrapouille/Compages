@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/World/Spatial/Joint.hpp"
+#include "Compages/World/Spatial/JointHandle.hpp"
 #include "Compages/World/Spatial/LookAt.hpp"
 #include "Compages/World/World.hpp"
 
@@ -325,7 +325,7 @@ public:
 
     [[nodiscard]] compages::core::Vector3f position() const
     {
-        if (LocalTransform const* origin = jointOrigin())
+        if (LocalTransform const* origin = joint().origin())
         {
             return origin->position;
         }
@@ -354,7 +354,7 @@ public:
 
     [[nodiscard]] compages::core::Quatf rotation() const
     {
-        if (LocalTransform const* origin = jointOrigin())
+        if (LocalTransform const* origin = joint().origin())
         {
             return origin->rotation;
         }
@@ -386,7 +386,7 @@ public:
 
     [[nodiscard]] compages::core::Vector3f scale() const
     {
-        if (LocalTransform const* origin = jointOrigin())
+        if (LocalTransform const* origin = joint().origin())
         {
             return origin->scale;
         }
@@ -412,94 +412,42 @@ public:
     // Joints: what moves a link of a robot relative to its parent link
     // ------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-    //! \brief Make the entity turn around an axis, within an interval of
-    //! angles. Its current place becomes the place of the joint at zero.
-    //! A zero axis makes a joint that does not move.
+    //! \brief The joint of the entity, to set or read its angle or offset.
     //!
     //! \code
-    //! arm.revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg).angle(30.0_deg);
-    //! wheel.revolute({ 1, 0, 0 });    // no bounds: a continuous joint
+    //! arm.joint().angle(30.0_deg);
     //! \endcode
-    // ------------------------------------------------------------------------
+    [[nodiscard]] JointHandle joint() const
+    {
+        return JointHandle(world(), m_id);
+    }
+
+    //! \brief Make the entity turn around an axis, within an interval of
+    //! angles (JointHandle::revolute). Kept here to chain while building.
+    //!
+    //! \code
+    //! Entity arm = base.child("Arm").revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg);
+    //! \endcode
     Entity& revolute(compages::core::Vector3f const& p_axis,
                      units::angle::radian_t p_min = units::angle::radian_t(
                          -std::numeric_limits<double>::infinity()),
                      units::angle::radian_t p_max = units::angle::radian_t(
                          std::numeric_limits<double>::infinity()))
     {
-        RevoluteJoint joint{ .origin = takeOrigin(),
-                             .axis = jointAxis(p_axis) };
-        joint.state.position.min = p_min;
-        joint.state.position.max = p_max;
-        world().add(m_id, std::move(joint));
+        joint().revolute(p_axis, p_min, p_max);
         return *this;
     }
 
-    // ------------------------------------------------------------------------
     //! \brief Make the entity slide along an axis, within an interval of
-    //! offsets. Its current place becomes the place of the joint at zero.
-    //!
-    //! \code
-    //! slider.prismatic({ 0, 0, 1 }, 0.0_m, 0.3_m).offset(0.1_m);
-    //! \endcode
-    // ------------------------------------------------------------------------
+    //! offsets (JointHandle::prismatic). Kept here to chain while building.
     Entity& prismatic(compages::core::Vector3f const& p_axis,
                       units::length::meter_t p_min = units::length::meter_t(
                           -std::numeric_limits<double>::infinity()),
                       units::length::meter_t p_max = units::length::meter_t(
                           std::numeric_limits<double>::infinity()))
     {
-        PrismaticJoint joint{ .origin = takeOrigin(),
-                              .axis = jointAxis(p_axis) };
-        joint.state.position.min = p_min;
-        joint.state.position.max = p_max;
-        world().add(m_id, std::move(joint));
+        joint().prismatic(p_axis, p_min, p_max);
         return *this;
-    }
-
-    //! \brief Set the angle of the revolute joint. Kept inside its bounds when
-    //! the World is updated.
-    Entity& angle(units::angle::radian_t p_angle)
-    {
-        world().template get<RevoluteJoint>(m_id).state.position.value =
-            p_angle;
-        return *this;
-    }
-
-    //! \brief The angle that turns the link: the commanded one, kept inside
-    //! the bounds.
-    [[nodiscard]] units::angle::radian_t angle() const
-    {
-        return world().template get<RevoluteJoint>(m_id).state.position.applied();
-    }
-
-    //! \brief The angle as last set, maybe outside the bounds.
-    [[nodiscard]] units::angle::radian_t commandedAngle() const
-    {
-        return world().template get<RevoluteJoint>(m_id).state.position.value;
-    }
-
-    //! \brief Set the offset of the prismatic joint. Kept inside its bounds
-    //! when the World is updated.
-    Entity& offset(units::length::meter_t p_offset)
-    {
-        world().template get<PrismaticJoint>(m_id).state.position.value =
-            p_offset;
-        return *this;
-    }
-
-    //! \brief The offset that slides the link: the commanded one, kept inside
-    //! the bounds.
-    [[nodiscard]] units::length::meter_t offset() const
-    {
-        return world().template get<PrismaticJoint>(m_id).state.position.applied();
-    }
-
-    //! \brief The offset as last set, maybe outside the bounds.
-    [[nodiscard]] units::length::meter_t commandedOffset() const
-    {
-        return world().template get<PrismaticJoint>(m_id).state.position.value;
     }
 
     //! \brief The local place, to be changed field by field. On a joint, it is
@@ -525,48 +473,16 @@ public:
 
 private:
 
-    //! \brief The origin of the joint of the entity, or nullptr without one.
-    [[nodiscard]] LocalTransform* jointOrigin() const
-    {
-        if (m_world == nullptr)
-        {
-            return nullptr;
-        }
-        if (auto* joint = m_world->template tryGet<RevoluteJoint>(m_id))
-        {
-            return &joint->origin;
-        }
-        if (auto* joint = m_world->template tryGet<PrismaticJoint>(m_id))
-        {
-            return &joint->origin;
-        }
-        return nullptr;
-    }
-
     //! \brief What position(), rotation() and scale() change: the joint
     //! origin, or else the local place.
     [[nodiscard]] LocalTransformView place() const
     {
-        if (LocalTransform* origin = jointOrigin())
+        if (LocalTransform* origin = joint().origin())
         {
             return LocalTransformView(
                 origin->position, origin->rotation, origin->scale);
         }
         return transform();
-    }
-
-    //! \brief The origin of a new joint: that of the joint being replaced, or
-    //! the local place. Removes the joint being replaced.
-    [[nodiscard]] LocalTransform takeOrigin() const
-    {
-        LocalTransform origin = world().transforms().local(m_id);
-        if (LocalTransform const* previous = jointOrigin())
-        {
-            origin = *previous;
-        }
-        world().template remove<RevoluteJoint>(m_id);
-        world().template remove<PrismaticJoint>(m_id);
-        return origin;
     }
 
     World* m_world = nullptr;
