@@ -94,11 +94,12 @@ include/Compages/          the public interface, installed
     Import/                glTF, STL, URDF visuals, prefab instantiation
     Procedural/            primitives, shader library, CanvasTexture
     Animation/             clips, Animator, AnimationSystem
-    Render/                extraction, snapshot, queue, Renderer, ShadowPass, Skybox, picking
+    Render/                extraction, snapshot, queue, Renderer, ShadowPass, picking
     Components/            MeshRenderer, PrefabInstance
     Serialization/         saving a scene to JSON
 src/                       the same folders as include/, plus GPU/Backends/GL45/ (glad is private here)
-                           and the private helpers of a folder (Renderer/Import/GltfConvert.hpp)
+                           and the private helpers of a folder (Renderer/Import/GltfConvert.hpp,
+                           Renderer/Render/Skybox.hpp); Scene keeps its drawing parts in Scene::Impl
 examples/                  the gallery, one binary; Common/ holds the window and the manifest
 tests/                     GPU, World, Renderer
 external/external.mk       the third-party repositories, locked in external/versions.lock

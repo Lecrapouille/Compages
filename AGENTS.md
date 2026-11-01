@@ -56,8 +56,8 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
   draws from a `RenderSnapshot`, never from the `World` directly.
 - No physics engine (and no audio) in Compages: an outside engine writes the
   poses of entities marked `PoseDriver::External` (`40_ExternalPhysics`).
-- Classes stay small and focused; no PIMPL. A helper used only by one `.cpp`
-  lives in `src/` next to it.
+- Classes stay small and focused. PIMPL only for `Scene` (`Scene::Impl` in
+  `Scene.cpp`). A helper used only by one `.cpp` lives in `src/` next to it.
 - Errors: load-time failures return `compages::Status` / `Result<T>`
   (`COMPAGES_TRY`, `COMPAGES_TRY_ASSIGN`); per-frame errors are recorded
   (`gpu::reportError`, read by `takeFrameError`), never thrown.

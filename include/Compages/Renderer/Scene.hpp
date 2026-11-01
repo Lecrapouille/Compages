@@ -9,8 +9,6 @@
 
 #include "Compages/Core/Result.hpp"
 #include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Drawable.hpp"
-#include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
@@ -18,8 +16,6 @@
 #include "Compages/Renderer/Render/Raycast.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 #include "Compages/Renderer/Render/DebugDraw.hpp"
-#include "Compages/Renderer/Render/Renderer.hpp"
-#include "Compages/Renderer/Render/Skybox.hpp"
 #include "Compages/Renderer/RenderSettings.hpp"
 #include "Compages/Renderer/Assets/Looks.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
@@ -148,19 +144,13 @@ public:
     //! the name of the shape: "box", "sphere", "plane", "cylinder", "cone",
     //! "pyramid". What a prefab refers to it by.
     // ------------------------------------------------------------------------
-    MeshAssetId shapeMesh(Shape p_shape)
-    {
-        return m_looks.shapeMesh(p_shape);
-    }
+    MeshAssetId shapeMesh(Shape p_shape);
 
     // ------------------------------------------------------------------------
     //! \brief Keep a look under a name, so that a prefab or a saved file can
     //! refer to it.
     // ------------------------------------------------------------------------
-    MaterialInstanceId material(std::string p_name, Look const& p_look)
-    {
-        return m_looks.material(std::move(p_name), p_look);
-    }
+    MaterialInstanceId material(std::string p_name, Look const& p_look);
 
     // ------------------------------------------------------------------------
     //! \brief Change what an entity drawn by this Scene looks like. Its
@@ -204,14 +194,8 @@ public:
                                  float p_range = 10.0f);
 
     //! \brief The camera render() uses when given none.
-    void activeCamera(compages::world::EntityId p_camera)
-    {
-        m_active_camera = p_camera;
-    }
-    [[nodiscard]] compages::world::Entity activeCamera() const
-    {
-        return compages::world::Entity(m_world, m_active_camera);
-    }
+    void activeCamera(compages::world::EntityId p_camera);
+    [[nodiscard]] compages::world::Entity activeCamera() const;
 
     // ------------------------------------------------------------------------
     //! \brief Put a camera and a sun where they see everything drawn. For a
@@ -268,22 +252,10 @@ public:
     // ------------------------------------------------------------------------
     Scene& skybox(std::array<std::string, 6u> const& p_faces);
 
-    [[nodiscard]] RenderSettings& renderSettings()
-    {
-        return m_settings;
-    }
-    [[nodiscard]] RenderSettings const& renderSettings() const
-    {
-        return m_settings;
-    }
-    [[nodiscard]] Environment& environment()
-    {
-        return m_environment;
-    }
-    [[nodiscard]] Environment const& environment() const
-    {
-        return m_environment;
-    }
+    [[nodiscard]] RenderSettings& renderSettings();
+    [[nodiscard]] RenderSettings const& renderSettings() const;
+    [[nodiscard]] Environment& environment();
+    [[nodiscard]] Environment const& environment() const;
 
     // --- compages::core::Frame
     // ---------------------------------------------------------------
@@ -319,10 +291,7 @@ public:
 
     //! \brief The camera as the last render() saw it: its matrices, its
     //! position, its viewport.
-    [[nodiscard]] CameraFrame const& lastCamera() const
-    {
-        return m_last_camera;
-    }
+    [[nodiscard]] CameraFrame const& lastCamera() const;
 
     // ------------------------------------------------------------------------
     //! \brief What is under a pixel, as the last render() saw it.
@@ -333,10 +302,7 @@ public:
     pick(compages::core::Vector2f p_pixel) const;
 
     //! \brief Lines drawn over the next render(), then forgotten.
-    [[nodiscard]] DebugDraw& debug()
-    {
-        return m_debug;
-    }
+    [[nodiscard]] DebugDraw& debug();
 
 private:
 
@@ -345,17 +311,14 @@ private:
 
 private:
 
+    struct Impl;
+
     compages::world::World& m_world;
-    std::unique_ptr<AssetManager> m_owned_assets;
     AssetManager* m_assets;
-    Looks m_looks;
-    Renderer m_renderer;
-    DebugDraw m_debug;
-    compages::world::EntityId m_active_camera{};
-    RenderSettings m_settings{};
-    Environment m_environment{};
-    CameraFrame m_last_camera{};
-    Skybox m_sky;
+    //! \brief What drawing needs and the user does not see: the renderer, the
+    //! sky, the looks, the settings. Behind a pointer so that Scene.hpp does
+    //! not bring the drawing machinery with it.
+    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace compages::renderer

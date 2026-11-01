@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/Renderer/Render/Skybox.hpp"
+#include "Skybox.hpp"
 
 #include <initializer_list>
 

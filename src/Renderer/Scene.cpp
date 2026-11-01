@@ -6,6 +6,8 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Scene.hpp"
+#include "Compages/Renderer/Render/Renderer.hpp"
+#include "Render/Skybox.hpp"
 #include "Compages/World/Entity.hpp"
 
 #include "Compages/Core/AABB.hpp"
@@ -35,26 +37,100 @@ namespace
 
 } // namespace
 
-Scene::Scene(compages::world::World& p_world)
-    : m_world(p_world),
-      m_owned_assets(std::make_unique<AssetManager>()),
-      m_assets(m_owned_assets.get()),
-      m_looks(*m_assets)
+// ****************************************************************************
+//! \brief The private part of a Scene: what drawing needs.
+// ****************************************************************************
+struct Scene::Impl
 {
+    Impl(std::unique_ptr<AssetManager> p_owned, AssetManager& p_assets)
+        : owned_assets(std::move(p_owned)), looks(p_assets)
+    {
+    }
+
+    //! \brief The assets of the Scene, when it was not given some.
+    std::unique_ptr<AssetManager> owned_assets;
+    Looks looks;
+    Renderer renderer;
+    DebugDraw debug;
+    compages::world::EntityId active_camera{};
+    RenderSettings settings{};
+    Environment environment{};
+    CameraFrame last_camera{};
+    Skybox sky;
+};
+
+Scene::Scene(compages::world::World& p_world)
+    : m_world(p_world), m_assets(nullptr)
+{
+    auto owned = std::make_unique<AssetManager>();
+    m_assets = owned.get();
+    m_impl = std::make_unique<Impl>(std::move(owned), *m_assets);
 }
 
 Scene::Scene(compages::world::World& p_world, AssetManager& p_assets)
-    : m_world(p_world), m_assets(&p_assets), m_looks(p_assets)
+    : m_world(p_world),
+      m_assets(&p_assets),
+      m_impl(std::make_unique<Impl>(nullptr, p_assets))
 {
 }
 
 Scene::~Scene() = default;
 
+MeshAssetId Scene::shapeMesh(Shape p_shape)
+{
+    return m_impl->looks.shapeMesh(p_shape);
+}
+
+MaterialInstanceId Scene::material(std::string p_name, Look const& p_look)
+{
+    return m_impl->looks.material(std::move(p_name), p_look);
+}
+
+void Scene::activeCamera(compages::world::EntityId p_camera)
+{
+    m_impl->active_camera = p_camera;
+}
+
+compages::world::Entity Scene::activeCamera() const
+{
+    return compages::world::Entity(m_world, m_impl->active_camera);
+}
+
+RenderSettings& Scene::renderSettings()
+{
+    return m_impl->settings;
+}
+
+RenderSettings const& Scene::renderSettings() const
+{
+    return m_impl->settings;
+}
+
+Environment& Scene::environment()
+{
+    return m_impl->environment;
+}
+
+Environment const& Scene::environment() const
+{
+    return m_impl->environment;
+}
+
+CameraFrame const& Scene::lastCamera() const
+{
+    return m_impl->last_camera;
+}
+
+DebugDraw& Scene::debug()
+{
+    return m_impl->debug;
+}
+
 compages::world::Entity
 Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
 {
     compages::world::Entity entity = m_world.entity(std::move(p_name));
-    auto instance = m_assets->addMaterialInstance({}, m_looks.instanceOf(p_look));
+    auto instance = m_assets->addMaterialInstance({}, m_impl->looks.instanceOf(p_look));
     if (!instance)
     {
         compages::gpu::reportError(instance.error());
@@ -67,7 +143,7 @@ Scene::drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look)
 compages::world::Entity
 Scene::shape(Shape p_shape, std::string p_name, Look const& p_look)
 {
-    return drawn(m_looks.shapeMesh(p_shape), std::move(p_name), p_look);
+    return drawn(m_impl->looks.shapeMesh(p_shape), std::move(p_name), p_look);
 }
 
 compages::world::Entity Scene::box(std::string p_name, Look const& p_look)
@@ -135,23 +211,23 @@ compages::world::Entity Scene::copy(compages::world::EntityId p_entity,
 
 void Scene::look(compages::world::EntityId p_entity, Look const& p_look)
 {
-    m_looks.wear(m_world, p_entity, m_looks.instanceOf(p_look));
+    m_impl->looks.wear(m_world, p_entity, m_impl->looks.instanceOf(p_look));
 }
 
 void Scene::look(compages::world::EntityId p_entity, TextureAssetId p_albedo)
 {
-    MaterialInstance instance = m_looks.instanceOf(texture({}));
+    MaterialInstance instance = m_impl->looks.instanceOf(texture({}));
     instance.base_color_texture = p_albedo;
-    m_looks.wear(m_world, p_entity, instance);
+    m_impl->looks.wear(m_world, p_entity, instance);
 }
 
 compages::world::Entity Scene::camera(std::string p_name)
 {
     compages::world::Entity camera =
         m_world.entity(std::move(p_name)).set(compages::world::Camera{});
-    if (!m_world.alive(m_active_camera))
+    if (!m_world.alive(m_impl->active_camera))
     {
-        m_active_camera = camera;
+        m_impl->active_camera = camera;
     }
     return camera;
 }
@@ -203,7 +279,7 @@ compages::core::Vector3f Scene::frameAll()
     const float radius = std::max({ extent.x, extent.y, extent.z, 0.05f });
 
     compages::world::Entity eye =
-        m_world.alive(m_active_camera) ? activeCamera() : camera();
+        m_world.alive(m_impl->active_camera) ? activeCamera() : camera();
     eye.position(center + compages::core::Vector3f(0.0f, radius, radius * 4.0f))
         .lookAt(center);
     compages::world::Camera& lens = eye.get<compages::world::Camera>();
@@ -214,7 +290,7 @@ compages::core::Vector3f Scene::frameAll()
         .position(center +
                   compages::core::Vector3f(radius, radius * 2.0f, radius))
         .lookAt(center);
-    m_environment.ambient = compages::core::Vector3f(0.22f, 0.22f, 0.24f);
+    m_impl->environment.ambient = compages::core::Vector3f(0.22f, 0.22f, 0.24f);
     return center;
 }
 
@@ -285,20 +361,20 @@ std::string Scene::playing(compages::world::EntityId p_model) const
 
 Scene& Scene::background(float p_red, float p_green, float p_blue)
 {
-    m_settings.clear_color =
+    m_impl->settings.clear_color =
         compages::core::Vector4f(p_red, p_green, p_blue, 1.0f);
     return *this;
 }
 
 Scene& Scene::ambient(float p_red, float p_green, float p_blue)
 {
-    m_environment.ambient = compages::core::Vector3f(p_red, p_green, p_blue);
+    m_impl->environment.ambient = compages::core::Vector3f(p_red, p_green, p_blue);
     return *this;
 }
 
 Scene& Scene::skybox(std::array<std::string, 6u> const& p_faces)
 {
-    compages::gpu::check(m_sky.load(p_faces));
+    compages::gpu::check(m_impl->sky.load(p_faces));
     return *this;
 }
 
@@ -363,7 +439,7 @@ void Scene::render(compages::world::EntityId p_camera)
     // A camera drawing into a part of the picture gets a pass of its own over
     // that part, so that clearing it leaves the rest alone.
     compages::gpu::PassDesc part = where;
-    part.color = m_settings.clear_color;
+    part.color = m_impl->settings.clear_color;
     part.clear_color = true;
     part.clear_depth = true;
     part.target = {};
@@ -399,20 +475,20 @@ void Scene::render(compages::world::EntityId p_camera)
     snapshot.value().camera.viewport_y = 0.0f;
     snapshot.value().camera.viewport_width = part.width;
     snapshot.value().camera.viewport_height = part.height;
-    m_last_camera = snapshot.value().camera;
-    m_last_camera.viewport_x = float(part.x - where.x);
-    m_last_camera.viewport_y = float(part.y - where.y);
+    m_impl->last_camera = snapshot.value().camera;
+    m_impl->last_camera.viewport_x = float(part.x - where.x);
+    m_impl->last_camera.viewport_y = float(part.y - where.y);
 
-    m_sky.draw(snapshot.value().camera);
+    m_impl->sky.draw(snapshot.value().camera);
 
-    compages::gpu::check(m_renderer.render(snapshot.value(), *m_assets));
-    compages::gpu::check(m_debug.flush(snapshot.value().camera));
-    m_debug.clear();
+    compages::gpu::check(m_impl->renderer.render(snapshot.value(), *m_assets));
+    compages::gpu::check(m_impl->debug.flush(snapshot.value().camera));
+    m_impl->debug.clear();
 }
 
 void Scene::render()
 {
-    render(m_active_camera);
+    render(m_impl->active_camera);
 }
 
 void Scene::draw(compages::world::ViewFrame const& p_frame)
@@ -424,17 +500,17 @@ void Scene::draw(compages::world::ViewFrame const& p_frame)
 std::optional<compages::renderer::RayHit>
 Scene::pick(compages::core::Vector2f p_pixel) const
 {
-    if ((m_last_camera.viewport_width == 0u) ||
-        (m_last_camera.viewport_height == 0u))
+    if ((m_impl->last_camera.viewport_width == 0u) ||
+        (m_impl->last_camera.viewport_height == 0u))
     {
         return std::nullopt;
     }
     return pickAt(*this,
-                  m_last_camera,
-                  p_pixel.x - m_last_camera.viewport_x,
-                  p_pixel.y - m_last_camera.viewport_y,
-                  m_last_camera.viewport_width,
-                  m_last_camera.viewport_height);
+                  m_impl->last_camera,
+                  p_pixel.x - m_impl->last_camera.viewport_x,
+                  p_pixel.y - m_impl->last_camera.viewport_y,
+                  m_impl->last_camera.viewport_width,
+                  m_impl->last_camera.viewport_height);
 }
 
 } // namespace compages::renderer
