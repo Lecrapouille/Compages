@@ -157,7 +157,7 @@ Checking every assignment at every frame would slow a simulation down. Call `pre
 
 - **The window** (GLFW, SDL, Qt) belongs to your application. `gpu::init` receives the function loader once your OpenGL context exists.
 - **The editor, the asset store, a production pipeline** for a big game.
-- **Physics**: the old ReactPhysics3D adapter waits in `attic/Physics/`, out of the build, to come back as world components and a system.
+- **Physics**: Compages has no physics engine. Your engine computes the poses and writes them into the world entities; the renderer shows them.
 
 Compages targets **scientific simulations** first (fields, cellular automata, n-body, curves), then **games and robots** that reuse the same objects in space.
 

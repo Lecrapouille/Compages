@@ -179,6 +179,6 @@ The skin material is the PBR shader of the Renderer (`shaders::pbrFragment()`) w
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.
-- The old contact demos are in `attic/Physics/`, not in the binary ([chapter 7](07-Architecture.md#-9-window-and-physics)).
+- There is no physics engine in the library ([chapter 7](07-Architecture.md#-9-window-and-physics)).
 
 Next: [10-Debugging.md](10-Debugging.md).

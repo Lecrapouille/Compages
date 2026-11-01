@@ -91,7 +91,6 @@ src/
   Renderer/                Scene, Assets/, Render/, Systems/
 examples/                  the gallery, one binary; Common/ holds the window and the manifest
 tests/                     GPU, World, Renderer
-attic/Physics/             ReactPhysics3D adapter, not in the build
 external/external.mk       the third-party repositories, locked in external/versions.lock
 ```
 
@@ -181,7 +180,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 ## 🪟 9. Window and physics
 
 - GLFW exists only in `examples/Common/Window.cpp`. After the ImGui panels of the gallery, `gpu::forgetRenderState()` resets the cached state of the backend.
-- `attic/Physics/` is a ReactPhysics3D adapter, out of the build. The plan is to bring it back as `world::` components and a system; the renderer would show the result, never simulate collisions.
+- Compages has no physics engine and will not get one. The world holds the poses; your engine (MuJoCo, Bullet, Jolt, your own) computes them and writes them into the entities at each step. The renderer only shows the result.
 
 ---
 

@@ -28,7 +28,6 @@ src/                implementation; src/GPU/Backends/GL45/ is the only place wit
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp
 tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
-attic/Physics/      ReactPhysics3D adapter, out of the build
 external/           external.mk declares the third parties, versions.lock their commits;
                     external/Compages-data/ = demo assets
 ```

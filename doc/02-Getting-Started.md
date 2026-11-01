@@ -70,7 +70,6 @@ The third-party libraries are not git submodules. `external/external.mk` declare
 | `zeux/pugixml` | URDF files |
 | `ocornut/imgui` | the panels of the gallery |
 | `Lecrapouille/Compages-data` | textures, glTF and URDF files of the demos |
-| `DanielChappuis/reactphysics3d` | `attic/Physics/` only: not fetched |
 
 The demos find the assets in the cache, then in `external/Compages-data/` (a clone of yours, to regenerate the screenshots) and in the `COMPAGES_DATA_PATH` environment variable.
 
