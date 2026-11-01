@@ -130,14 +130,14 @@ void RobotArm::controls()
             {
                 revolute->state.position.value = units::angle::radian_t(0.0);
                 revolute->state.position.value =
-                    revolute->state.position.clamped();
+                    revolute->state.position.applied();
             }
             else if (auto* prismatic =
                          joint.find<compages::world::PrismaticJoint>())
             {
                 prismatic->state.position.value = units::length::meter_t(0.0);
                 prismatic->state.position.value =
-                    prismatic->state.position.clamped();
+                    prismatic->state.position.applied();
             }
         }
     }

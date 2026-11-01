@@ -180,7 +180,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 ## 🪟 9. Window and physics
 
 - GLFW exists only in `examples/Common/Window.cpp`. After the ImGui panels of the gallery, `gpu::forgetRenderState()` resets the cached state of the backend.
-- Compages has no physics engine and will not get one. The world holds the poses; your engine (MuJoCo, Bullet, Jolt, your own) computes them and writes them into the entities at each step. The renderer only shows the result.
+- Compages has no physics engine and will not get one. The world holds the poses; your engine (MuJoCo, Bullet, Jolt, your own) computes them and writes them into the entities at each step. The renderer only shows the result. See [chapter 5](05-World-Layer.md#plug-in-a-physics-engine) and `40_ExternalPhysics`.
 
 ---
 

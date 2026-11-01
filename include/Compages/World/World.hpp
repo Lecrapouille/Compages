@@ -140,6 +140,18 @@ public:
     //! \brief Headless step: run behaviors, then propagate transforms.
     void update(compages::core::Frame const& p_frame);
 
+    //! \brief Interactive step without the transforms: only store the timing
+    //! and the input, and run the behaviors. Another writer (an animation, a
+    //! physics engine) can then change poses before one update() computes
+    //! the world matrices of all of them.
+    //!
+    //! \code
+    //! world.step(viewFrame);
+    //! engine.writePoses(world);
+    //! world.update();
+    //! \endcode
+    void step(ViewFrame const& p_view);
+
     //! \brief Interactive step: timing plus input for behaviors and
     //! controllers.
     //!

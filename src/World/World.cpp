@@ -305,11 +305,16 @@ void World::update(compages::core::Frame const& p_frame)
     update();
 }
 
-void World::update(ViewFrame const& p_view)
+void World::step(ViewFrame const& p_view)
 {
     m_frame = p_view;
     m_input = p_view.input;
     runBehaviors();
+}
+
+void World::update(ViewFrame const& p_view)
+{
+    step(p_view);
     update();
 }
 

@@ -96,7 +96,9 @@ compages::world::Entity arm = ship.child("Arm")
 arm.angle(30.0_deg);
 ```
 
-`update` (through `update(Frame)`) runs `KinematicSystem`, which sets the local transform from the joint value, then `TransformSystem`, which propagates from parents to children. Turning a joint moves everything below it. The value stays inside the limits (see the tutorial output in [chapter 3](03-Tutorial.md#step-2--a-joint-and-a-behavior)).
+`update` (through `update(Frame)`) runs `KinematicSystem`, which sets the local transform from the joint value, then `TransformSystem`, which propagates from parents to children. Turning a joint moves everything below it.
+
+A joint keeps two values. The **commanded** value is the one you set; it may be outside the limits. The **applied** value is the commanded one kept inside the limits: it is the one that moves the link. `arm.angle()` gives the applied angle, `arm.commandedAngle()` the commanded one (`offset()` and `commandedOffset()` for a slider). In the component, `state.position.value` is the command and `state.position.applied()` the effect. A zero axis gives a joint that does not move.
 
 | Joint | Set with | Example |
 |-------|----------|---------|
@@ -108,13 +110,49 @@ arm.angle(30.0_deg);
 
 ---
 
-## 📦 5. What lives in the World
+## 🎯 5. Who writes the pose: `PoseDriver`
+
+Three writers can move an entity: the `KinematicSystem` (from its joint), the `AnimationSystem` (from a clip of the renderer) and your own code (a physics engine, a robot controller, the network). Without a rule, they write over each other.
+
+The rule without `PoseDriver`: a joint wins over a clip, and your code may always write. With the component, only the named writer touches the pose:
+
+| `PoseDriver::source` | Who writes the local pose |
+|----------------------|---------------------------|
+| `Kinematic` | the `KinematicSystem`, from the joint |
+| `Animation` | the `AnimationSystem`, from the playing clip |
+| `External` | your code only: no system of Compages writes it |
+
+### Plug in a physics engine
+
+Compages has **no physics engine**, and will not get one: MuJoCo, Bullet, Jolt or your own does this job better. The engine keeps its bodies; Compages keeps the poses and draws them. At each step:
+
+```cpp
+#include <Compages/World/Components/PoseDriver.hpp>
+
+// Once: the engine owns the pose of the ball.
+ball.set(compages::world::PoseDriver{ compages::world::PoseDriver::External });
+
+// Each frame:
+engine.step(dt);                              // 1. the engine moves its bodies
+auto const p = engine.position(body);         // 2. its result goes into the entity
+ball.position(p.x, p.y, p.z);
+scene.draw(viewFrame);                        // 3. Compages computes the matrices and draws
+```
+
+Headless, replace `scene.draw` with `world.update(frame)`. With a `Scene`, `World::step(viewFrame)` runs the behaviors without computing the matrices, so another writer can still change poses before the single `World::update()`.
+
+`40_ExternalPhysics` does this with a tiny engine of a few lines (gravity and bounces), written without any Compages type. RobotIK does the same with MuJoCo.
+
+---
+
+## 📦 6. What lives in the World
 
 In `include/Compages/World/Components/`, simulation data:
 
 - **Camera**: field of view, near and far planes. The view used for drawing is the world matrix of the entity.
 - **Light**: color, intensity. The direction of the sun is the forward axis of its entity.
 - **SkinInstance**: bone ids and pose matrices, for skinning by the renderer.
+- **PoseDriver**: who writes the pose ([section 5](#-5-who-writes-the-pose-posedriver)).
 
 And what lives elsewhere:
 
@@ -129,20 +167,20 @@ Saving a scene (`35_PrefabAndSave`) touches both: the world and the asset catalo
 
 ---
 
-## ⏰ 6. `update` and `draw`
+## ⏰ 7. `update` and `draw`
 
 ```text
 Headless:   world.update(frame);
 
 With a picture:  scene.draw(viewFrame);
-                    World::update(frame)     behaviors
+                    World::step(frame)       behaviors
                     AnimationSystem          clips -> local transforms
-                    World::update()          joints, matrices
+                    World::update()          joints, matrices (once)
                     skinning                 pose -> SkinInstance
                     extraction + drawing
 ```
 
-Animation clips belong to the **renderer**, because they live in the asset catalog: `Scene` applies them between the two passes of `World::update`. A headless world has no clip until a `Scene` loads one.
+Animation clips belong to the **renderer**, because they live in the asset catalog: `Scene` applies them after the behaviors and before the single `World::update()`. A headless world has no clip until a `Scene` loads one.
 
 | Type | Holds |
 |------|-------|
@@ -153,7 +191,7 @@ You fill `elapsed` (and `total`) yourself in a headless loop.
 
 ---
 
-## 🧭 7. Demos of this layer
+## 🧭 8. Demos of this layer
 
 | Demo | Idea |
 |------|------|
@@ -161,6 +199,7 @@ You fill `elapsed` (and `total`) yourself in a headless loop.
 | `31_MovingRobot` | hierarchy and joints |
 | `32c_MiscLookAt` | `lookAt` on a thousand transforms |
 | `38_RobotArm` | URDF, forward kinematics |
+| `40_ExternalPhysics` | an outside engine writes the poses (`PoseDriver::External`) |
 | `51_Behaviors` | several behaviors, input |
 
 Next: [06-Renderer-Layer.md](06-Renderer-Layer.md) — a picture of this world.

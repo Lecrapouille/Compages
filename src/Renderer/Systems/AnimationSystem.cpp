@@ -11,6 +11,7 @@
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Components/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/World/Components/PoseDriver.hpp"
 #include "Compages/World/Components/SkinInstance.hpp"
 #include "Compages/World/Entity.hpp"
 #include "Compages/World/World.hpp"
@@ -220,7 +221,10 @@ Status compages::renderer::AnimationSystem::sample(
                 }
                 compages::world::EntityId const target =
                     animator.targets[channel.target];
-                if (!p_world.alive(target))
+                if (!p_world.alive(target) ||
+                    !compages::world::mayWrite(
+                        p_world.tryGet<compages::world::PoseDriver>(target),
+                        compages::world::PoseDriver::Animation))
                 {
                     continue;
                 }

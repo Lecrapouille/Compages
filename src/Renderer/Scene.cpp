@@ -675,7 +675,10 @@ Status Scene::prepare()
 
 void Scene::update(compages::world::ViewFrame const& p_frame)
 {
-    m_world.update(p_frame);
+    // Behaviors and clips write local poses first; one update then turns the
+    // joints into poses (a joint wins over a clip, see PoseDriver) and
+    // computes every world matrix once.
+    m_world.step(p_frame);
     compages::gpu::check(compages::renderer::AnimationSystem::sample(
         m_world, *m_assets, p_frame.elapsed));
     m_world.update();

@@ -51,21 +51,22 @@ namespace compages::world
 //!
 //! \code
 //! compages::world::Bounded<units::angle::radian_t> angle{ .value = 1.2_rad, .max = 90.0_deg };
-//! angle.clamped();
+//! angle.applied(); // 90 degrees: the value is the command, not the effect
 //! \endcode
 // ****************************************************************************
 template <class U>
 struct Bounded
 {
-    //! \brief Current joint coordinate (angle or offset).
+    //! \brief The commanded joint coordinate (angle or offset): what was
+    //! asked. It may be outside [min, max]; applied() is what moves the link.
     U value{ 0.0 };
     //! \brief Lower limit, or unbounded below.
     U min{ -std::numeric_limits<double>::infinity() };
     //! \brief Upper limit, or unbounded above.
     U max{ std::numeric_limits<double>::infinity() };
 
-    //! \brief The value brought back inside [min, max].
-    [[nodiscard]] U clamped() const
+    //! \brief The applied value: the command brought back inside [min, max].
+    [[nodiscard]] U applied() const
     {
         return std::clamp(value, min, max);
     }
@@ -141,13 +142,17 @@ struct PrismaticJoint
     PrismaticState state{};
 };
 
-//! \brief The local place of the link, for the clamped angle of the joint.
+//! \brief The unit axis of a joint, or the zero vector when \c p_axis is
+//! too short or not finite. A joint with a zero axis does not move its link.
+[[nodiscard]] compages::core::Vector3f jointAxis(compages::core::Vector3f const& p_axis);
+
+//! \brief The local place of the link, for the applied angle of the joint.
 //!
 //! \param[in] p_joint Revolute joint state and origin.
 //! \return TRS written into \c TransformStore by \c KinematicSystem.
 [[nodiscard]] LocalTransform jointTransform(RevoluteJoint const& p_joint);
 
-//! \brief The local place of the link, for the clamped offset of the joint.
+//! \brief The local place of the link, for the applied offset of the joint.
 //!
 //! \param[in] p_joint Prismatic joint state and origin.
 //! \return TRS written into \c TransformStore by \c KinematicSystem.

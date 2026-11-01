@@ -415,6 +415,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Make the entity turn around an axis, within an interval of
     //! angles. Its current place becomes the place of the joint at zero.
+    //! A zero axis makes a joint that does not move.
     //!
     //! \code
     //! arm.revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg).angle(30.0_deg);
@@ -428,8 +429,7 @@ public:
                          std::numeric_limits<double>::infinity()))
     {
         RevoluteJoint joint{ .origin = takeOrigin(),
-                             .axis =
-                                 compages::core::vector::normalize(p_axis) };
+                             .axis = jointAxis(p_axis) };
         joint.state.position.min = p_min;
         joint.state.position.max = p_max;
         world().add(m_id, std::move(joint));
@@ -451,8 +451,7 @@ public:
                           std::numeric_limits<double>::infinity()))
     {
         PrismaticJoint joint{ .origin = takeOrigin(),
-                              .axis =
-                                  compages::core::vector::normalize(p_axis) };
+                              .axis = jointAxis(p_axis) };
         joint.state.position.min = p_min;
         joint.state.position.max = p_max;
         world().add(m_id, std::move(joint));
@@ -468,8 +467,15 @@ public:
         return *this;
     }
 
-    //! \brief The angle of the revolute joint, as last set.
+    //! \brief The angle that turns the link: the commanded one, kept inside
+    //! the bounds.
     [[nodiscard]] units::angle::radian_t angle() const
+    {
+        return world().template get<RevoluteJoint>(m_id).state.position.applied();
+    }
+
+    //! \brief The angle as last set, maybe outside the bounds.
+    [[nodiscard]] units::angle::radian_t commandedAngle() const
     {
         return world().template get<RevoluteJoint>(m_id).state.position.value;
     }
@@ -483,8 +489,15 @@ public:
         return *this;
     }
 
-    //! \brief The offset of the prismatic joint, as last set.
+    //! \brief The offset that slides the link: the commanded one, kept inside
+    //! the bounds.
     [[nodiscard]] units::length::meter_t offset() const
+    {
+        return world().template get<PrismaticJoint>(m_id).state.position.applied();
+    }
+
+    //! \brief The offset as last set, maybe outside the bounds.
+    [[nodiscard]] units::length::meter_t commandedOffset() const
     {
         return world().template get<PrismaticJoint>(m_id).state.position.value;
     }

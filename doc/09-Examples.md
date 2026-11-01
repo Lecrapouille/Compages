@@ -145,6 +145,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `37_Skybox` | six faces; the sky turns with the camera |
 | `38_RobotArm` | URDF IRB 2400, forward kinematics |
 | `39a_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` |
+| `40_ExternalPhysics` | a small outside engine moves balls; `PoseDriver::External` |
 
 ---
 
@@ -179,6 +180,6 @@ The skin material is the PBR shader of the Renderer (`shaders::pbrFragment()`) w
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.
-- There is no physics engine in the library ([chapter 7](07-Architecture.md#-9-window-and-physics)).
+- There is no physics engine in the library: `40_ExternalPhysics` shows how to plug one in ([chapter 5](05-World-Layer.md#plug-in-a-physics-engine)).
 
 Next: [10-Debugging.md](10-Debugging.md).

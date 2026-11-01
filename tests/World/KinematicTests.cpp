@@ -9,6 +9,7 @@
 #include "main.hpp"
 
 
+#include "Compages/World/Components/PoseDriver.hpp"
 #include "Compages/World/World.hpp"
 
 #include <cmath>
@@ -36,12 +37,12 @@ TEST(Kinematics, BoundedClampsItsValue)
 {
     compages::world::Bounded<units::angle::radian_t> bounded;
     bounded.value = 3.0_rad;
-    EXPECT_DOUBLE_EQ(bounded.clamped().to<double>(), 3.0);
+    EXPECT_DOUBLE_EQ(bounded.applied().to<double>(), 3.0);
     bounded.min = -1.0_rad;
     bounded.max = 1.0_rad;
-    EXPECT_DOUBLE_EQ(bounded.clamped().to<double>(), 1.0);
+    EXPECT_DOUBLE_EQ(bounded.applied().to<double>(), 1.0);
     bounded.value = -2.0_rad;
-    EXPECT_DOUBLE_EQ(bounded.clamped().to<double>(), -1.0);
+    EXPECT_DOUBLE_EQ(bounded.applied().to<double>(), -1.0);
 }
 
 TEST(Kinematics, JointStateIsUnboundedByDefault)
@@ -79,8 +80,9 @@ TEST(Kinematics, RevoluteJointStaysWithinItsLimits)
     world.update();
     const float half = std::sqrt(0.5f);
     expectNear(tip.worldPosition(), compages::core::Vector3f(half, half, 0));
-    // The value kept is the one set; only its effect is clamped.
-    EXPECT_NEAR(units::angle::degree_t(arm.angle()).to<double>(), 90.0, 1.0e-9);
+    // The command is kept; the applied angle is the one inside the bounds.
+    EXPECT_NEAR(units::angle::degree_t(arm.commandedAngle()).to<double>(), 90.0, 1.0e-9);
+    EXPECT_NEAR(units::angle::degree_t(arm.angle()).to<double>(), 45.0, 1.0e-9);
 }
 
 TEST(Kinematics, PrismaticJointSlidesItsLink)
@@ -183,4 +185,40 @@ TEST(Kinematics, UnchangedJointsLeaveTheirTransformsClean)
     registry.get<compages::world::RevoluteJoint>(arm.native()).state.position.value = 20.0_deg;
     system.update(registry, transforms);
     EXPECT_TRUE(transforms.isDirty(arm));
+}
+
+TEST(Kinematics, ZeroAxisJointDoesNotMoveItsLink)
+{
+    compages::world::World world;
+    compages::world::Entity arm = world.entity("Arm").position(1, 2, 3).revolute({ 0, 0, 0 });
+    compages::world::Entity slider = world.entity("Slider").position(1, 0, 0).prismatic({ 0, 0, 0 });
+
+    arm.angle(90.0_deg);
+    slider.offset(0.5_m);
+    world.update();
+    expectNear(arm.worldPosition(), compages::core::Vector3f(1, 2, 3));
+    expectNear(slider.worldPosition(), compages::core::Vector3f(1, 0, 0));
+    EXPECT_TRUE(std::isfinite(arm.worldMatrix()(0, 0)));
+}
+
+// A physics engine marks its bodies External: the joint no longer writes the
+// pose, so the one written from outside stays.
+TEST(Kinematics, ExternalPoseDriverKeepsThePoseWrittenFromOutside)
+{
+    compages::world::World world;
+    compages::world::Entity arm = world.entity("Arm").revolute({ 0, 0, 1 });
+    compages::world::Entity tip = arm.child("Tip").position(1, 0, 0);
+    arm.set(compages::world::PoseDriver{ compages::world::PoseDriver::External });
+
+    arm.angle(90.0_deg);
+    arm.transform().position = compages::core::Vector3f(0, 0, 5);
+    world.transforms().markDirty(arm.id());
+    world.update();
+    expectNear(arm.worldPosition(), compages::core::Vector3f(0, 0, 5));
+    expectNear(tip.worldPosition(), compages::core::Vector3f(1, 0, 5));
+
+    // Back to the joint: it writes the pose again.
+    arm.set(compages::world::PoseDriver{ compages::world::PoseDriver::Kinematic });
+    world.update();
+    expectNear(tip.worldPosition(), compages::core::Vector3f(0, 1, 0));
 }
