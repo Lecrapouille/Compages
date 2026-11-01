@@ -1,6 +1,6 @@
 ---
 name: compages-world
-description: Write or change Compages World-layer code (compages::world): World/Entity/EntityId, scene graph (child, lookup, transforms, world matrices), ECS components and each<> systems, Behavior, revolute/prismatic joints, Frame/ViewFrame, controllers (Orbit, Fly), headless simulation and tests. Use for anything that moves without needing the GPU.
+description: Write or change Compages World-layer code (compages::world): World/Entity/EntityId, scene graph (child, lookup, transforms, world matrices), ECS components and each<> systems, Routine, revolute/prismatic joints, Frame/ViewFrame, controllers (Orbit, Fly), headless simulation and tests. Use for anything that moves without needing the GPU.
 ---
 
 # Compages World layer
@@ -21,14 +21,14 @@ ship.child("Gun").position(0, 0.5f, 0);                  // graph: child follows
 compages::core::Frame step;  step.elapsed = 1.0f / 60.0f;  // you fill elapsed/total
 world.each<Position, Velocity>([&](compages::world::Entity, Position& p, Velocity& v)
     { p.value += v.value * step.elapsed; });             // system: entities with BOTH
-world.update(step);                                      // behaviors, joints, matrices
+world.update(step);                                      // routines, joints, matrices
 world.lookup("Ship/Gun");                                // path lookup; Entity is a handle, if(e) tests it
 ```
 
 - Components: `.set(T{})`, `.add<T>(args)`, `.get<T>()`, `.has<T>()`, `.remove<T>()`.
   Transform (graph) ≠ your `Position` component: `.position()`, `.rotate(rad, axis)`,
   `.scale()`, `.lookAt()`, `.worldMatrix()`, `.worldPosition()`.
-- Behavior: `struct Spin: compages::world::Behavior { void update(float dt) override; }`,
+- Routine: `struct Spin: compages::world::Routine { void update(float dt) override; }`,
   `entity.add<Spin>(2.0f)`; `start()` once; access `entity()`, `transform()`,
   `world()`, `input()`, `frame()`; skipped when `enable(false)`. Prefer `each`
   for many entities (virtual calls, cache misses).
@@ -41,10 +41,10 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 - Who writes a pose: `PoseDriver { Kinematic, Animation, External }`
   (`World/Components/PoseDriver.hpp`). A physics engine is outside Compages: it
   marks its bodies `External` and writes their pose each step (`40_ExternalPhysics`).
-  `world.step(viewFrame)` runs the behaviors only; `world.update()` the matrices.
+  `world.step(viewFrame)` runs the routines only; `world.update()` the matrices.
 - URDF headless: `compages::world::loadUrdf(world, path)` (`World/Import/`).
-- `ViewFrame` = `Frame` + keyboard/mouse, for behaviors such as `Orbit`, `Fly`
-  (`World/Controllers/Controls.hpp`); `FPSController` is applied, not a behavior.
+- `ViewFrame` = `Frame` + keyboard/mouse, for routines such as `Orbit`, `Fly`
+  (`World/Controllers/Controls.hpp`); `FPSController` is applied, not a routine.
 - Camera, Light, SkinInstance components are simulation data
   (`World/Components/`); the view matrix is the camera entity world matrix.
 

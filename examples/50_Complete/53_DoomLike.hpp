@@ -33,7 +33,7 @@ namespace examples
 //!   - glTF: the soldiers and the robots, skinned and animated with the clips
 //!     of their file, and the shotgun, whose Idle, Fire and Reload clips are
 //!     written by DoomLike/make_shotgun.py;
-//!   - the World: behaviors (the torches flicker), parents (the gun in the
+//!   - the World: routines (the torches flicker), parents (the gun in the
 //!     hands, the marks on the bones), and bones turned by hand after the
 //!     clips so that a soldier aims;
 //!   - the GPU layer: particles drawn after the Scene with its camera.

@@ -21,8 +21,8 @@ namespace examples
 //! \brief A small simulation: falling, bouncing cubes, a lamp going round,
 //! and debug lines over them.
 //!
-//! Everything that moves is a behavior. The cubes fall under a gravity and
-//! bounce on the floor, which is a behavior of a dozen lines rather than a
+//! Everything that moves is a routine. The cubes fall under a gravity and
+//! bounce on the floor, which is a routine of a dozen lines rather than a
 //! physics engine; the lamp turns around the scene. The debug lines are
 //! drawn over the next frame and then forgotten:
 //! \code

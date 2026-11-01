@@ -54,7 +54,7 @@
 #include "30_WorldAndAssets/39a_CanvasPaint.hpp"
 #include "30_WorldAndAssets/40_ExternalPhysics.hpp"
 #include "50_Complete/50_ThreeJsLike.hpp"
-#include "50_Complete/51_Behaviors.hpp"
+#include "50_Complete/51_Routines.hpp"
 #include "50_Complete/52_MvpDemo.hpp"
 #include "50_Complete/53_DoomLike.hpp"
 #include "50_Complete/54_SweatAndDecals.hpp"
@@ -108,7 +108,7 @@
     X(CanvasPaint, "39a_CanvasPaint", "39_DynamicCanvas", "30_WorldAndAssets/39a_CanvasPaint.cpp", "-", 0, "-") \
     X(ExternalPhysics, "40_ExternalPhysics", "40_ExternalPhysics", "30_WorldAndAssets/40_ExternalPhysics.cpp", "-", 0, "-") \
     X(ThreeJsLike, "50_ThreeJsLike", "50_ThreeJsLike", "50_Complete/50_ThreeJsLike.cpp", "-", 15, "ThreeJsLike::setUp|ThreeJsLike::draw") \
-    X(Behaviors, "51_Behaviors", "51_Behaviors", "50_Complete/51_Behaviors.cpp", "17_MovingRobot", 0, "-") \
+    X(Routines, "51_Routines", "51_Routines", "50_Complete/51_Routines.cpp", "17_MovingRobot", 0, "-") \
     X(MvpDemo, "52_MvpDemo", "52_Simulation", "50_Complete/52_MvpDemo.cpp", "24_MvpDemo", 20, "MvpDemo::draw") \
     X(DoomLike, "53_DoomLike", "53_DoomLike", "50_Complete/53_DoomLike.cpp", "-", 0, "-") \
     X(SweatAndDecals, "54_SweatAndDecals", "54_SurfaceFluid", "50_Complete/54_SweatAndDecals.cpp", "-", 0, "-")

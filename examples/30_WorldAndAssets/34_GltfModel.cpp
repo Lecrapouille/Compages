@@ -37,7 +37,7 @@ compages::Status GltfModel::setUp()
 
 void GltfModel::draw(compages::world::ViewFrame const& p_frame)
 {
-    // The orbit behavior reads the mouse inside the draw.
+    // The orbit routine reads the mouse inside the draw.
     m_scene.draw(p_frame);
 }
 

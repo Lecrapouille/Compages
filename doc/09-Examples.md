@@ -130,8 +130,8 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 | Demo | Idea |
 |------|------|
-| `30_HeadlessWorld` | ECS and behavior, no drawing |
-| `31_MovingRobot` | boxes linked by joints, a `Walk` behavior |
+| `30_HeadlessWorld` | ECS and routine, no drawing |
+| `31_MovingRobot` | boxes linked by joints, a `Walk` routine |
 | `32a_SplitViews` | one world, two cameras, one update |
 | `32b_CameraPick` | orbit or fly, click to select |
 | `32c_MiscLookAt` | a thousand cones look at a sphere |
@@ -154,7 +154,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | Demo | Idea |
 |------|------|
 | `50_ThreeJsLike` | shape, camera, light, one draw per frame |
-| `51_Behaviors` | three cubes, three behaviors; Space for the green one |
+| `51_Routines` | three cubes, three routines; Space for the green one |
 | `52_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes |
 | `53_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels |
 | `54_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh |

@@ -299,9 +299,9 @@ void World::update(compages::core::Frame const& p_frame)
 {
     m_frame = p_frame;
     // A headless step has no input: do not keep the keys and the mouse of a
-    // previous update(ViewFrame), or behaviors would see them held forever.
+    // previous update(ViewFrame), or routines would see them held forever.
     m_input = Input{};
-    runBehaviors();
+    runRoutines();
     update();
 }
 
@@ -309,7 +309,7 @@ void World::step(ViewFrame const& p_view)
 {
     m_frame = p_view;
     m_input = p_view.input;
-    runBehaviors();
+    runRoutines();
 }
 
 void World::update(ViewFrame const& p_view)
@@ -344,65 +344,65 @@ Entity World::lookup(std::string_view p_path)
     return Entity(*this, find(root, p_path.substr(slash + 1u)));
 }
 
-Behavior& World::addBehavior(EntityId p_entity,
-                             std::unique_ptr<Behavior> p_behavior)
+Routine& World::addRoutine(EntityId p_entity,
+                             std::unique_ptr<Routine> p_behavior)
 {
-    assert(alive(p_entity) && "a behavior added to a dead entity");
+    assert(alive(p_entity) && "a routine added to a dead entity");
     p_behavior->m_world = this;
     p_behavior->m_entity = p_entity;
-    Behaviors& behaviors =
-        m_registry.get_or_emplace<Behaviors>(p_entity.native());
-    behaviors.list.emplace_back(std::move(p_behavior));
-    return *behaviors.list.back();
+    Routines& routines =
+        m_registry.get_or_emplace<Routines>(p_entity.native());
+    routines.list.emplace_back(std::move(p_behavior));
+    return *routines.list.back();
 }
 
-std::size_t World::behaviorCount(EntityId p_entity) const
+std::size_t World::routineCount(EntityId p_entity) const
 {
-    Behaviors const* behaviors = tryGet<Behaviors>(p_entity);
-    return (behaviors == nullptr) ? 0u : behaviors->list.size();
+    Routines const* routines = tryGet<Routines>(p_entity);
+    return (routines == nullptr) ? 0u : routines->list.size();
 }
 
-void World::runBehaviors()
+void World::runRoutines()
 {
-    // A behavior may create or destroy entities, or add behaviors: the list
+    // A routine may create or destroy entities, or add routines: the list
     // of who runs this frame is taken first.
     struct Running
     {
         EntityId entity;
-        Behavior* behavior;
+        Routine* routine;
     };
     std::vector<Running> running;
-    for (auto [native, behaviors] : m_registry.view<Behaviors>().each())
+    for (auto [native, routines] : m_registry.view<Routines>().each())
     {
         if (!enabledInHierarchy(EntityId(native)))
         {
             continue;
         }
-        for (std::unique_ptr<Behavior> const& behavior : behaviors.list)
+        for (std::unique_ptr<Routine> const& routine : routines.list)
         {
-            running.emplace_back(Running{ EntityId(native), behavior.get() });
+            running.emplace_back(Running{ EntityId(native), routine.get() });
         }
     }
     for (Running const& run : running)
     {
-        // Gone if an earlier behavior of this same frame destroyed it: the
+        // Gone if an earlier routine of this same frame destroyed it: the
         // pointer is only followed once found again in its entity.
-        Behaviors const* owner = tryGet<Behaviors>(run.entity);
+        Routines const* owner = tryGet<Routines>(run.entity);
         if ((owner == nullptr) ||
             std::none_of(owner->list.begin(),
                          owner->list.end(),
-                         [&run](std::unique_ptr<Behavior> const& p_kept)
-                         { return p_kept.get() == run.behavior; }))
+                         [&run](std::unique_ptr<Routine> const& p_kept)
+                         { return p_kept.get() == run.routine; }))
         {
             continue;
         }
-        Behavior* behavior = run.behavior;
-        if (!behavior->m_started)
+        Routine* routine = run.routine;
+        if (!routine->m_started)
         {
-            behavior->m_started = true;
-            behavior->start();
+            routine->m_started = true;
+            routine->start();
         }
-        behavior->update(m_frame.elapsed);
+        routine->update(m_frame.elapsed);
     }
 }
 

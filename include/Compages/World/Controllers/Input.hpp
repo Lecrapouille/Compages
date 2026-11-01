@@ -22,7 +22,7 @@ namespace compages::world
 
 // ****************************************************************************
 //! \file
-//! \brief Logical keys and mouse state for camera controllers and behaviors.
+//! \brief Logical keys and mouse state for camera controllers and routines.
 //!
 //! Nothing here includes GLFW: \c KeyMap stores native key codes (GLFW in the
 //! gallery) and fills \c Input from a \c keyDown(int) callback.

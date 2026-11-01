@@ -83,7 +83,7 @@ The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` 
 include/Compages/          the public interface, installed
   Core/                    vectors, matrices, Result, Frame, AABB, units
   GPU/                     Drawable, Buffer, Compute, Texture, Pipeline...
-  World/                   World, Entity, EntityId, Behavior
+  World/                   World, Entity, EntityId, Routine
     Components/            Camera, Light, SkinInstance, PoseDriver
     Spatial/               SpatialGraph, TransformStore, TransformSystem
     Kinematics/            Joint, JointHandle, KinematicSystem
@@ -131,9 +131,9 @@ Handles live in pools (index + generation). Destroying twice is harmless. `Buffe
 1. **Graph**: `SpatialGraph` (parent, first child, sibling) and `TransformStore` (local, world, dirty bit). Propagation from parent to child.
 2. **ECS**: EnTT. `Entity` is the chaining handle; `EntityId` is what you store.
 
-`World::update(Frame)` runs all behaviors; then `update()` without argument runs the joints (`KinematicSystem`) and computes the matrices (`TransformSystem`).
+`World::update(Frame)` runs all routines; then `update()` without argument runs the joints (`KinematicSystem`) and computes the matrices (`TransformSystem`).
 
-`Orbit` and `Fly` are behaviors of `World/Controllers/Controls.hpp`, reading a `ViewFrame`. `FPSController` is a separate class, used through `apply`; it draws nothing.
+`Orbit` and `Fly` are routines of `World/Controllers/Controls.hpp`, reading a `ViewFrame`. `FPSController` is a separate class, used through `apply`; it draws nothing.
 
 ---
 
@@ -165,7 +165,7 @@ Scene::draw(ViewFrame)
 
 ```text
 application    context, input, ViewFrame
-world          entities, behaviors, joints, matrices
+world          entities, routines, joints, matrices
 renderer       drawing, asset ids resolved
 gpu            sends the CPU changes to the backend, draws and dispatches
 ```

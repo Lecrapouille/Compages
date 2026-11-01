@@ -182,12 +182,12 @@ Ship/Gun found: yes
 ```
 
 - `each<Position, Velocity>` is a **system**: a loop over the entities that have **both** components. The rock is never visited.
-- `update(step)` runs the behaviors, the joints, then computes the world matrices.
+- `update(step)` runs the routines, the joints, then computes the world matrices.
 - `Position` is **your** struct. The place of an entity in the scene graph (what `.position(x, y, z)` changes) is its **transform**. A simulation may use one, the other, or both.
 
-### Step 2 — a joint and a behavior
+### Step 2 — a joint and a routine
 
-A revolute joint turns a child around an axis, within limits. A behavior is code attached to one entity, called by `update`:
+A revolute joint turns a child around an axis, within limits. A routine is code attached to one entity, called by `update`:
 
 ```cpp
 #include <Compages/World/Entity.hpp>
@@ -195,8 +195,8 @@ A revolute joint turns a child around an axis, within limits. A behavior is code
 
 using namespace units::literals;
 
-//! A behavior: a small piece of code attached to one entity.
-struct Spin: compages::world::Behavior
+//! A routine: a small piece of code attached to one entity.
+struct Spin: compages::world::Routine
 {
     explicit Spin(float p_speed) : speed(p_speed) {}
     void update(float p_dt) override { transform().rotateY(speed * p_dt); }
@@ -262,7 +262,7 @@ return m_scene.prepare();
 Every frame:
 
 ```cpp
-// The cube turns; the orbit behavior turns the camera from the mouse.
+// The cube turns; the orbit routine turns the camera from the mouse.
 m_cube.rotate(p_frame.elapsed, { 0.4f, 1.0f, 0.0f });
 m_scene.draw(p_frame);
 ```
@@ -270,7 +270,7 @@ m_scene.draw(p_frame);
 ![Cube](images/50_ThreeJsLike.png)
 
 - `box` returns an entity of the **world**: you move it like any other entity. The mesh and the material are renderer components.
-- `Orbit` is a behavior that reads the mouse from the `ViewFrame` (a `Frame` plus keyboard and mouse). Right drag turns, the wheel zooms.
+- `Orbit` is a routine that reads the mouse from the `ViewFrame` (a `Frame` plus keyboard and mouse). Right drag turns, the wheel zooms.
 - `draw` updates the world, then draws it.
 
 Other looks, same call:

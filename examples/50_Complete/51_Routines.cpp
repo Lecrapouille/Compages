@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "50_Complete/51_Behaviors.hpp"
+#include "50_Complete/51_Routines.hpp"
 #include "Compages/World/Entity.hpp"
 
 #include "Common/Gui.hpp"
@@ -17,7 +17,7 @@ namespace examples
 {
 
 //! \brief Turns its entity around its own vertical axis.
-struct Behaviors::Spin: compages::world::Behavior
+struct Routines::Spin: compages::world::Routine
 {
     explicit Spin(float p_speed) : speed(p_speed) {}
 
@@ -31,7 +31,7 @@ struct Behaviors::Spin: compages::world::Behavior
 };
 
 //! \brief Floats up and down around where it was when it started.
-struct Behaviors::Bob: compages::world::Behavior
+struct Routines::Bob: compages::world::Routine
 {
     void start() override
     {
@@ -50,7 +50,7 @@ struct Behaviors::Bob: compages::world::Behavior
 
 //! \brief Breathes, and grows while space or the button of the Try it panel
 //! is held; shrinks back when it is released.
-struct Behaviors::GrowOnSpace: compages::world::Behavior
+struct Routines::GrowOnSpace: compages::world::Routine
 {
     explicit GrowOnSpace(bool const& p_button) : button(p_button) {}
 
@@ -69,25 +69,25 @@ struct Behaviors::GrowOnSpace: compages::world::Behavior
     float size = 1.0f;
 };
 
-std::string Behaviors::description() const
+std::string Routines::description() const
 {
-    return "Three cubes, each driven by small behaviors attached to it: the "
+    return "Three cubes, each driven by small routines attached to it: the "
            "blue one spins, the orange one floats and spins, the green one "
            "breathes "
            "and grows while SPACE is held (the mouse over the picture) or "
            "while "
            "the button of the Try it panel is. The camera control "
-           "is a behavior too: right drag turns it.";
+           "is a routine too: right drag turns it.";
 }
 
-compages::Status Behaviors::setUp()
+compages::Status Routines::setUp()
 {
-    // The camera control is a behavior too: Orbit, hung on the camera.
+    // The camera control is a routine too: Orbit, hung on the camera.
     m_scene.background(0.04f, 0.05f, 0.09f).ambient(0.12f, 0.13f, 0.16f);
     m_scene.camera().position(0.0f, 1.5f, 5.0f).add<compages::world::Orbit>();
     m_scene.sun();
 
-    // One behavior, two, or one that reads the keyboard.
+    // One routine, two, or one that reads the keyboard.
     m_scene.box("Spinner", compages::renderer::color(0.18f, 0.55f, 0.95f))
         .position(-1.6f, 0.0f, 0.0f)
         .add<Spin>(1.5f);
@@ -101,13 +101,13 @@ compages::Status Behaviors::setUp()
     return m_scene.prepare();
 }
 
-void Behaviors::draw(compages::world::ViewFrame const& p_frame)
+void Routines::draw(compages::world::ViewFrame const& p_frame)
 {
-    // update() of every behavior runs inside the draw.
+    // update() of every routine runs inside the draw.
     m_scene.draw(p_frame);
 }
 
-void Behaviors::controls()
+void Routines::controls()
 {
     // Held rather than clicked: true for as long as the button is pressed.
     ImGui::Button("Hold to grow the green cube");

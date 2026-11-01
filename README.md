@@ -46,7 +46,7 @@ The project stopped for several years. With the help of LLMs, I rebuilt it from 
 - ⚡ the GPU layer sends everything the CPU changed **in one pass** at `draw()`, with no virtual call and no `gl*` in your code;
 - 🧬 the world is an **ECS** ([EnTT](https://github.com/skypjack/entt)): an entity is an id, your data are plain structs packed in memory, and loops over thousands of entities stay **cache friendly**;
 - 🌳 the **scene graph** sits on the same entities, with the chained style of Three.js;
-- 🎬 **behaviors** give the comfort of `MonoBehaviour`, but they are optional small scripts attached to an entity, not a class tree you must inherit from;
+- 🎬 **routines** give the comfort of `MonoBehaviour`, but they are optional small scripts attached to an entity, not a class tree you must inherit from;
 - 🔁 **ping-pong**, render-to-texture and compute shaders are first-class: the gallery has a Game of Life, a reaction-diffusion and an eight-thousand-star galaxy.
 
 ---
@@ -65,7 +65,7 @@ The project stopped for several years. With the help of LLMs, I rebuilt it from 
 | Use only the part you need | ✅ three independent layers | — | ✅ | ❌ | ❌ | ✅ |
 | A library, not an editor | ✅ your window, your loop | ✅ | ✅ | ✅ | ❌ | ✅ |
 
-I know of no other C++ library that puts these together: the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like behaviors, as three layers you can use one at a time.
+I know of no other C++ library that puts these together: the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time.
 
 What this gives you:
 
@@ -111,7 +111,7 @@ ship.child("Gun").position(0.0f, 0.5f, 0.0f);             // the gun follows the
 world.each<Velocity>([&](compages::world::Entity e, Velocity& v) {   // a system: a plain loop
     e.position(e.position() + v.value * step.elapsed);
 });
-world.update(step);                                       // behaviors, joints, matrices
+world.update(step);                                       // routines, joints, matrices
 ```
 
 This runs in a unit test, with no OpenGL. Joints too: `.revolute(axis, -90.0_deg, 90.0_deg).joint().angle(30.0_deg)`, and the children follow.
@@ -168,7 +168,7 @@ Start with chapters 1 to 3, then open the chapter of the layer you need.
 | 2 | [Getting started](doc/02-Getting-Started.md) | 🚀 Install, build, gallery, headless CI, system install |
 | 3 | [Your first programs](doc/03-Tutorial.md) | 🎓 One program per layer, line by line |
 | 4 | [The GPU layer](doc/04-GPU-Layer.md) | 🟧 Drawable, buffers, compute, several passes |
-| 5 | [The World layer](doc/05-World-Layer.md) | 🟦 Scene graph, ECS, behaviors, joints |
+| 5 | [The World layer](doc/05-World-Layer.md) | 🟦 Scene graph, ECS, routines, joints |
 | 6 | [The Renderer layer](doc/06-Renderer-Layer.md) | 🟩 Scene, assets, frame, live textures |
 | 7 | [Architecture](doc/07-Architecture.md) | 🏗 Folders, includes, one frame |
 | 8 | [API reference](doc/08-API-Reference.md) | 📖 The calls of the three layers |

@@ -15,7 +15,7 @@
 
 // ****************************************************************************
 //! \file
-//! \brief Camera controls, as behaviors added to the camera entity.
+//! \brief Camera controls, as routines added to the camera entity.
 //!
 //! \code
 //! m_scene.camera().position(0, 2, 6).add<compages::world::Orbit>();   // look at 0,0,0
@@ -43,7 +43,7 @@ namespace compages::world
 //! scene.camera().add<compages::world::Orbit>(compages::core::Vector3f{ 0, 1, 0 });
 //! \endcode
 // ****************************************************************************
-struct Orbit : Behavior
+struct Orbit : Routine
 {
     //! \brief The tuning: the target, the sensitivities, the limits.
     OrbitController controller;
@@ -73,7 +73,7 @@ struct Orbit : Behavior
 //! scene.camera().position(2, 1.5, 2).add<compages::world::Rig>(compages::core::Vector3f{ 0, 0, 0 });
 //! \endcode
 // ****************************************************************************
-struct Rig : Behavior
+struct Rig : Routine
 {
     //! \brief The tuning: the target, the speeds, the limits.
     RigController controller;
@@ -98,7 +98,7 @@ struct Rig : Behavior
 //! scene.camera().position(0, 2, 5).add<compages::world::Fly>();
 //! \endcode
 // ****************************************************************************
-struct Fly : Behavior
+struct Fly : Routine
 {
     //! \brief The tuning: the speeds, the sensitivity, the limits.
     FlyController controller;

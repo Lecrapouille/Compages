@@ -14,7 +14,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/Core/Vector.hpp"
-#include "Compages/World/Behavior.hpp"
+#include "Compages/World/Routines/Routine.hpp"
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 #include "Compages/World/Entt.hpp"
@@ -36,7 +36,7 @@
 // ****************************************************************************
 //! \file
 //! \brief The World: entities, their components, their hierarchy and their
-//! behaviors. Headless: nothing here needs a GPU.
+//! routines. Headless: nothing here needs a GPU.
 //!
 //! The syntax is the one of flecs. An entity is created by name and given
 //! components, which are plain structs:
@@ -137,11 +137,11 @@ public:
             { std::invoke(p_callback, EntityId(p_entity), p_components...); });
     }
 
-    //! \brief Headless step: run behaviors, then propagate transforms.
+    //! \brief Headless step: run routines, then propagate transforms.
     void update(compages::core::Frame const& p_frame);
 
     //! \brief Interactive step without the transforms: only store the timing
-    //! and the input, and run the behaviors. Another writer (an animation, a
+    //! and the input, and run the routines. Another writer (an animation, a
     //! physics engine) can then change poses before one update() computes
     //! the world matrices of all of them.
     //!
@@ -152,7 +152,7 @@ public:
     //! \endcode
     void step(ViewFrame const& p_view);
 
-    //! \brief Interactive step: timing plus input for behaviors and
+    //! \brief Interactive step: timing plus input for routines and
     //! controllers.
     //!
     //! \code
@@ -207,7 +207,7 @@ public:
     //! \brief Rename an entity (used by lookup paths).
     void setName(EntityId p_entity, std::string p_name);
 
-    //! \brief A disabled entity is skipped by the renderer and the behaviors,
+    //! \brief A disabled entity is skipped by the renderer and the routines,
     //! and so are its children.
     void setEnabled(EntityId p_entity, bool p_enabled);
     [[nodiscard]] bool enabled(EntityId p_entity) const;
@@ -336,26 +336,26 @@ public:
         return m_registry.get<T>(p_entity.native());
     }
 
-    //! \brief Attach a behavior to an entity. What Entity::add<T>() does when
-    //! T derives from Behavior.
-    Behavior& addBehavior(EntityId p_entity,
-                          std::unique_ptr<Behavior> p_behavior);
+    //! \brief Attach a routine to an entity. What Entity::add<T>() does when
+    //! T derives from Routine.
+    Routine& addRoutine(EntityId p_entity,
+                          std::unique_ptr<Routine> p_behavior);
 
-    //! \brief How many behaviors an entity has.
-    [[nodiscard]] std::size_t behaviorCount(EntityId p_entity) const;
+    //! \brief How many routines an entity has.
+    [[nodiscard]] std::size_t routineCount(EntityId p_entity) const;
 
-    //! \brief The first behavior of type T of an entity, or nullptr.
+    //! \brief The first routine of type T of an entity, or nullptr.
     template <typename T>
-    [[nodiscard]] T* behavior(EntityId p_entity)
+    [[nodiscard]] T* routine(EntityId p_entity)
     {
-        Behaviors* behaviors = tryGet<Behaviors>(p_entity);
-        if (behaviors == nullptr)
+        Routines* routines = tryGet<Routines>(p_entity);
+        if (routines == nullptr)
         {
             return nullptr;
         }
-        for (std::unique_ptr<Behavior> const& behavior : behaviors->list)
+        for (std::unique_ptr<Routine> const& routine : routines->list)
         {
-            if (T* found = dynamic_cast<T*>(behavior.get()))
+            if (T* found = dynamic_cast<T*>(routine.get()))
             {
                 return found;
             }
@@ -363,23 +363,23 @@ public:
         return nullptr;
     }
 
-    //! \brief Take the behaviors of type T off an entity. Not from inside one
+    //! \brief Take the routines of type T off an entity. Not from inside one
     //! of them: it would be destroyed while it runs.
     template <typename T>
-    void removeBehaviors(EntityId p_entity)
+    void removeRoutines(EntityId p_entity)
     {
-        if (Behaviors* behaviors = tryGet<Behaviors>(p_entity))
+        if (Routines* routines = tryGet<Routines>(p_entity))
         {
             std::erase_if(
-                behaviors->list,
-                [](std::unique_ptr<Behavior> const& p_behavior)
+                routines->list,
+                [](std::unique_ptr<Routine> const& p_behavior)
                 { return dynamic_cast<T*>(p_behavior.get()) != nullptr; });
         }
     }
 
 private:
 
-    void runBehaviors();
+    void runRoutines();
 
     struct Name
     {
@@ -390,14 +390,14 @@ private:
     {
     };
 
-    //! \brief The behaviors of one entity, as a component.
-    struct Behaviors: compages::core::NotCopiable
+    //! \brief The routines of one entity, as a component.
+    struct Routines: compages::core::NotCopiable
     {
-        Behaviors() = default;
-        Behaviors(Behaviors&&) = default;
-        Behaviors& operator=(Behaviors&&) = default;
+        Routines() = default;
+        Routines(Routines&&) = default;
+        Routines& operator=(Routines&&) = default;
 
-        std::vector<std::unique_ptr<Behavior>> list;
+        std::vector<std::unique_ptr<Routine>> list;
     };
 
     entt::registry m_registry;

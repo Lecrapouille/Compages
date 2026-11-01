@@ -31,7 +31,7 @@ namespace examples
 //! \endcode
 //!
 //! What the entity returned by box() is: a handle to the World, where every
-//! method chains, position(), rotate(), set<Component>(), add<Behavior>().
+//! method chains, position(), rotate(), set<Component>(), add<Routine>().
 // ****************************************************************************
 class ThreeJsLike final: public Example
 {

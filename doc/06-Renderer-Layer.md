@@ -58,7 +58,7 @@ Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`e
 ```text
 Scene::draw(ViewFrame)
   update
-    World::update(frame)     behaviors
+    World::update(frame)     routines
     AnimationSystem          clips -> local transforms
     World::update()          joints, world matrices
     skinning                 SkinInstance
@@ -120,7 +120,7 @@ scene.activeCamera(id);
 - The sky (`37_Skybox`) turns with the camera but never comes closer.
 - `scene.pick({ x, y })` reads the result of the last `render`, pixel counted from the bottom left, like the mouse coordinates (`32b_CameraPick`).
 - `scene.debug()` queues debug lines for the next render, then forgets them (`52_MvpDemo`).
-- Ready-made controls, as behaviors: `Orbit` (right button, wheel), `Fly` (right button to look, WASD, Q, E) and `Rig`. `32b` switches between `Orbit` and `Fly`. `FPSController` keeps you on the ground; it is applied directly, not as a behavior.
+- Ready-made controls, as routines: `Orbit` (right button, wheel), `Fly` (right button to look, WASD, Q, E) and `Rig`. `32b` switches between `Orbit` and `Fly`. `FPSController` keeps you on the ground; it is applied directly, not as a routine.
 - `Rig` is a strategy-game camera, looking at a point of the ground. The left button drags the ground (the grabbed point stays under the mouse), the right or middle button turns, the wheel zooms; W A S D or the arrows move, Q and E turn, R and F zoom, Shift runs. The camera glides to the wanted pose; each frame covers the part `1 - exp(-sharpness * dt)` of the way, so the glide is the same at any frame rate and never overshoots (a `Lerp(a, b, dt * speed)` does both wrong). The logic is in `RigController`, tested without a window.
 
   ```cpp

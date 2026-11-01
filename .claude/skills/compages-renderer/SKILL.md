@@ -32,7 +32,7 @@ scene.draw(frame);                       // = update(frame) + render()
   `activeCamera(id)`, `pick({x, y})` (bottom-left origin, last render), `debug()`.
 - Several views: `Scene map(world, scene.assets());` then `scene.update(frame);
   scene.render(); map.render(map.camera().id());`.
-- Frame order: `World::step(frame)` (behaviors) → `AnimationSystem` →
+- Frame order: `World::step(frame)` (routines) → `AnimationSystem` →
   `World::update()` once (joints, matrices) → skinning → `SceneExtractor` →
   `RenderSnapshot` (sorted by material then mesh, culled) → `Renderer`
   (`ShadowPass` for the shadows, `Skybox` behind). Folders: `Scene/` (Scene, Looks, Environment, RenderSettings), `Assets/`,

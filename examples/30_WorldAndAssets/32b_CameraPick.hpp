@@ -18,7 +18,7 @@ namespace examples
 // ****************************************************************************
 //! \brief Steer the camera two ways, and click a cube to select it.
 //!
-//! A camera control is a behavior; changing the way of steering is taking one
+//! A camera control is a routine; changing the way of steering is taking one
 //! off and putting another on:
 //! \code
 //! m_camera.remove<compages::world::Orbit>().add<compages::world::Fly>();

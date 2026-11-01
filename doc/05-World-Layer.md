@@ -1,6 +1,6 @@
 # 🟦 5. The World layer
 
-The second layer answers one question: **where are things, and how do they move, without touching the graphics card?** This is headless simulation: unit tests, planners, servers, robots. In this page you learn the two mechanisms of a `World` (the scene graph and the ECS), behaviors, joints, and where the line with the Renderer is.
+The second layer answers one question: **where are things, and how do they move, without touching the graphics card?** This is headless simulation: unit tests, planners, servers, robots. In this page you learn the two mechanisms of a `World` (the scene graph and the ECS), routines, joints, and where the line with the Renderer is.
 
 | | |
 |---|---|
@@ -24,8 +24,8 @@ The commented programs are in [chapter 3 §2](03-Tutorial.md#-2-a-world-without-
 | Placement | `.position()`, `.rotate()`, `.scale()`, `.lookAt()` | the transform in the graph |
 | Data | `.set(T{})`, `.add<T>(...)`, `.get<T>()`, `.has<T>()`, `.remove<T>()` | your structs: the ECS |
 | System | `world.each<T...>(fn)` | a loop over the entities that have these components |
-| Step | `world.update(frame)` | behaviors, joints, world matrices |
-| Local logic | `Behavior` | `update(dt)` on one entity |
+| Step | `world.update(frame)` | routines, joints, world matrices |
+| Local logic | `Routine` | `update(dt)` on one entity |
 
 The two mechanisms help each other:
 
@@ -62,10 +62,10 @@ Here `position()` is the **transform** of the graph, not a component of yours. `
 
 ---
 
-## 🎬 3. Behaviors
+## 🎬 3. Routines
 
 ```cpp
-struct Spin: compages::world::Behavior
+struct Spin: compages::world::Routine
 {
     explicit Spin(float p_speed) : speed(p_speed) {}
     void update(float p_dt) override { transform().rotateY(speed * p_dt); }
@@ -75,11 +75,11 @@ struct Spin: compages::world::Behavior
 ship.add<Spin>(2.0f);    // built with Spin(2.0f)
 ```
 
-Like Unity's `MonoBehaviour`: `World::update(Frame)` calls `start()` once on new behaviors, then `update(dt)` at every step, in the order they were added. An entity may hold several behaviors. Inside, you reach `entity()`, `transform()`, `world()`, `input()` and `frame()`. Disabled entities and their descendants are skipped.
+Like Unity's `MonoBehaviour`: `World::update(Frame)` calls `start()` once on new routines, then `update(dt)` at every step, in the order they were added. An entity may hold several routines. Inside, you reach `entity()`, `transform()`, `world()`, `input()` and `frame()`. Disabled entities and their descendants are skipped.
 
-Behaviors are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`).
+Routines are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`).
 
-`51_Behaviors` puts three behaviors on three cubes (spin, float, "breathe" while Space is pressed). The camera controller `Orbit` is a behavior too.
+`51_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controller `Orbit` is a routine too.
 
 ---
 
@@ -143,7 +143,7 @@ ball.position(p.x, p.y, p.z);
 scene.draw(viewFrame);                        // 3. Compages computes the matrices and draws
 ```
 
-Headless, replace `scene.draw` with `world.update(frame)`. With a `Scene`, `World::step(viewFrame)` runs the behaviors without computing the matrices, so another writer can still change poses before the single `World::update()`.
+Headless, replace `scene.draw` with `world.update(frame)`. With a `Scene`, `World::step(viewFrame)` runs the routines without computing the matrices, so another writer can still change poses before the single `World::update()`.
 
 `40_ExternalPhysics` does this with a tiny engine of a few lines (gravity and bounces), written without any Compages type. RobotIK does the same with MuJoCo.
 
@@ -177,19 +177,19 @@ Saving a scene (`35_PrefabAndSave`) touches both: the world and the asset catalo
 Headless:   world.update(frame);
 
 With a picture:  scene.draw(viewFrame);
-                    World::step(frame)       behaviors
+                    World::step(frame)       routines
                     AnimationSystem          clips -> local transforms
                     World::update()          joints, matrices (once)
                     skinning                 pose -> SkinInstance
                     extraction + drawing
 ```
 
-Animation clips belong to the **renderer**, because they live in the asset catalog: `Scene` applies them after the behaviors and before the single `World::update()`. A headless world has no clip until a `Scene` loads one.
+Animation clips belong to the **renderer**, because they live in the asset catalog: `Scene` applies them after the routines and before the single `World::update()`. A headless world has no clip until a `Scene` loads one.
 
 | Type | Holds |
 |------|-------|
 | `compages::core::Frame` | `elapsed`, `total`, `width`, `height` — enough for a headless step |
-| `compages::world::ViewFrame` | a `Frame` plus keyboard and mouse, for behaviors and `Scene::draw` |
+| `compages::world::ViewFrame` | a `Frame` plus keyboard and mouse, for routines and `Scene::draw` |
 
 You fill `elapsed` (and `total`) yourself in a headless loop.
 
@@ -199,11 +199,11 @@ You fill `elapsed` (and `total`) yourself in a headless loop.
 
 | Demo | Idea |
 |------|------|
-| `30_HeadlessWorld` | ECS, behavior, `lookup`, no GPU |
+| `30_HeadlessWorld` | ECS, routine, `lookup`, no GPU |
 | `31_MovingRobot` | hierarchy and joints |
 | `32c_MiscLookAt` | `lookAt` on a thousand transforms |
 | `38_RobotArm` | URDF, forward kinematics |
 | `40_ExternalPhysics` | an outside engine writes the poses (`PoseDriver::External`) |
-| `51_Behaviors` | several behaviors, input |
+| `51_Routines` | several routines, input |
 
 Next: [06-Renderer-Layer.md](06-Renderer-Layer.md) — a picture of this world.

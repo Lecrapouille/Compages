@@ -19,7 +19,7 @@ namespace examples
 constexpr char const* SAVED = "/tmp/compages_prefab_scene.json";
 
 //! \brief Swings the arms and turns the head of a placed robot.
-struct Wave: compages::world::Behavior
+struct Wave: compages::world::Routine
 {
     explicit Wave(float p_phase) : phase(p_phase) {}
 

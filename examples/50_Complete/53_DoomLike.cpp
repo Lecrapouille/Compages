@@ -29,7 +29,7 @@ using doom::ROBOT_SCALE;
 using doom::WALL_HEIGHT;
 
 //! \brief Makes the light of a torch waver, the way a flame does.
-struct DoomLike::Flicker: compages::world::Behavior
+struct DoomLike::Flicker: compages::world::Routine
 {
     explicit Flicker(float p_phase) : phase(p_phase) {}
 

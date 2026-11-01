@@ -18,11 +18,11 @@ namespace examples
 // ****************************************************************************
 //! \brief Code attached to an entity, the Unity way.
 //!
-//! A behavior is a small class deriving from compages::world::Behavior. Added
+//! A routine is a small class deriving from compages::world::Routine. Added
 //! to an entity, it is started once, then updated every frame the entity is
 //! enabled, and it reaches its entity, its transform and the input:
 //! \code
-//! struct Spin : compages::world::Behavior
+//! struct Spin : compages::world::Routine
 //! {
 //!     explicit Spin(float p_speed) : speed(p_speed) {}
 //!     void update(float p_dt) override { transform().rotateY(speed * p_dt); }
@@ -32,15 +32,15 @@ namespace examples
 //! m_scene.box("Cube").add<Spin>(2.0f);    // built with Spin(2.0f)
 //! \endcode
 //!
-//! The camera control is a behavior too: add<compages::world::Orbit>().
+//! The camera control is a routine too: add<compages::world::Orbit>().
 // ****************************************************************************
-class Behaviors final: public Example
+class Routines final: public Example
 {
 public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "51_Behaviors";
+        return "51_Routines";
     }
 
     [[nodiscard]] std::string description() const override;

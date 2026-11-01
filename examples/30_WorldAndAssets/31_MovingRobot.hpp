@@ -17,7 +17,7 @@ namespace examples
 
 // ****************************************************************************
 //! \brief Three robots of cubes: a hierarchy of transforms, posed by a
-//! behavior.
+//! routine.
 //!
 //! A robot is a tree. Its joints are empty entities placed where a part
 //! turns, a shoulder or a neck, and the boxes hang under them; turning a
@@ -30,7 +30,7 @@ namespace examples
 //! \endcode
 //!
 //! Only the boxes are scaled, never the joints: a scale on a joint would
-//! squash every part under it. The motion is a behavior on the root of each
+//! squash every part under it. The motion is a routine on the root of each
 //! robot, written from the total time so that it never drifts.
 // ****************************************************************************
 class MovingRobot final: public Example

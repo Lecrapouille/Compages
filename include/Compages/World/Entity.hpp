@@ -107,20 +107,20 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Attach a component built from the arguments, or a behavior when
-    //! T derives from Behavior.
+    //! \brief Attach a component built from the arguments, or a routine when
+    //! T derives from Routine.
     //!
     //! \code
     //! enemy.add<Hostile>();           // a tag: a component without data
-    //! cube.add<Spin>(2.0f);           // a behavior, built with Spin(2.0f)
+    //! cube.add<Spin>(2.0f);           // a routine, built with Spin(2.0f)
     //! \endcode
     // ------------------------------------------------------------------------
     template <typename T, typename... Args>
     Entity& add(Args&&... p_args)
     {
-        if constexpr (std::is_base_of_v<Behavior, T>)
+        if constexpr (std::is_base_of_v<Routine, T>)
         {
-            world().addBehavior(
+            world().addRoutine(
                 m_id, std::make_unique<T>(std::forward<Args>(p_args)...));
         }
         else if constexpr (std::is_constructible_v<T, Args...>)
@@ -135,14 +135,14 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Detach the component of type T, or the behaviors of type T.
+    //! \brief Detach the component of type T, or the routines of type T.
     // ------------------------------------------------------------------------
     template <typename T>
     Entity& remove()
     {
-        if constexpr (std::is_base_of_v<Behavior, T>)
+        if constexpr (std::is_base_of_v<Routine, T>)
         {
-            world().template removeBehaviors<T>(m_id);
+            world().template removeRoutines<T>(m_id);
         }
         else
         {
@@ -152,12 +152,12 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Has the entity a component, or a behavior, of type T?
+    //! \brief Has the entity a component, or a routine, of type T?
     // ------------------------------------------------------------------------
     template <typename T>
     [[nodiscard]] bool has() const
     {
-        if constexpr (std::is_base_of_v<Behavior, T>)
+        if constexpr (std::is_base_of_v<Routine, T>)
         {
             return find<T>() != nullptr;
         }
@@ -173,12 +173,12 @@ public:
     template <typename T>
     [[nodiscard]] T& get() const
     {
-        if constexpr (std::is_base_of_v<Behavior, T>)
+        if constexpr (std::is_base_of_v<Routine, T>)
         {
-            T* behavior = find<T>();
-            assert((behavior != nullptr) &&
-                   "Entity::get of a missing behavior");
-            return *behavior;
+            T* routine = find<T>();
+            assert((routine != nullptr) &&
+                   "Entity::get of a missing routine");
+            return *routine;
         }
         else
         {
@@ -187,7 +187,7 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief The component, or the behavior, of type T; nullptr when the
+    //! \brief The component, or the routine, of type T; nullptr when the
     //! entity has none.
     // ------------------------------------------------------------------------
     template <typename T>
@@ -197,9 +197,9 @@ public:
         {
             return nullptr;
         }
-        if constexpr (std::is_base_of_v<Behavior, T>)
+        if constexpr (std::is_base_of_v<Routine, T>)
         {
-            return m_world->template behavior<T>(m_id);
+            return m_world->template routine<T>(m_id);
         }
         else
         {
@@ -236,7 +236,7 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Visible to renderer and behaviors (checks ancestors too)?
+    //! \brief Visible to renderer and routines (checks ancestors too)?
     // ------------------------------------------------------------------------
     [[nodiscard]] bool enabled() const
     {
@@ -489,22 +489,22 @@ private:
     EntityId m_id{};
 };
 
-inline Entity Behavior::entity() const
+inline Entity Routine::entity() const
 {
     return Entity(*m_world, m_entity);
 }
 
-inline LocalTransformView Behavior::transform() const
+inline LocalTransformView Routine::transform() const
 {
     return m_world->transform(m_entity);
 }
 
-inline Input const& Behavior::input() const
+inline Input const& Routine::input() const
 {
     return m_world->input();
 }
 
-inline compages::core::Frame const& Behavior::frame() const
+inline compages::core::Frame const& Routine::frame() const
 {
     return m_world->frame();
 }

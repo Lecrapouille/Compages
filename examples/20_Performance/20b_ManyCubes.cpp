@@ -69,7 +69,7 @@ compages::Status ManyCubes::setUp()
 void ManyCubes::draw(compages::world::ViewFrame const& p_frame)
 {
     // Sorting and frustum culling happen inside the draw, from the camera
-    // the orbit behavior just moved.
+    // the orbit routine just moved.
     m_scene.draw(p_frame);
 }
 

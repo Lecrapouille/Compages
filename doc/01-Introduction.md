@@ -55,7 +55,7 @@ Compages keeps the two jobs apart, so that you can simulate without showing, or 
 | **Transform** | The position, rotation and scale of an entity, relative to its parent. |
 | **World matrix** | The final placement of an entity in the world, computed from all its parents. |
 | **Joint** | A child that moves in one way only: a **revolute** joint turns (an elbow), a **prismatic** joint slides. |
-| **Behavior** | A small piece of code attached to one entity, called every frame (`update(dt)`). |
+| **Routine** | A small piece of code attached to one entity, called every frame (`update(dt)`). |
 | **Frame** | One step of time: the time since the last step (`elapsed`) and since the start (`total`). |
 
 ### On the Renderer side
@@ -119,7 +119,7 @@ One `World` holds two mechanisms:
 - **A scene graph** (parent, children, transform), with a chained style like [Three.js](https://threejs.org/): `entity("Ship").child("Gun").position(...)`.
 - **An ECS** ([EnTT](https://github.com/skypjack/entt)): your structs are the components; `world.each<Velocity>(...)` visits only the entities that have a `Velocity`.
 
-Behaviors, joints, camera, lights and skeleton poses are simulation data. The view matrix is not hidden in the camera: it is the world matrix of the camera entity. **Headless mode is not an add-on: it is layer 2 used alone.**
+Routines, joints, camera, lights and skeleton poses are simulation data. The view matrix is not hidden in the camera: it is the world matrix of the camera entity. **Headless mode is not an add-on: it is layer 2 used alone.**
 
 ### Layer 3 — showing without owning the simulation
 

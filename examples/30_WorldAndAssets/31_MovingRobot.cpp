@@ -15,7 +15,7 @@ namespace examples
 
 //! \brief Turns the robot, glances its head and swings its arms, from the
 //! total time rather than by adding a little each frame.
-struct MovingRobot::Walk: compages::world::Behavior
+struct MovingRobot::Walk: compages::world::Routine
 {
     explicit Walk(float p_phase) : phase(p_phase) {}
 
@@ -47,7 +47,7 @@ struct MovingRobot::Walk: compages::world::Behavior
 std::string MovingRobot::description() const
 {
     return "Three robots made of boxes hung under joints: turning a joint "
-           "turns every part under it. A Walk behavior on each robot poses "
+           "turns every part under it. A Walk routine on each robot poses "
            "its joints from the total time.";
 }
 
@@ -117,7 +117,7 @@ compages::Status MovingRobot::setUp()
 
 void MovingRobot::draw(compages::world::ViewFrame const& p_frame)
 {
-    // update() of the Walk behaviors runs inside the draw.
+    // update() of the Walk routines runs inside the draw.
     m_scene.draw(p_frame);
 }
 

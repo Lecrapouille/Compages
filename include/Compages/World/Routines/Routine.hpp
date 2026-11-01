@@ -25,7 +25,7 @@ class Entity;
 //! Derive from it, override update(), and add it to an entity like a
 //! component:
 //! \code
-//! struct Spin: compages::world::Behavior
+//! struct Spin: compages::world::Routine
 //! {
 //!     float speed = 1.0f;
 //!     explicit Spin(float p_speed) : speed(p_speed) {}
@@ -42,14 +42,14 @@ class Entity;
 //! World::update() runs them, in the order they were added, after calling
 //! start() once on the ones that are new. An entity can have several.
 // ****************************************************************************
-class Behavior
+class Routine
 {
 public:
 
-    virtual ~Behavior() = default;
+    virtual ~Routine() = default;
 
     // ------------------------------------------------------------------------
-    //! \brief Called once, at the first update after the behavior was added.
+    //! \brief Called once, at the first update after the routine was added.
     // ------------------------------------------------------------------------
     virtual void start()
     {
@@ -68,7 +68,7 @@ public:
 protected:
 
     // ------------------------------------------------------------------------
-    //! \brief The entity this behavior is attached to.
+    //! \brief The entity this routine is attached to.
     // ------------------------------------------------------------------------
     [[nodiscard]] Entity entity() const;
 

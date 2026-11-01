@@ -267,7 +267,7 @@ public:
     [[nodiscard]] Status prepare();
 
     // ------------------------------------------------------------------------
-    //! \brief Move the compages::world::World forward one frame: the behaviors,
+    //! \brief Move the compages::world::World forward one frame: the routines,
     //! then the animations, then the transforms.
     // ------------------------------------------------------------------------
     void update(compages::world::ViewFrame const& p_frame);

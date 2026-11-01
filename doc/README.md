@@ -17,7 +17,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 | # | Chapter | Read it when… |
 |---|---------|---------------|
 | 4 | [The GPU layer](04-GPU-Layer.md) | you have shaders and arrays: draw, compute, several passes |
-| 5 | [The World layer](05-World-Layer.md) | you have things that move: entities, ECS, joints, behaviors, no screen |
+| 5 | [The World layer](05-World-Layer.md) | you have things that move: entities, ECS, joints, routines, no screen |
 | 6 | [The Renderer layer](06-Renderer-Layer.md) | you want a picture of the world: scene, camera, lights, files, painted textures |
 
 ## 📖 Reference

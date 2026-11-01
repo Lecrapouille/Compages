@@ -16,12 +16,12 @@ namespace examples
 {
 
 // ****************************************************************************
-//! \brief Two walkers going round, their gait made by a behavior.
+//! \brief Two walkers going round, their gait made by a routine.
 //!
 //! The same pattern as 31_MovingRobot, pushed to a walk cycle: hips and
-//! shoulders are joints, the limbs hang under them, and a Walk behavior
+//! shoulders are joints, the limbs hang under them, and a Walk routine
 //! swings them in opposite phase while it moves its walker along a circle.
-//! One class of behavior, two walkers, each with its own radius and phase:
+//! One class of routine, two walkers, each with its own radius and phase:
 //! \code
 //! makeWalker("A", blue).add<Walk>(3.1f, 0.0f);
 //! makeWalker("B", red).add<Walk>(2.2f, 1.7f);

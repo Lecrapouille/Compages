@@ -20,7 +20,7 @@ const compages::renderer::Look SKIN =
 
 //! \brief Walks its entity around a circle, swinging legs and arms in
 //! opposite phase.
-struct AnimatedModel::Walk: compages::world::Behavior
+struct AnimatedModel::Walk: compages::world::Routine
 {
     Walk(float p_radius, float p_phase) : radius(p_radius), phase(p_phase) {}
 
@@ -64,7 +64,7 @@ struct AnimatedModel::Walk: compages::world::Behavior
 std::string AnimatedModel::description() const
 {
     return "Two walkers going round: hips and shoulders are joints, the limbs "
-           "hang under them, and one Walk behavior per walker swings them. The "
+           "hang under them, and one Walk routine per walker swings them. The "
            "camera turns slowly by itself.";
 }
 
@@ -135,7 +135,7 @@ compages::Status AnimatedModel::setUp()
 
 void AnimatedModel::draw(compages::world::ViewFrame const& p_frame)
 {
-    // The Walk behaviors run inside the draw.
+    // The Walk routines run inside the draw.
     m_scene.draw(p_frame);
 }
 

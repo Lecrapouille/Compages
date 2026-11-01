@@ -23,7 +23,7 @@ const compages::core::AABB UNIT =
 
 //! \brief Falls, and bounces on the floor losing a part of its speed, then
 //! starts again from where it was.
-struct Bounce: compages::world::Behavior
+struct Bounce: compages::world::Routine
 {
     void start() override
     {
@@ -55,7 +55,7 @@ struct Bounce: compages::world::Behavior
 };
 
 //! \brief Goes round the vertical axis, at its height and its distance.
-struct Circle: compages::world::Behavior
+struct Circle: compages::world::Routine
 {
     void update(float) override
     {
@@ -66,7 +66,7 @@ struct Circle: compages::world::Behavior
 };
 
 //! \brief Turns on itself.
-struct MvpDemo::Spin: compages::world::Behavior
+struct MvpDemo::Spin: compages::world::Routine
 {
     void update(float p_dt) override
     {
@@ -77,7 +77,7 @@ struct MvpDemo::Spin: compages::world::Behavior
 std::string MvpDemo::description() const
 {
     return "Falling cubes bouncing on a floor, a spinning block and a lamp "
-           "going round, all driven by behaviors, with debug boxes drawn "
+           "going round, all driven by routines, with debug boxes drawn "
            "around the cubes.";
 }
 

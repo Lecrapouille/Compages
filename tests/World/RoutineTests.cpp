@@ -18,7 +18,7 @@
 namespace
 {
 
-struct Counter : compages::world::Behavior
+struct Counter : compages::world::Routine
 {
     int starts = 0;
     int updates = 0;
@@ -36,7 +36,7 @@ struct Counter : compages::world::Behavior
     }
 };
 
-struct Mover : compages::world::Behavior
+struct Mover : compages::world::Routine
 {
     explicit Mover(float p_speed) : speed(p_speed) {}
 
@@ -48,7 +48,7 @@ struct Mover : compages::world::Behavior
     float speed;
 };
 
-struct SelfRemover : compages::world::Behavior
+struct SelfRemover : compages::world::Routine
 {
     void update(float /*p_dt*/) override
     {
@@ -78,7 +78,7 @@ float distanceBetween(compages::core::Vector3f const& p_a, compages::core::Vecto
 
 } // namespace
 
-TEST(Behavior, StartsOnceThenUpdatesEveryFrame)
+TEST(Routine, StartsOnceThenUpdatesEveryFrame)
 {
     compages::world::World world;
     compages::world::Entity actor = world.entity("Actor").add<Counter>();
@@ -92,7 +92,7 @@ TEST(Behavior, StartsOnceThenUpdatesEveryFrame)
     EXPECT_FLOAT_EQ(counter.last_dt, 0.25f);
 }
 
-TEST(Behavior, TakesConstructorArgumentsAndMovesItsEntity)
+TEST(Routine, TakesConstructorArgumentsAndMovesItsEntity)
 {
     compages::world::World world;
     compages::world::Entity actor = world.entity("Actor").add<Mover>(2.0f);
@@ -102,7 +102,7 @@ TEST(Behavior, TakesConstructorArgumentsAndMovesItsEntity)
     EXPECT_FLOAT_EQ(actor.position().x, 1.0f);
 }
 
-TEST(Behavior, DisabledEntitiesAndTheirChildrenDoNotRun)
+TEST(Routine, DisabledEntitiesAndTheirChildrenDoNotRun)
 {
     compages::world::World world;
     compages::world::Entity parent = world.entity("Parent");
@@ -117,7 +117,7 @@ TEST(Behavior, DisabledEntitiesAndTheirChildrenDoNotRun)
     EXPECT_EQ(child.get<Counter>().updates, 1);
 }
 
-TEST(Behavior, CanRemoveItselfWhileRunning)
+TEST(Routine, CanRemoveItselfWhileRunning)
 {
     compages::world::World world;
     compages::world::Entity actor = world.entity("Actor").add<SelfRemover>().add<Counter>();
@@ -129,7 +129,7 @@ TEST(Behavior, CanRemoveItselfWhileRunning)
     EXPECT_EQ(actor.get<Counter>().updates, 1);
 }
 
-TEST(Behavior, HasAndFindTellBehaviorsFromComponents)
+TEST(Routine, HasAndFindTellBehaviorsFromComponents)
 {
     compages::world::World world;
     compages::world::Entity actor = world.entity("Actor").set(Velocity{ 3.0f });
@@ -210,8 +210,8 @@ TEST(Fly, KeepsTheDirectionTheCameraWasLooking)
 }
 
 // Regression: a headless update(compages::core::Frame) kept the keys and the mouse of the last
-// update(compages::world::ViewFrame), so a behavior saw them held forever.
-struct InputProbe : compages::world::Behavior
+// update(compages::world::ViewFrame), so a routine saw them held forever.
+struct InputProbe : compages::world::Routine
 {
     bool left = false;
     bool forward = false;

@@ -22,7 +22,7 @@ namespace compages::world
 //! \brief One interactive frame: timing, viewport size and user input.
 //!
 //! Used by the gallery and \c compages::renderer::Scene. Headless simulation uses
-//! \c compages::core::Frame alone; behaviors that read the mouse or keys need a \c ViewFrame
+//! \c compages::core::Frame alone; routines that read the mouse or keys need a \c ViewFrame
 //! passed to \c World::update(ViewFrame).
 //!
 //! \code
@@ -38,7 +38,7 @@ namespace compages::world
 // ****************************************************************************
 struct ViewFrame : compages::core::Frame
 {
-    //! \brief Mouse and keyboard for this frame (controllers and behaviors).
+    //! \brief Mouse and keyboard for this frame (controllers and routines).
     Input input{};
 };
 

@@ -21,8 +21,8 @@ struct Velocity
     compages::core::Vector3f value{ 0.0f, 0.0f, 0.0f };
 };
 
-//! \brief How many frames a behavior has seen.
-struct Ticks: compages::world::Behavior
+//! \brief How many frames a routine has seen.
+struct Ticks: compages::world::Routine
 {
     void update(float) override
     {
@@ -35,7 +35,7 @@ struct Ticks: compages::world::Behavior
 std::string HeadlessWorld::description() const
 {
     return "A World without a Scene: entities made in one chain, a system "
-           "moving what has a Position and a Velocity, a behavior counting "
+           "moving what has a Position and a Velocity, a routine counting "
            "frames. Nothing is drawn; the frame fails if a system did not run.";
 }
 
@@ -65,19 +65,19 @@ void HeadlessWorld::draw(compages::world::ViewFrame const& p_frame)
     m_world.each<Position, Velocity>(
         [&](compages::world::Entity, Position& p_position, Velocity& p_velocity)
         { p_position.value += p_velocity.value * p_frame.elapsed; });
-    m_world.update(p_frame); // the behaviors, then the transforms
+    m_world.update(p_frame); // the routines, then the transforms
 
     // The gallery has no scene to look at, so the checks are the picture:
-    // the player must have moved, and the worker must still have its behavior.
+    // the player must have moved, and the worker must still have its routine.
     compages::world::Entity player = m_world.lookup("player");
     if ((p_frame.total > 0.5f) && (player.get<Position>().value.x <= 0.0f))
     {
         compages::gpu::reportError(
             "the movement system did not move the player");
     }
-    if (m_world.behaviorCount(m_world.lookup("Simulation/Worker")) != 1u)
+    if (m_world.routineCount(m_world.lookup("Simulation/Worker")) != 1u)
     {
-        compages::gpu::reportError("the worker lost its behavior");
+        compages::gpu::reportError("the worker lost its routine");
     }
 }
 
