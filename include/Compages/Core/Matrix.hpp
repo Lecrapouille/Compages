@@ -19,13 +19,20 @@ namespace compages::core
 namespace matrix
 {
 //! \brief Enum used by the constructor for initializing matrices.
+//!
+//! Entries come from \c zero<T>() and \c one<T>(), not from the numbers 0
+//! and 1. For a float or an int those functions return 0 and 1. Another
+//! type of number can define them as the values that leave a sum or a
+//! product unchanged, so the same matrix code works for that type.
 enum Type
 {
-    //! \brief Create an identity matrix.
+    //! \brief \c one<T>() on the diagonal, \c zero<T>() everywhere else.
     Identity,
-    //! \brief Create a matrix filled with zeros.
+    //! \brief Every entry is \c zero<T>(), the value that changes nothing
+    //! when added.
     Zero,
-    //! \brief Create a matrix filled with ones.
+    //! \brief Every entry is \c one<T>(), the value that changes nothing
+    //! when multiplied.
     One,
 };
 } // namespace matrix
@@ -121,7 +128,8 @@ public:
     }
 
     //--------------------------------------------------------------------------
-    //! \brief Constructor for identity matrix.
+    //! \brief Fill the matrix as an identity, or with \c zero<T>() or
+    //! \c one<T>().
     //--------------------------------------------------------------------------
     explicit Matrix(matrix::Type const type)
     {
@@ -1119,4 +1127,3 @@ Matrix<T, 4u, 4u> scalingMatrix(Vector<T, 3u> const& scal)
     return m;
 }
 } // namespace compages::core
-
