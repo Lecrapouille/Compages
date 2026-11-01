@@ -21,16 +21,20 @@ namespace examples
 //! \brief Plug a physics engine into Compages.
 //!
 //! Compages has no physics engine. The engine (MuJoCo, Bullet, Jolt, or the
-//! tiny one of this demo) keeps its own bodies; at each step it writes their
-//! pose into the entities, which are marked PoseDriver::External so that no
-//! Compages system writes over them. The scene then computes the world
-//! matrices and draws them.
+//! tiny one of this demo) keeps its own bodies. A routine steps it in
+//! fixedUpdate(), at a fixed pace whatever the frame rate, writes the poses
+//! into the entities (marked PoseDriver::External, so that no Compages
+//! system writes over them) and sends a Contact message for each shock. A
+//! routine on each ball swells at a shock.
 //! \code
 //! ball.set(compages::world::PoseDriver{ compages::world::PoseDriver::External });
 //!
-//! engine.step(dt);                                // the engine moves
-//! ball.position(toCompages(engine.position(i)));  // its result goes in
-//! scene.draw(frame);                              // Compages shows it
+//! void fixedUpdate(float p_dt) override             // in the Physics routine
+//! {
+//!     engine.step(p_dt);                             // the engine moves
+//!     ball.position(p.x, p.y, p.z);                  // its result goes in
+//!     world().routines().send(ball, Contact{ ... }); // and its shocks
+//! }
 //! \endcode
 // ****************************************************************************
 class ExternalPhysics final: public Example
@@ -59,14 +63,31 @@ private:
             float radius;
         };
 
+        //! \brief A shock of the last step: body \c a against body \c b, or
+        //! against the box when \c b is negative.
+        struct Hit
+        {
+            std::size_t a;
+            int b;
+            std::array<float, 3> point;
+            //! \brief Pushes \c a away from what it hit.
+            std::array<float, 3> normal;
+            float speed;
+        };
+
         void step(float p_dt);
         void collide();
+        void hit(std::size_t p_a, int p_b, std::array<float, 3> p_normal, float p_speed);
 
         std::vector<Body> bodies;
+        std::vector<Hit> hits;
         float gravity = -9.81f;
         float bounce = 0.8f;
         float half_box = 3.0f;
     };
+
+    struct Physics;
+    struct Squash;
 
     void throwBalls();
 
@@ -75,6 +96,8 @@ private:
     TinyEngine m_engine;
     //! \brief The entity of each body, at the same index.
     std::vector<compages::world::Entity> m_balls;
+    //! \brief Shocks sent as messages since the start.
+    int m_shocks = 0;
 };
 
 } // namespace examples

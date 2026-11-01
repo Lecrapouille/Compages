@@ -26,13 +26,33 @@ constexpr std::size_t BALL_COUNT = 12u;
 
 } // namespace
 
+//! \brief Below this speed, a touch is resting, not a shock.
+constexpr float SHOCK_SPEED = 0.5f;
+
+void ExternalPhysics::TinyEngine::hit(std::size_t p_a, int p_b, std::array<float, 3> p_normal, float p_speed)
+{
+    if (p_speed < SHOCK_SPEED)
+    {
+        return;
+    }
+    Body const& body = bodies[p_a];
+    std::array<float, 3> point{};
+    for (std::size_t k = 0u; k < 3u; ++k)
+    {
+        point[k] = body.position[k] - (body.radius * p_normal[k]);
+    }
+    hits.push_back(Hit{ p_a, p_b, point, p_normal, p_speed });
+}
+
 void ExternalPhysics::TinyEngine::step(float p_dt)
 {
     // Gravity, a bounce on the floor and on the four walls, then the balls
     // against each other. A real engine does far more; what matters here is
-    // that it owns its bodies.
-    for (Body& body : bodies)
+    // that it owns its bodies, and reports its shocks.
+    hits.clear();
+    for (std::size_t i = 0u; i < bodies.size(); ++i)
     {
+        Body& body = bodies[i];
         body.velocity[1] += gravity * p_dt;
         for (std::size_t axis = 0u; axis < 3u; ++axis)
         {
@@ -40,6 +60,7 @@ void ExternalPhysics::TinyEngine::step(float p_dt)
         }
         if (body.position[1] < body.radius)
         {
+            hit(i, -1, { 0.0f, 1.0f, 0.0f }, -body.velocity[1]);
             body.position[1] = body.radius;
             body.velocity[1] = -body.velocity[1] * bounce;
         }
@@ -48,6 +69,9 @@ void ExternalPhysics::TinyEngine::step(float p_dt)
             const float limit = half_box - body.radius;
             if (std::abs(body.position[axis]) > limit)
             {
+                std::array<float, 3> normal{ 0.0f, 0.0f, 0.0f };
+                normal[axis] = (body.position[axis] > 0.0f) ? -1.0f : 1.0f;
+                hit(i, -1, normal, std::abs(body.velocity[axis]));
                 body.position[axis] = std::clamp(body.position[axis], -limit, limit);
                 body.velocity[axis] = -body.velocity[axis] * bounce;
             }
@@ -92,6 +116,7 @@ void ExternalPhysics::TinyEngine::collide()
             {
                 continue; // already moving apart
             }
+            hit(i, int(j), { -normal[0], -normal[1], -normal[2] }, closing);
             const float impulse = 0.5f * (1.0f + bounce) * closing;
             for (std::size_t k = 0u; k < 3u; ++k)
             {
@@ -102,12 +127,84 @@ void ExternalPhysics::TinyEngine::collide()
     }
 }
 
+// ****************************************************************************
+//! \brief Steps the engine at a fixed pace, gives its result to the entities,
+//! and tells each ball about its shocks.
+// ****************************************************************************
+struct ExternalPhysics::Physics: compages::world::Routine
+{
+    Physics(TinyEngine& p_engine, std::vector<compages::world::Entity>& p_balls, compages::world::EntityId p_floor, int& p_shocks)
+        : engine(p_engine), balls(p_balls), floor(p_floor), shocks(p_shocks)
+    {
+    }
+
+    void fixedUpdate(float p_dt) override
+    {
+        // 1. The engine moves its bodies.
+        engine.step(p_dt);
+
+        // 2. Its result goes into the entities.
+        for (std::size_t i = 0u; i < balls.size(); ++i)
+        {
+            auto const& p = engine.bodies[i].position;
+            balls[i].position(p[0], p[1], p[2]);
+        }
+
+        // 3. Its shocks go to the routines of the bodies: Compages detects
+        // no collision itself.
+        for (TinyEngine::Hit const& hit : engine.hits)
+        {
+            const compages::core::Vector3f point(hit.point[0], hit.point[1], hit.point[2]);
+            const compages::core::Vector3f normal(hit.normal[0], hit.normal[1], hit.normal[2]);
+            const compages::world::EntityId other = (hit.b < 0) ? floor : balls[std::size_t(hit.b)].id();
+            world().routines().send(balls[hit.a], compages::world::Contact{ other, point, normal, hit.speed });
+            if (hit.b >= 0)
+            {
+                world().routines().send(other, compages::world::Contact{ balls[hit.a], point, -1.0f * normal, hit.speed });
+            }
+            ++shocks;
+        }
+    }
+
+    TinyEngine& engine;
+    std::vector<compages::world::Entity>& balls;
+    compages::world::EntityId floor;
+    int& shocks;
+};
+
+// ****************************************************************************
+//! \brief Swells at a shock, as much as the shock is hard, then shrinks back.
+// ****************************************************************************
+struct ExternalPhysics::Squash: compages::world::Routine
+{
+    explicit Squash(float p_size) : size(p_size) {}
+
+    void onMessage(compages::world::Message const& p_message) override
+    {
+        if (compages::world::Contact const* contact = p_message.as<compages::world::Contact>())
+        {
+            swell = std::max(swell, std::min(1.0f, contact->speed / 4.0f));
+        }
+    }
+
+    void update(float p_dt) override
+    {
+        swell = std::max(0.0f, swell - (3.0f * p_dt));
+        entity().scale(size * (1.0f + (0.6f * swell)));
+    }
+
+    float size;
+    float swell = 0.0f;
+};
+
 std::string ExternalPhysics::description() const
 {
     return "Compages has no physics engine: a small engine of the demo moves "
-           "the balls (gravity, floor, walls, balls against balls), and writes their places into entities marked "
-           "PoseDriver::External. Compages only computes the world matrices "
-           "and draws. Right drag turns the camera.";
+           "the balls (gravity, floor, walls, balls against balls). A Physics "
+           "routine steps it in fixedUpdate(), writes the places into entities "
+           "marked PoseDriver::External and sends a Contact message for each "
+           "shock; a Squash routine on each ball swells at a shock. Right drag "
+           "turns the camera.";
 }
 
 void ExternalPhysics::throwBalls()
@@ -132,9 +229,10 @@ compages::Status ExternalPhysics::setUp()
         .add<compages::world::Orbit>();
     m_scene.sun();
     // The plane is built standing in XY: laid down, it is the floor y = 0.
-    m_scene.plane("Floor", compages::renderer::color(0.3f, 0.32f, 0.36f))
-        .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
-        .scale(2.0f * m_engine.half_box);
+    compages::world::Entity floor =
+        m_scene.plane("Floor", compages::renderer::color(0.3f, 0.32f, 0.36f))
+            .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+            .scale(2.0f * m_engine.half_box);
 
     throwBalls();
     for (std::size_t i = 0u; i < BALL_COUNT; ++i)
@@ -142,28 +240,19 @@ compages::Status ExternalPhysics::setUp()
         const float hue = float(i) / float(BALL_COUNT);
         compages::world::Entity ball = m_scene.sphere(
             "Ball", compages::renderer::color(0.4f + (0.6f * hue), 0.5f, 1.0f - (0.6f * hue)));
-        ball.scale(2.0f * m_engine.bodies[i].radius);
         // The engine writes the pose: no Compages system may.
-        ball.set(compages::world::PoseDriver{ compages::world::PoseDriver::External });
+        ball.set(compages::world::PoseDriver{ compages::world::PoseDriver::External })
+            .add<Squash>(2.0f * m_engine.bodies[i].radius);
         m_balls.push_back(ball);
     }
+    m_world.entity("Physics").add<Physics>(m_engine, m_balls, floor.id(), m_shocks);
     return m_scene.prepare();
 }
 
 void ExternalPhysics::draw(compages::world::ViewFrame const& p_frame)
 {
-    // 1. The engine moves its bodies, with a small fixed step for stability.
-    const float dt = std::min(p_frame.elapsed, 1.0f / 30.0f);
-    m_engine.step(dt);
-
-    // 2. Its result goes into the entities.
-    for (std::size_t i = 0u; i < m_balls.size(); ++i)
-    {
-        auto const& p = m_engine.bodies[i].position;
-        m_balls[i].position(p[0], p[1], p[2]);
-    }
-
-    // 3. Compages computes the world matrices and draws.
+    // The Physics routine runs inside: fixedUpdate() at 60 Hz, whatever the
+    // frame rate. Compages then computes the world matrices and draws.
     m_scene.draw(p_frame);
 }
 
@@ -174,6 +263,7 @@ void ExternalPhysics::controls()
         throwBalls();
     }
     ImGui::SliderFloat("Bounce", &m_engine.bounce, 0.0f, 1.0f);
+    ImGui::Text("Shocks sent as messages: %d", m_shocks);
 }
 
 } // namespace examples
