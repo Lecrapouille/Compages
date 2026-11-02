@@ -7,7 +7,7 @@
 
 #include "main.hpp"
 
-#include "Compages/GPU/Core/Pool.hpp"
+#include "GPU/Internal/Pool.hpp"
 
 #include <memory>
 #include <vector>

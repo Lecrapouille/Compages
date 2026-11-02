@@ -8,7 +8,7 @@
 #include "main.hpp"
 
 
-#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 
 #include <cstddef>
 

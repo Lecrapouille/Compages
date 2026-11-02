@@ -113,7 +113,7 @@ compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
 points.draw();
 ```
 
-> ⚡ `barrier` is **not** added after a dispatch for you: the GPU may run ahead. A missing barrier gives a race, not a compile error. Combine the flags with `|` (`VertexAttrib`, `Storage`, `Command`, `All`… in `GPU/Core/Enums.hpp`).
+> ⚡ `barrier` is **not** added after a dispatch for you: the GPU may run ahead. A missing barrier gives a race, not a compile error. Combine the flags with `|` (`VertexAttrib`, `Storage`, `Command`, `All`… in `GPU/Enums.hpp`).
 
 - `00c_Compute` is the smallest one: an array of numbers, then `download()` brings the result back to the CPU (orange bars while the CPU copy is late).
 - `13_Galaxy`: two ping-pong buffers, eight thousand stars, tiles in work group memory (see below).

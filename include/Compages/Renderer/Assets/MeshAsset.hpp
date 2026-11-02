@@ -10,7 +10,7 @@
 #include "Compages/Core/AABB.hpp"
 #include "Compages/Core/Vector.hpp"
 #include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
+#include "Compages/GPU/Enums.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/Renderer/Assets/Skin.hpp"
 

@@ -8,8 +8,8 @@
 #pragma once
 
 #include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/Core/DirtyRange.hpp"
-#include "Compages/GPU/Core/Std140.hpp"
+#include "Compages/GPU/DirtyRange.hpp"
+#include "Compages/GPU/Std140.hpp"
 #include "Compages/GPU/Shader.hpp"
 
 #include <array>

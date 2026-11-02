@@ -8,7 +8,7 @@
 #include "Compages/Renderer/Render/ShadowPass.hpp"
 
 #include "Compages/Core/Transformation.hpp"
-#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"

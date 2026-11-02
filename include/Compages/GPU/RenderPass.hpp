@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
 
 #include <cstddef>

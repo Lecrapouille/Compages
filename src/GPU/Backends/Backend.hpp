@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Enums.hpp"
-#include "Compages/GPU/Core/Reflection.hpp"
-#include "Compages/GPU/Core/RenderState.hpp"
+#include "Compages/GPU/Enums.hpp"
+#include "Compages/GPU/ProgramReflection.hpp"
+#include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/GPU/Texture.hpp"

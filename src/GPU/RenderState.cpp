@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/GPU/Core/RenderState.hpp"
+#include "Compages/GPU/RenderState.hpp"
 
 namespace compages::gpu
 {
@@ -116,28 +116,6 @@ const char* toString(PolygonMode p_mode)
             return "lines";
         case PolygonMode::Point:
             return "points";
-    }
-    return "unknown";
-}
-
-const char* toString(Primitive p_primitive)
-{
-    switch (p_primitive)
-    {
-        case Primitive::Points:
-            return "points";
-        case Primitive::Lines:
-            return "lines";
-        case Primitive::LineStrip:
-            return "line strip";
-        case Primitive::LineLoop:
-            return "line loop";
-        case Primitive::Triangles:
-            return "triangles";
-        case Primitive::TriangleStrip:
-            return "triangle strip";
-        case Primitive::TriangleFan:
-            return "triangle fan";
     }
     return "unknown";
 }

@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/GPU/Core/Reflection.hpp"
+#include "Compages/GPU/ProgramReflection.hpp"
 
 #include <algorithm>
 #include <iterator>

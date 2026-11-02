@@ -8,7 +8,7 @@
 #include "main.hpp"
 
 #include "Compages/Core/Result.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Handle.hpp"
 
 #include <memory>
 #include <string>

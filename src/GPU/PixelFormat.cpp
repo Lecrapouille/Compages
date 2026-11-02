@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/GPU/Core/PixelFormat.hpp"
+#include "Compages/GPU/PixelFormat.hpp"
 
 #include <iterator>
 

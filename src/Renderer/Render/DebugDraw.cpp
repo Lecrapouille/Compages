@@ -7,7 +7,7 @@
 
 #include "Compages/Renderer/Render/DebugDraw.hpp"
 
-#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/Shader.hpp"
 

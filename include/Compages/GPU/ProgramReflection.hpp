@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 
 #include <array>
 #include <cstdint>
@@ -38,8 +38,6 @@
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 

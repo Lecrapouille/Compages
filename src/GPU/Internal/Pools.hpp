@@ -9,7 +9,7 @@
 
 #include "GPU/Backends/Backend.hpp"
 #include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/Core/Pool.hpp"
+#include "GPU/Internal/Pool.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/Shader.hpp"

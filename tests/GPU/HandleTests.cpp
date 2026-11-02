@@ -7,7 +7,7 @@
 
 #include "main.hpp"
 
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Handle.hpp"
 
 #include <unordered_map>
 #include <unordered_set>

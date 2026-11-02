@@ -7,7 +7,7 @@
 
 #include "main.hpp"
 
-#include "Compages/GPU/Core/DirtyRange.hpp"
+#include "Compages/GPU/DirtyRange.hpp"
 
 TEST(TestDirtyRange, StartsWithNothingToSend)
 {

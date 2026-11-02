@@ -8,7 +8,7 @@
 #include "Compages/Renderer/Procedural/CanvasTexture.hpp"
 
 #include "Compages/Core/Matrix.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
+#include "Compages/GPU/Enums.hpp"
 #include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/TextureAsset.hpp"

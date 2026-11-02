@@ -8,7 +8,7 @@
 #include "Compages/Renderer/Procedural/Primitives.hpp"
 
 #include "Compages/Core/Maths.hpp"
-#include "Compages/GPU/Core/Layout.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 #include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
 #include <array>

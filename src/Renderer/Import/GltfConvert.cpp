@@ -15,7 +15,7 @@
 #include "Compages/World/Components/SkinInstance.hpp"
 #include "Compages/World/World.hpp"
 
-#include "Compages/GPU/Core/PixelFormat.hpp"
+#include "Compages/GPU/PixelFormat.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Texture.hpp"
 

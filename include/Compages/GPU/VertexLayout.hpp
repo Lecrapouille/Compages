@@ -9,9 +9,8 @@
 
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Core/FieldReflection.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
-#include "Compages/GPU/Core/Preprocessor.hpp"
+#include "Compages/GPU/FieldReflection.hpp"
+#include "Compages/GPU/Handle.hpp"
 
 #include <cstdint>
 #include <string>
@@ -44,8 +43,6 @@
 //! shader actually declares, naming both sides when they disagree.
 // ****************************************************************************
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 

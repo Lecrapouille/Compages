@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Handle.hpp"
-#include "Compages/GPU/Core/Layout.hpp"
-#include "Compages/GPU/Core/RenderState.hpp"
+#include "Compages/GPU/Handle.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
+#include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Shader.hpp"
 
 #include <string>

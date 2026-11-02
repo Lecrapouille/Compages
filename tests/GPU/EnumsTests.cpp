@@ -7,7 +7,7 @@
 
 #include "main.hpp"
 
-#include "Compages/GPU/Core/Enums.hpp"
+#include "Compages/GPU/Enums.hpp"
 
 #include <set>
 #include <string>

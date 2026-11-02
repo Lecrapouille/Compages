@@ -16,7 +16,7 @@ GPU_BACKEND ?= GL45
 TARGETS += Compages
 Compages.TYPE := library
 Compages.DESCRIPTION := C++ Wrapper allowing to write OpenGL Core applications in few lines
-Compages.SOURCES := src/GPU/*.cpp src/GPU/Core/**/*.cpp \
+Compages.SOURCES := src/GPU/*.cpp \
     src/GPU/Internal/**/*.cpp src/Renderer/**/*.cpp src/World/**/*.cpp \
     src/GPU/Backends/$(GPU_BACKEND)/**/*.cpp
 Compages.PUBLIC_INCLUDES := include

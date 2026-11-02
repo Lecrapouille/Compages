@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Enums.hpp"
+#include "Compages/GPU/Enums.hpp"
 
 #include <bit>
 #include <cstdint>
@@ -420,10 +420,5 @@ struct RenderState
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string toString() const;
 };
-
-// ----------------------------------------------------------------------------
-//! \brief Name of a primitive kind, for printing a state.
-// ----------------------------------------------------------------------------
-[[nodiscard]] const char* toString(Primitive p_primitive);
 
 } // namespace compages::gpu

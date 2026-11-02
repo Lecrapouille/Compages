@@ -9,9 +9,9 @@
 
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
-#include "Compages/GPU/Core/Reflection.hpp"
+#include "Compages/GPU/Enums.hpp"
+#include "Compages/GPU/Handle.hpp"
+#include "Compages/GPU/ProgramReflection.hpp"
 
 #include <initializer_list>
 #include <span>

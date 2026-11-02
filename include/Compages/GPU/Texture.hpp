@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Handle.hpp"
-#include "Compages/GPU/Core/PixelFormat.hpp"
+#include "Compages/GPU/Handle.hpp"
+#include "Compages/GPU/PixelFormat.hpp"
 
 #include <array>
 #include <cstddef>

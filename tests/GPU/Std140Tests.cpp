@@ -8,7 +8,7 @@
 #include "main.hpp"
 
 
-#include "Compages/GPU/Core/Std140.hpp"
+#include "Compages/GPU/Std140.hpp"
 
 
 

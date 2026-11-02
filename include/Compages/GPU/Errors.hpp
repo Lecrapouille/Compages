@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Handle.hpp"
 
 #include <cstddef>
 #include <string>

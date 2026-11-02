@@ -148,6 +148,31 @@ constexpr std::size_t SHADER_STAGE_COUNT = 6u;
 }
 
 // ----------------------------------------------------------------------------
+//! \brief Name of a primitive kind, for printing a state.
+// ----------------------------------------------------------------------------
+[[nodiscard]] constexpr const char* toString(Primitive p_primitive)
+{
+    switch (p_primitive)
+    {
+        case Primitive::Points:
+            return "points";
+        case Primitive::Lines:
+            return "lines";
+        case Primitive::LineStrip:
+            return "line strip";
+        case Primitive::LineLoop:
+            return "line loop";
+        case Primitive::Triangles:
+            return "triangles";
+        case Primitive::TriangleStrip:
+            return "triangle strip";
+        case Primitive::TriangleFan:
+            return "triangle fan";
+    }
+    return "unknown";
+}
+
+// ----------------------------------------------------------------------------
 //! \brief Name of a buffer kind, for error messages.
 // ----------------------------------------------------------------------------
 [[nodiscard]] constexpr const char* toString(BufferKind p_kind)

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "Compages/GPU/Core/DirtyRange.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/DirtyRange.hpp"
+#include "Compages/GPU/Enums.hpp"
+#include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/Errors.hpp"
 
 #include <algorithm>

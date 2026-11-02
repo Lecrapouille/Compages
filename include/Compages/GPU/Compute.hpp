@@ -8,8 +8,8 @@
 #pragma once
 
 #include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/Core/Enums.hpp"
-#include "Compages/GPU/Core/Handle.hpp"
+#include "Compages/GPU/Enums.hpp"
+#include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/Shader.hpp"
 
 #include <array>
