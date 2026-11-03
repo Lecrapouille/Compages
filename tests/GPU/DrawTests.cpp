@@ -29,7 +29,7 @@ constexpr int HEIGHT = 32;
 // ****************************************************************************
 struct Corner
 {
-    compages::core::Vector2f position;
+    compages::Vector2f position;
 };
 
 //! \brief A triangle covering the whole target, wound counter clockwise.
@@ -248,11 +248,10 @@ TEST_F(DrawTest, RefusesAPassOverNothing)
 // pipeline, a draw, and pixels that changed colour.
 TEST_F(DrawTest, DrawsATriangleThatReallyLandsOnTheTarget)
 {
-    auto vertices =
-        compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                  compages::gpu::BufferKind::Vertex,
-                                  compages::gpu::BufferUsage::Immutable)
-            .take();
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
+                        .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
     ASSERT_TRUE(bool(pass)) << pass.error();
@@ -267,11 +266,10 @@ TEST_F(DrawTest, DrawsATriangleThatReallyLandsOnTheTarget)
 
 TEST_F(DrawTest, AcceptsTheExplicitPassContract)
 {
-    auto vertices =
-        compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                  compages::gpu::BufferKind::Vertex,
-                                  compages::gpu::BufferUsage::Immutable)
-            .take();
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
+                        .take();
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
     ASSERT_TRUE(bool(pass)) << pass.error();
 
@@ -289,9 +287,9 @@ TEST_F(DrawTest, LeavesAloneWhatItDoesNotCover)
     const std::vector<Corner> corner{ { { -1.0f, -1.0f } },
                                       { { 0.0f, -1.0f } },
                                       { { -1.0f, 0.0f } } };
-    auto vertices = compages::gpu::Buffer<Corner>::from(corner,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        corner,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -309,13 +307,13 @@ TEST_F(DrawTest, LeavesAloneWhatItDoesNotCover)
 // The square drawn by index, which stores four corners and names six.
 TEST_F(DrawTest, DrawsFromIndicesNamingTheCorners)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(SQUARE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        SQUARE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
-    auto indices = compages::gpu::Buffer<std::uint16_t>::from(SQUARE_INDICES,
-                                                    compages::gpu::BufferKind::Index,
-                                                    compages::gpu::BufferUsage::Immutable)
+    auto indices = compages::gpu::IndexBuffer<std::uint16_t>::from(
+                       SQUARE_INDICES,
+                       compages::gpu::BufferUsage::Static)
                        .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -368,9 +366,9 @@ TEST_F(DrawTest, RefusesToDrawWithoutVerticesWhenTheShaderWantsThem)
 // something somebody chose.
 TEST_F(DrawTest, RefusesToDrawOutsideAPass)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); });
@@ -382,9 +380,9 @@ TEST_F(DrawTest, RefusesToDrawOutsideAPass)
 // quietly ignores, so the missing triangle gets blamed on the shader.
 TEST_F(DrawTest, RefusesACountThatDoesNotMakeWholeTriangles)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(SQUARE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        SQUARE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -399,9 +397,9 @@ TEST_F(DrawTest, RefusesACountThatDoesNotMakeWholeTriangles)
 // whole reason strips exist.
 TEST_F(DrawTest, AcceptsFourVerticesAsAStrip)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(SQUARE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        SQUARE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -414,9 +412,9 @@ TEST_F(DrawTest, AcceptsFourVerticesAsAStrip)
 
 TEST_F(DrawTest, RefusesToReadPastTheEndOfABuffer)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -432,9 +430,9 @@ TEST_F(DrawTest, RefusesToReadPastTheEndOfABuffer)
 // read nonsense.
 TEST_F(DrawTest, RefusesABufferOfTheWrongKind)
 {
-    auto indices = compages::gpu::Buffer<std::uint16_t>::from(SQUARE_INDICES,
-                                                    compages::gpu::BufferKind::Index,
-                                                    compages::gpu::BufferUsage::Immutable)
+    auto indices = compages::gpu::IndexBuffer<std::uint16_t>::from(
+                       SQUARE_INDICES,
+                       compages::gpu::BufferUsage::Static)
                        .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -447,9 +445,9 @@ TEST_F(DrawTest, RefusesABufferOfTheWrongKind)
 
 TEST_F(DrawTest, RefusesVerticesGivenAsIndices)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(SQUARE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        SQUARE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -466,9 +464,9 @@ TEST_F(DrawTest, RefusesVerticesGivenAsIndices)
 
 TEST_F(DrawTest, RefusesADrawOfNothing)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -483,7 +481,8 @@ TEST_F(DrawTest, RefusesADrawOfNothing)
 // call an example animating its vertices needs.
 TEST_F(DrawTest, SendsWhatChangedBeforeDrawingAGrowingBuffer)
 {
-    compages::gpu::Buffer<Corner> corners{ std::span<const Corner>(BIG_TRIANGLE) };
+    compages::gpu::VertexBuffer<Corner> corners;
+    corners.assign(BIG_TRIANGLE);
     ASSERT_TRUE(corners.dirty());
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -505,9 +504,9 @@ TEST_F(DrawTest, LetsTheNearerSurfaceWin)
     // Two triangles covering the target, the green one nearer than the red one,
     // drawn in the order that would give the wrong answer without a depth test.
     const std::vector<Corner> covering = BIG_TRIANGLE;
-    auto vertices = compages::gpu::Buffer<Corner>::from(covering,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        covering,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     constexpr const char* NEAR_VERTEX = R"(#version 450 core
@@ -553,9 +552,9 @@ TEST_F(DrawTest, DropsTheTrianglesFacingAway)
     const std::vector<Corner> backwards{ { { -1.0f, -1.0f } },
                                          { { -1.0f, 3.0f } },
                                          { { 3.0f, -1.0f } } };
-    auto vertices = compages::gpu::Buffer<Corner>::from(backwards,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        backwards,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -573,9 +572,9 @@ TEST_F(DrawTest, DropsTheTrianglesFacingAway)
 // is what a split view and a preview inset need.
 TEST_F(DrawTest, DrawsIntoOnlyPartOfTheTarget)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     // Start the whole target from black.
@@ -623,9 +622,9 @@ TEST_F(DrawTest, DrawsIntoOnlyPartOfTheTarget)
 // has to come out identical to one drawn from the cache.
 TEST_F(DrawTest, DrawsTheSameAfterForgettingWhatTheDeviceWasTold)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     // Once to fill the cache of the backend.
@@ -697,9 +696,9 @@ TEST_F(DrawTest, ClearsOnlyItsOwnPartOfTheTarget)
 // other half of what makes a pass a region rather than a suggestion.
 TEST_F(DrawTest, KeepsWhatIsDrawnInsideItsOwnPart)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     {
@@ -734,9 +733,9 @@ TEST_F(DrawTest, KeepsWhatIsDrawnInsideItsOwnPart)
 // frame.
 TEST_F(DrawTest, CountsTheWorkOfAFrame)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     compages::gpu::resetFrameStatistics();
@@ -769,9 +768,9 @@ TEST_F(DrawTest, CountsWhatTheDeviceIsHolding)
     ASSERT_EQ(before.pipelines, 0u);
 
     {
-        auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                                  compages::gpu::BufferKind::Vertex,
-                                                  compages::gpu::BufferUsage::Immutable)
+        auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                            BIG_TRIANGLE,
+                            compages::gpu::BufferUsage::Static)
                             .take();
         auto drawing = compages::gpu::Pipeline::create<Corner>(m_program, m_layout).take();
 
@@ -804,13 +803,11 @@ TEST_F(DrawTest, RefusesABufferOfTheWrongVertex)
 {
     struct Fat
     {
-        compages::core::Vector2f position;
-        compages::core::Vector2f padding;
+        compages::Vector2f position;
+        compages::Vector2f padding;
     };
 
-    auto wrong = compages::gpu::Buffer<Fat>::create(3u,
-                                          compages::gpu::BufferKind::Vertex,
-                                          compages::gpu::BufferUsage::Dynamic)
+    auto wrong = compages::gpu::VertexBuffer<Fat>::create(3u, compages::gpu::BufferUsage::Stream)
                      .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -829,9 +826,9 @@ TEST_F(DrawTest, DrawsEachInstanceAtItsOwnPlace)
 {
     struct Sprite
     {
-        compages::core::Vector2f center;
-        compages::core::Vector2f extent;
-        compages::core::Vector4f color;
+        compages::Vector2f center;
+        compages::Vector2f extent;
+        compages::Vector4f color;
     };
 
     constexpr const char* vertex = R"(#version 450 core
@@ -871,10 +868,9 @@ void main() { oColor = vColor; }
         { { -0.5f, 0.0f }, { 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
         { { 0.5f, 0.0f }, { 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } }
     };
-    auto instances = compages::gpu::Buffer<Sprite>::from(
+    auto instances = compages::gpu::VertexBuffer<Sprite>::from(
                          std::span<const Sprite>(sprites),
-                         compages::gpu::BufferKind::Vertex,
-                         compages::gpu::BufferUsage::Immutable)
+                         compages::gpu::BufferUsage::Static)
                          .take();
 
     compages::gpu::resetFrameStatistics();
@@ -896,9 +892,9 @@ void main() { oColor = vColor; }
 
 TEST_F(DrawTest, RefusesADrawOfZeroInstances)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -913,7 +909,7 @@ TEST_F(DrawTest, RefusesMoreInstancesThanTheBufferHolds)
 {
     struct Sprite
     {
-        compages::core::Vector2f center;
+        compages::Vector2f center;
     };
 
     constexpr const char* vertex = R"(#version 450 core
@@ -933,10 +929,9 @@ void main()
     auto drawing = compages::gpu::Pipeline::create<Sprite>(program, layout).take();
 
     const std::vector<Sprite> one{ { { 0.0f, 0.0f } } };
-    auto instances = compages::gpu::Buffer<Sprite>::from(
+    auto instances = compages::gpu::VertexBuffer<Sprite>::from(
                          std::span<const Sprite>(one),
-                         compages::gpu::BufferKind::Vertex,
-                         compages::gpu::BufferUsage::Immutable)
+                         compages::gpu::BufferUsage::Static)
                          .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -951,16 +946,15 @@ void main()
 // do. That is what a compute pass that culls writes, and what this reads.
 TEST_F(DrawTest, DrawsWhatTheCommandBufferAsks)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
     const compages::gpu::DrawIndirectCommand command{ 3u, 1u, 0u, 0u };
     auto commands =
-        compages::gpu::Buffer<compages::gpu::DrawIndirectCommand>::from(
+        compages::gpu::StorageBuffer<compages::gpu::DrawIndirectCommand>::from(
             std::span<const compages::gpu::DrawIndirectCommand>(&command, 1u),
-            compages::gpu::BufferKind::Storage,
-            compages::gpu::BufferUsage::Immutable)
+            compages::gpu::BufferUsage::Static)
             .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -976,12 +970,12 @@ TEST_F(DrawTest, DrawsWhatTheCommandBufferAsks)
 
 TEST_F(DrawTest, RefusesACommandBufferThatIsTooSmall)
 {
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
-    auto too_small = compages::gpu::Buffer<std::uint32_t>::create(
-                         2u, compages::gpu::BufferKind::Storage, compages::gpu::BufferUsage::Dynamic)
+    auto too_small = compages::gpu::StorageBuffer<std::uint32_t>::create(
+                         2u, compages::gpu::BufferUsage::Stream)
                          .take();
 
     auto pass = compages::gpu::RenderPass::begin(wholeTarget());
@@ -1018,14 +1012,12 @@ void main()
 }
 )";
 
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
-    auto commands = compages::gpu::Buffer<compages::gpu::DrawIndirectCommand>::create(
-                        1u,
-                        compages::gpu::BufferKind::Storage,
-                        compages::gpu::BufferUsage::Storage)
+    auto commands = compages::gpu::StorageBuffer<compages::gpu::DrawIndirectCommand>::create(
+                        1u, compages::gpu::BufferUsage::Stream)
                         .take();
 
     auto compute = compages::gpu::ComputeProgram::fromSource(fill).take();

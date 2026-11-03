@@ -21,8 +21,8 @@
 //! \brief Two matrices, the easiest case: both align on 16 and occupy 64.
 struct Camera
 {
-    compages::core::Matrix44f projection;
-    compages::core::Matrix44f view;
+    compages::Matrix44f projection;
+    compages::Matrix44f view;
 };
 GPU_STD140(Camera, projection, view);
 
@@ -30,7 +30,7 @@ GPU_STD140(Camera, projection, view);
 //! in the four bytes it leaves behind.
 struct Light
 {
-    compages::core::Vector3f direction;
+    compages::Vector3f direction;
     float intensity;
 };
 GPU_STD140(Light, direction, intensity);
@@ -39,8 +39,8 @@ GPU_STD140(Light, direction, intensity);
 //! of 16 with nothing to add.
 struct Material
 {
-    compages::core::Vector4f albedo;
-    compages::core::Vector4f emissive;
+    compages::Vector4f albedo;
+    compages::Vector4f emissive;
 };
 GPU_STD140(Material, albedo, emissive);
 
@@ -53,18 +53,18 @@ TEST(Std140, KnowsTheAlignmentAndSizeOfEachType)
     ASSERT_EQ(compages::gpu::std140::Rules<float>::alignment, 4u);
     ASSERT_EQ(compages::gpu::std140::Rules<float>::size, 4u);
 
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector2f>::alignment, 8u);
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector2f>::size, 8u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector2f>::alignment, 8u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector2f>::size, 8u);
 
     // Aligns on 16, occupies 12: the four bytes after it can hold a float.
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector3f>::alignment, 16u);
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector3f>::size, 12u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector3f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector3f>::size, 12u);
 
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f>::alignment, 16u);
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f>::size, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector4f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector4f>::size, 16u);
 
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix44f>::alignment, 16u);
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix44f>::size, 64u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Matrix44f>::alignment, 16u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Matrix44f>::size, 64u);
 }
 
 // A matrix of three is the trap nobody expects: std140 pads each of its three
@@ -72,8 +72,8 @@ TEST(Std140, KnowsTheAlignmentAndSizeOfEachType)
 // struct wholesale would shift everything after it.
 TEST(Std140, KnowsAMatrixOfThreeOccupiesFortyEightBytes)
 {
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Matrix33f>::size, 48u);
-    ASSERT_EQ(sizeof(compages::core::Matrix33f), 36u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Matrix33f>::size, 48u);
+    ASSERT_EQ(sizeof(compages::Matrix33f), 36u);
 }
 
 // An array is the other trap: every element is padded up to 16 bytes, so ten
@@ -86,8 +86,8 @@ TEST(Std140, KnowsEveryArrayElementIsPaddedToSixteenBytes)
 
     // A vector of four already fills 16, so an array of them is the one case
     // where C++ and std140 agree.
-    ASSERT_EQ(compages::gpu::std140::Rules<compages::core::Vector4f[10]>::size, 160u);
-    ASSERT_EQ(sizeof(compages::core::Vector4f[10]), 160u);
+    ASSERT_EQ(compages::gpu::std140::Rules<compages::Vector4f[10]>::size, 160u);
+    ASSERT_EQ(sizeof(compages::Vector4f[10]), 160u);
 }
 
 TEST(Std140, RoundsUpTheWayTheRulesDo)
@@ -132,7 +132,7 @@ TEST(Std140, RefusesAStructThatWasNeverChecked)
 TEST(Std140, CatchesTheFloatBeforeAVectorOfThree)
 {
 
-    // What C++ does with { float radius; compages::core::Vector3f position; }
+    // What C++ does with { float radius; compages::Vector3f position; }
     const std::array<compages::gpu::std140::Member, 2> members{
         compages::gpu::std140::Member{ "radius", 0u, 4u, 4u },
         compages::gpu::std140::Member{ "position", 4u, 16u, 12u },

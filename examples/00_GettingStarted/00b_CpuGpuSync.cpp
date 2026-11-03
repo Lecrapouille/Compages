@@ -14,23 +14,21 @@
 namespace examples
 {
 
-//! \brief How tall the tallest bar may be.
+// How tall the tallest bar may be.
 constexpr int TOP = 60;
 
+// ----------------------------------------------------------------------------
 std::string CpuGpuSync::description() const
 {
     return "The graphics card has its own memory. A compages::gpu::Buffer "
-           "keeps a copy of "
-           "its numbers on the CPU, used like a std::vector, and sends only "
-           "what "
-           "changed when upload() is called.\n\nThe bars show what the GPU "
-           "holds. "
-           "Press the buttons of the Try it panel: the CPU copy changes at "
-           "once, the orange bars "
-           "are those the GPU does not know about yet, and upload() sends "
-           "them.";
+           "keeps a copy of its numbers on the CPU, used like a std::vector, "
+           "and sends only what changed when upload() is called.\n\nThe bars "
+           "show what the GPU holds. Press the buttons of the Try it panel: "
+           "the CPU copy changes at once, the orange bars are those the GPU "
+           "does not know about yet, and upload() sends them.";
 }
 
+// ----------------------------------------------------------------------------
 void CpuGpuSync::readBack()
 {
     // Reading back makes the CPU wait for the GPU: fine for five numbers in a
@@ -42,6 +40,7 @@ void CpuGpuSync::readBack()
     }
 }
 
+// ----------------------------------------------------------------------------
 compages::Status CpuGpuSync::setUp()
 {
     COMPAGES_TRY(m_chart.setUp());
@@ -52,19 +51,26 @@ compages::Status CpuGpuSync::setUp()
     // The one synchronisation point: device memory is reserved, then what
     // changed is sent.
     COMPAGES_TRY(m_values.upload());
+
+    // Read back what the GPU holds, for the bars.
     readBack();
+
     m_said = "assign() then upload(): both copies hold the same five numbers.";
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void CpuGpuSync::draw(compages::world::ViewFrame const&)
 {
     // What the GPU holds, with the elements upload() would send in orange.
     compages::gpu::DirtyRange const& pending = m_values.pending();
-    m_chart.draw(
-        m_on_gpu, TOP, pending.begin(), pending.empty() ? 0u : pending.count());
+    m_chart.draw(m_on_gpu,
+                 TOP,
+                 pending.begin(),
+                 pending.empty() ? 0u : pending.end() - pending.begin());
 }
 
+// ----------------------------------------------------------------------------
 void CpuGpuSync::controls()
 {
     // Changing an element: only the CPU copy moves, and the range of what the
@@ -78,6 +84,7 @@ void CpuGpuSync::controls()
         m_next = m_next + 1u;
     }
     ImGui::SameLine();
+
     // Appending: the GPU memory has no room for it yet; upload() makes some.
     if (ImGui::Button("emplace_back(7)") && (m_values.count() < 12u))
     {
@@ -85,6 +92,8 @@ void CpuGpuSync::controls()
         m_said = "One more number, on the CPU only.";
     }
     ImGui::SameLine();
+
+    //
     if (ImGui::Button("upload()"))
     {
         const std::size_t sent =
@@ -115,15 +124,17 @@ void CpuGpuSync::controls()
 
     if (ImGui::Button("Print both copies to the console"))
     {
+        // The CPU copy is a plain array; the GPU copy is read back first, so that
+        // what is printed is what the device really holds.
+        readBack();
+
         printToConsole();
     }
 }
 
-void CpuGpuSync::printToConsole()
+// ----------------------------------------------------------------------------
+void CpuGpuSync::printToConsole() const
 {
-    // The CPU copy is a plain array; the GPU copy is read back first, so that
-    // what is printed is what the device really holds.
-    readBack();
     std::cout << "[00b_CpuGpuSync] CPU:";
     for (int value : m_values.elements())
     {

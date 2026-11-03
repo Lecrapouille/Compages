@@ -31,7 +31,7 @@ public:
     //! \brief Compile the shader. Once, in the setUp() of the example.
     [[nodiscard]] compages::Status setUp()
     {
-        return m_bars.load(VERTEX_SHADER, FRAGMENT_SHADER);
+        return m_bars.loadSources(VERTEX_SHADER, FRAGMENT_SHADER);
     }
 
     // ------------------------------------------------------------------------
@@ -53,9 +53,9 @@ public:
         {
             const bool hot =
                 (i >= p_first_hot) && (i < p_first_hot + p_hot_count);
-            const compages::core::Vector3f color =
-                hot ? compages::core::Vector3f(1.0f, 0.62f, 0.25f)
-                    : compages::core::Vector3f(0.35f, 0.62f, 0.95f);
+            const compages::Vector3f color =
+                hot ? compages::Vector3f(1.0f, 0.62f, 0.25f)
+                    : compages::Vector3f(0.35f, 0.62f, 0.95f);
             const float left = -0.9f + (float(i) * width) + (width * 0.1f);
             const float right = left + (width * 0.8f);
             const float top = -0.8f + (1.6f * float(std::max(p_values[i], 0)) /
@@ -68,7 +68,7 @@ public:
             m_bars.emplace_back(Vertex{ { left, top }, color });
         }
         compages::gpu::clear({ 0.08f, 0.09f, 0.11f });
-        if (m_bars.count() != 0u)
+        if (m_bars.vertexCount() != 0u)
         {
             m_bars.draw();
         }
@@ -78,8 +78,8 @@ private:
 
     struct Vertex
     {
-        compages::core::Vector2f position;
-        compages::core::Vector3f color;
+        compages::Vector2f position;
+        compages::Vector3f color;
     };
 
     static constexpr char const* VERTEX_SHADER = R"(#version 450 core

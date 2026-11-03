@@ -13,8 +13,10 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief Turns the robot, glances its head and swings its arms, from the
 //! total time rather than by adding a little each frame.
+// ----------------------------------------------------------------------------
 struct MovingRobot::Walk: compages::world::Routine
 {
     explicit Walk(float p_phase) : phase(p_phase) {}
@@ -44,6 +46,7 @@ struct MovingRobot::Walk: compages::world::Routine
     compages::world::Entity right;
 };
 
+// ----------------------------------------------------------------------------
 std::string MovingRobot::description() const
 {
     return "Three robots made of boxes hung under joints: turning a joint "
@@ -51,6 +54,7 @@ std::string MovingRobot::description() const
            "its joints from the total time.";
 }
 
+// ----------------------------------------------------------------------------
 void MovingRobot::makeRobot(char const* p_name, float p_x, float p_phase)
 {
     const compages::renderer::Look wood =
@@ -97,6 +101,7 @@ void MovingRobot::makeRobot(char const* p_name, float p_x, float p_phase)
     robot.add<Walk>(p_phase);
 }
 
+// ----------------------------------------------------------------------------
 compages::Status MovingRobot::setUp()
 {
     // The orbit looks at the robots' chests, not at the origin under their
@@ -105,8 +110,7 @@ compages::Status MovingRobot::setUp()
     m_scene.camera()
         .position(0.0f, 45.0f, 120.0f)
         .lookAt(0.0f, 30.0f, 0.0f)
-        .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 30.0f, 0.0f));
+        .add<compages::world::Orbit>(compages::Vector3f(0.0f, 30.0f, 0.0f));
     m_scene.sun();
 
     makeRobot("Robot1", -34.0f, 0.0f);
@@ -115,6 +119,7 @@ compages::Status MovingRobot::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void MovingRobot::draw(compages::world::ViewFrame const& p_frame)
 {
     // update() of the Walk routines runs inside the draw.

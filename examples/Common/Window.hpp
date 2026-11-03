@@ -112,12 +112,12 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Where the mouse is, in pixels from the bottom left of the window.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::core::Vector2f mouse() const;
+    [[nodiscard]] compages::Vector2f mouse() const;
 
     // ------------------------------------------------------------------------
     //! \brief How far the mouse moved since the previous \c beginFrame, y up.
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::core::Vector2f mouseDelta() const
+    [[nodiscard]] compages::Vector2f mouseDelta() const
     {
         return m_mouse_delta;
     }
@@ -200,8 +200,8 @@ private:
     int m_frames_this_second = 0;
     float m_frames_per_second = 0.0f;
 
-    compages::core::Vector2f m_mouse{ 0.0f, 0.0f };
-    compages::core::Vector2f m_mouse_delta{ 0.0f, 0.0f };
+    compages::Vector2f m_mouse{ 0.0f, 0.0f };
+    compages::Vector2f m_mouse_delta{ 0.0f, 0.0f };
     bool m_mouse_seen = false;
     float m_scroll = 0.0f;
     bool m_mouse_left = false;

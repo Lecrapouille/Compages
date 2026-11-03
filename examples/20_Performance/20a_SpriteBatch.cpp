@@ -18,6 +18,7 @@ constexpr std::uint32_t ATLAS = 128u;
 constexpr std::uint32_t TILES = 4u;
 constexpr std::uint32_t TILE_PX = ATLAS / TILES;
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
 in vec2 center;
 in vec2 extent;
@@ -48,6 +49,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D atlas;
@@ -66,6 +68,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string SpriteBatch::description() const
 {
     return "A hundred thousand sprites, one draw. The four corners are made "
@@ -75,6 +78,7 @@ std::string SpriteBatch::description() const
            "draw call, whatever the count.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SpriteBatch::makeAtlas()
 {
     COMPAGES_TRY(
@@ -102,6 +106,7 @@ compages::Status SpriteBatch::makeAtlas()
     return m_atlas.write(std::as_bytes(std::span<const std::uint8_t>(pixels)));
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SpriteBatch::setUp()
 {
     COMPAGES_TRY(makeAtlas());
@@ -117,25 +122,25 @@ compages::Status SpriteBatch::setUp()
     {
         for (std::uint32_t x = 0u; x < SIDE; ++x)
         {
-            sprites.emplace_back(Sprite{
-                compages::core::Vector2f(-1.0f + ((float(x) + 0.5f) * step),
-                                         -1.0f + ((float(y) + 0.5f) * step)),
-                compages::core::Vector2f(step * 0.42f, step * 0.42f),
+            sprites.emplace_back(
+                compages::Vector2f(-1.0f + ((float(x) + 0.5f) * step),
+                                   -1.0f + ((float(y) + 0.5f) * step)),
+                compages::Vector2f(step * 0.42f, step * 0.42f),
                 static_cast<float>(tile(rng)),
-                jitter(rng) * 8.0f });
+                jitter(rng) * 8.0f);
         }
     }
 
-    COMPAGES_TRY(m_sprites.load(VERTEX, FRAGMENT));
+    COMPAGES_TRY(m_sprites.loadSources(VERTEX, FRAGMENT));
     // perInstance: the record advances once per sprite, not once per corner.
-    m_sprites.vertices(sprites,
-                       compages::gpu::VertexLayout::of<Sprite>().perInstance());
-    m_sprites.usage(compages::gpu::BufferUsage::Immutable);
-    m_sprites.primitive(compages::gpu::Primitive::TriangleStrip);
+    m_sprites.setVertices(
+        sprites, compages::gpu::VertexLayout::of<Sprite>().perInstance());
+    m_sprites.state().primitive = compages::gpu::Primitive::TriangleStrip;
     m_sprites["atlas"] = m_atlas;
     return m_sprites.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void SpriteBatch::draw(compages::world::ViewFrame const& p_frame)
 {
     // Time wobbles the sprites; aspect keeps them square when the window is
@@ -144,7 +149,7 @@ void SpriteBatch::draw(compages::world::ViewFrame const& p_frame)
     m_sprites["aspect"] = aspect(p_frame);
 
     compages::gpu::clear({ 0.04f, 0.04f, 0.06f });
-    m_sprites.drawInstanced(m_sprites.count(), 4u);
+    m_sprites.drawInstanced(m_sprites.vertexCount(), 4u);
 }
 
 } // namespace examples

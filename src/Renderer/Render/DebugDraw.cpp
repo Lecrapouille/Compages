@@ -70,10 +70,8 @@ Status DebugDraw::ensureInitialized()
         compages::gpu::Pipeline::create<DebugVertex>(m_program, layout, state));
 
     COMPAGES_TRY_ASSIGN(m_vertices,
-                        compages::gpu::Buffer<DebugVertex>::create(
-                            1024u,
-                            compages::gpu::BufferKind::Vertex,
-                            compages::gpu::BufferUsage::Dynamic));
+                        compages::gpu::VertexBuffer<DebugVertex>::create(
+                            1024u, compages::gpu::BufferUsage::Stream));
     m_ready = true;
     return success();
 }
@@ -83,36 +81,36 @@ void DebugDraw::clear()
     m_pending.clear();
 }
 
-void DebugDraw::line(compages::core::Vector3f const& p_a,
-                     compages::core::Vector3f const& p_b,
-                     compages::core::Vector3f const& p_color)
+void DebugDraw::line(compages::Vector3f const& p_a,
+                     compages::Vector3f const& p_b,
+                     compages::Vector3f const& p_color)
 {
     m_pending.emplace_back(DebugVertex{ p_a, p_color });
     m_pending.emplace_back(DebugVertex{ p_b, p_color });
 }
 
-void DebugDraw::box(compages::core::AABB const& p_local_bounds,
-                    compages::core::Matrix44f const& p_world_matrix,
-                    compages::core::Vector3f const& p_color)
+void DebugDraw::box(compages::AABB const& p_local_bounds,
+                    compages::Matrix44f const& p_world_matrix,
+                    compages::Vector3f const& p_color)
 {
     if (p_local_bounds.empty())
     {
         return;
     }
 
-    const compages::core::AABB world =
+    const compages::AABB world =
         p_local_bounds.transformed(p_world_matrix);
-    const compages::core::Vector3f& mn = world.min;
-    const compages::core::Vector3f& mx = world.max;
-    const compages::core::Vector3f corners[8]{
-        compages::core::Vector3f(mn.x, mn.y, mn.z),
-        compages::core::Vector3f(mx.x, mn.y, mn.z),
-        compages::core::Vector3f(mx.x, mx.y, mn.z),
-        compages::core::Vector3f(mn.x, mx.y, mn.z),
-        compages::core::Vector3f(mn.x, mn.y, mx.z),
-        compages::core::Vector3f(mx.x, mn.y, mx.z),
-        compages::core::Vector3f(mx.x, mx.y, mx.z),
-        compages::core::Vector3f(mn.x, mx.y, mx.z)
+    const compages::Vector3f& mn = world.min;
+    const compages::Vector3f& mx = world.max;
+    const compages::Vector3f corners[8]{
+        compages::Vector3f(mn.x, mn.y, mn.z),
+        compages::Vector3f(mx.x, mn.y, mn.z),
+        compages::Vector3f(mx.x, mx.y, mn.z),
+        compages::Vector3f(mn.x, mx.y, mn.z),
+        compages::Vector3f(mn.x, mn.y, mx.z),
+        compages::Vector3f(mx.x, mn.y, mx.z),
+        compages::Vector3f(mx.x, mx.y, mx.z),
+        compages::Vector3f(mn.x, mx.y, mx.z)
     };
     const std::array<std::pair<int, int>, 12u> edges{ { { 0, 1 },
                                                         { 1, 2 },
@@ -132,10 +130,10 @@ void DebugDraw::box(compages::core::AABB const& p_local_bounds,
     }
 }
 
-void DebugDraw::ray(compages::core::Vector3f const& p_origin,
-                    compages::core::Vector3f const& p_direction,
+void DebugDraw::ray(compages::Vector3f const& p_origin,
+                    compages::Vector3f const& p_direction,
                     float p_length,
-                    compages::core::Vector3f const& p_color)
+                    compages::Vector3f const& p_color)
 {
     line(p_origin, p_origin + (p_direction * p_length), p_color);
 }
@@ -151,10 +149,8 @@ Status DebugDraw::flush(CameraFrame const& p_camera)
     if (m_pending.size() > m_vertices.count())
     {
         COMPAGES_TRY_ASSIGN(m_vertices,
-                            compages::gpu::Buffer<DebugVertex>::create(
-                                m_pending.size(),
-                                compages::gpu::BufferKind::Vertex,
-                                compages::gpu::BufferUsage::Dynamic));
+                            compages::gpu::VertexBuffer<DebugVertex>::create(
+                                m_pending.size(), compages::gpu::BufferUsage::Stream));
     }
 
     m_vertices.write(std::span<DebugVertex const>(m_pending));

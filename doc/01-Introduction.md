@@ -42,7 +42,7 @@ Compages keeps the two jobs apart, so that you can simulate without showing, or 
 | **Buffer** | A block of memory on the GPU: vertices, indices, any array. |
 | **Draw call** | One order "draw these triangles with this shader". Fewer is faster. |
 | **Compute shader** | A shader that does not draw: it computes on a grid of numbers (physics, particles). |
-| **CPU mirror** | The copy of a buffer kept in normal memory. You change it; Compages sends the changed part to the GPU at the next draw. |
+| **CPU mirror** | The copy of a buffer kept in normal memory (a `BufferUsage::Dynamic` buffer, or a `Drawable`). You change it; Compages sends the changed parts to the GPU at the next draw. |
 
 ### On the World side
 
@@ -110,7 +110,7 @@ Inspired by [Glumpy](https://glumpy.github.io/) (Python):
 - Assignment changes the **CPU mirror**. The GPU is touched only at `draw()`, which sends what changed, then draws.
 - Public headers contain no `GLenum`. The OpenGL 4.5 backend (with Direct State Access) is hidden and replaceable.
 
-Glumpy alone would copy the vertices again for each shader that reads a mesh (shadow, depth, outline). Compages adds a vertex layout **on the C++ side** (`Buffer<Vertex>`, `Pipeline`), checked against each program: one buffer, several shaders.
+Glumpy alone would copy the vertices again for each shader that reads a mesh (shadow, depth, outline). Compages adds a vertex layout **on the C++ side** (`VertexBuffer<Vertex>`, `Pipeline`), checked against each program: one buffer, several shaders.
 
 ### Layer 2 — the world exists without an image
 

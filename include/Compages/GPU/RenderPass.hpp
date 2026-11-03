@@ -7,15 +7,6 @@
 
 #pragma once
 
-#include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Handle.hpp"
-#include "Compages/GPU/Framebuffer.hpp"
-
-#include <cstddef>
-#include <cstdint>
-#include <initializer_list>
-#include <vector>
-
 // ****************************************************************************
 //! \file
 //! \brief Where a frame is drawn, and what it starts from.
@@ -36,8 +27,9 @@
 //! one below is suspended meanwhile and resumed, not cleared, at the end:
 //! \code
 //! {
-//!     compages::gpu::RenderPass offscreen(m_framebuffer, { .color = { 0, 0, 0,
-//!     1 } }); m_scene.draw();
+//!     compages::gpu::RenderPass offscreen(m_framebuffer,
+//!           { .color = { 0, 0, 0, 1 } });
+//!     m_scene.draw();
 //! }                          // back to the window
 //! m_screen["image"] = m_color;
 //! m_screen.draw(3u);
@@ -46,15 +38,36 @@
 //! The pass ends when the object goes out of scope. There is nothing to
 //! remember to call, and nothing that stays half open when a frame returns
 //! early.
+//!
+//! What it holds:
+//! - RenderPass and PassDesc: open a pass, and say how.
+//! - clear(), clearDepth(): wipe the open pass.
+//! - inRenderPass(), currentPass(), readPixels(): ask about the open pass.
 // ****************************************************************************
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
+#include "Compages/Core/NotCopiable.hpp"
+#include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Framebuffer.hpp"
+#include "Compages/GPU/Handle.hpp"
+
+#include <cstddef>
+#include <cstdint>
+#include <initializer_list>
+#include <vector>
+
 namespace compages::gpu
 {
 
 // ****************************************************************************
-//! \brief What a pass draws into and what it starts from.
+//! \brief What a pass draws into and what it starts from: the canvas, the
+//! part of it in use, and whether it is wiped first.
+//!
+//! \code
+//! // Left half of the window, cleared to dark blue:
+//! compages::gpu::PassDesc left{ .width = w / 2u, .height = h,
+//!                               .color = { 0.0f, 0.0f, 0.2f, 1.0f } };
+//! compages::gpu::RenderPass pass(left);
+//! \endcode
 // ****************************************************************************
 struct PassDesc
 {
@@ -80,7 +93,7 @@ struct PassDesc
     bool clear_color = true;
     //! \brief The colour to start from, as red, green, blue and alpha between 0
     //! and 1.
-    compages::core::Vector4f color{ 0.0f, 0.0f, 0.0f, 1.0f };
+    compages::Vector4f color{ 0.0f, 0.0f, 0.0f, 1.0f };
 
     //! \brief Should the recorded distances be forgotten before anything is
     //! drawn?
@@ -102,9 +115,21 @@ struct PassDesc
 };
 
 // ****************************************************************************
-//! \brief One span of drawing, open until it goes out of scope.
+//! \brief A drawing session on one canvas, open until it goes out of scope.
+//!
+//! Like putting a sheet on the easel: everything drawn while the pass is open
+//! lands on that sheet, and taking the sheet off happens by itself at the end
+//! of the block. A pass can be opened over another one, to draw into a texture
+//! for a moment, and the one below is resumed untouched afterwards.
+//!
+//! \code
+//! {
+//!     compages::gpu::RenderPass shadow(m_shadow_map);   // into the texture
+//!     m_scene.draw();
+//! }                                                     // back to the window
+//! \endcode
 // ****************************************************************************
-class RenderPass
+class RenderPass: private compages::NotCopiable
 {
 public:
 
@@ -120,6 +145,8 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Start drawing, as begin() does, recording why not as the frame
     //! error (see Errors.hpp). open() then says false and draws are refused.
+    //!
+    //! \param[in] p_desc where, and what to start from.
     // ------------------------------------------------------------------------
     explicit RenderPass(PassDesc const& p_desc);
 
@@ -128,19 +155,29 @@ public:
     //! which part.
     //!
     //! \code
-    //! compages::gpu::RenderPass pass(m_framebuffer, { .color = { 1, 1, 1, 1 }
-    //! });
+    //! compages::gpu::RenderPass pass(m_framebuffer,
+    //!                                { .color = { 1, 1, 1, 1 } });
     //! \endcode
+    //!
+    //! \param[in] p_target the framebuffer to draw into. A failure, such as a
+    //! released framebuffer, is recorded as the frame error.
+    //! \param[in] p_desc what to start from. A width and height of zero mean
+    //! the whole framebuffer; its target field is replaced by p_target.
     // ------------------------------------------------------------------------
     explicit RenderPass(Framebuffer const& p_target, PassDesc p_desc = {});
 
+    //! \brief Take over the open pass of p_other, which is left closed: the
+    //! pass now ends with this object.
+    //! \param[in,out] p_other the pass to take over.
     RenderPass(RenderPass&& p_other) noexcept;
+    //! \brief End this pass, then take over p_other's.
+    //! \param[in,out] p_other the pass to take over.
+    //! \return this object, now owning the other pass.
     RenderPass& operator=(RenderPass&& p_other) noexcept;
-    RenderPass(RenderPass const&) = delete;
-    RenderPass& operator=(RenderPass const&) = delete;
 
     // ------------------------------------------------------------------------
-    //! \brief Close the pass.
+    //! \brief Close the pass, as end() does. Nothing happens if it is already
+    //! closed or was never opened.
     // ------------------------------------------------------------------------
     ~RenderPass();
 
@@ -154,7 +191,9 @@ public:
     void end();
 
     // ------------------------------------------------------------------------
-    //! \brief Is this pass still open?
+    //! \brief Is this pass still open? False after end(), after a move, and
+    //! when the constructor could not start it.
+    //! \return true while draws are accepted.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool open() const
     {
@@ -163,6 +202,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Where in the target this pass draws, and what it started from.
+    //! \return the description the pass was opened with, its target resolved.
     // ------------------------------------------------------------------------
     [[nodiscard]] PassDesc const& description() const
     {
@@ -188,37 +228,51 @@ private:
 //! \code
 //! compages::gpu::clear({ 0.1f, 0.1f, 0.15f });
 //! \endcode
+//!
+//! Only the part of the target the pass covers is filled.
+//!
+//! \param[in] p_color red, green, blue and alpha between 0 and 1.
 // ----------------------------------------------------------------------------
-void clear(compages::core::Vector4f const& p_color);
+void clear(compages::Vector4f const& p_color);
 
 //! \brief Same, fully opaque.
-void clear(compages::core::Vector3f const& p_color);
+//! \param[in] p_color red, green and blue between 0 and 1.
+void clear(compages::Vector3f const& p_color);
 
 //! \brief Same, from braces: three numbers are opaque, four give the alpha.
+//! \param[in] p_color three or four numbers between 0 and 1.
 void clear(std::initializer_list<float> p_color);
 
 // ----------------------------------------------------------------------------
 //! \brief Forget the distances recorded in the open pass, so that anything
-//! drawn next passes the depth test.
+//! drawn next passes the depth test. Used between two layers of a frame, such
+//! as a scene and a 3D overlay that must always show.
+//!
+//! \param[in] p_depth the distance to start from; 1 is the farthest.
 // ----------------------------------------------------------------------------
 void clearDepth(float p_depth = 1.0f);
 
 // ----------------------------------------------------------------------------
 //! \brief Clear both colour and depth at once, what a 3D frame starts with.
+//!
+//! \param[in] p_color red, green and blue between 0 and 1, fully opaque.
+//! \param[in] p_depth the distance to start from; 1 is the farthest.
 // ----------------------------------------------------------------------------
-void clear(compages::core::Vector3f const& p_color, float p_depth);
+void clear(compages::Vector3f const& p_color, float p_depth);
 
 // ----------------------------------------------------------------------------
 //! \brief Is a pass open right now?
 //!
 //! What a draw call checks before agreeing to draw, since drawing outside a
 //! pass goes somewhere nobody chose.
+//! \return true when a pass is open.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool inRenderPass();
 
 // ----------------------------------------------------------------------------
 //! \brief Where the open pass is drawing, or a description of zero size when
 //! none is open.
+//! \return the innermost open pass, or an empty description.
 // ----------------------------------------------------------------------------
 [[nodiscard]] PassDesc const& currentPass();
 

@@ -92,8 +92,8 @@ map.render(top);         // a minimap
 
 | Call | Effect |
 |------|--------|
-| `scene.load("Duck.glb")` | loads and places in the world; returns the root entity (a `Result`) |
-| `scene.assets().load(path)` | returns a `PrefabId`, does not touch the world |
+| `scene.loadFile("Duck.glb")` | loads and places in the world; returns the root entity (a `Result`) |
+| `scene.assets().loadFile(path)` | returns a `PrefabId`, does not touch the world |
 | `scene.instantiate(prefab)` | adds one more copy; joints are remapped |
 | `scene.frameAll()` | places camera and sun to see everything; returns the center, for `Orbit` |
 | `scene.play(model, "Walk")` | plays an animation of the file |
@@ -124,7 +124,7 @@ scene.activeCamera(id);
 - `Rig` is a strategy-game camera, looking at a point of the ground. The left button drags the ground (the grabbed point stays under the mouse), the right or middle button turns, the wheel zooms; W A S D or the arrows move, Q and E turn, R and F zoom, Shift runs. The camera glides to the wanted pose; each frame covers the part `1 - exp(-sharpness * dt)` of the way, so the glide is the same at any frame rate and never overshoots (a `Lerp(a, b, dt * speed)` does both wrong). The logic is in `RigController`, tested without a window.
 
   ```cpp
-  scene.camera().position(1.6f, 1.2f, 1.6f).add<compages::world::Rig>(compages::core::Vector3f(0.35f, 0.0f, 0.0f));
+  scene.camera().position(1.6f, 1.2f, 1.6f).add<compages::world::Rig>(compages::Vector3f(0.35f, 0.0f, 0.0f));
   ```
 
 **Light and shadow.** The lit and PBR materials share one shading: the sun,
@@ -173,7 +173,7 @@ compages::renderer::CanvasTexture canvas;
 COMPAGES_TRY(canvas.create(512u, 512u));  // white by default
 
 // Matches the mesh: a 1x1 plane in local space, before scale()
-canvas.setMapping(compages::core::AABB::fromCorners(
+canvas.setMapping(compages::AABB::fromCorners(
     { -0.5f, -0.5f, 0.0f }, { 0.5f, 0.5f, 0.0f }));
 
 COMPAGES_TRY(canvas.bind(scene.assets(), "my_canvas"));

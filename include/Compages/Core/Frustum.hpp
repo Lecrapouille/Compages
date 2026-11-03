@@ -14,8 +14,9 @@
 #include <algorithm>
 #include <array>
 
-namespace compages::core
+namespace compages
 {
+
 // ****************************************************************************
 //! \file
 //! \brief The six planes of a view, for asking whether a box is visible.
@@ -58,7 +59,7 @@ class Frustum
         // --------------------------------------------------------------------
         [[nodiscard]] float signedDistance(Vector3f const& p_point) const
         {
-            return compages::core::vector::dot(normal, p_point) + offset;
+            return compages::vector::dot(normal, p_point) + offset;
         }
     };
 
@@ -77,7 +78,7 @@ public:
         {
             Plane plane;
             Vector3f const xyz(p_row.x, p_row.y, p_row.z);
-            float const length = compages::core::vector::norm(xyz);
+            float const length = compages::vector::norm(xyz);
             float const inv = (length < 1.0e-8f) ? 1.0f : (1.0f / length);
             plane.normal = xyz * inv;
             plane.offset = p_row.w * inv;
@@ -129,5 +130,4 @@ private:
     std::array<Plane, 6u> m_planes{};
 };
 
-} // namespace compages::core
-
+} // namespace compages

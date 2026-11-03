@@ -7,6 +7,38 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief What one corner of a shape (a vertex) holds, and where each value
+//! sits in memory.
+//!
+//! A shape is drawn from its corners, and each corner carries values: where it
+//! is, its colour, which point of a picture it shows. The graphics card reads
+//! them as bytes; this file says which bytes are which, and by which name the
+//! shader calls each one.
+//!
+//! The C++ struct is the truth. A vertex is a plain struct, its fields are
+//! described once (usually read off the struct by the compiler), and a pipeline
+//! checks that description against what the shader actually declares, naming
+//! both sides when they disagree. Fields of one vertex sit next to each other
+//! in one buffer, which is what the card reads fastest, and the same buffer can
+//! feed several shaders that read different fields.
+//!
+//! \code
+//! struct Vertex
+//! {
+//!     compages::Vector3f position;
+//!     compages::Vector2f uv;
+//! };
+//! auto layout = compages::gpu::VertexLayout::of<Vertex>();   // position, uv
+//! \endcode
+//!
+//! What it holds:
+//! - VertexLayout: the description of one vertex.
+//! - field(), describe(): describe a struct by hand, renaming fields.
+//! - AttributeFormat, ScalarType, FormatOf: how one field is stored.
+// ****************************************************************************
+
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 #include "Compages/GPU/FieldReflection.hpp"
@@ -17,31 +49,6 @@
 #include <string_view>
 #include <type_traits>
 #include <vector>
-
-// ****************************************************************************
-//! \file
-//! \brief Says what one vertex looks like in memory.
-//!
-//! This is where the previous design went wrong, so it is worth saying what
-//! changed. Before, the shader decided: the program was introspected, and for
-//! every attribute it declared a separate buffer was created, each holding one
-//! attribute tightly packed. Three consequences followed, none of them wanted.
-//!
-//! Interleaving was impossible. Position, normal and texture coordinates of one
-//! vertex sat in three different buffers, so drawing read three streams that
-//! were far apart in memory, when they are always used together.
-//!
-//! The layout could not be described without a shader in hand, so the same
-//! geometry could not be handed to a second shader expecting the same vertices
-//! in a different order, and a mesh could not exist before a program did.
-//!
-//! And a mismatch between what the geometry held and what the shader wanted was
-//! not detected: whichever the shader asked for, it got.
-//!
-//! Here the C++ struct is the truth. A vertex is a plain struct, its fields are
-//! described once, and a pipeline checks that description against what the
-//! shader actually declares, naming both sides when they disagree.
-// ****************************************************************************
 
 namespace compages::gpu
 {
@@ -71,7 +78,9 @@ enum class ScalarType
 };
 
 // ----------------------------------------------------------------------------
-//! \brief Size in bytes of one component.
+//! \brief Size in bytes of one component: 4 for Float, 1 for Int8.
+//! \param[in] p_type the kind to inspect.
+//! \return the size in bytes: 1, 2, 4 or 8.
 // ----------------------------------------------------------------------------
 [[nodiscard]] constexpr std::size_t sizeOf(ScalarType p_type)
 {
@@ -95,7 +104,9 @@ enum class ScalarType
 }
 
 // ----------------------------------------------------------------------------
-//! \brief Is this a whole number kind?
+//! \brief Is this a whole number kind? Only those can be normalized().
+//! \param[in] p_type the kind to inspect.
+//! \return true for the Int and UInt kinds.
 // ----------------------------------------------------------------------------
 [[nodiscard]] constexpr bool isInteger(ScalarType p_type)
 {
@@ -118,6 +129,8 @@ enum class ScalarType
 
 // ----------------------------------------------------------------------------
 //! \brief Name of a scalar kind, for error messages.
+//! \param[in] p_type the kind to name.
+//! \return a static string, never null.
 // ----------------------------------------------------------------------------
 [[nodiscard]] constexpr const char* toString(ScalarType p_type)
 {
@@ -147,6 +160,11 @@ enum class ScalarType
 
 // ****************************************************************************
 //! \brief How one field is stored and how the shader is to read it.
+//!
+//! \code
+//! constexpr compages::gpu::AttributeFormat rgba8{
+//!     compages::gpu::ScalarType::UInt8, 4u, 1u, true }; // a colour, 4 bytes
+//! \endcode
 // ****************************************************************************
 struct AttributeFormat
 {
@@ -171,6 +189,7 @@ struct AttributeFormat
 
     // ------------------------------------------------------------------------
     //! \brief Size in bytes of the whole field.
+    //! \return components times the size of one, times slots.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr std::size_t size() const
     {
@@ -179,6 +198,8 @@ struct AttributeFormat
 
     // ------------------------------------------------------------------------
     //! \brief Is this a format the hardware can actually read?
+    //! \return true when components and slots are 1 to 4, and normalized and
+    //! as_integer are not both set.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr bool valid() const
     {
@@ -190,6 +211,7 @@ struct AttributeFormat
     //! \brief The GLSL type a shader must declare for this field, such as
     //! "vec3" or "ivec4". Used to explain a mismatch in words the reader can
     //! look for in the shader source.
+    //! \return the GLSL type, such as "vec3".
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string glslType() const;
 };
@@ -291,10 +313,10 @@ struct FormatOf<std::uint32_t>
 };
 
 //! \brief A vector of anything the library already knows becomes that same kind
-//! of number, repeated. This is what makes compages::core::Vector3f work
+//! of number, repeated. This is what makes compages::Vector3f work
 //! without a specialization of its own.
 template <typename T, std::size_t N>
-struct FormatOf<compages::core::Vector<T, N>>
+struct FormatOf<compages::Vector<T, N>>
 {
     static_assert((N >= 1u) && (N <= 4u),
                   "a vertex field holds at most 4 components");
@@ -309,7 +331,7 @@ struct FormatOf<compages::core::Vector<T, N>>
 //!
 //! Worth having for exactly one reason: a per instance transform. Giving each
 //! instance its own model matrix as a field read once per object is what turns
-//! a thousand draw calls into one, and it is how 15_SpriteBatch works.
+//! a thousand draw calls into one, and it is how 20a_SpriteBatch works.
 //!
 //! On the order of the numbers. C++ stores row-major Scilab matrices; each
 //! vertex attribute slot is one row (\c Matrix[i]), which matches how
@@ -317,7 +339,7 @@ struct FormatOf<compages::core::Vector<T, N>>
 //! consecutive vec4 attributes are used (same boundary as \c GL_TRUE on
 //! uniform uploads).
 template <typename T, std::size_t Rows, std::size_t Cols>
-struct FormatOf<compages::core::Matrix<T, Rows, Cols>>
+struct FormatOf<compages::Matrix<T, Rows, Cols>>
 {
     static_assert((Rows >= 2u) && (Rows <= 4u) && (Cols >= 2u) && (Cols <= 4u),
                   "a matrix vertex field is between 2x2 and 4x4: the hardware "
@@ -335,6 +357,14 @@ struct FormatOf<compages::core::Matrix<T, Rows, Cols>>
 
 // ----------------------------------------------------------------------------
 //! \brief The vertex format of a type, ready to be put in a field description.
+//!
+//! \code
+//! constexpr auto format = compages::gpu::formatOf<compages::Vector3f>();
+//! static_assert(format.components == 3u);
+//! \endcode
+//!
+//! \tparam T a type FormatOf knows: a scalar, a Vector or a Matrix.
+//! \return the format FormatOf<T> gives.
 // ----------------------------------------------------------------------------
 template <typename T>
 [[nodiscard]] constexpr AttributeFormat formatOf()
@@ -345,6 +375,9 @@ template <typename T>
 // ****************************************************************************
 //! \brief One field of a vertex: where it sits, how it is stored, and what the
 //! shader calls it.
+//!
+//! Usually built for you, by VertexLayout::of() or field(). Read back from
+//! VertexLayout::fields() to print or check a layout.
 // ****************************************************************************
 struct FieldDesc
 {
@@ -371,6 +404,10 @@ struct FieldDesc
 //! compile time rather than at run time: asking for a normalized float is a
 //! mistake the compiler can catch.
 //!
+//! \code
+//! compages::gpu::field(&Vertex::color, "aColor").normalized().perInstance()
+//! \endcode
+//!
 //! \tparam Member the type of the struct member being described.
 // ****************************************************************************
 template <typename Member>
@@ -379,7 +416,11 @@ class Field
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief Describe a field sitting at a given offset.
+    //! \brief Describe a field sitting at a given offset. field() calls it,
+    //! with an offset measured on the struct.
+    //!
+    //! \param[in] p_name the name the shader declares for it.
+    //! \param[in] p_offset distance in bytes from the start of the vertex.
     // ------------------------------------------------------------------------
     Field(std::string p_name, std::uint32_t p_offset)
         : m_desc{ std::move(p_name), formatOf<Member>(), p_offset, false }
@@ -391,7 +432,10 @@ public:
     //! 1 when signed.
     //!
     //! This is how a colour stored as four bytes reaches the shader as a vec4,
-    //! for a quarter of the memory of four floats.
+    //! for a quarter of the memory of four floats. Refused at compile time
+    //! on a float field.
+    //!
+    //! \return the field, to chain another modifier.
     // ------------------------------------------------------------------------
     [[nodiscard]] Field normalized() &&
     {
@@ -408,6 +452,8 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Read this field once per instance instead of once per vertex.
+    //!
+    //! \return the field, to chain another modifier.
     // ------------------------------------------------------------------------
     [[nodiscard]] Field perInstance() &&
     {
@@ -416,7 +462,8 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Hand the description over to describe().
+    //! \brief Hand the description over to describe(), which is what lets a
+    //! field be given there without a call to finish it.
     // ------------------------------------------------------------------------
     [[nodiscard]] operator FieldDesc() &&
     {
@@ -478,6 +525,7 @@ template <typename Class, typename Member>
 //!
 //! \param[in] p_member which member of the struct.
 //! \param[in] p_name the name the shader declares for it.
+//! \return the field, to chain normalized() or perInstance().
 // ----------------------------------------------------------------------------
 template <typename Class, typename Member>
 [[nodiscard]] Field<Member> field(Member Class::* p_member, std::string p_name)
@@ -486,15 +534,19 @@ template <typename Class, typename Member>
 }
 
 // ****************************************************************************
-//! \brief The complete description of one vertex: which fields, where they
-//! sit in the struct, and what the shader should call each one.
+//! \brief The map of one vertex: which values each corner of a shape holds,
+//! and where each one sits in memory.
+//!
+//! A vertex is a corner with its values: a position, a colour, a texture
+//! coordinate. The layout tells the graphics card how to find each value in
+//! the bytes of a vertex, and which name the shader uses for it.
 //!
 //! Usually read off the struct itself, with nothing written by hand:
 //! \code
 //! struct Vertex
 //! {
-//!     compages::core::Vector3f position;   // feeds "in vec3 position;"
-//!     compages::core::Vector2f uv;         // feeds "in vec2 uv;"
+//!     compages::Vector3f position;   // feeds "in vec3 position;"
+//!     compages::Vector2f uv;         // feeds "in vec2 uv;"
 //! };
 //! const compages::gpu::VertexLayout layout =
 //! compages::gpu::VertexLayout::of<Vertex>();
@@ -527,6 +579,9 @@ public:
     //! \brief Build from the fields and the size of the C++ struct.
     //!
     //! Prefer describe(), which takes the size from the type itself.
+    //!
+    //! \param[in] p_fields the fields, in any order.
+    //! \param[in] p_stride the size of one vertex in bytes, padding included.
     // ------------------------------------------------------------------------
     VertexLayout(std::vector<FieldDesc> p_fields, std::uint32_t p_stride);
 
@@ -538,6 +593,7 @@ public:
     //! a vertex attribute can hold (float, int, a Vector or a Matrix of those).
     //! What else it must be is listed in FieldReflection.hpp, and anything it
     //! is not stops the compilation with a sentence saying which.
+    //! \return the layout, one field per member.
     // ------------------------------------------------------------------------
     template <typename Vertex>
     [[nodiscard]] static VertexLayout of()
@@ -568,9 +624,16 @@ public:
     //!
     //! A name that is not a field is reported by validate(), so the mistake
     //! surfaces when the pipeline is built rather than as a missing attribute.
+    //!
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \param[in] p_attribute the attribute name in the shader.
+    //! \return this layout, to chain another change.
     // ------------------------------------------------------------------------
     VertexLayout& rename(std::string_view p_field, std::string p_attribute) &;
     //! \brief Same, on a temporary, for chaining after of().
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \param[in] p_attribute the attribute name in the shader.
+    //! \return the temporary, to chain another change.
     [[nodiscard]] VertexLayout&& rename(std::string_view p_field,
                                         std::string p_attribute) &&
     {
@@ -578,10 +641,16 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Read one field once per instance rather than once per vertex.
+    //! \brief Read one field once per instance rather than once per vertex:
+    //! a colour per object, the corners being shared.
+    //!
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \return this layout, to chain another change.
     // ------------------------------------------------------------------------
     VertexLayout& perInstance(std::string_view p_field) &;
     //! \brief Same, on a temporary.
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \return the temporary, to chain another change.
     [[nodiscard]] VertexLayout&& perInstance(std::string_view p_field) &&
     {
         return std::move(perInstance(p_field));
@@ -590,9 +659,12 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Read every field once per instance: the struct describes one
     //! object, not one corner, as for a sprite drawn a hundred thousand times.
+    //!
+    //! \return this layout, to chain another change.
     // ------------------------------------------------------------------------
     VertexLayout& perInstance() &;
     //! \brief Same, on a temporary.
+    //! \return the temporary, to chain another change.
     [[nodiscard]] VertexLayout&& perInstance() &&
     {
         return std::move(perInstance());
@@ -601,9 +673,15 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Hand an integer field to the shader as a fraction between 0 and
     //! 1 (or -1 and 1 when signed), as a colour stored in four bytes wants.
+    //! A float field is reported by validate().
+    //!
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \return this layout, to chain another change.
     // ------------------------------------------------------------------------
     VertexLayout& normalized(std::string_view p_field) &;
     //! \brief Same, on a temporary.
+    //! \param[in] p_field the member name in the C++ struct.
+    //! \return the temporary, to chain another change.
     [[nodiscard]] VertexLayout&& normalized(std::string_view p_field) &&
     {
         return std::move(normalized(p_field));
@@ -611,6 +689,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief The fields, in the order they were described.
+    //! \return the fields.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::vector<FieldDesc> const& fields() const
     {
@@ -620,6 +699,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Distance in bytes from one vertex to the next, that is the size
     //! of the C++ struct including whatever padding the compiler added.
+    //! \return the stride in bytes.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uint32_t stride() const
     {
@@ -628,17 +708,23 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief The field a shader attribute of this name would read, or nullptr.
+    //!
+    //! \param[in] p_name the attribute name, after any rename().
+    //! \return the field, or nullptr when no field has that name.
     // ------------------------------------------------------------------------
     [[nodiscard]] FieldDesc const* find(std::string_view p_name) const;
 
     // ------------------------------------------------------------------------
     //! \brief How many attribute slots the whole vertex takes. Not the same as
     //! the number of fields, since a matrix field takes several.
+    //! \return the slots used by all fields.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t slots() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Is any field read per instance?
+    //! \brief Is any field read per instance? Such a layout is drawn with
+    //! drawInstanced().
+    //! \return true when at least one field is per instance.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool hasPerInstanceFields() const;
 
@@ -652,11 +738,14 @@ public:
     //! since only then is there a shader to compare against.
     //!
     //! Computed once when the layout is built, so asking is free.
+    //! \return success, or the first problem found, with the field named.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status validate() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Has anything been described at all?
+    //! \brief Has anything been described at all? An empty layout is valid:
+    //! it draws without vertex data.
+    //! \return true when there is no field.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool empty() const
     {
@@ -666,6 +755,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief A readable dump of the fields, their offsets and their formats.
     //! What to print when a shader and a layout disagree.
+    //! \return one line per field.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string toString() const;
 
@@ -690,9 +780,9 @@ private:
 //! \code
 //! struct Vertex
 //! {
-//!     compages::core::Vector3f position;
-//!     compages::core::Vector3f normal;
-//!     compages::core::Vector2f uv;
+//!     compages::Vector3f position;
+//!     compages::Vector3f normal;
+//!     compages::Vector2f uv;
 //! };
 //!
 //! static const compages::gpu::VertexLayout LAYOUT =
@@ -704,9 +794,14 @@ private:
 //!
 //! The stride comes from sizeof(Vertex), so the vertices can be interleaved in
 //! a single buffer exactly as the struct lays them out, which is what the GPU
-//! reads fastest and what the previous design could not express at all.
+//! reads fastest.
+//!
+//! Prefer VertexLayout::of<Vertex>() when the member names already match the
+//! shader: it needs no list at all.
 //!
 //! \tparam Vertex the struct describing one vertex.
+//! \param[in] p_fields one field() per member to send, in any order.
+//! \return the layout, with sizeof(Vertex) as stride.
 // ----------------------------------------------------------------------------
 template <typename Vertex, typename... Fields>
 [[nodiscard]] VertexLayout describe(Fields&&... p_fields)

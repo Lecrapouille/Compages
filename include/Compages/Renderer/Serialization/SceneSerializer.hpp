@@ -10,6 +10,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -33,8 +34,7 @@ class Scene;
 //!
 //! \code
 //! COMPAGES_TRY(compages::renderer::saveScene(scene, "level.json"));
-//! auto roots = COMPAGES_TRY(compages::renderer::loadScene(scene,
-//! "level.json"));
+//! auto roots = compages::renderer::loadScene(scene, "level.json");
 //! \endcode
 // ****************************************************************************
 
@@ -44,9 +44,9 @@ class Scene;
 //! \param[in] p_assets resolves mesh and material names.
 //! \param[in] p_path output path.
 // ------------------------------------------------------------------------
-[[nodiscard]] Status save(compages::world::World const& p_world,
-                          AssetManager const& p_assets,
-                          std::string const& p_path);
+[[nodiscard]] Status saveWorld(compages::world::World const& p_world,
+                               AssetManager const& p_assets,
+                               std::filesystem::path const& p_path);
 
 // ------------------------------------------------------------------------
 //! \brief Load entities from a JSON file into \c p_world.
@@ -57,16 +57,17 @@ class Scene;
 //! \param[in] p_path JSON scene file.
 // ------------------------------------------------------------------------
 [[nodiscard]] Result<std::vector<compages::world::EntityId>>
-load(compages::world::World& p_world,
-     AssetManager const& p_assets,
-     std::string const& p_path);
+loadWorld(compages::world::World& p_world,
+          AssetManager const& p_assets,
+          std::filesystem::path const& p_path);
 
 // ------------------------------------------------------------------------
 //! \brief Save a Scene's compages::world::World plus presentation settings.
 //! \param[in] p_scene world, environment and render settings.
 //! \param[in] p_path output path.
 // ------------------------------------------------------------------------
-[[nodiscard]] Status saveScene(Scene const& p_scene, std::string const& p_path);
+[[nodiscard]] Status saveScene(Scene const& p_scene,
+                               std::filesystem::path const& p_path);
 
 // ------------------------------------------------------------------------
 //! \brief Reload a Scene's compages::world::World and presentation settings.
@@ -75,6 +76,6 @@ load(compages::world::World& p_world,
 //! \return new spatial root entities from the file.
 // ------------------------------------------------------------------------
 [[nodiscard]] Result<std::vector<compages::world::EntityId>>
-loadScene(Scene& p_scene, std::string const& p_path);
+loadScene(Scene& p_scene, std::filesystem::path const& p_path);
 
 } // namespace compages::renderer

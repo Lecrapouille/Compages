@@ -58,9 +58,9 @@ struct Contact
     //! \brief The other body.
     EntityId other;
     //! \brief Where they touched, in the world.
-    compages::core::Vector3f point{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f point{ 0.0f, 0.0f, 0.0f };
     //! \brief Unit direction pushing this body away from the other one.
-    compages::core::Vector3f normal{ 0.0f, 1.0f, 0.0f };
+    compages::Vector3f normal{ 0.0f, 1.0f, 0.0f };
     //! \brief How fast they came together, in metres per second.
     float speed = 0.0f;
 };

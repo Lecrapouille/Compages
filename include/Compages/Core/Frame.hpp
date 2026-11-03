@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace compages::core
+namespace compages
 {
 
 // ****************************************************************************
@@ -18,10 +18,11 @@ namespace compages::core
 //! Headless tests and server-side simulation pass a \c Frame to
 //! \c World::update(Frame). Interactive apps use \c compages::world::ViewFrame,
 //! which publicly inherits \c Frame; pass it to \c World::update(ViewFrame) or
-//! slice with \c static_cast<Frame const&>(viewFrame) when only timing/size matter.
+//! slice with \c static_cast<Frame const&>(viewFrame) when only timing/size
+//! matter.
 //!
 //! \code
-//! compages::core::Frame step;
+//! compages::Frame step;
 //! step.elapsed = 1.0f / 60.0f;
 //! step.width = 800;
 //! step.height = 600;
@@ -48,7 +49,7 @@ struct Frame
 //! Accepts \c ViewFrame through the \c Frame base subobject.
 //!
 //! \code
-//! compages::core::perspective(60.0_deg, compages::world::aspect(frame),
+//! compages::perspective(60.0_deg, compages::world::aspect(frame),
 //! 0.1f, 100.0f);
 //! \endcode
 // ****************************************************************************
@@ -59,5 +60,4 @@ struct Frame
                : float(p_frame.width) / float(p_frame.height);
 }
 
-} // namespace compages::core
-
+} // namespace compages

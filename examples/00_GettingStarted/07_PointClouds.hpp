@@ -14,7 +14,7 @@ namespace examples
 
 struct PointVertex
 {
-    compages::core::Vector3f position;
+    compages::Vector3f position;
 };
 
 // ****************************************************************************

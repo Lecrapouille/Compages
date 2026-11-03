@@ -28,43 +28,43 @@ void FlyController::apply(World& p_world,
         pitch = std::clamp(pitch, min_pitch, max_pitch);
     }
 
-    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
+    const compages::Quatf q_yaw = compages::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(yaw)),
-        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
-    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
+        compages::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::Quatf q_pitch = compages::Quatf::fromAngleAxis(
         units::angle::radian_t(static_cast<double>(pitch)),
-        compages::core::Vector3f(1.0f, 0.0f, 0.0f));
-    const compages::core::Quatf rotation = q_yaw * q_pitch;
+        compages::Vector3f(1.0f, 0.0f, 0.0f));
+    const compages::Quatf rotation = q_yaw * q_pitch;
 
-    compages::core::Vector3f motion(0.0f);
+    compages::Vector3f motion(0.0f);
     if (p_input.forward)
     {
-        motion += compages::core::Vector3f(0.0f, 0.0f, -1.0f);
+        motion += compages::Vector3f(0.0f, 0.0f, -1.0f);
     }
     if (p_input.back)
     {
-        motion += compages::core::Vector3f(0.0f, 0.0f, 1.0f);
+        motion += compages::Vector3f(0.0f, 0.0f, 1.0f);
     }
     if (p_input.left)
     {
-        motion += compages::core::Vector3f(-1.0f, 0.0f, 0.0f);
+        motion += compages::Vector3f(-1.0f, 0.0f, 0.0f);
     }
     if (p_input.right)
     {
-        motion += compages::core::Vector3f(1.0f, 0.0f, 0.0f);
+        motion += compages::Vector3f(1.0f, 0.0f, 0.0f);
     }
     if (p_input.up)
     {
-        motion += compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+        motion += compages::Vector3f(0.0f, 1.0f, 0.0f);
     }
     if (p_input.down)
     {
-        motion += compages::core::Vector3f(0.0f, -1.0f, 0.0f);
+        motion += compages::Vector3f(0.0f, -1.0f, 0.0f);
     }
 
     LocalTransformView local = p_world.transform(p_camera);
     local.rotation = rotation;
-    const float length = compages::core::vector::norm(motion);
+    const float length = compages::vector::norm(motion);
     if (length > 1.0e-6f)
     {
         const float speed =

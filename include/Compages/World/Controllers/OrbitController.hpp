@@ -38,7 +38,7 @@ class OrbitController
 {
 public:
 
-    compages::core::Vector3f target{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f target{ 0.0f, 0.0f, 0.0f };
     float yaw = 0.0f;
     float pitch = -0.35f;
     float distance = 40.0f;
@@ -59,7 +59,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Write the pose from the current yaw/pitch/distance, ignoring
-    //! input. What a demo uses to drive the camera from \c compages::core::Frame::total.
+    //! input. What a demo uses to drive the camera from \c compages::Frame::total.
     // ------------------------------------------------------------------------
     void writePose(World& p_world, EntityId p_camera) const;
 };

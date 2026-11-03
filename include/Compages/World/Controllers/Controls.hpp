@@ -40,7 +40,7 @@ namespace compages::world
 //! wheel.
 //!
 //! \code
-//! scene.camera().add<compages::world::Orbit>(compages::core::Vector3f{ 0, 1, 0 });
+//! scene.camera().add<compages::world::Orbit>(compages::Vector3f{ 0, 1, 0 });
 //! \endcode
 // ****************************************************************************
 struct Orbit : Routine
@@ -49,7 +49,7 @@ struct Orbit : Routine
     OrbitController controller;
 
     Orbit() = default;
-    explicit Orbit(compages::core::Vector3f p_target) { controller.target = p_target; }
+    explicit Orbit(compages::Vector3f p_target) { controller.target = p_target; }
 
     //! \brief Seed distance, zoom limits and yaw/pitch from the camera pose.
     void start() override;
@@ -70,7 +70,7 @@ struct Orbit : Routine
 //! wanted pose (see \c RigController).
 //!
 //! \code
-//! scene.camera().position(2, 1.5, 2).add<compages::world::Rig>(compages::core::Vector3f{ 0, 0, 0 });
+//! scene.camera().position(2, 1.5, 2).add<compages::world::Rig>(compages::Vector3f{ 0, 0, 0 });
 //! \endcode
 // ****************************************************************************
 struct Rig : Routine
@@ -79,7 +79,7 @@ struct Rig : Routine
     RigController controller;
 
     Rig() = default;
-    explicit Rig(compages::core::Vector3f p_target) { controller.target = p_target; }
+    explicit Rig(compages::Vector3f p_target) { controller.target = p_target; }
 
     //! \brief Seed the wanted pose from where the camera stands, looking at
     //! the target; the ground passes through the target.

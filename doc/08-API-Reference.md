@@ -2,7 +2,7 @@
 
 The entry points and the common calls of the three layers on one page. For the context, see [4. GPU](04-GPU-Layer.md), [5. World](05-World-Layer.md), [6. Renderer](06-Renderer-Layer.md); for a walkthrough, [3. Tutorial](03-Tutorial.md).
 
-Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, matrices and `Frame` are in `compages::core` (`compages::core::Vector3f`); `Status` and `Result<T>` are in `compages`.
+Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, matrices, `Frame`, `Status` and `Result<T>` are directly in `compages` (`compages::Vector3f`).
 
 ---
 
@@ -39,9 +39,10 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | Action | Call |
 |--------|------|
 | device | `compages::gpu::init(loader)` / `shutdown()` / `initialized()` |
-| draw | `Drawable d; d.load(vs, fs); d["name"] = …; d.draw();` |
-| typed vertices | `d.vertices<Vertex>(span)`, `d.vertex<Vertex>(i)` |
-| static buffer | `Buffer<T>::from(data, { .usage = BufferUsage::Immutable, .cpu_mirror = false })` |
+| draw | `Drawable d; d.loadSources(vs, fs); d["name"] = …; d.draw();` |
+| typed vertices | `d.setVertices<Vertex>(data)` or `BufferUsage::Dynamic` (no default); `d.editVertex<Vertex>(i)`, `d.editVertices<Vertex>(first, count)`, `d.editVertices<Vertex>()`, `d.vertexCount()` |
+| GPU-made or shared vertices | `d.borrowVertices(buffer)`: no copy, the buffer must outlive `d` |
+| buffers | `VertexBuffer<T>`, `IndexBuffer<T>`, `StorageBuffer<T>`; `::from(data, usage)`, `::create(count, usage)`; `BufferUsage::Static` (no CPU copy, never written), `Stream` (no CPU copy, `write()`), `Dynamic` (CPU copy, `[]`, `upload()`) |
 | clear | `clear({ r, g, b })` |
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
@@ -64,7 +65,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | world placement | `.worldMatrix()`, `.worldPosition()` |
 | component | `.set(T{})` `.add<T>(args)` `.get<T>()` `.has<T>()` `.remove<T>()` |
 | system (loop) | `world.each<A, B>([](Entity e, A& a, B& b) { … })` |
-| step | `compages::core::Frame step; step.elapsed = dt; world.update(step);` |
+| step | `compages::Frame step; step.elapsed = dt; world.update(step);` |
 | routine | `struct X: Routine { void update(float dt) override; };` then `.add<X>(…)` |
 | routine life | `onEnable` `start` `fixedUpdate` `update` `lateUpdate` `onDisable` `onDestroy`, `priority()`, `enabled(bool)` |
 | fixed pace | `world.routines().fixedStep(1.0f / 120.0f)` |
@@ -89,8 +90,8 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | shadows | `environment().shadows` (sun), `PointLight::shadows` (one lamp), `environment().shadow_resolution`, `environment().lamp_shadow_resolution` |
 | primitives | `scene.box(name, look)` `sphere` `plane` `cylinder` `cone` `pyramid` |
 | looks | `color(r, g, b)` `texture("a.jpg")` `normals()` `depth(near, far)` |
-| file | `scene.load("model.glb")` → `Result<Entity>` |
-| prefab | `assets().load(path)` then `scene.instantiate(id)` |
+| file | `scene.loadFile("model.glb")` → `Result<Entity>` |
+| prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |
 | frame | `scene.draw(ViewFrame)`, or `update` then `render()` / `render(cameraId)` |
 | fit the view | `scene.frameAll()` |
 | animation | `scene.play(model, "Walk")` `scene.clips(model)` |
@@ -105,7 +106,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 | Type | Holds |
 |------|-------|
-| `compages::core::Frame` | `elapsed`, `total`, `width`, `height` |
+| `compages::Frame` | `elapsed`, `total`, `width`, `height` |
 | `compages::world::ViewFrame` | a `Frame` plus keyboard and mouse |
 
 ---

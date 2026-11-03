@@ -68,8 +68,8 @@ void main() { oColor = texture(image, vec2(0.5)); }
 //! \brief The vertex the colored shader reads, as a struct.
 struct Vertex
 {
-    compages::core::Vector2f position;
-    compages::core::Vector3f color;
+    compages::Vector2f position;
+    compages::Vector3f color;
 };
 
 //! \brief The red, green, blue of the pixel in the middle of the target.
@@ -145,12 +145,11 @@ protected:
 TEST_F(DrawableTest, DrawsAttributesGivenByName)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
     triangle["position"] = { { -1.0f, -1.0f }, { 3.0f, -1.0f }, { -1.0f, 3.0f } };
     triangle["color"] = { { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } };
 
-    ASSERT_EQ(triangle.count(), 3u);
-    ASSERT_EQ(triangle.layout().stride(), 5u * sizeof(float));
+    ASSERT_EQ(triangle.vertexCount(), 3u);
     ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 }
 
@@ -158,10 +157,10 @@ TEST_F(DrawableTest, DrawsAttributesGivenByName)
 TEST_F(DrawableTest, DrawsVerticesGivenAsAStruct)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
-    triangle.vertices<Vertex>({ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } });
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
+    triangle.setVertices<Vertex>({ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } });
     ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
 }
 
@@ -169,15 +168,15 @@ TEST_F(DrawableTest, DrawsVerticesGivenAsAStruct)
 TEST_F(DrawableTest, SendsWhatChangedAtTheNextDraw)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
-    triangle.vertices<Vertex>({ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } });
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
+    triangle.setVertices<Vertex>({ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } });
     ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
 
-    for (Vertex& vertex : triangle.vertices<Vertex>())
+    for (Vertex& vertex : triangle.editVertices<Vertex>())
     {
-        vertex.color = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+        vertex.color = compages::Vector3f(0.0f, 1.0f, 0.0f);
     }
     ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 
@@ -185,34 +184,40 @@ TEST_F(DrawableTest, SendsWhatChangedAtTheNextDraw)
     ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
 }
 
-// Immutable vertices are sent once; changing one afterwards is a frame error.
-TEST_F(DrawableTest, RefusesToChangeImmutableVerticesOnceDrawn)
+// Borrowed vertices live in a Buffer the caller owns: changing them through
+// the drawable is a frame error, giving vertices of its own again is not.
+TEST_F(DrawableTest, RefusesToChangeBorrowedVerticesByName)
 {
-    compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
-    triangle.vertices<Vertex>({ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
-                                { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } });
-    triangle.usage(compages::gpu::BufferUsage::Immutable);
-    ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
-    ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
+    const std::vector<Vertex> red{ { { -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { 3.0f, -1.0f }, { 1.0f, 0.0f, 0.0f } },
+                                   { { -1.0f, 3.0f }, { 1.0f, 0.0f, 0.0f } } };
+    auto buffer = compages::gpu::VertexBuffer<Vertex>::from(
+        red, compages::gpu::BufferUsage::Static);
+    ASSERT_TRUE(bool(buffer)) << buffer.error();
 
-    triangle.vertex<Vertex>(0u).color = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
-    auto pass = compages::gpu::RenderPass::begin(
-        compages::gpu::PassDesc{ .width = WIDTH, .height = HEIGHT, .target = {} });
-    ASSERT_TRUE(bool(pass)) << pass.error();
-    triangle.draw();
+    compages::gpu::Drawable triangle;
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
+    triangle.borrowVertices(buffer.value());
+    ASSERT_EQ(drawn([&] { triangle.draw(); }), RED);
+    EXPECT_THAT(triangle.describe(), HasSubstr("does not own"));
+
+    triangle["color"] = { { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } };
     ASSERT_TRUE(compages::gpu::hasFrameError());
-    EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("Immutable"));
+    EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("borrowed"));
+
+    triangle.setVertices<Vertex>({ { { -1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f } },
+                                   { { 3.0f, -1.0f }, { 0.0f, 1.0f, 0.0f } },
+                                   { { -1.0f, 3.0f }, { 0.0f, 1.0f, 0.0f } } });
+    ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 }
 
 // Uniforms by name, with the same syntax as attributes.
 TEST_F(DrawableTest, SetsUniformsByName)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(PLAIN_VERTEX, TINTED_FRAGMENT)));
     triangle["position"] = { { -1.0f, -1.0f }, { 3.0f, -1.0f }, { -1.0f, 3.0f } };
-    triangle["tint"] = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+    triangle["tint"] = compages::Vector3f(0.0f, 1.0f, 0.0f);
     triangle["strength"] = 1.0;
     ASSERT_EQ(drawn([&] { triangle.draw(); }), GREEN);
 
@@ -224,9 +229,9 @@ TEST_F(DrawableTest, SetsUniformsByName)
 TEST_F(DrawableTest, DrawsThroughIndices)
 {
     compages::gpu::Drawable square;
-    ASSERT_TRUE(bool(square.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
+    ASSERT_TRUE(bool(square.loadSources(PLAIN_VERTEX, TINTED_FRAGMENT)));
     square["position"] = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } };
-    square["tint"] = compages::core::Vector3f(1.0f, 0.0f, 0.0f);
+    square["tint"] = compages::Vector3f(1.0f, 0.0f, 0.0f);
     square["strength"] = 1.0f;
     square.indices({ 0, 1, 2, 2, 3, 0 });
     ASSERT_EQ(drawn([&] { square.draw(); }), RED);
@@ -245,7 +250,7 @@ TEST_F(DrawableTest, DrawsWithoutVerticesAndSamplesATexture)
     ASSERT_TRUE(bool(texture.write(std::as_bytes(std::span(green)))));
 
     compages::gpu::Drawable screen;
-    ASSERT_TRUE(bool(screen.load(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
+    ASSERT_TRUE(bool(screen.loadSources(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
     screen["image"] = texture;
     ASSERT_EQ(drawn([&] { screen.draw(3u); }), GREEN);
 }
@@ -254,7 +259,7 @@ TEST_F(DrawableTest, DrawsWithoutVerticesAndSamplesATexture)
 TEST_F(DrawableTest, NamesWhatTheShaderHasWhenANameIsWrong)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
     triangle["positon"] = { { 0, 0 }, { 1, 0 }, { 0, 1 } };
 
     ASSERT_TRUE(compages::gpu::hasFrameError());
@@ -266,7 +271,7 @@ TEST_F(DrawableTest, NamesWhatTheShaderHasWhenANameIsWrong)
 TEST_F(DrawableTest, RefusesTheWrongNumberOfComponents)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
     triangle["color"] = { { 1, 0 }, { 0, 1 }, { 0, 0 } };
     EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("vec3"));
 }
@@ -274,7 +279,7 @@ TEST_F(DrawableTest, RefusesTheWrongNumberOfComponents)
 TEST_F(DrawableTest, RefusesToDrawAttributesOfDifferentLengths)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
     triangle["position"] = { { -1, -1 }, { 1, -1 }, { 0, 1 }, { 0, 0 } };
     triangle["color"] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
@@ -286,7 +291,7 @@ TEST_F(DrawableTest, RefusesToDrawAttributesOfDifferentLengths)
 TEST_F(DrawableTest, SaysWhichAttributeWasNeverGiven)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(COLORED_VERTEX, COLORED_FRAGMENT)));
+    ASSERT_TRUE(bool(triangle.loadSources(COLORED_VERTEX, COLORED_FRAGMENT)));
     triangle["position"] = { { -1, -1 }, { 1, -1 }, { 0, 1 } };
 
     auto prepared = triangle.prepare();
@@ -297,8 +302,8 @@ TEST_F(DrawableTest, SaysWhichAttributeWasNeverGiven)
 TEST_F(DrawableTest, TellsAnAttributeFromAUniform)
 {
     compages::gpu::Drawable triangle;
-    ASSERT_TRUE(bool(triangle.load(PLAIN_VERTEX, TINTED_FRAGMENT)));
-    triangle["position"] = compages::core::Vector2f(0.0f, 0.0f);
+    ASSERT_TRUE(bool(triangle.loadSources(PLAIN_VERTEX, TINTED_FRAGMENT)));
+    triangle["position"] = compages::Vector2f(0.0f, 0.0f);
     EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("attribute"));
     triangle["tint"] = { { 1, 0, 0 } };
     EXPECT_THAT(compages::gpu::takeFrameError(), HasSubstr("uniform"));
@@ -325,7 +330,7 @@ TEST_F(DrawableTest, DrawsIntoATextureFromInsideAnotherPass)
     ASSERT_TRUE(bool(framebuffer.attach(color)));
 
     compages::gpu::Drawable screen;
-    ASSERT_TRUE(bool(screen.load(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
+    ASSERT_TRUE(bool(screen.loadSources(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
 
     compages::gpu::RenderPass window(compages::gpu::PassDesc{ .width = WIDTH, .height = HEIGHT });
     {
@@ -351,7 +356,7 @@ TEST_F(DrawableTest, APassWithoutTargetDrawsIntoThePassAroundIt)
     ASSERT_TRUE(bool(framebuffer.attach(color)));
 
     compages::gpu::Drawable screen;
-    ASSERT_TRUE(bool(screen.load(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
+    ASSERT_TRUE(bool(screen.loadSources(GENERATED_VERTEX, SAMPLING_FRAGMENT)));
 
     compages::gpu::RenderPass window(compages::gpu::PassDesc{ .width = WIDTH, .height = HEIGHT });
     compages::gpu::clear({ 0.0f, 0.0f, 1.0f });

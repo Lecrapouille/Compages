@@ -74,7 +74,7 @@ private:
     [[nodiscard]] compages::Status makeSprite();
 
     std::vector<Body> m_bodies;
-    std::vector<compages::core::Vector2f> m_positions;
+    std::vector<compages::Vector2f> m_positions;
     std::vector<float> m_sizes;
     //! \brief Index of the first hydrogen cloud. The cores follow, one each.
     std::size_t m_clouds = 0u;

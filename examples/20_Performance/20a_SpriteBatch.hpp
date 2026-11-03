@@ -21,9 +21,10 @@ namespace examples
 //! the four corners from gl_VertexID, and each record of the buffer is one
 //! sprite, read once per instance:
 //! \code
-//! m_sprites.vertices(sprites,
-//! compages::gpu::VertexLayout::of<Sprite>().perInstance());
-//! m_sprites.drawInstanced(m_sprites.count(), 4u);   // 4 corners per sprite
+//! m_sprites.setVertices(sprites,
+//!     compages::gpu::VertexLayout::of<Sprite>().perInstance());
+//! m_sprites.drawInstanced(m_sprites.vertexCount(), 4u);   // 4 corners per
+//! sprite
 //! \endcode
 //!
 //! The atlas is four by four tiles computed here. Each sprite names a tile;
@@ -47,8 +48,8 @@ private:
 
     struct Sprite
     {
-        compages::core::Vector2f center;
-        compages::core::Vector2f extent;
+        compages::Vector2f center;
+        compages::Vector2f extent;
         float tile = 0.0f;
         float phase = 0.0f;
     };

@@ -21,10 +21,11 @@ namespace examples
 //! A model loaded with its animations plays the first one; play() changes to
 //! another by the name it has in the file:
 //! \code
-//! COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(dataPath("Soldier.glb").string()));
+//! COMPAGES_TRY_ASSIGN(m_soldier,
+//!                     m_scene.loadFile(dataPath("Soldier.glb")));
 //! ...
-//! if (p_frame.input.down(compages::world::Key::D2)) m_scene.play(m_soldier,
-//! "Walk");
+//! if (p_frame.input.down(compages::world::Key::D2))
+//!     m_scene.play(m_soldier, "Walk");
 //! \endcode
 //! The "Try it" panel lists every clip of the file, from
 //! m_scene.clips(m_soldier), and plays the one chosen.

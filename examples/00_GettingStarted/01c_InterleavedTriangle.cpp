@@ -7,11 +7,10 @@
 
 #include "00_GettingStarted/01c_InterleavedTriangle.hpp"
 
-#include <array>
-
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief The same shader as 01b: `position` and `color` are the names the
 //! fields of Vertex must have.
 constexpr const char* VERTEX_SHADER = R"(#version 450 core
@@ -28,6 +27,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
 in vec3 vColor;
@@ -39,41 +39,31 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string InterleavedTriangle::description() const
 {
-    return "A triangle from a struct Vertex { position; color; }. Its fields "
-           "are "
-           "read off the struct at compile time and matched to the shader by "
-           "name. The vertices never change, so they are put once into an "
-           "Immutable buffer, which the driver may keep where the GPU reads it "
-           "fastest, and which can never be written again:\n\n" +
+    return "A triangle from a struct Vertex { position; color; }. Each field "
+           "feeds the shader input of the same name. The drawable keeps a "
+           "copy of the corners and sends it at the first draw.\n\n" +
            m_triangle.describe();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status InterleavedTriangle::setUp()
 {
-    COMPAGES_TRY(m_triangle.load(VERTEX_SHADER, FRAGMENT_SHADER));
+    COMPAGES_TRY(m_triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 
-    // Whole vertices, in the order the fields are declared.
-    const std::array<Vertex, 3u> corners{
+    // Three whole corners, each written as its fields in the order of the
+    // struct: position, then color. They travel to the graphics card at the
+    // first draw.
+    m_triangle.setVertices<Vertex>(
         { { { -0.8f, -0.6f }, { 0.1f, 0.9f, 0.9f } },
           { { 0.8f, -0.6f }, { 0.9f, 0.1f, 0.9f } },
-          { { 0.0f, 0.8f }, { 0.9f, 0.9f, 0.1f } } }
-    };
-
-    // Filled when it is made, never written again. No CPU copy is kept: there
-    // will never be anything to send.
-    COMPAGES_TRY_ASSIGN(m_vertices,
-                        compages::gpu::Buffer<Vertex>::from(
-                            corners,
-                            { .usage = compages::gpu::BufferUsage::Immutable,
-                              .cpu_mirror = false }));
-
-    // The drawable reads the buffer where it is, rather than copying it.
-    m_triangle.vertices(m_vertices);
+          { { 0.0f, 0.8f }, { 0.9f, 0.9f, 0.1f } } });
     return m_triangle.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void InterleavedTriangle::draw(compages::world::ViewFrame const&)
 {
     compages::gpu::clear({ 0.1f, 0.1f, 0.15f });

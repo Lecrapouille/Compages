@@ -34,9 +34,9 @@ namespace examples
 // ****************************************************************************
 struct CubeVertex
 {
-    compages::core::Vector3f position;
-    compages::core::Vector3f normal;
-    compages::core::Vector3f color;
+    compages::Vector3f position;
+    compages::Vector3f normal;
+    compages::Vector3f color;
 };
 
 // ****************************************************************************
@@ -59,17 +59,17 @@ struct CubeMesh
 {
     struct Face
     {
-        compages::core::Vector3f normal;
-        compages::core::Vector3f color;
+        compages::Vector3f normal;
+        compages::Vector3f color;
     };
 
     const std::array<Face, 6u> faces{
-        Face{ compages::core::Vector3f(0.0f, 0.0f, 1.0f), compages::core::Vector3f(0.9f, 0.3f, 0.3f) },
-        Face{ compages::core::Vector3f(0.0f, 0.0f, -1.0f), compages::core::Vector3f(0.3f, 0.9f, 0.4f) },
-        Face{ compages::core::Vector3f(1.0f, 0.0f, 0.0f), compages::core::Vector3f(0.3f, 0.5f, 0.9f) },
-        Face{ compages::core::Vector3f(-1.0f, 0.0f, 0.0f), compages::core::Vector3f(0.9f, 0.8f, 0.3f) },
-        Face{ compages::core::Vector3f(0.0f, 1.0f, 0.0f), compages::core::Vector3f(0.8f, 0.4f, 0.9f) },
-        Face{ compages::core::Vector3f(0.0f, -1.0f, 0.0f), compages::core::Vector3f(0.4f, 0.9f, 0.9f) }
+        Face{ compages::Vector3f(0.0f, 0.0f, 1.0f), compages::Vector3f(0.9f, 0.3f, 0.3f) },
+        Face{ compages::Vector3f(0.0f, 0.0f, -1.0f), compages::Vector3f(0.3f, 0.9f, 0.4f) },
+        Face{ compages::Vector3f(1.0f, 0.0f, 0.0f), compages::Vector3f(0.3f, 0.5f, 0.9f) },
+        Face{ compages::Vector3f(-1.0f, 0.0f, 0.0f), compages::Vector3f(0.9f, 0.8f, 0.3f) },
+        Face{ compages::Vector3f(0.0f, 1.0f, 0.0f), compages::Vector3f(0.8f, 0.4f, 0.9f) },
+        Face{ compages::Vector3f(0.0f, -1.0f, 0.0f), compages::Vector3f(0.4f, 0.9f, 0.9f) }
     };
 
     const float half = p_size * 0.5f;
@@ -80,10 +80,10 @@ struct CubeMesh
     {
         // Two directions along the face, found from its normal, so that the four
         // corners come out of the normal rather than being typed twenty four times.
-        const compages::core::Vector3f up = (std::abs(face.normal.y) > 0.5f) ? compages::core::Vector3f(0.0f, 0.0f, 1.0f)
-                                                             : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
-        const compages::core::Vector3f right = compages::core::vector::cross(up, face.normal);
-        const compages::core::Vector3f top = compages::core::vector::cross(face.normal, right);
+        const compages::Vector3f up = (std::abs(face.normal.y) > 0.5f) ? compages::Vector3f(0.0f, 0.0f, 1.0f)
+                                                             : compages::Vector3f(0.0f, 1.0f, 0.0f);
+        const compages::Vector3f right = compages::vector::cross(up, face.normal);
+        const compages::Vector3f top = compages::vector::cross(face.normal, right);
 
         const auto first = static_cast<std::uint16_t>(cube.vertices.size());
         cube.vertices.emplace_back((face.normal - right - top) * half, face.normal, face.color);

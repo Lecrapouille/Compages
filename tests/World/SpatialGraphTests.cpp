@@ -102,9 +102,9 @@ TEST(SpatialGraph, KeepWorldReparentPreservesWorldPose)
 
     // A at (10, 0, 0). B at (0, 5, 0) relative to A. C at (0, 2, 0) relative
     // to B. compages::world::World position of C is (10, 7, 0).
-    transforms.localMutable(ea).position = compages::core::Vector3f(10.0f, 0.0f, 0.0f);
-    transforms.localMutable(eb).position = compages::core::Vector3f(0.0f, 5.0f, 0.0f);
-    transforms.localMutable(ec).position = compages::core::Vector3f(0.0f, 2.0f, 0.0f);
+    transforms.localMutable(ea).position = compages::Vector3f(10.0f, 0.0f, 0.0f);
+    transforms.localMutable(eb).position = compages::Vector3f(0.0f, 5.0f, 0.0f);
+    transforms.localMutable(ec).position = compages::Vector3f(0.0f, 2.0f, 0.0f);
 
     // Manually build world matrices (no TransformSystem here).
     transforms.setWorld(ea, compages::world::localMatrix(transforms.local(ea)));

@@ -24,7 +24,7 @@ constexpr int HEIGHT = 32;
 
 struct Corner
 {
-    compages::core::Vector2f position;
+    compages::Vector2f position;
 };
 
 const std::vector<Corner> BIG_TRIANGLE{ { { -1.0f, -1.0f } },
@@ -198,16 +198,16 @@ TEST_F(FramebufferTest, APassDrawsIntoTheTexture)
     auto program = compages::gpu::Program::fromSources(VERTEX, RED_FRAGMENT).take();
     const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Corner>();
     auto pipeline = compages::gpu::Pipeline::create<Corner>(program, layout).take();
-    auto vertices = compages::gpu::Buffer<Corner>::from(BIG_TRIANGLE,
-                                              compages::gpu::BufferKind::Vertex,
-                                              compages::gpu::BufferUsage::Immutable)
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
                         .take();
 
     compages::gpu::PassDesc desc;
     desc.width = WIDTH;
     desc.height = HEIGHT;
     desc.target = framebuffer.handle();
-    desc.color = compages::core::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+    desc.color = compages::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Core/Result.hpp"
 #include "Compages/Renderer/Animation/AnimationClip.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
@@ -18,6 +19,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -41,13 +43,11 @@ namespace compages::renderer
 //! Étape 3 of the roadmap needs: registering a mesh made in code, registering
 //! a material made in code, and dropping any of them by id.
 // ****************************************************************************
-class AssetManager
+class AssetManager: private compages::NotCopiable
 {
 public:
 
     AssetManager() = default;
-    AssetManager(AssetManager const&) = delete;
-    AssetManager& operator=(AssetManager const&) = delete;
     AssetManager(AssetManager&&) = default;
     AssetManager& operator=(AssetManager&&) = default;
 
@@ -88,7 +88,8 @@ public:
                                              Prefab p_prefab);
 
     //! \brief Load a reusable asset without creating entities.
-    [[nodiscard]] Result<PrefabId> load(std::string const& p_path);
+    [[nodiscard]] Result<PrefabId>
+    loadFile(std::filesystem::path const& p_path);
 
     [[nodiscard]] Result<AnimationClipId> addAnimation(std::string p_name,
                                                        AnimationClip p_clip);

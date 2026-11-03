@@ -13,6 +13,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string GltfAnimation::description() const
 {
     return "Soldier.glb and the clips it came with. Choose one in the Try it "
@@ -21,6 +22,7 @@ std::string GltfAnimation::description() const
            "Soldier.glb in external/Compages-data/.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status GltfAnimation::setUp()
 {
     // The clips live in the file. Walk is the one the example starts on.
@@ -31,20 +33,21 @@ compages::Status GltfAnimation::setUp()
                                  "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.10f, 0.12f, 0.15f);
-    COMPAGES_TRY_ASSIGN(m_soldier, m_scene.load(path.string()));
+    COMPAGES_TRY_ASSIGN(m_soldier, m_scene.loadFile(path));
     // The model looks down -Z, away from a camera placed in front: half a turn
     // shows its face.
-    m_soldier.rotation(3.14159265f, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    m_soldier.rotation(3.14159265f, compages::Vector3f(0.0f, 1.0f, 0.0f));
     if (!m_scene.play(m_soldier, "Walk"))
     {
         return compages::failure("Soldier.glb has no Walk clip");
     }
     m_clips = m_scene.clips(m_soldier);
-    const compages::core::Vector3f middle = m_scene.frameAll();
+    const compages::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void GltfAnimation::draw(compages::world::ViewFrame const& p_frame)
 {
     // play() is cheap to call every frame: the same clip keeps playing.
@@ -63,6 +66,7 @@ void GltfAnimation::draw(compages::world::ViewFrame const& p_frame)
     m_scene.draw(p_frame);
 }
 
+// ----------------------------------------------------------------------------
 void GltfAnimation::controls()
 {
     // One button per clip of the file, the one playing highlighted.

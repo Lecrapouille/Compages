@@ -241,23 +241,25 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Read a file, choosing the format from what is in it.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status load(std::string const& p_path, bool p_srgb)
+    [[nodiscard]] Status loadFile(std::filesystem::path const& p_path,
+                                  bool p_srgb)
     {
+        const std::string file = p_path.string();
         int channels = 0;
 
         // A file holding values beyond one, as a photograph of a bright sky
         // does, is read as floats: squeezing it into bytes would throw away
         // exactly what it was saved for.
-        if (stbi_is_hdr(p_path.c_str()) != 0)
+        if (stbi_is_hdr(file.c_str()) != 0)
         {
             m_pixels =
-                stbi_loadf(p_path.c_str(), &m_width, &m_height, &channels, 4);
+                stbi_loadf(file.c_str(), &m_width, &m_height, &channels, 4);
             m_format = PixelFormat::RGBA32F;
         }
         else
         {
             m_pixels =
-                stbi_load(p_path.c_str(), &m_width, &m_height, &channels, 0);
+                stbi_load(file.c_str(), &m_width, &m_height, &channels, 0);
             switch (channels)
             {
                 case 1:
@@ -281,12 +283,12 @@ public:
             // stb_image says what is wrong in a sentence, which is more use
             // than anything this layer could add.
             const char* why = stbi_failure_reason();
-            return failure("cannot read the image '" + p_path +
+            return failure("cannot read the image '" + file +
                            "': " + ((why == nullptr) ? "unknown reason" : why));
         }
         if ((m_width <= 0) || (m_height <= 0))
         {
-            return failure("the image '" + p_path + "' has no pixels");
+            return failure("the image '" + file + "' has no pixels");
         }
 
         return success();
@@ -366,7 +368,7 @@ Result<Texture> Texture::create(TextureDesc const& p_desc)
     return Texture(added.take());
 }
 
-Result<Texture> Texture::fromFile(std::string const& p_path,
+Result<Texture> Texture::fromFile(std::filesystem::path const& p_path,
                                   LoadOptions const& p_options)
 {
     if (!initialized())
@@ -381,7 +383,7 @@ Result<Texture> Texture::fromFile(std::string const& p_path,
     stbi_set_flip_vertically_on_load(p_options.flip_vertically ? 1 : 0);
 
     LoadedImage image;
-    COMPAGES_TRY(image.load(p_path, p_options.srgb));
+    COMPAGES_TRY(image.loadFile(p_path, p_options.srgb));
 
     TextureDesc desc;
     desc.kind = TextureKind::Texture2D;
@@ -409,7 +411,7 @@ Result<Texture> Texture::fromFile(std::string const& p_path,
 }
 
 Result<Texture>
-Texture::cubeFromFiles(std::array<std::string, 6u> const& p_paths,
+Texture::cubeFromFiles(std::array<std::filesystem::path, 6u> const& p_paths,
                        LoadOptions const& p_options)
 {
     if (!initialized())
@@ -427,7 +429,7 @@ Texture::cubeFromFiles(std::array<std::string, 6u> const& p_paths,
     std::array<LoadedImage, 6u> faces;
     for (std::size_t i = 0u; i < 6u; ++i)
     {
-        COMPAGES_TRY(faces[i].load(p_paths[i], p_options.srgb));
+        COMPAGES_TRY(faces[i].loadFile(p_paths[i], p_options.srgb));
     }
 
     for (std::size_t i = 1u; i < 6u; ++i)
@@ -439,9 +441,10 @@ Texture::cubeFromFiles(std::array<std::string, 6u> const& p_paths,
             return failure(
                 "the six faces of a cube map must be the same size and format, "
                 "but '" +
-                p_paths[i] + "' is " + std::to_string(faces[i].width()) +
-                " by " + std::to_string(faces[i].height()) + " " +
-                toString(faces[i].format()) + " while '" + p_paths[0] +
+                p_paths[i].string() + "' is " +
+                std::to_string(faces[i].width()) + " by " +
+                std::to_string(faces[i].height()) + " " +
+                toString(faces[i].format()) + " while '" + p_paths[0].string() +
                 "' is " + std::to_string(faces[0].width()) + " by " +
                 std::to_string(faces[0].height()) + " " +
                 toString(faces[0].format()));
@@ -478,7 +481,7 @@ Texture::cubeFromFiles(std::array<std::string, 6u> const& p_paths,
 }
 
 Result<Texture>
-Texture::volumeFromFiles(std::vector<std::string> const& p_paths,
+Texture::volumeFromFiles(std::vector<std::filesystem::path> const& p_paths,
                          LoadOptions const& p_options)
 {
     if (!initialized())
@@ -495,24 +498,25 @@ Texture::volumeFromFiles(std::vector<std::string> const& p_paths,
     stbi_set_flip_vertically_on_load(p_options.flip_vertically ? 1 : 0);
 
     std::vector<std::unique_ptr<LoadedImage>> layers;
-    for (std::string const& path : p_paths)
+    for (std::filesystem::path const& path : p_paths)
     {
         layers.emplace_back(std::make_unique<LoadedImage>());
-        COMPAGES_TRY(layers.back()->load(path, p_options.srgb));
+        COMPAGES_TRY(layers.back()->loadFile(path, p_options.srgb));
         LoadedImage const& first = *layers.front();
         LoadedImage const& last = *layers.back();
         if ((last.width() != first.width()) ||
             (last.height() != first.height()) ||
             (last.format() != first.format()))
         {
-            return failure("the layers of a volume must be the same size and "
-                           "format, but '" +
-                           path + "' is " + std::to_string(last.width()) +
-                           " by " + std::to_string(last.height()) + " " +
-                           toString(last.format()) + " while '" + p_paths[0] +
-                           "' is " + std::to_string(first.width()) + " by " +
-                           std::to_string(first.height()) + " " +
-                           toString(first.format()));
+            return failure(
+                "the layers of a volume must be the same size and "
+                "format, but '" +
+                path.string() + "' is " + std::to_string(last.width()) +
+                " by " + std::to_string(last.height()) + " " +
+                toString(last.format()) + " while '" + p_paths[0].string() +
+                "' is " + std::to_string(first.width()) + " by " +
+                std::to_string(first.height()) + " " +
+                toString(first.format()));
         }
     }
 
@@ -546,8 +550,9 @@ Texture::volumeFromFiles(std::vector<std::string> const& p_paths,
     return texture;
 }
 
-Status Texture::loadVolume(std::vector<std::string> const& p_paths,
-                           LoadOptions const& p_options)
+Status
+Texture::loadVolumeFiles(std::vector<std::filesystem::path> const& p_paths,
+                         LoadOptions const& p_options)
 {
     COMPAGES_TRY_ASSIGN(*this, volumeFromFiles(p_paths, p_options));
     return success();
@@ -559,14 +564,16 @@ Status Texture::allocate(TextureDesc const& p_desc)
     return success();
 }
 
-Status Texture::load(std::string const& p_path, LoadOptions const& p_options)
+Status Texture::loadFile(std::filesystem::path const& p_path,
+                         LoadOptions const& p_options)
 {
     COMPAGES_TRY_ASSIGN(*this, fromFile(p_path, p_options));
     return success();
 }
 
-Status Texture::loadCube(std::array<std::string, 6u> const& p_paths,
-                         LoadOptions const& p_options)
+Status
+Texture::loadCubeFiles(std::array<std::filesystem::path, 6u> const& p_paths,
+                       LoadOptions const& p_options)
 {
     COMPAGES_TRY_ASSIGN(*this, cubeFromFiles(p_paths, p_options));
     return success();

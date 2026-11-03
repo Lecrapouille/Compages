@@ -25,7 +25,7 @@ namespace fs = std::filesystem;
 
 //! \brief Where a mesh of the URDF is on disk: relative to the URDF file,
 //! with a "package://name/" or "file://" prefix dropped.
-std::string resolveMesh(fs::path const& p_folder, std::string p_filename)
+fs::path resolveMesh(fs::path const& p_folder, std::string p_filename)
 {
     constexpr std::string_view PACKAGE = "package://";
     constexpr std::string_view FILE = "file://";
@@ -57,15 +57,15 @@ std::string resolveMesh(fs::path const& p_folder, std::string p_filename)
     {
         if (fs::exists(candidate))
         {
-            return candidate.string();
+            return candidate;
         }
     }
-    return candidates.front().string();
+    return candidates.front();
 }
 
-std::string lowerExtension(std::string const& p_path)
+std::string lowerExtension(fs::path const& p_path)
 {
-    std::string extension = fs::path(p_path).extension().string();
+    std::string extension = p_path.extension().string();
     std::transform(extension.begin(),
                    extension.end(),
                    extension.begin(),
@@ -107,8 +107,8 @@ private:
         }
 
         compages::world::Entity visual;
-        compages::core::Vector3f scale = p_visual.origin.scale;
-        compages::core::Quatf rotation = p_visual.origin.rotation;
+        compages::Vector3f scale = p_visual.origin.scale;
+        compages::Quatf rotation = p_visual.origin.rotation;
         switch (p_visual.kind)
         {
             case compages::world::UrdfGeometry::Mesh:
@@ -123,7 +123,7 @@ private:
                 break;
             case compages::world::UrdfGeometry::Sphere:
                 visual = m_scene.sphere("visual", look);
-                scale = compages::core::Vector3f(2.0f * p_visual.radius,
+                scale = compages::Vector3f(2.0f * p_visual.radius,
                                                  2.0f * p_visual.radius,
                                                  2.0f * p_visual.radius);
                 break;
@@ -131,13 +131,13 @@ private:
                 // The shapes of the Scene stand along Y, a URDF cylinder
                 // along Z.
                 visual = m_scene.cylinder("visual", look);
-                scale = compages::core::Vector3f(2.0f * p_visual.radius,
+                scale = compages::Vector3f(2.0f * p_visual.radius,
                                                  p_visual.length,
                                                  2.0f * p_visual.radius);
                 rotation = rotation *
-                           compages::core::Quatf::fromAngleAxis(
+                           compages::Quatf::fromAngleAxis(
                                units::angle::radian_t(0.5 * std::numbers::pi),
-                               compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+                               compages::Vector3f(1.0f, 0.0f, 0.0f));
                 break;
         }
         visual.parent(p_link)
@@ -150,8 +150,8 @@ private:
     Result<compages::world::Entity> meshVisual(std::string const& p_filename,
                                                Look const& p_look)
     {
-        const std::string path = resolveMesh(m_folder, p_filename);
-        auto drawn = m_meshes.find(path);
+        const fs::path path = resolveMesh(m_folder, p_filename);
+        auto drawn = m_meshes.find(path.string());
         if (drawn != m_meshes.end())
         {
             compages::world::Entity copy =
@@ -174,7 +174,7 @@ private:
         else if ((extension == ".glb") || (extension == ".gltf"))
         {
             visual = m_scene.world().entity("visual");
-            COMPAGES_TRY(m_scene.load(path, visual));
+            COMPAGES_TRY(m_scene.loadFile(path, visual));
             return visual;
         }
         else
@@ -182,7 +182,7 @@ private:
             return failure("mesh '" + p_filename +
                            "': only STL and glTF meshes are read");
         }
-        m_meshes.try_emplace(path, visual.id());
+        m_meshes.try_emplace(path.string(), visual.id());
         return visual;
     }
 
@@ -194,7 +194,7 @@ private:
 } // namespace
 
 Result<compages::world::Entity> loadUrdf(Scene& p_scene,
-                                         std::string const& p_path,
+                                         std::filesystem::path const& p_path,
                                          compages::world::EntityId p_parent)
 {
     auto robot = compages::world::parseUrdf(p_path);
@@ -202,7 +202,7 @@ Result<compages::world::Entity> loadUrdf(Scene& p_scene,
     {
         return failure(robot.error());
     }
-    Visuals visuals(p_scene, fs::path(p_path).parent_path());
+    Visuals visuals(p_scene, p_path.parent_path());
     auto root = compages::world::buildUrdf(
         p_scene.world(), robot.value(), p_parent,
         [&visuals](compages::world::UrdfLink const& p_link,
@@ -210,7 +210,7 @@ Result<compages::world::Entity> loadUrdf(Scene& p_scene,
         { return visuals.addLink(p_link, p_entity); });
     if (!root)
     {
-        return failure("'" + p_path + "': " + root.error());
+        return failure("'" + p_path.string() + "': " + root.error());
     }
     return root;
 }

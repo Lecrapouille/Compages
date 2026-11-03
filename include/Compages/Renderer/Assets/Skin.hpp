@@ -28,7 +28,7 @@ namespace compages::renderer
 // ****************************************************************************
 struct SkinAsset
 {
-    std::vector<compages::core::Matrix44f> inverse_bind;
+    std::vector<compages::Matrix44f> inverse_bind;
 };
 
 } // namespace compages::renderer

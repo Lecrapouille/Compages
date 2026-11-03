@@ -46,7 +46,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace compages::core
+namespace compages
 {
 
 // *****************************************************************************
@@ -185,7 +185,7 @@ public:
     //! convention): roll about X, then pitch about Y, then yaw about Z, all
     //! about the fixed axes.
     //! \code
-    //! auto const down = compages::core::Quatd::fromRpy(
+    //! auto const down = compages::Quatd::fromRpy(
     //!     units::angle::radian_t(3.1416), units::angle::radian_t(0),
     //!     units::angle::radian_t(0)); // tool pointing down
     //! \endcode
@@ -321,7 +321,7 @@ public:
     //--------------------------------------------------------------------------
     Matrix<T, 4u, 4u> toMatrix() const
     {
-        Matrix<T, 4u, 4u> Result(compages::core::matrix::Identity);
+        Matrix<T, 4u, 4u> Result(compages::matrix::Identity);
         T qxx(b * b);
         T qyy(c * c);
         T qzz(d * d);
@@ -705,5 +705,5 @@ units::angle::radian_t yaw(Quat<T> const& q)
     return units::angle::radian_t(std::atan2(siny, cosy));
 }
 
-} // namespace compages::core
+} // namespace compages
 

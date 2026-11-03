@@ -23,7 +23,7 @@
 //! \file
 //! \brief Compiling stages, linking them, and asking the result what it holds.
 //!
-//! \note On matrices. \c compages::core matrices are row-major with the Scilab
+//! \note On matrices. \c compages matrices are row-major with the Scilab
 //! convention (\c y = M * x). OpenGL expects column-major memory, so the GL45
 //! backend uploads them with \c glProgramUniformMatrix*fv(..., GL_TRUE, ...).
 // ****************************************************************************
@@ -97,7 +97,7 @@ bool readShaderSource(std::filesystem::path const& p_path,
 //!
 //! The extensions are the ones the Khronos reference compiler established, plus
 //! the shorter forms in wide use.
-Result<ShaderStage> stageOfFile(std::string const& p_path)
+Result<ShaderStage> stageOfFile(std::filesystem::path const& p_path)
 {
     const std::string extension = shaderExtension(p_path);
 
@@ -126,22 +126,22 @@ Result<ShaderStage> stageOfFile(std::string const& p_path)
         return ShaderStage::TessellationEvaluation;
     }
 
-    return failure("cannot tell which pipeline stage '" + p_path +
+    return failure("cannot tell which pipeline stage '" + p_path.string() +
                    "' is meant to be: its extension is '" + extension +
                    "' and none of .vert, .frag, .geom, .comp, .tesc or .tese. "
                    "Say the stage explicitly instead");
 }
 
-Result<std::string> readSource(std::string const& p_path)
+Result<std::string> readSource(std::filesystem::path const& p_path)
 {
     std::string source;
     if (!readShaderSource(p_path, source))
     {
-        return failure("cannot read the shader '" + p_path + "'");
+        return failure("cannot read the shader '" + p_path.string() + "'");
     }
     if (source.empty())
     {
-        return failure("the shader '" + p_path + "' is empty");
+        return failure("the shader '" + p_path.string() + "' is empty");
     }
     return source;
 }
@@ -198,7 +198,7 @@ Result<Shader> Shader::fromSource(ShaderStage p_stage,
     return Shader(added.take());
 }
 
-Result<Shader> Shader::fromFile(std::string const& p_path)
+Result<Shader> Shader::fromFile(std::filesystem::path const& p_path)
 {
     auto stage = stageOfFile(p_path);
     if (!stage)
@@ -208,14 +208,15 @@ Result<Shader> Shader::fromFile(std::string const& p_path)
     return fromFile(stage.value(), p_path);
 }
 
-Result<Shader> Shader::fromFile(ShaderStage p_stage, std::string const& p_path)
+Result<Shader> Shader::fromFile(ShaderStage p_stage,
+                                std::filesystem::path const& p_path)
 {
     auto source = readSource(p_path);
     if (!source)
     {
         return failure(source.error());
     }
-    return fromSource(p_stage, source.value(), p_path);
+    return fromSource(p_stage, source.value(), p_path.string());
 }
 
 Shader::Shader(Shader&& p_other) noexcept : m_handle(p_other.m_handle)
@@ -348,8 +349,8 @@ Result<Program> Program::fromSources(std::string_view p_vertex,
     return link({ &vertex, &fragment });
 }
 
-Result<Program> Program::fromFiles(std::string const& p_vertex,
-                                   std::string const& p_fragment)
+Result<Program> Program::fromFiles(std::filesystem::path const& p_vertex,
+                                   std::filesystem::path const& p_fragment)
 {
     Shader vertex;
     Shader fragment;
@@ -368,7 +369,7 @@ Result<Program> Program::fromComputeSource(std::string_view p_source)
     return link({ &compute });
 }
 
-Result<Program> Program::fromComputeFile(std::string const& p_path)
+Result<Program> Program::fromComputeFile(std::filesystem::path const& p_path)
 {
     Shader compute;
     COMPAGES_TRY_ASSIGN(compute,
@@ -376,26 +377,27 @@ Result<Program> Program::fromComputeFile(std::string const& p_path)
     return link({ &compute });
 }
 
-Status Program::load(std::string_view p_vertex, std::string_view p_fragment)
+Status Program::loadSources(std::string_view p_vertex,
+                            std::string_view p_fragment)
 {
     COMPAGES_TRY_ASSIGN(*this, fromSources(p_vertex, p_fragment));
     return success();
 }
 
-Status Program::loadFiles(std::string const& p_vertex,
-                          std::string const& p_fragment)
+Status Program::loadFiles(std::filesystem::path const& p_vertex,
+                          std::filesystem::path const& p_fragment)
 {
     COMPAGES_TRY_ASSIGN(*this, fromFiles(p_vertex, p_fragment));
     return success();
 }
 
-Status Program::loadCompute(std::string_view p_source)
+Status Program::loadComputeSource(std::string_view p_source)
 {
     COMPAGES_TRY_ASSIGN(*this, fromComputeSource(p_source));
     return success();
 }
 
-Status Program::loadComputeFile(std::string const& p_path)
+Status Program::loadComputeFile(std::filesystem::path const& p_path)
 {
     COMPAGES_TRY_ASSIGN(*this, fromComputeFile(p_path));
     return success();
@@ -535,19 +537,19 @@ void Program::set(std::string_view p_name, float p_value)
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector2f const& p_value)
+                  compages::Vector2f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec2, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector3f const& p_value)
+                  compages::Vector3f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec3, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector4f const& p_value)
+                  compages::Vector4f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Vec4, p_value.data());
 }
@@ -571,43 +573,43 @@ void Program::set(std::string_view p_name, bool p_value)
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector2i const& p_value)
+                  compages::Vector2i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec2, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector3i const& p_value)
+                  compages::Vector3i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec3, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Vector4i const& p_value)
+                  compages::Vector4i const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::IVec4, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Matrix22f const& p_value)
+                  compages::Matrix22f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat2, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Matrix33f const& p_value)
+                  compages::Matrix33f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat3, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  compages::core::Matrix44f const& p_value)
+                  compages::Matrix44f const& p_value)
 {
     GPU_SET_UNIFORM(p_name, DataType::Mat4, p_value.data());
 }
 
 void Program::set(std::string_view p_name,
-                  std::span<const compages::core::Matrix44f> p_values)
+                  std::span<const compages::Matrix44f> p_values)
 {
     auto location = locationOf(p_name, DataType::Mat4);
     if (!location)

@@ -14,7 +14,7 @@
 #include <cmath>
 #include <limits>
 
-namespace compages::core
+namespace compages
 {
 
 // ****************************************************************************
@@ -180,5 +180,4 @@ struct AABB
     }
 };
 
-} // namespace compages::core
-
+} // namespace compages

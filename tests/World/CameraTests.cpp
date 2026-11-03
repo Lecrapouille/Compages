@@ -25,7 +25,7 @@ TEST(WorldCamera, ExtractsAViewFromTheEntityTransform)
     compages::renderer::Scene scene(world, assets);
 
     compages::world::EntityId cam = world.create("camera");
-    world.transform(cam).position = compages::core::Vector3f(0.0f, 0.0f, 3.0f);
+    world.transform(cam).position = compages::Vector3f(0.0f, 0.0f, 3.0f);
     world.add(cam, compages::world::Camera{});
     scene.activeCamera(cam);
     world.update();

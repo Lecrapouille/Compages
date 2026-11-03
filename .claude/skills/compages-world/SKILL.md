@@ -7,18 +7,18 @@ description: Write or change Compages World-layer code (compages::world): World/
 
 Headless simulation: no `gpu::init`, no window. Headers
 `<Compages/World/Entity.hpp>` (chaining) and `<Compages/World/World.hpp>`.
-Vectors and `Frame` are in `compages::core` (not global).
+Vectors and `Frame` are in `compages` (not global).
 
 ```cpp
-struct Position { compages::core::Vector3f value{ 0, 0, 0 }; };   // your structs = components
-struct Velocity { compages::core::Vector3f value{ 0, 0, 0 }; };
+struct Position { compages::Vector3f value{ 0, 0, 0 }; };   // your structs = components
+struct Velocity { compages::Vector3f value{ 0, 0, 0 }; };
 
 compages::world::World world;
 world.entity("player").set(Position{}).set(Velocity{ { 1, 0, 0 } });
 compages::world::Entity ship = world.entity("Ship").position(2, 0, 0);
 ship.child("Gun").position(0, 0.5f, 0);                  // graph: child follows parent
 
-compages::core::Frame step;  step.elapsed = 1.0f / 60.0f;  // you fill elapsed/total
+compages::Frame step;  step.elapsed = 1.0f / 60.0f;  // you fill elapsed/total
 world.each<Position, Velocity>([&](compages::world::Entity, Position& p, Velocity& v)
     { p.value += v.value * step.elapsed; });             // system: entities with BOTH
 world.update(step);                                      // routines, joints, matrices

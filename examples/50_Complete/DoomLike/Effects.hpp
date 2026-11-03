@@ -49,44 +49,44 @@ public:
     void reset(compages::renderer::Scene& p_scene);
 
     //! \brief A spurt of blood leaving \c p_at toward \c p_direction.
-    void blood(compages::core::Vector3f p_at,
-               compages::core::Vector3f p_direction,
+    void blood(compages::Vector3f p_at,
+               compages::Vector3f p_direction,
                int p_count);
     //! \brief Sparks off a hard surface, and a puff of dust.
-    void sparks(compages::core::Vector3f p_at,
-                compages::core::Vector3f p_normal,
+    void sparks(compages::Vector3f p_at,
+                compages::Vector3f p_normal,
                 int p_count);
     //! \brief The flash of a shot at the muzzle, toward \c p_direction.
-    void muzzle(compages::core::Vector3f p_at,
-                compages::core::Vector3f p_direction);
+    void muzzle(compages::Vector3f p_at,
+                compages::Vector3f p_direction);
     //! \brief A spent shell thrown to the right of the gun.
-    void casing(compages::core::Vector3f p_at,
-                compages::core::Vector3f p_right);
+    void casing(compages::Vector3f p_at,
+                compages::Vector3f p_right);
     //! \brief Fire, smoke and sparks in every direction.
-    void explosion(compages::core::Vector3f p_at);
+    void explosion(compages::Vector3f p_at);
     //! \brief A glowing ball, what a projectile looks like as it flies.
-    void glow(compages::core::Vector3f p_at,
-              compages::core::Vector3f p_color,
+    void glow(compages::Vector3f p_at,
+              compages::Vector3f p_color,
               float p_size);
     //! \brief The streak of a shot, fading in \c p_life seconds.
-    void tracer(compages::core::Vector3f p_from,
-                compages::core::Vector3f p_to,
-                compages::core::Vector3f p_color,
+    void tracer(compages::Vector3f p_from,
+                compages::Vector3f p_to,
+                compages::Vector3f p_color,
                 float p_life);
 
     //! \brief A mark on a wall, the floor or the ceiling. \c p_normal leaves
     //! the surface.
     void mark(Mark p_mark,
-              compages::core::Vector3f p_point,
-              compages::core::Vector3f p_normal,
+              compages::Vector3f p_point,
+              compages::Vector3f p_normal,
               float p_size);
     //! \brief A pool spreading on the floor under a body.
-    void pool(Mark p_mark, compages::core::Vector3f p_at, float p_size);
+    void pool(Mark p_mark, compages::Vector3f p_at, float p_size);
     //! \brief A splash on a body, held by the bone nearest to \c p_point so
     //! that it follows the animation.
     void markBody(Mark p_mark,
                   compages::world::EntityId p_body,
-                  compages::core::Vector3f p_point,
+                  compages::Vector3f p_point,
                   float p_size);
 
     //! \brief Move the particles, fade the streaks, spread the pools.
@@ -108,9 +108,9 @@ private:
 
     struct Particle
     {
-        compages::core::Vector3f position;
-        compages::core::Vector3f velocity;
-        compages::core::Vector3f color;
+        compages::Vector3f position;
+        compages::Vector3f velocity;
+        compages::Vector3f color;
         float size;
         float life;
         float age = 0.0f;
@@ -122,9 +122,9 @@ private:
 
     struct Tracer
     {
-        compages::core::Vector3f from;
-        compages::core::Vector3f to;
-        compages::core::Vector3f color;
+        compages::Vector3f from;
+        compages::Vector3f to;
+        compages::Vector3f color;
         float life;
         float age = 0.0f;
     };
@@ -139,13 +139,13 @@ private:
     //! \brief One vertex per particle, what the shader reads.
     struct Point
     {
-        compages::core::Vector3f position;
-        compages::core::Vector4f color;
+        compages::Vector3f position;
+        compages::Vector4f color;
         float size;
     };
 
     void emit(Particle p_particle);
-    [[nodiscard]] compages::core::Vector3f randomDirection();
+    [[nodiscard]] compages::Vector3f randomDirection();
     [[nodiscard]] compages::world::Entity takeMark(Mark p_mark);
 
     static constexpr std::size_t MARKS = 4u;

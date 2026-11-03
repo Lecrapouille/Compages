@@ -21,11 +21,11 @@ namespace examples
 // ****************************************************************************
 //! \brief Forward kinematics of an industrial robot loaded from a URDF file.
 //!
-//! load() builds one entity per link, with a RevoluteJoint between each link
-//! and its parent. Setting an angle is all it takes to move the arm; the World
-//! turns the joints into transforms at its next update:
+//! loadFile() builds one entity per link, with a RevoluteJoint between each
+//! link and its parent. Setting an angle is all it takes to move the arm; the
+//! World turns the joints into transforms at its next update:
 //! \code
-//! auto robot = m_scene.load(dataPath("irb2400.urdf").string());
+//! auto robot = m_scene.loadFile(dataPath("irb2400.urdf"));
 //! robot.value().lookup("base_link/link_1").joint().angle(30.0_deg);
 //! \endcode
 // ****************************************************************************

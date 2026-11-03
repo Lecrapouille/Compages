@@ -55,19 +55,19 @@ void apply(entt::registry& p_registry, TransformStore& p_transforms)
 
 } // namespace
 
-compages::core::Vector3f jointAxis(compages::core::Vector3f const& p_axis)
+compages::Vector3f jointAxis(compages::Vector3f const& p_axis)
 {
     const float length = p_axis.norm();
     if (!std::isfinite(length) || (length < 1.0e-6f))
     {
-        return compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+        return compages::Vector3f(0.0f, 0.0f, 0.0f);
     }
     return p_axis / length;
 }
 
 LocalTransform jointTransform(RevoluteJoint const& p_joint)
 {
-    const compages::core::Vector3f axis = jointAxis(p_joint.axis);
+    const compages::Vector3f axis = jointAxis(p_joint.axis);
     if (axis.norm() < 0.5f) // zero axis: the link does not move
     {
         return p_joint.origin;
@@ -75,7 +75,7 @@ LocalTransform jointTransform(RevoluteJoint const& p_joint)
     const units::angle::radian_t angle = p_joint.state.position.applied();
     LocalTransform local = p_joint.origin;
     local.rotation = p_joint.origin.rotation *
-                     compages::core::Quatf::fromAngleAxis(angle, axis);
+                     compages::Quatf::fromAngleAxis(angle, axis);
     local.rotation.normalize();
     return local;
 }
@@ -83,8 +83,8 @@ LocalTransform jointTransform(RevoluteJoint const& p_joint)
 LocalTransform jointTransform(PrismaticJoint const& p_joint)
 {
     const float offset = p_joint.state.position.applied().to<float>();
-    const compages::core::Vector3f axis = jointAxis(p_joint.axis);
-    const compages::core::Vector3f slide(axis.x * offset * p_joint.origin.scale.x,
+    const compages::Vector3f axis = jointAxis(p_joint.axis);
+    const compages::Vector3f slide(axis.x * offset * p_joint.origin.scale.x,
                          axis.y * offset * p_joint.origin.scale.y,
                          axis.z * offset * p_joint.origin.scale.z);
     LocalTransform local = p_joint.origin;

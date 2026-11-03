@@ -30,25 +30,25 @@ namespace
 
 using json = nlohmann::json;
 
-json vec3(compages::core::Vector3f const& p_v)
+json vec3(compages::Vector3f const& p_v)
 {
     return json::array({ p_v.x, p_v.y, p_v.z });
 }
 
-json quat(compages::core::Quatf const& p_q)
+json quat(compages::Quatf const& p_q)
 {
     return json::array({ p_q[0], p_q[1], p_q[2], p_q[3] });
 }
 
-compages::core::Vector3f readVec3(json const& p_j)
+compages::Vector3f readVec3(json const& p_j)
 {
-    return compages::core::Vector3f(
+    return compages::Vector3f(
         p_j.at(0).get<float>(), p_j.at(1).get<float>(), p_j.at(2).get<float>());
 }
 
-compages::core::Quatf readQuat(json const& p_j)
+compages::Quatf readQuat(json const& p_j)
 {
-    return compages::core::Quatf(p_j.at(0).get<float>(),
+    return compages::Quatf(p_j.at(0).get<float>(),
                                  p_j.at(1).get<float>(),
                                  p_j.at(2).get<float>(),
                                  p_j.at(3).get<float>());
@@ -217,9 +217,9 @@ Status applyComponents(compages::world::World& p_world,
 
 } // namespace
 
-Status save(compages::world::World const& p_world,
-            compages::renderer::AssetManager const& p_assets,
-            std::string const& p_path)
+Status saveWorld(compages::world::World const& p_world,
+                 compages::renderer::AssetManager const& p_assets,
+                 std::filesystem::path const& p_path)
 {
     std::vector<compages::world::EntityId> order;
     std::unordered_map<compages::world::EntityId, int> index;
@@ -245,21 +245,21 @@ Status save(compages::world::World const& p_world,
     std::ofstream out(p_path);
     if (!out)
     {
-        return failure("cannot write scene file '" + p_path + "'");
+        return failure("cannot write scene file '" + p_path.string() + "'");
     }
     out << document.dump(2);
     return success();
 }
 
 Result<std::vector<compages::world::EntityId>>
-load(compages::world::World& p_world,
-     compages::renderer::AssetManager const& p_assets,
-     std::string const& p_path)
+loadWorld(compages::world::World& p_world,
+          compages::renderer::AssetManager const& p_assets,
+          std::filesystem::path const& p_path)
 {
     std::ifstream in(p_path);
     if (!in)
     {
-        return failure("cannot read scene file '" + p_path + "'");
+        return failure("cannot read scene file '" + p_path.string() + "'");
     }
 
     json document;
@@ -320,7 +320,7 @@ load(compages::world::World& p_world,
 }
 
 Status saveScene(compages::renderer::Scene const& p_scene,
-                 std::string const& p_path)
+                 std::filesystem::path const& p_path)
 {
     json document;
     document["version"] = 2;
@@ -366,19 +366,20 @@ Status saveScene(compages::renderer::Scene const& p_scene,
     std::ofstream out(p_path);
     if (!out)
     {
-        return failure("cannot write scene file '" + p_path + "'");
+        return failure("cannot write scene file '" + p_path.string() + "'");
     }
     out << document.dump(2);
     return success();
 }
 
 Result<std::vector<compages::world::EntityId>>
-loadScene(compages::renderer::Scene& p_scene, std::string const& p_path)
+loadScene(compages::renderer::Scene& p_scene,
+          std::filesystem::path const& p_path)
 {
     std::ifstream in(p_path);
     if (!in)
     {
-        return failure("cannot read scene file '" + p_path + "'");
+        return failure("cannot read scene file '" + p_path.string() + "'");
     }
 
     json document;
@@ -395,7 +396,7 @@ loadScene(compages::renderer::Scene& p_scene, std::string const& p_path)
         {
             json const& color = scene_node.at("clear_color");
             p_scene.renderSettings().clear_color =
-                compages::core::Vector4f(color.at(0).get<float>(),
+                compages::Vector4f(color.at(0).get<float>(),
                                          color.at(1).get<float>(),
                                          color.at(2).get<float>(),
                                          color.at(3).get<float>());

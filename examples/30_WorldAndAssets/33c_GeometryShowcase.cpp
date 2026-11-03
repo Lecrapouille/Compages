@@ -12,6 +12,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string GeometryShowcase::description() const
 {
     return "Box, sphere, cone, cylinder, pyramid and a tube on a plateau, "
@@ -19,6 +20,7 @@ std::string GeometryShowcase::description() const
            "The camera turns around the plateau.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status GeometryShowcase::setUp()
 {
     // The camera turns around the plateau by itself.
@@ -34,7 +36,7 @@ compages::Status GeometryShowcase::setUp()
 
     // The textured shader without a picture: it samples white.
     compages::renderer::Look through_pbr = compages::renderer::texture({});
-    through_pbr.color = compages::core::Vector3f(0.28f, 0.45f, 0.92f);
+    through_pbr.color = compages::Vector3f(0.28f, 0.45f, 0.92f);
 
     // One of each look the Scene can give a shape: a colour, a tinted
     // texture, a depth ramp, and the normals.
@@ -79,6 +81,7 @@ compages::Status GeometryShowcase::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void GeometryShowcase::draw(compages::world::ViewFrame const& p_frame)
 {
     // The shapes turn; the plateau stays.

@@ -92,6 +92,7 @@ static bool isComment(std::string const& p_line)
             (p_line.compare(first, 1u, "*") == 0));
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawUi()
 {
     drawMenuBar();
@@ -106,6 +107,7 @@ void Gallery::drawUi()
     drawConsolePanel();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawMenuBar()
 {
     if (!ImGui::BeginMainMenuBar())
@@ -236,6 +238,7 @@ void Gallery::drawMenuBar()
     ImGui::EndMainMenuBar();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawStatusBar()
 {
     // A side bar of the main viewport rather than a window: the dock space is
@@ -283,6 +286,7 @@ void Gallery::drawStatusBar()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawDockSpace()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -326,6 +330,7 @@ void Gallery::drawDockSpace()
     ImGui::DockSpaceOverViewport(dock, viewport);
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawViewport()
 {
     // No tab while it is alone in its place, no padding: the picture fills
@@ -387,7 +392,7 @@ void Gallery::drawViewport()
         draw->AddImage(ImTextureRef(static_cast<ImTextureID>(m_view_color.nativeId())),
                        at, end, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
     }
-    m_view_mouse = compages::core::Vector2f((io.MousePos.x - at.x) * scale.x,
+    m_view_mouse = compages::Vector2f((io.MousePos.x - at.x) * scale.x,
                             static_cast<float>(m_view_height) -
                                 ((io.MousePos.y - at.y) * scale.y));
 
@@ -409,6 +414,7 @@ void Gallery::drawViewport()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawHud(float p_x, float p_y, float p_width, float p_height)
 {
     if (m_current == nullptr)
@@ -462,6 +468,7 @@ void Gallery::drawHud(float p_x, float p_y, float p_width, float p_height)
     }
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawExamplesPanel()
 {
     if (!ImGui::Begin(EXAMPLES))
@@ -522,6 +529,7 @@ void Gallery::drawExamplesPanel()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawInspectorPanel()
 {
     if (!ImGui::Begin(INSPECTOR))
@@ -579,6 +587,7 @@ void Gallery::drawInspectorPanel()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawTryItPanel()
 {
     if (!ImGui::Begin(TRY_IT))
@@ -608,6 +617,7 @@ void Gallery::drawTryItPanel()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawSourcePanel()
 {
     if (!ImGui::Begin(SOURCE))
@@ -665,6 +675,7 @@ void Gallery::drawSourcePanel()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawDebugPanel()
 {
     if (!ImGui::Begin(DEBUG))
@@ -727,6 +738,7 @@ void Gallery::drawDebugPanel()
     ImGui::End();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::drawConsolePanel()
 {
     if (!ImGui::Begin(CONSOLE))

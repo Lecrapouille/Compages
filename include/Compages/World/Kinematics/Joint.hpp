@@ -121,7 +121,7 @@ struct RevoluteJoint
     //! angle is zero.
     LocalTransform origin{};
     //! \brief Unit axis of rotation, in the joint frame.
-    compages::core::Vector3f axis{ 0.0f, 0.0f, 1.0f };
+    compages::Vector3f axis{ 0.0f, 0.0f, 1.0f };
     RevoluteState state{};
 };
 
@@ -138,13 +138,13 @@ struct PrismaticJoint
     //! offset is zero.
     LocalTransform origin{};
     //! \brief Unit axis of translation, in the joint frame.
-    compages::core::Vector3f axis{ 0.0f, 0.0f, 1.0f };
+    compages::Vector3f axis{ 0.0f, 0.0f, 1.0f };
     PrismaticState state{};
 };
 
 //! \brief The unit axis of a joint, or the zero vector when \c p_axis is
 //! too short or not finite. A joint with a zero axis does not move its link.
-[[nodiscard]] compages::core::Vector3f jointAxis(compages::core::Vector3f const& p_axis);
+[[nodiscard]] compages::Vector3f jointAxis(compages::Vector3f const& p_axis);
 
 //! \brief The local place of the link, for the applied angle of the joint.
 //!

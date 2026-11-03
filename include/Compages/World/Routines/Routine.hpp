@@ -161,7 +161,7 @@ protected:
     // ------------------------------------------------------------------------
     //! \brief Timing from the last World step (size and delta time).
     // ------------------------------------------------------------------------
-    [[nodiscard]] compages::core::Frame const& frame() const;
+    [[nodiscard]] compages::Frame const& frame() const;
 
     //! \brief Names a timer, to cancel it.
     using TimerId = std::uint32_t;

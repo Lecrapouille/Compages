@@ -18,10 +18,12 @@ using namespace units::literals;
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief The three matrices are separate uniforms and multiplied in the
 //! shader, in the order every text on the subject uses. Combining them on the
 //! CPU would be fewer multiplications, and is what a real renderer does; kept
 //! apart here because this example is about what each one means.
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX_SHADER = R"(#version 450 core
 
 in vec3 position;
@@ -46,6 +48,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
 in vec3 vNormal;
@@ -63,55 +66,54 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string IndexedCube::description() const
 {
     return "Indices, so a corner is stored once and named several times. A "
-           "depth "
-           "test, so a near face covers a far one whatever the order. Back "
-           "face "
-           "culling, so half of a closed shape costs nothing. And three "
-           "matrices, "
-           "to place it, look at it and project it. The test and the culling "
-           "belong "
-           "to the render state of the drawable, so nothing has to be switched "
-           "off "
-           "afterwards.";
+           "depth test, so a near face covers a far one whatever the order. "
+           "Back face culling, so half of a closed shape costs nothing. And "
+           "three matrices, to place it, look at it and project it. The test "
+           "and the culling belong to the render state of the drawable, so "
+           "nothing has to be switched off afterwards.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status IndexedCube::setUp()
 {
-    COMPAGES_TRY(m_cube.load(VERTEX_SHADER, FRAGMENT_SHADER));
+    COMPAGES_TRY(m_cube.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 
     // Twenty four corners and thirty six indices, built once on the CPU: see
     // Common/ColoredCube.hpp. Sixteen bit indices, because twenty four vertices
     // are a long way below sixty five thousand. The cube is one and a bit
     // across so that it fits in front of the camera.
     const CubeMesh cube = createCube(1.2f);
-    m_cube.vertices(cube.vertices);
+    m_cube.setVertices(cube.vertices);
     m_cube.indices(cube.indices);
-    m_cube.depthTest().cull(compages::gpu::CullMode::Back);
+    m_cube.state().depth_test = true;
+    m_cube.state().cull = compages::gpu::CullMode::Back;
     return m_cube.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void IndexedCube::draw(compages::world::ViewFrame const& p_frame)
 {
-    const compages::core::Matrix44f identity(compages::core::matrix::Identity);
+    const compages::Matrix44f identity(compages::matrix::Identity);
 
-    const compages::core::Matrix44f model =
-        compages::core::rotate(identity,
-                               units::angle::radian_t(p_frame.total * 0.7f),
-                               compages::core::Vector3f(0.3f, 1.0f, 0.2f));
+    const compages::Matrix44f model =
+        compages::rotate(identity,
+                         units::angle::radian_t(p_frame.total * 0.7f),
+                         compages::Vector3f(0.3f, 1.0f, 0.2f));
 
-    const compages::core::Matrix44f view =
-        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 3.0f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::Matrix44f view =
+        compages::lookAt(compages::Vector3f(0.0f, 0.0f, 3.0f),
+                         compages::Vector3f(0.0f, 0.0f, 0.0f),
+                         compages::Vector3f(0.0f, 1.0f, 0.0f));
 
     // Read from the frame and not remembered from set up: the window can be
     // resized, and a projection built once is how a cube ends up looking like a
     // brick.
-    const compages::core::Matrix44f projection =
-        compages::core::perspective(60.0_deg, aspect(p_frame), 0.1f, 20.0f);
+    const compages::Matrix44f projection =
+        compages::perspective(60.0_deg, aspect(p_frame), 0.1f, 20.0f);
 
     m_cube["model"] = model;
     m_cube["view"] = view;

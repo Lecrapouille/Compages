@@ -40,7 +40,7 @@ chapter tables: keep them in sync. Code comments point to chapters
   snippets build headless with
   `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`;
   paste the real output.
-- Namespaces in snippets: `compages::core::Vector3f`, `compages::core::Frame`,
+- Namespaces in snippets: `compages::Vector3f`, `compages::Frame`,
   `compages::world::...`, `compages::renderer::...`, `compages::gpu::...`.
 - Each chapter: what you will learn → content/tutorial → reference tables → next.
 - Do not document what does not exist (check the header first); mark future

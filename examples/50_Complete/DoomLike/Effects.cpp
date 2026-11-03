@@ -54,64 +54,67 @@ void main()
 )";
 
 //! \brief The colours of the marks, as lit surfaces.
-static compages::core::Vector3f markColor(Mark p_mark)
+static compages::Vector3f markColor(Mark p_mark)
 {
     switch (p_mark)
     {
         case Mark::Blood:
-            return compages::core::Vector3f(0.32f, 0.01f, 0.01f);
+            return compages::Vector3f(0.32f, 0.01f, 0.01f);
         case Mark::Hole:
-            return compages::core::Vector3f(0.025f, 0.025f, 0.025f);
+            return compages::Vector3f(0.025f, 0.025f, 0.025f);
         case Mark::Scorch:
-            return compages::core::Vector3f(0.02f, 0.017f, 0.015f);
+            return compages::Vector3f(0.02f, 0.017f, 0.015f);
         case Mark::Oil:
-            return compages::core::Vector3f(0.03f, 0.03f, 0.035f);
+            return compages::Vector3f(0.03f, 0.03f, 0.035f);
     }
-    return compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+    return compages::Vector3f(0.0f, 0.0f, 0.0f);
 }
 
 //! \brief The turn bringing +Z onto \c p_normal, then \c p_spin around it.
-static compages::core::Quatf facing(compages::core::Vector3f p_normal,
+static compages::Quatf facing(compages::Vector3f p_normal,
                                     float p_spin)
 {
-    const compages::core::Quatf spin = compages::core::Quatf::fromAngleAxis(
+    const compages::Quatf spin = compages::Quatf::fromAngleAxis(
         units::angle::radian_t(double(p_spin)),
-        compages::core::Vector3f(0.0f, 0.0f, 1.0f));
-    const compages::core::Vector3f z(0.0f, 0.0f, 1.0f);
-    const float cosine = compages::core::vector::dot(z, p_normal);
+        compages::Vector3f(0.0f, 0.0f, 1.0f));
+    const compages::Vector3f z(0.0f, 0.0f, 1.0f);
+    const float cosine = compages::vector::dot(z, p_normal);
     if (cosine > 0.9999f)
     {
         return spin;
     }
     if (cosine < -0.9999f)
     {
-        return compages::core::Quatf::fromAngleAxis(
+        return compages::Quatf::fromAngleAxis(
                    units::angle::radian_t(double(PI)),
-                   compages::core::Vector3f(0.0f, 1.0f, 0.0f)) *
+                   compages::Vector3f(0.0f, 1.0f, 0.0f)) *
                spin;
     }
-    compages::core::Vector3f axis = compages::core::vector::cross(z, p_normal);
+    compages::Vector3f axis = compages::vector::cross(z, p_normal);
     axis.normalize();
-    return compages::core::Quatf::fromAngleAxis(
+    return compages::Quatf::fromAngleAxis(
                units::angle::radian_t(double(std::acos(cosine))), axis) *
            spin;
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Effects::setUp()
 {
     // Depth tested so that walls hide them, depth not written so that they
     // do not hide one another.
     for (compages::gpu::Drawable* drawable : { &m_glowing, &m_hiding })
     {
-        COMPAGES_TRY(drawable->load(VERTEX_SHADER, FRAGMENT_SHADER));
-        drawable->primitive(compages::gpu::Primitive::Points).depthTest(true);
+        COMPAGES_TRY(drawable->loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
+        drawable->state().primitive = compages::gpu::Primitive::Points;
+        drawable->state().depth_test = true;
         drawable->state().depth_write = false;
     }
-    m_glowing.blend(compages::gpu::Blend::additive());
-    m_hiding.blend(compages::gpu::Blend::alpha());
+    m_glowing.state().blend = compages::gpu::Blend::additive();
+    m_hiding.state().blend = compages::gpu::Blend::alpha();
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void Effects::reset(compages::renderer::Scene& p_scene)
 {
     m_scene = &p_scene;
@@ -137,9 +140,9 @@ void Effects::reset(compages::renderer::Scene& p_scene)
             auto add = [&mesh](float x, float y)
             {
                 compages::renderer::MeshVertex vertex;
-                vertex.position = compages::core::Vector3f(x, y, 0.0f);
-                vertex.normal = compages::core::Vector3f(0.0f, 0.0f, 1.0f);
-                vertex.uv = compages::core::Vector2f(x, y);
+                vertex.position = compages::Vector3f(x, y, 0.0f);
+                vertex.normal = compages::Vector3f(0.0f, 0.0f, 1.0f);
+                vertex.uv = compages::Vector2f(x, y);
                 mesh.source_vertices.emplace_back(vertex);
                 return std::uint32_t(mesh.source_vertices.size() - 1u);
             };
@@ -178,9 +181,9 @@ void Effects::reset(compages::renderer::Scene& p_scene)
                      0.3f);
             }
             mesh.index_count = mesh.source_indices.size();
-            mesh.local_bounds = compages::core::AABB::fromCorners(
-                compages::core::Vector3f(-0.9f, -0.9f, -0.01f),
-                compages::core::Vector3f(0.9f, 0.9f, 0.01f));
+            mesh.local_bounds = compages::AABB::fromCorners(
+                compages::Vector3f(-0.9f, -0.9f, -0.01f),
+                compages::Vector3f(0.9f, 0.9f, 0.01f));
             m_shapes[kind][shape] =
                 p_scene.mesh(std::move(mesh), "MarkShape", look)
                     .position(0.0f, -50.0f, 0.0f)
@@ -191,20 +194,23 @@ void Effects::reset(compages::renderer::Scene& p_scene)
     }
 }
 
+// ----------------------------------------------------------------------------
 float Effects::random(float p_low, float p_high)
 {
     return std::uniform_real_distribution<float>(p_low, p_high)(m_random);
 }
 
-compages::core::Vector3f Effects::randomDirection()
+// ----------------------------------------------------------------------------
+compages::Vector3f Effects::randomDirection()
 {
-    compages::core::Vector3f d(
+    compages::Vector3f d(
         random(-1.0f, 1.0f), random(-1.0f, 1.0f), random(-1.0f, 1.0f));
     const float length = d.norm();
     return (length > 1.0e-3f) ? (d * (1.0f / length))
-                              : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+                              : compages::Vector3f(0.0f, 1.0f, 0.0f);
 }
 
+// ----------------------------------------------------------------------------
 void Effects::emit(Particle p_particle)
 {
     if (m_particles.size() < 4000u)
@@ -213,8 +219,9 @@ void Effects::emit(Particle p_particle)
     }
 }
 
-void Effects::blood(compages::core::Vector3f p_at,
-                    compages::core::Vector3f p_direction,
+// ----------------------------------------------------------------------------
+void Effects::blood(compages::Vector3f p_at,
+                    compages::Vector3f p_direction,
                     int p_count)
 {
     for (int i = 0; i < p_count; ++i)
@@ -224,7 +231,7 @@ void Effects::blood(compages::core::Vector3f p_at,
         drop.velocity =
             (p_direction * random(1.0f, 4.0f)) + (randomDirection() * 1.5f);
         const float dark = random(0.45f, 0.75f);
-        drop.color = compages::core::Vector3f(dark, 0.02f, 0.02f);
+        drop.color = compages::Vector3f(dark, 0.02f, 0.02f);
         drop.size = random(0.03f, 0.08f);
         drop.life = random(0.5f, 1.1f);
         drop.gravity = 9.0f;
@@ -234,15 +241,16 @@ void Effects::blood(compages::core::Vector3f p_at,
     Particle mist;
     mist.position = p_at;
     mist.velocity = p_direction * 0.4f;
-    mist.color = compages::core::Vector3f(0.5f, 0.02f, 0.02f);
+    mist.color = compages::Vector3f(0.5f, 0.02f, 0.02f);
     mist.size = 0.25f;
     mist.life = 0.35f;
     mist.grow = 0.8f;
     emit(mist);
 }
 
-void Effects::sparks(compages::core::Vector3f p_at,
-                     compages::core::Vector3f p_normal,
+// ----------------------------------------------------------------------------
+void Effects::sparks(compages::Vector3f p_at,
+                     compages::Vector3f p_normal,
                      int p_count)
 {
     for (int i = 0; i < p_count; ++i)
@@ -252,7 +260,7 @@ void Effects::sparks(compages::core::Vector3f p_at,
         spark.velocity =
             (p_normal * random(1.0f, 3.0f)) + (randomDirection() * 2.5f);
         spark.color =
-            compages::core::Vector3f(1.0f, random(0.55f, 0.8f), 0.25f);
+            compages::Vector3f(1.0f, random(0.55f, 0.8f), 0.25f);
         spark.size = random(0.02f, 0.04f);
         spark.life = random(0.15f, 0.4f);
         spark.gravity = 6.0f;
@@ -262,7 +270,7 @@ void Effects::sparks(compages::core::Vector3f p_at,
     Particle dust;
     dust.position = p_at + (p_normal * 0.05f);
     dust.velocity = p_normal * 0.3f;
-    dust.color = compages::core::Vector3f(0.35f, 0.32f, 0.3f);
+    dust.color = compages::Vector3f(0.35f, 0.32f, 0.3f);
     dust.size = 0.15f;
     dust.life = 0.7f;
     dust.grow = 0.5f;
@@ -270,13 +278,14 @@ void Effects::sparks(compages::core::Vector3f p_at,
     emit(dust);
 }
 
-void Effects::muzzle(compages::core::Vector3f p_at,
-                     compages::core::Vector3f p_direction)
+// ----------------------------------------------------------------------------
+void Effects::muzzle(compages::Vector3f p_at,
+                     compages::Vector3f p_direction)
 {
     Particle flash;
     flash.position = p_at;
     flash.velocity = p_direction * 1.0f;
-    flash.color = compages::core::Vector3f(1.0f, 0.8f, 0.4f);
+    flash.color = compages::Vector3f(1.0f, 0.8f, 0.4f);
     flash.size = 0.22f;
     flash.life = 0.06f;
     flash.glows = true;
@@ -287,7 +296,7 @@ void Effects::muzzle(compages::core::Vector3f p_at,
         spark.position = p_at;
         spark.velocity =
             (p_direction * random(4.0f, 9.0f)) + (randomDirection() * 1.2f);
-        spark.color = compages::core::Vector3f(1.0f, 0.7f, 0.3f);
+        spark.color = compages::Vector3f(1.0f, 0.7f, 0.3f);
         spark.size = 0.025f;
         spark.life = random(0.05f, 0.14f);
         spark.glows = true;
@@ -296,8 +305,8 @@ void Effects::muzzle(compages::core::Vector3f p_at,
     Particle smoke;
     smoke.position = p_at + (p_direction * 0.1f);
     smoke.velocity =
-        (p_direction * 0.6f) + compages::core::Vector3f(0.0f, 0.3f, 0.0f);
-    smoke.color = compages::core::Vector3f(0.5f, 0.5f, 0.5f);
+        (p_direction * 0.6f) + compages::Vector3f(0.0f, 0.3f, 0.0f);
+    smoke.color = compages::Vector3f(0.5f, 0.5f, 0.5f);
     smoke.size = 0.08f;
     smoke.life = 0.8f;
     smoke.grow = 0.35f;
@@ -305,29 +314,31 @@ void Effects::muzzle(compages::core::Vector3f p_at,
     emit(smoke);
 }
 
-void Effects::casing(compages::core::Vector3f p_at,
-                     compages::core::Vector3f p_right)
+// ----------------------------------------------------------------------------
+void Effects::casing(compages::Vector3f p_at,
+                     compages::Vector3f p_right)
 {
     Particle shell;
     shell.position = p_at;
     shell.velocity = (p_right * random(1.5f, 2.5f)) +
-                     compages::core::Vector3f(0.0f, random(1.5f, 2.5f), 0.0f);
-    shell.color = compages::core::Vector3f(0.75f, 0.1f, 0.08f);
+                     compages::Vector3f(0.0f, random(1.5f, 2.5f), 0.0f);
+    shell.color = compages::Vector3f(0.75f, 0.1f, 0.08f);
     shell.size = 0.03f;
     shell.life = 1.2f;
     shell.gravity = 9.8f;
     emit(shell);
 }
 
-void Effects::explosion(compages::core::Vector3f p_at)
+// ----------------------------------------------------------------------------
+void Effects::explosion(compages::Vector3f p_at)
 {
     for (int i = 0; i < 70; ++i)
     {
         Particle fire;
         fire.position = p_at + (randomDirection() * 0.3f);
         fire.velocity = randomDirection() * random(1.0f, 5.0f) +
-                        compages::core::Vector3f(0.0f, 1.5f, 0.0f);
-        fire.color = compages::core::Vector3f(1.0f, random(0.35f, 0.7f), 0.1f);
+                        compages::Vector3f(0.0f, 1.5f, 0.0f);
+        fire.color = compages::Vector3f(1.0f, random(0.35f, 0.7f), 0.1f);
         fire.size = random(0.3f, 0.7f);
         fire.life = random(0.3f, 0.8f);
         fire.drag = 3.0f;
@@ -340,7 +351,7 @@ void Effects::explosion(compages::core::Vector3f p_at)
         Particle spark;
         spark.position = p_at;
         spark.velocity = randomDirection() * random(5.0f, 12.0f);
-        spark.color = compages::core::Vector3f(1.0f, 0.8f, 0.4f);
+        spark.color = compages::Vector3f(1.0f, 0.8f, 0.4f);
         spark.size = 0.04f;
         spark.life = random(0.3f, 0.9f);
         spark.gravity = 8.0f;
@@ -353,9 +364,9 @@ void Effects::explosion(compages::core::Vector3f p_at)
         smoke.position = p_at + (randomDirection() * 0.5f);
         smoke.velocity =
             randomDirection() * 0.8f +
-            compages::core::Vector3f(0.0f, random(0.6f, 1.4f), 0.0f);
+            compages::Vector3f(0.0f, random(0.6f, 1.4f), 0.0f);
         const float grey = random(0.12f, 0.25f);
-        smoke.color = compages::core::Vector3f(grey, grey, grey);
+        smoke.color = compages::Vector3f(grey, grey, grey);
         smoke.size = random(0.5f, 0.9f);
         smoke.life = random(1.5f, 3.0f);
         smoke.drag = 1.2f;
@@ -364,13 +375,14 @@ void Effects::explosion(compages::core::Vector3f p_at)
     }
 }
 
-void Effects::glow(compages::core::Vector3f p_at,
-                   compages::core::Vector3f p_color,
+// ----------------------------------------------------------------------------
+void Effects::glow(compages::Vector3f p_at,
+                   compages::Vector3f p_color,
                    float p_size)
 {
     Particle ball;
     ball.position = p_at;
-    ball.velocity = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+    ball.velocity = compages::Vector3f(0.0f, 0.0f, 0.0f);
     ball.color = p_color;
     ball.size = p_size;
     ball.life = 0.02f;
@@ -378,14 +390,16 @@ void Effects::glow(compages::core::Vector3f p_at,
     emit(ball);
 }
 
-void Effects::tracer(compages::core::Vector3f p_from,
-                     compages::core::Vector3f p_to,
-                     compages::core::Vector3f p_color,
+// ----------------------------------------------------------------------------
+void Effects::tracer(compages::Vector3f p_from,
+                     compages::Vector3f p_to,
+                     compages::Vector3f p_color,
                      float p_life)
 {
     m_tracers.emplace_back(Tracer{ p_from, p_to, p_color, p_life });
 }
 
+// ----------------------------------------------------------------------------
 compages::world::Entity Effects::takeMark(Mark p_mark)
 {
     // A new copy until enough are around, then the oldest moves.
@@ -403,9 +417,10 @@ compages::world::Entity Effects::takeMark(Mark p_mark)
     return placed.back();
 }
 
+// ----------------------------------------------------------------------------
 void Effects::mark(Mark p_mark,
-                   compages::core::Vector3f p_point,
-                   compages::core::Vector3f p_normal,
+                   compages::Vector3f p_point,
+                   compages::Vector3f p_normal,
                    float p_size)
 {
     if (m_scene == nullptr)
@@ -422,7 +437,8 @@ void Effects::mark(Mark p_mark,
         .scale(p_size);
 }
 
-void Effects::pool(Mark p_mark, compages::core::Vector3f p_at, float p_size)
+// ----------------------------------------------------------------------------
+void Effects::pool(Mark p_mark, compages::Vector3f p_at, float p_size)
 {
     if (m_scene == nullptr)
     {
@@ -430,15 +446,16 @@ void Effects::pool(Mark p_mark, compages::core::Vector3f p_at, float p_size)
     }
     compages::world::Entity puddle = takeMark(p_mark);
     puddle.position(p_at.x, 0.012f, p_at.z)
-        .rotation(facing(compages::core::Vector3f(0.0f, 1.0f, 0.0f),
+        .rotation(facing(compages::Vector3f(0.0f, 1.0f, 0.0f),
                          random(0.0f, 2.0f * PI)))
         .scale(0.05f);
     m_spreading.emplace_back(Spread{ puddle, 0.05f, p_size });
 }
 
+// ----------------------------------------------------------------------------
 void Effects::markBody(Mark p_mark,
                        compages::world::EntityId p_body,
-                       compages::core::Vector3f p_point,
+                       compages::Vector3f p_point,
                        float p_size)
 {
     if (m_scene == nullptr)
@@ -465,8 +482,8 @@ void Effects::markBody(Mark p_mark,
         {
             continue;
         }
-        compages::core::Matrix44f const& m = world.worldMatrix(id);
-        const compages::core::Vector3f at = compages::core::translation(m);
+        compages::Matrix44f const& m = world.worldMatrix(id);
+        const compages::Vector3f at = compages::translation(m);
         const float d = (at - p_point).norm();
         if (d < best)
         {
@@ -482,14 +499,14 @@ void Effects::markBody(Mark p_mark,
     // In the space of the bone: the point brought back through its matrix,
     // the size divided by its scale, which in a model made in centimetres is
     // a hundredth.
-    const compages::core::Matrix44f inverse =
-        compages::core::inverse(world.worldMatrix(nearest));
-    const compages::core::Vector3f local =
-        compages::core::transformPoint(inverse, p_point);
-    compages::core::Matrix44f const& m = world.worldMatrix(nearest);
+    const compages::Matrix44f inverse =
+        compages::inverse(world.worldMatrix(nearest));
+    const compages::Vector3f local =
+        compages::transformPoint(inverse, p_point);
+    compages::Matrix44f const& m = world.worldMatrix(nearest);
     const float scale = std::max(
-        compages::core::vector::norm(
-            compages::core::Vector3f(m(0, 0), m(1, 0), m(2, 0))),
+        compages::vector::norm(
+            compages::Vector3f(m(0, 0), m(1, 0), m(2, 0))),
         1.0e-6f);
 
     compages::world::Entity drop;
@@ -508,6 +525,7 @@ void Effects::markBody(Mark p_mark,
         .scale(p_size / scale);
 }
 
+// ----------------------------------------------------------------------------
 void Effects::update(float p_dt)
 {
     for (Particle& p : m_particles)
@@ -521,7 +539,7 @@ void Effects::update(float p_dt)
         if ((p.gravity > 0.0f) && (p.position.y < 0.01f))
         {
             p.position.y = 0.01f;
-            p.velocity = compages::core::Vector3f(
+            p.velocity = compages::Vector3f(
                 p.velocity.x * 0.3f, -p.velocity.y * 0.2f, p.velocity.z * 0.3f);
         }
     }
@@ -543,6 +561,7 @@ void Effects::update(float p_dt)
                   [](Spread const& s) { return s.size >= s.target; });
 }
 
+// ----------------------------------------------------------------------------
 void Effects::lines(compages::renderer::DebugDraw& p_debug) const
 {
     for (Tracer const& t : m_tracers)
@@ -552,6 +571,7 @@ void Effects::lines(compages::renderer::DebugDraw& p_debug) const
     }
 }
 
+// ----------------------------------------------------------------------------
 void Effects::draw(compages::renderer::CameraFrame const& p_camera,
                    float p_fov_degrees,
                    float p_height)
@@ -570,7 +590,7 @@ void Effects::draw(compages::renderer::CameraFrame const& p_camera,
             alpha *= std::min(1.0f, t * 6.0f) * 0.7f;
         }
         const Point point{ p.position,
-                           compages::core::Vector4f(
+                           compages::Vector4f(
                                p.color.x, p.color.y, p.color.z, alpha),
                            p.size };
         (p.glows ? m_glowing : m_hiding).emplace_back(point);
@@ -580,7 +600,7 @@ void Effects::draw(compages::renderer::CameraFrame const& p_camera,
         p_height * 0.5f / std::tan(p_fov_degrees * PI / 360.0f);
     for (compages::gpu::Drawable* drawable : { &m_hiding, &m_glowing })
     {
-        if (drawable->count() == 0u)
+        if (drawable->vertexCount() == 0u)
         {
             continue;
         }

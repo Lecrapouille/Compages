@@ -16,26 +16,22 @@
 namespace examples
 {
 
-namespace
-{
-
 //! \brief Where an unbounded (continuous) joint slider stops, in degrees.
 constexpr float FULL_TURN = 360.0f;
 
-float degrees(units::angle::radian_t p_angle, float p_fallback)
+static float degrees(units::angle::radian_t p_angle, float p_fallback)
 {
     const float value = units::angle::degree_t(p_angle).to<float>();
     return std::isfinite(value) ? value : p_fallback;
 }
 
-float meters(units::length::meter_t p_offset, float p_fallback)
+static float meters(units::length::meter_t p_offset, float p_fallback)
 {
     const float value = p_offset.to<float>();
     return std::isfinite(value) ? value : p_fallback;
 }
 
-} // namespace
-
+// ----------------------------------------------------------------------------
 std::string RobotArm::description() const
 {
     return "An ABB IRB 2400 loaded from its URDF file: one entity per link, a "
@@ -46,6 +42,7 @@ std::string RobotArm::description() const
            "external/Compages-data/.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status RobotArm::setUp()
 {
     const std::filesystem::path path = dataPath("irb2400.urdf");
@@ -56,7 +53,7 @@ compages::Status RobotArm::setUp()
             "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.12f, 0.14f, 0.18f);
-    auto robot = m_scene.load(path.string());
+    auto robot = m_scene.loadFile(path);
     if (!robot)
     {
         return compages::failure(robot.error());
@@ -79,23 +76,25 @@ compages::Status RobotArm::setUp()
     };
     collect(robot.value());
 
-    const compages::core::Vector3f middle = m_scene.frameAll();
+    const compages::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void RobotArm::draw(compages::world::ViewFrame const& p_frame)
 {
     m_scene.draw(p_frame);
 }
 
+// ----------------------------------------------------------------------------
 void RobotArm::controls()
 {
-    for (compages::world::Entity& joint : m_joints)
+    for (compages::world::Entity const& joint : m_joints)
     {
-        if (auto* revolute = joint.find<compages::world::RevoluteJoint>())
+        if (auto const* revolute = joint.find<compages::world::RevoluteJoint>())
         {
-            auto& position = revolute->state.position;
+            auto const& position = revolute->state.position;
             float angle = degrees(position.value, 0.0f);
             if (ImGui::SliderFloat(joint.name().c_str(),
                                    &angle,
@@ -106,7 +105,7 @@ void RobotArm::controls()
                 joint.joint().angle(units::angle::degree_t(angle));
             }
         }
-        else if (auto* prismatic =
+        else if (auto const* prismatic =
                      joint.find<compages::world::PrismaticJoint>())
         {
             auto& position = prismatic->state.position;
@@ -124,7 +123,7 @@ void RobotArm::controls()
 
     if (ImGui::Button("Home"))
     {
-        for (compages::world::Entity& joint : m_joints)
+        for (compages::world::Entity const& joint : m_joints)
         {
             if (auto* revolute = joint.find<compages::world::RevoluteJoint>())
             {
@@ -144,7 +143,7 @@ void RobotArm::controls()
 
     if (m_tool)
     {
-        const compages::core::Vector3f tool = m_tool.worldPosition();
+        const compages::Vector3f tool = m_tool.worldPosition();
         ImGui::Text("tool0 in the world: %.3f %.3f %.3f",
                     double(tool.x),
                     double(tool.y),

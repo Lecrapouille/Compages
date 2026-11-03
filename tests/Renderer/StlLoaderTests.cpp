@@ -143,7 +143,7 @@ TEST(StlLoader, LoadsAFile)
         std::ofstream file(path, std::ios::binary);
         file << ASCII_SQUARE;
     }
-    auto mesh = compages::renderer::loadStl(path.string());
+    auto mesh = compages::renderer::loadStl(path);
     std::filesystem::remove(path);
     ASSERT_TRUE(bool(mesh)) << mesh.error();
     expectSquare(mesh.value());

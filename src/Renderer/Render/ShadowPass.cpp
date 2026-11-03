@@ -50,7 +50,7 @@ Status drawCaster(compages::gpu::Program& p_program,
     if (joints > 0)
     {
         p_program.set("uJoints",
-                      std::span<const compages::core::Matrix44f>(
+                      std::span<const compages::Matrix44f>(
                           p_snapshot.joint_palette.data() + p_item.joint_offset,
                           static_cast<std::size_t>(joints)));
     }
@@ -73,7 +73,7 @@ void ShadowPass::bind(compages::renderer::Material& p_material) const
 {
     p_material.program.set("lampShadows", m_lamps.enabled);
     p_material.program.set("lampFaces",
-                           std::span<const compages::core::Matrix44f>(m_lamps.faces.data(), m_lamps.faces.size()));
+                           std::span<const compages::Matrix44f>(m_lamps.faces.data(), m_lamps.faces.size()));
     if (m_lamps.any)
     {
         m_lamp_depth.bind(LAMP_SHADOW_UNIT);
@@ -102,7 +102,7 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
     }
 
     // What casts a shadow, and how big it is: the box of the sun fits it.
-    compages::core::AABB casters;
+    compages::AABB casters;
     for (RenderItem const& item : p_snapshot.items)
     {
         if (!has(item.flags, RenderFlags::NoShadowCaster) && !has(item.flags, RenderFlags::Overlay) &&
@@ -142,20 +142,20 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
     }
 
     // The sun looks at the middle of the casters from beyond them.
-    const compages::core::Vector3f center = (casters.min + casters.max) * 0.5f;
-    const compages::core::Vector3f half = (casters.max - casters.min) * 0.5f;
-    const float radius = std::max(compages::core::vector::norm(half), 0.01f);
-    compages::core::Vector3f travel = sunOf(p_snapshot).first;
-    if (compages::core::vector::norm(travel) < 1.0e-6f)
+    const compages::Vector3f center = (casters.min + casters.max) * 0.5f;
+    const compages::Vector3f half = (casters.max - casters.min) * 0.5f;
+    const float radius = std::max(compages::vector::norm(half), 0.01f);
+    compages::Vector3f travel = sunOf(p_snapshot).first;
+    if (compages::vector::norm(travel) < 1.0e-6f)
     {
         return success();
     }
-    travel = compages::core::vector::normalize(travel);
-    const compages::core::Vector3f up =
-        std::abs(travel.y) > 0.99f ? compages::core::Vector3f(1.0f, 0.0f, 0.0f) : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
-    const compages::core::Matrix44f view = compages::core::lookAt(center - (travel * (2.0f * radius)), center, up);
-    const compages::core::Matrix44f projection =
-        compages::core::ortho(-radius, radius, -radius, radius, 0.01f * radius, 4.0f * radius);
+    travel = compages::vector::normalize(travel);
+    const compages::Vector3f up =
+        std::abs(travel.y) > 0.99f ? compages::Vector3f(1.0f, 0.0f, 0.0f) : compages::Vector3f(0.0f, 1.0f, 0.0f);
+    const compages::Matrix44f view = compages::lookAt(center - (travel * (2.0f * radius)), center, up);
+    const compages::Matrix44f projection =
+        compages::ortho(-radius, radius, -radius, radius, 0.01f * radius, 4.0f * radius);
     m_sun.light_view_projection = projection * view;
     m_sun.texel = (2.0f * radius) / static_cast<float>(size);
     // About one texel of depth, in the [0, 1] depth of the picture.
@@ -219,7 +219,7 @@ Status ShadowPass::renderLamps(RenderSnapshot const& p_snapshot,
     }
 
     // The six faces of a cube, as a camera of 90 degrees looking along each axis.
-    using compages::core::Vector3f;
+    using compages::Vector3f;
     const std::array<Vector3f, 6u> along{ Vector3f(1.0f, 0.0f, 0.0f), Vector3f(-1.0f, 0.0f, 0.0f),
                                           Vector3f(0.0f, 1.0f, 0.0f), Vector3f(0.0f, -1.0f, 0.0f),
                                           Vector3f(0.0f, 0.0f, 1.0f), Vector3f(0.0f, 0.0f, -1.0f) };
@@ -235,14 +235,14 @@ Status ShadowPass::renderLamps(RenderSnapshot const& p_snapshot,
             continue;
         }
         const float near = std::max(0.01f, lamp.range * 0.002f);
-        const compages::core::Matrix44f projection =
-            compages::core::perspective(units::angle::radian_t(0.5f * 3.14159265f), 1.0f, near, lamp.range);
+        const compages::Matrix44f projection =
+            compages::perspective(units::angle::radian_t(0.5f * 3.14159265f), 1.0f, near, lamp.range);
         m_lamp_program.set("lampPos", lamp.position);
         m_lamp_program.set("lampRange", lamp.range);
         for (std::size_t face = 0u; face < 6u; ++face)
         {
-            const compages::core::Matrix44f view_projection =
-                projection * compages::core::lookAt(lamp.position, lamp.position + along[face], up[face]);
+            const compages::Matrix44f view_projection =
+                projection * compages::lookAt(lamp.position, lamp.position + along[face], up[face]);
             m_lamps.faces[(6u * i) + face] = view_projection;
 
             compages::gpu::RenderPass const pass(m_lamp_target,
@@ -264,7 +264,7 @@ Status ShadowPass::renderLamps(RenderSnapshot const& p_snapshot,
                     const Vector3f nearest(std::clamp(lamp.position.x, item.world_bounds.min.x, item.world_bounds.max.x),
                                            std::clamp(lamp.position.y, item.world_bounds.min.y, item.world_bounds.max.y),
                                            std::clamp(lamp.position.z, item.world_bounds.min.z, item.world_bounds.max.z));
-                    if (compages::core::vector::norm(nearest - lamp.position) > lamp.range)
+                    if (compages::vector::norm(nearest - lamp.position) > lamp.range)
                     {
                         continue;
                     }

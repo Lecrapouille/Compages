@@ -22,9 +22,9 @@ namespace
 // ****************************************************************************
 struct Mesh
 {
-    compages::core::Vector3f position;
-    compages::core::Vector3f normal;
-    compages::core::Vector2f uv;
+    compages::Vector3f position;
+    compages::Vector3f normal;
+    compages::Vector2f uv;
 };
 
 // ****************************************************************************
@@ -33,8 +33,8 @@ struct Mesh
 // ****************************************************************************
 struct Sprite
 {
-    compages::core::Vector2f position;
-    compages::core::Vector<std::uint8_t, 4u> color;
+    compages::Vector2f position;
+    compages::Vector<std::uint8_t, 4u> color;
 };
 
 // ****************************************************************************
@@ -42,7 +42,7 @@ struct Sprite
 // ****************************************************************************
 struct Instance
 {
-    compages::core::Matrix44f model;
+    compages::Matrix44f model;
 };
 
 //! \brief Reads all three fields of a Mesh. The forward pass.
@@ -75,7 +75,7 @@ in vec3 aPosition;
 void main() { gl_Position = vec4(aPosition, 1.0); }
 )";
 
-//! \brief Reads the position as a vec2, which a compages::core::Vector3f field cannot feed.
+//! \brief Reads the position as a vec2, which a compages::Vector3f field cannot feed.
 constexpr const char* NARROW_VERTEX = R"(#version 450 core
 in vec2 position;
 void main() { gl_Position = vec4(position, 0.0, 1.0); }
@@ -691,11 +691,11 @@ TEST(RenderStateTest, SaysWhenAPassWritesDepthOnly)
 // nobody asked for.
 TEST(RenderStateTest, ReadsAMatrixFieldOneSlotAtATime)
 {
-    constexpr compages::gpu::AttributeFormat format = compages::gpu::formatOf<compages::core::Matrix44f>();
+    constexpr compages::gpu::AttributeFormat format = compages::gpu::formatOf<compages::Matrix44f>();
 
     ASSERT_EQ(format.slots, 4u);
     ASSERT_EQ(format.components, 4u);
-    ASSERT_EQ(format.size(), sizeof(compages::core::Matrix44f));
+    ASSERT_EQ(format.size(), sizeof(compages::Matrix44f));
     ASSERT_EQ(format.glslType(), "mat4");
     ASSERT_FALSE(format.as_integer);
 }

@@ -18,14 +18,13 @@ namespace examples
 // ****************************************************************************
 //! \brief A glTF model loaded, placed and framed in three lines.
 //!
-//! load() reads the file once into a prefab, and places it in the World.
+//! loadFile() reads the file once into a prefab, and places it in the World.
 //! frameAll() puts a camera and a sun where they see it whole, whatever its
 //! size:
 //! \code
-//! COMPAGES_TRY(m_scene.load(dataPath("Duck.glb").string()));
-//! const compages::core::Vector3f middle = m_scene.frameAll();
-//! m_scene.activeCamera().add<compages::world::Orbit>(middle);   // turn around
-//! it
+//! COMPAGES_TRY(m_scene.loadFile(dataPath("Duck.glb")));
+//! const compages::Vector3f middle = m_scene.frameAll();
+//! m_scene.activeCamera().add<compages::world::Orbit>(middle); // turn around
 //! \endcode
 // ****************************************************************************
 class GltfModel final: public Example

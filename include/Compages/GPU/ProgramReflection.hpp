@@ -7,6 +7,32 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief What a shader program turns out to contain, as the driver reports
+//! it: its inputs, its values, its blocks.
+//!
+//! When a program is linked, the driver decides where everything goes. This
+//! file holds its answer, read once and kept. Two things make it worth having
+//! rather than guessing.
+//!
+//! The offsets of the members of a uniform block are the driver's, not ours.
+//! The std140 rules say what they should be, and GPU_STD140 checks a C++ struct
+//! against those rules, but the only authority on where the driver really put a
+//! member is the driver. Asking it means a block can be filled correctly even
+//! when the shader was written by somebody else.
+//!
+//! And knowing what the program declares is what lets a mismatch be named: a
+//! vertex layout offering "aPosition" to a shader asking for "position" gets
+//! both lists spelled out in the error.
+//!
+//! What it holds:
+//! - ProgramReflection: everything, with lookups by name.
+//! - AttributeInfo, UniformInfo, BlockInfo, BlockMember: one entry each.
+//! - DataType and its helpers: a type as GLSL declares it.
+//! - TypeOf: the DataType of a C++ type.
+// ****************************************************************************
+
 #include "Compages/GPU/VertexLayout.hpp"
 
 #include <array>
@@ -15,33 +41,11 @@
 #include <string_view>
 #include <vector>
 
-// ****************************************************************************
-//! \file
-//! \brief What a linked shader program turns out to contain.
-//!
-//! Read from the driver once, when the program is linked, and kept. Two things
-//! make it worth having rather than guessing.
-//!
-//! The offsets of the members of a uniform block are the driver's, not ours. The
-//! std140 rules say what they should be, and GPU_STD140 checks a C++ struct
-//! against those rules, but the only authority on where the driver really put a
-//! member is the driver. Asking it means a block can be filled correctly even
-//! when the shader was written by somebody else, or compiled with a layout
-//! qualifier nobody expected.
-//!
-//! And knowing what the program declares is what lets a mismatch be named. A
-//! vertex layout offering "aPosition" to a shader that asks for "position" used
-//! to draw nothing at all, with no message; now both lists are in hand and the
-//! difference can be spelled out.
-// ****************************************************************************
-
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
 namespace compages::gpu
 {
-
-
 
 // ----------------------------------------------------------------------------
 //! \brief A type as a shader declares it.
@@ -121,52 +125,81 @@ enum class DataType
 };
 
 // ----------------------------------------------------------------------------
-//! \brief The type as it is spelled in shader source, for error messages.
+//! \brief The type as it is spelled in shader source ("vec3", "sampler2D"),
+//! for error messages the reader can search the shader for.
+//! \param[in] p_type the type to name.
+//! \return a static string, never null; "unknown" for Unknown.
 // ----------------------------------------------------------------------------
 [[nodiscard]] const char* toString(DataType p_type);
 
 // ----------------------------------------------------------------------------
-//! \brief Is this a texture the shader reads through a sampler?
+//! \brief Is this a texture the shader reads through a sampler? Such a
+//! uniform is given a texture, not a number.
+//! \param[in] p_type the type to inspect.
+//! \return true for every Sampler kind.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isSampler(DataType p_type);
 
 // ----------------------------------------------------------------------------
-//! \brief Is this an image the shader may write to?
+//! \brief Is this an image the shader may write to? Bound with
+//! Texture::bindAsImage(), not as a sampler.
+//! \param[in] p_type the type to inspect.
+//! \return true for every Image kind.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isImage(DataType p_type);
 
 // ----------------------------------------------------------------------------
-//! \brief Is this a matrix?
+//! \brief Is this a matrix? A matrix attribute takes one slot per column.
+//! \param[in] p_type the type to inspect.
+//! \return true for the Mat kinds.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isMatrix(DataType p_type);
 
 // ----------------------------------------------------------------------------
-//! \brief How many columns, which for a vector or a scalar is one.
+//! \brief How many columns, which for a vector or a scalar is one: 4 for a
+//! mat4, 2 for a mat2x4.
+//! \param[in] p_type the type to inspect.
+//! \return the column count, 1 to 4.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::uint8_t columnsOf(DataType p_type);
 
 // ----------------------------------------------------------------------------
-//! \brief How many rows, that is how many components one column holds.
+//! \brief How many rows, that is how many components one column holds: 3
+//! for a vec3, 4 for a mat2x4.
+//! \param[in] p_type the type to inspect.
+//! \return the row count, 1 to 4.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::uint8_t rowsOf(DataType p_type);
 
 // ----------------------------------------------------------------------------
 //! \brief What kind of number the components are, or Float for a sampler, which
 //! has no components of its own.
+//! \param[in] p_type the type to inspect.
+//! \return the scalar kind; Float for samplers and images.
 // ----------------------------------------------------------------------------
 [[nodiscard]] ScalarType scalarOf(DataType p_type);
 
 // ----------------------------------------------------------------------------
 //! \brief The vertex format an attribute of this type expects.
 //!
-//! This is what makes a C++ vertex layout comparable to what the shader declares:
-//! both sides end up as an AttributeFormat, and a mismatch can be shown in the
-//! same words.
+//! This is what makes a C++ vertex layout comparable to what the shader
+//! declares: both sides end up as an AttributeFormat, and a mismatch can be
+//! shown in the same words.
+//!
+//! \param[in] p_type the type of a vertex attribute.
+//! \return the format a matching field must have.
 // ----------------------------------------------------------------------------
 [[nodiscard]] AttributeFormat attributeFormatOf(DataType p_type);
 
 // ****************************************************************************
-//! \brief One `in` variable of the vertex stage.
+//! \brief One `in` variable of the vertex stage: a value each corner of a
+//! shape must bring, such as its position.
+//!
+//! \code
+//! for (auto const& a : program.reflection().attributes)
+//!     std::cout << a.name << ' ' << toString(a.type) << " at "
+//!               << a.location << '\n';
+//! \endcode
 // ****************************************************************************
 struct AttributeInfo
 {
@@ -184,7 +217,8 @@ struct AttributeInfo
 };
 
 // ****************************************************************************
-//! \brief One uniform that does not belong to a block.
+//! \brief One uniform that does not belong to a block: a value shared by
+//! every corner and pixel of a draw, such as a colour or a matrix.
 //!
 //! These are the ones set one at a time, and the ones the driver keeps its own
 //! copy of. Samplers appear here too, since a sampler is a uniform holding the
@@ -206,6 +240,9 @@ struct UniformInfo
 // ****************************************************************************
 //! \brief One member of a uniform or storage block, at the offset the driver
 //! chose.
+//!
+//! Where a value really sits in the block, which may differ from where the C++
+//! struct puts it: compare the two when a value arrives in the wrong place.
 // ****************************************************************************
 struct BlockMember
 {
@@ -227,13 +264,21 @@ struct BlockMember
 
     // ------------------------------------------------------------------------
     //! \brief How many bytes this member occupies, arrays and matrix padding
-    //! included.
+    //! included: 64 for a float[4] in std140, not 16.
+    //! \return the bytes the member covers in the block.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t bytes() const;
 };
 
 // ****************************************************************************
-//! \brief One uniform block or one shader storage block.
+//! \brief One uniform block or one shader storage block: a group of values
+//! read from a buffer.
+//!
+//! \code
+//! if (auto const* camera = program.reflection().uniformBlock("Camera"))
+//!     std::cout << camera->bytes << " bytes on binding "
+//!               << camera->binding << '\n';
+//! \endcode
 // ****************************************************************************
 struct BlockInfo
 {
@@ -250,12 +295,23 @@ struct BlockInfo
 
     // ------------------------------------------------------------------------
     //! \brief The member of this name, or nullptr.
+    //! \param[in] p_name the member name, without the block name.
+    //! \return the member, or nullptr when the block has none of that name.
     // ------------------------------------------------------------------------
     [[nodiscard]] BlockMember const* find(std::string_view p_name) const;
 };
 
 // ****************************************************************************
-//! \brief Everything a linked program turns out to declare.
+//! \brief The table of contents of a shader program: every value it reads,
+//! as the driver reports it.
+//!
+//! Read once when the program is linked. Most code never looks at it; it is
+//! what lets the library match vertices, uniforms and blocks by name, and what
+//! to print when a shader does not receive what it should.
+//!
+//! \code
+//! std::cout << program.reflection().toString();
+//! \endcode
 // ****************************************************************************
 struct ProgramReflection
 {
@@ -273,28 +329,39 @@ struct ProgramReflection
     std::array<int, 3> work_group_size{ 0, 0, 0 };
 
     // ------------------------------------------------------------------------
-    //! \brief The attribute of this name, or nullptr.
+    //! \brief The attribute of this name, or nullptr. An attribute declared
+    //! but unused is removed by the compiler and not found.
+    //! \param[in] p_name the name in GLSL.
+    //! \return the attribute, or nullptr.
     // ------------------------------------------------------------------------
     [[nodiscard]] AttributeInfo const* attribute(std::string_view p_name) const;
 
     // ------------------------------------------------------------------------
-    //! \brief The uniform of this name, or nullptr.
+    //! \brief The uniform of this name, or nullptr. Same caveat: an unused one
+    //! is gone.
+    //! \param[in] p_name the name in GLSL, as listed in uniforms.
+    //! \return the uniform, or nullptr.
     // ------------------------------------------------------------------------
     [[nodiscard]] UniformInfo const* uniform(std::string_view p_name) const;
 
     // ------------------------------------------------------------------------
     //! \brief The uniform block of this name, or nullptr.
+    //! \param[in] p_name the block name, not the instance name.
+    //! \return the block, or nullptr.
     // ------------------------------------------------------------------------
     [[nodiscard]] BlockInfo const* uniformBlock(std::string_view p_name) const;
 
     // ------------------------------------------------------------------------
     //! \brief The storage block of this name, or nullptr.
+    //! \param[in] p_name the block name, not the instance name.
+    //! \return the block, or nullptr.
     // ------------------------------------------------------------------------
     [[nodiscard]] BlockInfo const* storageBlock(std::string_view p_name) const;
 
     // ------------------------------------------------------------------------
     //! \brief The samplers among the uniforms, which is what a pass has to be
     //! given textures for.
+    //! \return pointers into uniforms, valid while this reflection lives.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::vector<UniformInfo const*> samplers() const;
 
@@ -304,6 +371,7 @@ struct ProgramReflection
     //! What to print when a shader is not doing what its author expected: it
     //! shows the names as the driver knows them, which is often the difference
     //! itself.
+    //! \return a readable dump, several lines.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string toString() const;
 };
@@ -315,6 +383,11 @@ struct ProgramReflection
 //! The one place the two type systems are put side by side. Left undefined for
 //! anything else, so offering a shader a type it cannot hold is a compile error
 //! naming the type rather than a silent conversion.
+//!
+//! \code
+//! static_assert(compages::gpu::TypeOf<compages::Vector3f>::value ==
+//!               compages::gpu::DataType::Vec3);
+//! \endcode
 // ****************************************************************************
 template <typename T>
 struct TypeOf
@@ -355,21 +428,21 @@ struct TypeOf<bool>
 //! onto its size, which is the whole of the naming scheme: vec3, ivec3, uvec3
 //! and bvec3 differ only in where they start.
 template <typename T, std::size_t N>
-struct TypeOf<compages::core::Vector<T, N>>
+struct TypeOf<compages::Vector<T, N>>
 {
     static_assert((N >= 2u) && (N <= 4u),
                   "a shader knows vectors of two, three and four");
 
     static constexpr DataType FIRST = TypeOf<T>::value;
-    static constexpr DataType value =
-        static_cast<DataType>(static_cast<int>(FIRST) + static_cast<int>(N) - 1);
+    static constexpr DataType value = static_cast<DataType>(
+        static_cast<int>(FIRST) + static_cast<int>(N) - 1);
 };
 
 //! \brief matCxR in GLSL has C columns of R rows, and the library's Matrix is
 //! named the other way round, rows first, which is the one place the two
 //! conventions have to be crossed.
 template <std::size_t Rows, std::size_t Cols>
-struct TypeOf<compages::core::Matrix<float, Rows, Cols>>
+struct TypeOf<compages::Matrix<float, Rows, Cols>>
 {
     static_assert((Rows >= 2u) && (Rows <= 4u) && (Cols >= 2u) && (Cols <= 4u),
                   "a shader knows matrices from two to four in each direction");
@@ -383,15 +456,19 @@ struct TypeOf<compages::core::Matrix<float, Rows, Cols>>
         }
         else
         {
-            // Mat2x3, Mat2x4, Mat3x2, Mat3x4, Mat4x2, Mat4x3 in that order, that
-            // is columns first and skipping the square ones already named above.
+            // Mat2x3, Mat2x4, Mat3x2, Mat3x4, Mat4x2, Mat4x3 in that order,
+            // that is columns first and skipping the square ones already named
+            // above.
             constexpr int TABLE[3][3] = {
-                { -1, static_cast<int>(DataType::Mat2x3),
+                { -1,
+                  static_cast<int>(DataType::Mat2x3),
                   static_cast<int>(DataType::Mat2x4) },
-                { static_cast<int>(DataType::Mat3x2), -1,
+                { static_cast<int>(DataType::Mat3x2),
+                  -1,
                   static_cast<int>(DataType::Mat3x4) },
                 { static_cast<int>(DataType::Mat4x2),
-                  static_cast<int>(DataType::Mat4x3), -1 }
+                  static_cast<int>(DataType::Mat4x3),
+                  -1 }
             };
             return static_cast<DataType>(TABLE[Cols - 2u][Rows - 2u]);
         }

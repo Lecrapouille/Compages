@@ -13,9 +13,9 @@
 // ****************************************************************************
 //! \brief The three matrices every pass of a frame reads.
 //!
-//! Written once, read by three programs. That is the reason a uniform block
-//! exists: Program::set() would have copied them three times, into three places
-//! the driver keeps.
+//! Written once, read by three shaders. That is the reason a uniform block
+//! exists: a plain uniform would have been copied three times, once into each
+//! shader.
 //!
 //! GPU_STD140 is at file scope on purpose. It specialises a template in
 //! compages::gpu::std140, which a type hidden in a class or an anonymous
@@ -24,9 +24,9 @@
 // ****************************************************************************
 struct Transforms
 {
-    compages::core::Matrix44f projection;
-    compages::core::Matrix44f view;
-    compages::core::Matrix44f model;
+    compages::Matrix44f projection;
+    compages::Matrix44f view;
+    compages::Matrix44f model;
 };
 GPU_STD140(Transforms, projection, view, model);
 
@@ -34,26 +34,25 @@ namespace examples
 {
 
 // ****************************************************************************
-//! \brief One mesh, three ways of drawing it, one block of matrices: the level
-//! beneath compages::gpu::Drawable.
+//! \brief One mesh, three ways of drawing it, one block of matrices.
 //!
-//! A Drawable owns its shader and its vertices. When one mesh is drawn by
-//! several shaders, the pieces are held apart instead: one Buffer<Vertex>, one
-//! Program per way of drawing, and one Pipeline per program, which checks at
-//! set up that the vertex can feed that shader:
+//! The cube lives once on the graphics card, in a Buffer we own. Three
+//! drawables borrow it, each with its own shader: one lights the cube, one
+//! paints its normals, one draws only its edges. This is the "shared" case of
+//! 01d_BorrowedTriangle, on a real mesh:
 //! \code
-//! COMPAGES_TRY(m_lit_program.load(LIT_VERTEX, LIT_FRAGMENT));
-//! COMPAGES_TRY_ASSIGN(m_lit,
-//! compages::gpu::Pipeline::create<Vertex>(m_lit_program, solid));
-//! ...
-//! compages::gpu::drawIndexed(m_lit, m_vertices, m_indices);
+//! COMPAGES_TRY_ASSIGN(m_vertices, compages::gpu::VertexBuffer<Vertex>::from(
+//!     cube.vertices, compages::gpu::BufferUsage::Static));
+//! for (compages::gpu::Drawable* pass : { &m_lit, &m_normals, &m_wire })
+//! {
+//!     pass->borrowVertices(m_vertices);
+//! }
 //! \endcode
-//! The lit pass reads every field, the normals pass drops the colour the
-//! linker never needed, the wireframe drops both; the overlay's vertex-reader
-//! count is what says the buffer really is shared.
+//! Each shader reads only the fields it needs: the lit pass reads all of
+//! them, the normals pass skips the colour, the wireframe skips both.
 //!
 //! The matrices are a typed uniform block. Written once per frame, bound once,
-//! read by all three programs from the same numbered point.
+//! read by all three shaders from the same numbered point.
 // ****************************************************************************
 class MultiPassMesh: public Example
 {
@@ -73,28 +72,13 @@ private:
     //! \brief The corner of the cube of Common/ColoredCube.hpp.
     using Vertex = CubeVertex;
 
-    // ------------------------------------------------------------------------
-    //! \brief Load one of the three programs and build its pipeline, which
-    //! checks the vertex can feed it. The program must outlive the pipeline.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] compages::Status
-    makePipeline(compages::gpu::Program& p_program,
-                 compages::gpu::Pipeline& p_pipeline,
-                 char const* p_vertex,
-                 char const* p_fragment,
-                 compages::gpu::RenderState const& p_state);
+    //! \brief Ours, read by the three drawables. Declared first, so that it
+    //! is destroyed after them.
+    compages::gpu::VertexBuffer<Vertex> m_vertices;
 
-    compages::gpu::Program m_lit_program;
-    compages::gpu::Program m_normals_program;
-    compages::gpu::Program m_wire_program;
-
-    compages::gpu::Pipeline m_lit;
-    compages::gpu::Pipeline m_normals;
-    compages::gpu::Pipeline m_wire;
-
-    //! \brief Kept on the CPU until the first draw sends it.
-    compages::gpu::Buffer<Vertex> m_vertices;
-    compages::gpu::Buffer<std::uint16_t> m_indices;
+    compages::gpu::Drawable m_lit;
+    compages::gpu::Drawable m_normals;
+    compages::gpu::Drawable m_wire;
     compages::gpu::TypedUniformBlock<Transforms> m_transforms;
 };
 

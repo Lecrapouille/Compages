@@ -75,9 +75,9 @@ struct MaterialInstance
     MaterialId material;
     //! \brief The base colour uploaded to the shader's \c color uniform, when
     //! the shader declares one.
-    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     //! \brief PBR base colour factor (\c baseColorFactor in glTF).
-    compages::core::Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
     //! \brief Optional albedo map. Empty means the factor alone is used.
     TextureAssetId base_color_texture{};
     //! \brief DepthMaterial near/far smoothstep range, in eye-space metres.

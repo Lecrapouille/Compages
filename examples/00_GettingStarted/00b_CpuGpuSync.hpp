@@ -27,12 +27,14 @@ namespace examples
 //! \code
 //! m_values.assign({ 3, 5, 8, 13, 21 });   // on the CPU only
 //! m_values[2u] = 42;                      // still on the CPU only
-//! COMPAGES_TRY(m_values.upload());         // now on the GPU too
+//! COMPAGES_TRY(m_values.upload());        // now on the GPU too
 //! \endcode
-//! The bars are what the GPU holds, read back from it. The buttons of the
-//! "Try it" panel change the CPU copy: the bars turn orange where the two
-//! copies disagree, and catch up when upload() is pressed. A drawable does that
-//! upload itself at every draw, which is why no later example calls it.
+//!
+//! This example shows bars representing the values held by the GPU, read back
+//! from it. The buttons of the "Try it" panel change the CPU copy: the bars
+//! turn orange where the two copies disagree, and catch up when upload() is
+//! pressed. A drawable does that upload itself at every draw, which is why no
+//! later example calls it.
 // ****************************************************************************
 class CpuGpuSync final: public Example
 {
@@ -52,9 +54,12 @@ private:
     //! \brief Read what the GPU holds into m_on_gpu, for the bars.
     void readBack();
     //! \brief Write the CPU copy and the GPU copy to the standard output.
-    void printToConsole();
+    void printToConsole() const;
 
-    compages::gpu::Buffer<int> m_values;
+private:
+
+    //! \brief The numbers, on the CPU transferred to the GPU.
+    compages::gpu::StorageBuffer<int> m_values;
     //! \brief What the GPU held when last asked.
     std::vector<int> m_on_gpu;
     //! \brief Which element the next "+5" changes.

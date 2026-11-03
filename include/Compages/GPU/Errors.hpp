@@ -7,22 +7,16 @@
 
 #pragma once
 
-#include "Compages/GPU/Handle.hpp"
-
-#include <cstddef>
-#include <string>
-#include <utility>
-
 // ****************************************************************************
 //! \file
-//! \brief The two ways the gpu layer says something went wrong.
+//! \brief How the GPU layer says that something went wrong.
 //!
-//! Errors come in two kinds, and each has its own channel.
+//! There are two kinds of failure, and each has its own channel.
 //!
 //! - **What can fail for a reason outside the program**: compiling a shader,
 //!   reading a file, asking the driver for something it does not have. These
-//!   return a Status, checked once with COMPAGES_TRY, because
-//!   the caller has to decide what to do about them.
+//!   return a Status, checked once with COMPAGES_TRY, because the caller has to
+//!   decide what to do about them.
 //!
 //! - **What happens every frame**: setting a uniform, binding a texture,
 //!   drawing. A failure there is a programming mistake (a uniform misspelled,
@@ -33,11 +27,11 @@
 //! \code
 //! compages::Status Demo::setUp()
 //! {
-//!     COMPAGES_TRY(m_quad.load(VERTEX, FRAGMENT));  // may fail: a
-//!     Status return success();
+//!     COMPAGES_TRY(m_quad.loadSources(VERTEX, FRAGMENT));  // may fail: a
+//!     Status return compages::success();
 //! }
 //!
-//! void Demo::draw(compages::core::Frame const& p_frame)
+//! void Demo::draw(compages::Frame const& p_frame)
 //! {
 //!     m_quad["time"] = p_frame.total;               // cannot fail loudly
 //!     m_quad.draw();                                // recorded, if it fails
@@ -50,6 +44,12 @@
 //! }
 //! \endcode
 // ****************************************************************************
+
+#include "Compages/GPU/Handle.hpp"
+
+#include <cstddef>
+#include <string>
+#include <utility>
 
 namespace compages::gpu
 {
@@ -72,24 +72,29 @@ void reportError(std::string p_message);
 //! error.
 //!
 //! \code
-//! if (!compages::gpu::check(m_texture.load("missing.png")))
+//! if (!compages::gpu::check(m_texture.loadFile("missing.png")))
 //! {
 //!     return;   // the reason is waiting in compages::gpu::takeFrameError()
 //! }
 //! \endcode
 //!
+//! \param[in] p_status the result to check. A failure is recorded as the
+//! frame error, with its message unchanged.
 //! \return true when \c p_status was a success.
 // ----------------------------------------------------------------------------
 bool check(Status const& p_status);
 
 // ----------------------------------------------------------------------------
-//! \brief Has anything failed since the error was last taken?
+//! \brief Has anything failed since the error was last taken? Cheaper than
+//! takeFrameError(), which builds a string.
+//! \return true when a failure is waiting to be taken.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool hasFrameError();
 
 // ----------------------------------------------------------------------------
 //! \brief How many failures were recorded since the error was last taken.
 //! Only the first one's message is kept.
+//! \return the number of failures, 0 when none.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t frameErrorCount();
 
@@ -106,11 +111,14 @@ bool check(Status const& p_status);
 //! Off by default. Turned on, reportError() asserts, which puts the debugger
 //! on the very line that failed instead of at the end of the frame. Has no
 //! effect when assertions are compiled out.
+//!
+//! \param[in] p_enabled true to stop on the next reportError().
 // ----------------------------------------------------------------------------
 void setBreakOnError(bool p_enabled);
 
 // ----------------------------------------------------------------------------
-//! \brief Is setBreakOnError() on?
+//! \brief Is setBreakOnError() on? attempt() reads it to restore it.
+//! \return true when reportError() stops in the debugger.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool breakOnError();
 
@@ -130,6 +138,10 @@ void setBreakOnError(bool p_enabled);
 //! EXPECT_FALSE(drawn);
 //! EXPECT_THAT(drawn.error(), HasSubstr("no pass is open"));
 //! \endcode
+//!
+//! \param[in] p_function anything callable with no argument. What it returns
+//! is ignored.
+//! \return the first failure p_function recorded, or success.
 // ----------------------------------------------------------------------------
 template <typename F>
 [[nodiscard]] Status attempt(F&& p_function)

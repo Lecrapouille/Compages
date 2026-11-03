@@ -13,6 +13,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 constexpr char const* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
@@ -24,7 +25,9 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 // Port of legacy 11_ComplexShader.fs (ShaderFrog Universe Nursery).
+// ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
 in vec2 vUv;
 uniform vec3 color;
@@ -83,15 +86,17 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string ComplexShader::description() const
 {
     return "Legacy 11_ComplexShader: ShaderFrog Universe Nursery starfield on "
            "a fullscreen quad.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status ComplexShader::setUp()
 {
-    COMPAGES_TRY(m_quad.load(VERTEX, FRAGMENT));
+    COMPAGES_TRY(m_quad.loadSources(VERTEX, FRAGMENT));
 
     // A quad covering the window. The starfield is entirely in the fragment
     // shader; these vertices only say where the picture is.
@@ -101,7 +106,7 @@ compages::Status ComplexShader::setUp()
 
     // The knobs of the original shader, left as uniforms so a frame can
     // change them. Only time does, below.
-    m_quad["color"] = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
+    m_quad["color"] = compages::Vector3f(1.0f, 1.0f, 1.0f);
     m_quad["speed"] = 0.0001f;
     m_quad["brightness"] = 0.0018f;
     m_quad["distfading"] = 0.7f;
@@ -109,6 +114,7 @@ compages::Status ComplexShader::setUp()
     return m_quad.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void ComplexShader::draw(compages::world::ViewFrame const& p_frame)
 {
     // The whole animation is this uniform. The quad itself never moves.

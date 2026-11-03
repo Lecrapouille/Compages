@@ -280,7 +280,7 @@ Status SpatialGraph::setParent(NodeId p_child,
     // now if we want to preserve it after the reparent. Capture it before we
     // touch the graph.
     const EntityId child_entity = m_nodes[p_child.index()].entity;
-    compages::core::Matrix44f preserved_world(compages::core::matrix::Identity);
+    compages::Matrix44f preserved_world(compages::matrix::Identity);
     const bool need_world = (p_policy == ReparentPolicy::KeepWorld) &&
                             (p_transforms != nullptr) &&
                             p_transforms->has(child_entity);
@@ -301,8 +301,8 @@ Status SpatialGraph::setParent(NodeId p_child,
         // We do not have a decomposition helper handy, so we recompose by
         // treating the local as "the affine transform from parent to child",
         // pulled apart into T, R, S.
-        compages::core::Matrix44f parent_world(
-            compages::core::matrix::Identity);
+        compages::Matrix44f parent_world(
+            compages::matrix::Identity);
         if (p_parent.valid())
         {
             const EntityId parent_entity = m_nodes[p_parent.index()].entity;
@@ -311,47 +311,47 @@ Status SpatialGraph::setParent(NodeId p_child,
                 parent_world = p_transforms->world(parent_entity);
             }
         }
-        const compages::core::Matrix44f parent_inverse =
-            compages::core::inverse(parent_world);
-        const compages::core::Matrix44f new_local =
+        const compages::Matrix44f parent_inverse =
+            compages::inverse(parent_world);
+        const compages::Matrix44f new_local =
             parent_inverse * preserved_world;
 
         LocalTransformView local = p_transforms->localMutable(child_entity);
-        local.position = compages::core::Vector3f(new_local(0, 3),
+        local.position = compages::Vector3f(new_local(0, 3),
                                                   new_local(1, 3),
                                                   new_local(2, 3));
-        const compages::core::Vector3f col0(new_local(0, 0),
+        const compages::Vector3f col0(new_local(0, 0),
                                             new_local(1, 0),
                                             new_local(2, 0));
-        const compages::core::Vector3f col1(new_local(0, 1),
+        const compages::Vector3f col1(new_local(0, 1),
                                             new_local(1, 1),
                                             new_local(2, 1));
-        const compages::core::Vector3f col2(new_local(0, 2),
+        const compages::Vector3f col2(new_local(0, 2),
                                             new_local(1, 2),
                                             new_local(2, 2));
         local.scale =
-            compages::core::Vector3f(compages::core::vector::norm(col0),
-                                     compages::core::vector::norm(col1),
-                                     compages::core::vector::norm(col2));
-        compages::core::Matrix44f rotation_only(
-            compages::core::matrix::Identity);
+            compages::Vector3f(compages::vector::norm(col0),
+                                     compages::vector::norm(col1),
+                                     compages::vector::norm(col2));
+        compages::Matrix44f rotation_only(
+            compages::matrix::Identity);
         if (local.scale.x > 1.0e-6f)
         {
-            const compages::core::Vector3f n0 = col0 / local.scale.x;
-            rotation_only[0] = compages::core::Vector4f(n0.x, n0.y, n0.z, 0.0f);
+            const compages::Vector3f n0 = col0 / local.scale.x;
+            rotation_only[0] = compages::Vector4f(n0.x, n0.y, n0.z, 0.0f);
         }
         if (local.scale.y > 1.0e-6f)
         {
-            const compages::core::Vector3f n1 = col1 / local.scale.y;
-            rotation_only[1] = compages::core::Vector4f(n1.x, n1.y, n1.z, 0.0f);
+            const compages::Vector3f n1 = col1 / local.scale.y;
+            rotation_only[1] = compages::Vector4f(n1.x, n1.y, n1.z, 0.0f);
         }
         if (local.scale.z > 1.0e-6f)
         {
-            const compages::core::Vector3f n2 = col2 / local.scale.z;
-            rotation_only[2] = compages::core::Vector4f(n2.x, n2.y, n2.z, 0.0f);
+            const compages::Vector3f n2 = col2 / local.scale.z;
+            rotation_only[2] = compages::Vector4f(n2.x, n2.y, n2.z, 0.0f);
         }
-        local.rotation = compages::core::Quatf::fromMatrix(
-            compages::core::transpose(rotation_only));
+        local.rotation = compages::Quatf::fromMatrix(
+            compages::transpose(rotation_only));
     }
 
     if (p_transforms != nullptr)

@@ -11,6 +11,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string GltfModel::description() const
 {
     return "A GLB file loaded into the World and framed by the camera. Right "
@@ -18,6 +19,7 @@ std::string GltfModel::description() const
            "external/Compages-data/.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status GltfModel::setUp()
 {
     // The file is optional data: without it the example says so and stops.
@@ -28,13 +30,14 @@ compages::Status GltfModel::setUp()
                                  "external/, or set COMPAGES_DATA_PATH");
     }
     m_scene.background(0.12f, 0.14f, 0.18f);
-    COMPAGES_TRY(m_scene.load(path.string()));
+    COMPAGES_TRY(m_scene.loadFile(path));
     // Places the camera and a sun so the whole model is in frame.
-    const compages::core::Vector3f middle = m_scene.frameAll();
+    const compages::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void GltfModel::draw(compages::world::ViewFrame const& p_frame)
 {
     // The orbit routine reads the mouse inside the draw.

@@ -14,7 +14,7 @@
 #include <limits>
 #include <optional>
 
-namespace compages::core
+namespace compages
 {
 // ****************************************************************************
 //! \file
@@ -48,7 +48,7 @@ struct Ray
         Ray ray;
         ray.origin = p_from;
         const Vector3f delta = p_to - p_from;
-        const float length = compages::core::vector::norm(delta);
+        const float length = compages::vector::norm(delta);
         ray.direction =
             (length < 1.0e-8f) ? Vector3f(0.0f, 0.0f, -1.0f) : (delta / length);
         return ray;
@@ -108,5 +108,5 @@ struct Ray
     return t_min;
 }
 
-} // namespace compages::core
+} // namespace compages
 

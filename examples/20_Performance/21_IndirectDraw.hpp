@@ -48,12 +48,12 @@ private:
 
     struct Dot
     {
-        compages::core::Vector2f position;
+        compages::Vector2f position;
     };
 
-    compages::gpu::Buffer<Dot> m_all;
-    compages::gpu::Buffer<Dot> m_kept;
-    compages::gpu::Buffer<compages::gpu::DrawIndirectCommand> m_command;
+    compages::gpu::StorageBuffer<Dot> m_all;
+    compages::gpu::StorageBuffer<Dot> m_kept;
+    compages::gpu::StorageBuffer<compages::gpu::DrawIndirectCommand> m_command;
     compages::gpu::ComputeProgram m_cull;
     compages::gpu::Drawable m_kept_points;
 };

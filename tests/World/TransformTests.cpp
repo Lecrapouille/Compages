@@ -22,13 +22,13 @@ TEST(WorldTransform, ChildFollowsParent)
     compages::world::EntityId head = world.create("head");
     ASSERT_TRUE(bool(world.setParent(head, body)));
 
-    world.transform(body).position = compages::core::Vector3f(10.0f, 0.0f, 0.0f);
-    world.transform(head).position = compages::core::Vector3f(0.0f, 2.0f, 0.0f);
+    world.transform(body).position = compages::Vector3f(10.0f, 0.0f, 0.0f);
+    world.transform(head).position = compages::Vector3f(0.0f, 2.0f, 0.0f);
     world.update();
 
-    const compages::core::Matrix44f& world_head = world.worldMatrix(head);
-    ASSERT_NEAR(compages::core::translation(world_head).x, 10.0f, 1.0e-4f);
-    ASSERT_NEAR(compages::core::translation(world_head).y, 2.0f, 1.0e-4f);
+    const compages::Matrix44f& world_head = world.worldMatrix(head);
+    ASSERT_NEAR(compages::translation(world_head).x, 10.0f, 1.0e-4f);
+    ASSERT_NEAR(compages::translation(world_head).y, 2.0f, 1.0e-4f);
 }
 
 // Scale is inherited by children through the standard TRS composition, the
@@ -41,12 +41,12 @@ TEST(WorldTransform, ScaleIsInheritedByChildren)
     compages::world::EntityId child = world.create("child");
     ASSERT_TRUE(bool(world.setParent(child, root)));
 
-    world.transform(root).scale = compages::core::Vector3f(10.0f, 10.0f, 10.0f);
-    world.transform(child).position = compages::core::Vector3f(0.0f, 1.0f, 0.0f);
+    world.transform(root).scale = compages::Vector3f(10.0f, 10.0f, 10.0f);
+    world.transform(child).position = compages::Vector3f(0.0f, 1.0f, 0.0f);
     world.update();
 
-    const compages::core::Matrix44f& world_child = world.worldMatrix(child);
-    ASSERT_NEAR(compages::core::translation(world_child).y, 10.0f, 1.0e-3f);
+    const compages::Matrix44f& world_child = world.worldMatrix(child);
+    ASSERT_NEAR(compages::translation(world_child).y, 10.0f, 1.0e-3f);
 }
 
 // Dirty propagation: writing to a parent's transform re-runs its children's
@@ -58,14 +58,14 @@ TEST(WorldTransform, WritingParentDirtiesChildren)
     compages::world::EntityId b = world.create("b");
     ASSERT_TRUE(bool(world.setParent(b, a)));
 
-    world.transform(a).position = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
-    world.transform(b).position = compages::core::Vector3f(1.0f, 0.0f, 0.0f);
+    world.transform(a).position = compages::Vector3f(0.0f, 0.0f, 0.0f);
+    world.transform(b).position = compages::Vector3f(1.0f, 0.0f, 0.0f);
     world.update();
-    ASSERT_NEAR(compages::core::translation(world.worldMatrix(b)).x, 1.0f, 1.0e-4f);
+    ASSERT_NEAR(compages::translation(world.worldMatrix(b)).x, 1.0f, 1.0e-4f);
 
-    world.transform(a).position = compages::core::Vector3f(5.0f, 0.0f, 0.0f);
+    world.transform(a).position = compages::Vector3f(5.0f, 0.0f, 0.0f);
     world.update();
-    ASSERT_NEAR(compages::core::translation(world.worldMatrix(b)).x, 6.0f, 1.0e-4f);
+    ASSERT_NEAR(compages::translation(world.worldMatrix(b)).x, 6.0f, 1.0e-4f);
 }
 
 // A destroyed subtree does not leak transforms.

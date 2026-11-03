@@ -16,7 +16,7 @@ namespace examples
 struct Picture
 {
     char const* file;
-    compages::core::Vector3f fallback;
+    compages::Vector3f fallback;
 };
 
 const std::array<Picture, 9u> PICTURES{ {
@@ -31,12 +31,14 @@ const std::array<Picture, 9u> PICTURES{ {
     { "tree-01.png", { 0.30f, 0.55f, 0.25f } },
 } };
 
+// ----------------------------------------------------------------------------
 std::string TextureGallery::description() const
 {
     return "Nine pictures of the data repository on a grid of turning boxes; "
            "a missing file falls back to a plain colour.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status TextureGallery::setUp()
 {
     // A slow orbit, so the boxes show more than their front face.
@@ -55,7 +57,7 @@ compages::Status TextureGallery::setUp()
             path.empty() ? compages::renderer::color(picture.fallback.x,
                                                      picture.fallback.y,
                                                      picture.fallback.z)
-                         : compages::renderer::texture(path.string());
+                         : compages::renderer::texture(path);
         const float column = float(i % 3u) - 1.0f;
         const float row = float(i / 3u) - 1.0f;
         m_boxes.emplace_back(m_scene.box(picture.file, look)
@@ -65,6 +67,7 @@ compages::Status TextureGallery::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void TextureGallery::draw(compages::world::ViewFrame const& p_frame)
 {
     // The same turn for every box, so the grid stays aligned.

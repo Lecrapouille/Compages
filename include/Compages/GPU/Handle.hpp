@@ -7,6 +7,15 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief Handle: a small, copyable name for a resource on the graphics card.
+//!
+//! Buffers, textures, programs and framebuffers are all reached through a
+//! Handle. Copying one is free and never keeps the resource alive; using one
+//! after the resource is gone is reported as an error rather than a crash.
+// ****************************************************************************
+
 #include "Compages/Core/Result.hpp"
 
 #include <cstddef>
@@ -16,13 +25,24 @@
 namespace compages::gpu
 {
 
-
 // ****************************************************************************
-//! \brief Names one GPU resource, in 32 bits, and knows when it is stale.
+//! \brief A ticket naming one resource on the graphics card, which can tell
+//! when that resource no longer exists.
 //!
-//! Resources are not held through pointers. A handle is a slot number plus a
-//! counter of how many times that slot has been reused, and the resource itself
-//! lives in a contiguous pool. Three things follow from that.
+//! Like a cloakroom ticket: it is small, it can be copied and handed around,
+//! and showing it gets the coat back. If the coat was already returned and the
+//! hook given to someone else, the number printed on the ticket no longer
+//! matches and the cloakroom says so, instead of handing over the wrong coat.
+//!
+//! \code
+//! compages::gpu::TextureHandle id = texture.handle();  // 4 bytes, copy freely
+//! texture.release();
+//! // Any call given id now fails with "no longer exists", nothing crashes.
+//! \endcode
+//!
+//! Technically, a handle is a slot number plus a counter of how many times that
+//! slot has been reused, and the resource itself lives in a contiguous pool.
+//! Three things follow from that.
 //!
 //! Copying is free and safe. A handle can be stored in a scene node, in a
 //! command list, in a hash map, and none of that keeps the resource alive or
@@ -33,10 +53,8 @@ namespace compages::gpu
 //! holds and the pool reports it as stale. A dangling pointer offers no such
 //! comfort.
 //!
-//! And the resources of one kind sit next to each other in memory, which is what
-//! the old design could not do: it kept one std::unique_ptr per object inside a
-//! std::map keyed by std::string, so walking the buffers of a mesh meant
-//! chasing pointers through the heap and comparing strings along the way.
+//! And the resources of one kind sit next to each other in memory, so walking
+//! them does not chase pointers through the heap.
 //!
 //! The tag makes the type of resource part of the type of the handle, so a
 //! texture handle cannot be passed where a buffer handle is expected. It is
@@ -80,6 +98,7 @@ public:
     //!
     //! Says nothing about whether the resource is still alive: only the pool
     //! knows that. This merely tells an empty handle from a filled one.
+    //! \return true when the handle is not empty.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr bool valid() const
     {
@@ -88,6 +107,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Same as valid(), so that a handle can be tested directly.
+    //! \return true when the handle is not empty.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr explicit operator bool() const
     {
@@ -97,6 +117,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Which slot of the pool. Meaningful to the pool, and to a human
     //! reading a log; nothing else should depend on the value.
+    //! \return the slot number.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr std::uint16_t index() const
     {
@@ -105,6 +126,9 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief How many times the slot had been used when this handle was made.
+    //! Seeing it in a log tells a stale handle from a fresh one on the same
+    //! slot.
+    //! \return the reuse count, 0 for an empty handle.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr std::uint16_t generation() const
     {
@@ -112,7 +136,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief The whole handle as one number, for logs and hashing.
+    //! \brief The whole handle as one number, for logs and hashing. Zero for
+    //! an empty handle.
+    //! \return the 32 bits: reuse count high, slot low.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr std::uint32_t bits() const
     {
@@ -121,7 +147,11 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Two handles are the same when they name the same resource at the
-    //! same reuse count.
+    //! same reuse count. A handle to a released resource never equals one to
+    //! the resource that later took its slot.
+    //!
+    //! \param[in] p_other the handle to compare with.
+    //! \return true when both name the same resource at the same reuse count.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr bool operator==(Handle const& p_other) const
     {
@@ -129,7 +159,11 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Ordering, so handles can be keys of an ordered container.
+    //! \brief Ordering, so handles can be keys of a std::map or sorted. The
+    //! order carries no meaning beyond that.
+    //!
+    //! \param[in] p_other the handle to compare with.
+    //! \return the order of the 32 bits.
     // ------------------------------------------------------------------------
     [[nodiscard]] constexpr auto operator<=>(Handle const& p_other) const
     {
@@ -152,7 +186,11 @@ private:
 template <typename Tag>
 struct std::hash<compages::gpu::Handle<Tag>>
 {
-    [[nodiscard]] std::size_t operator()(compages::gpu::Handle<Tag> const& p_handle) const
+    //! \brief Hash of the 32 bits of the handle.
+    //! \param[in] p_handle the handle to hash.
+    //! \return the hash of the 32 bits.
+    [[nodiscard]] std::size_t
+    operator()(compages::gpu::Handle<Tag> const& p_handle) const
     {
         return std::hash<std::uint32_t>{}(p_handle.bits());
     }

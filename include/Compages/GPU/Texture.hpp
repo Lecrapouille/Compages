@@ -7,12 +7,30 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief Pictures stored on the graphics card: images, cube maps, volumes.
+//!
+//! Anything a shape shows on its surface comes from a texture: a photograph,
+//! a painted material, the six faces of a sky. A texture can also be a blank
+//! sheet the card draws into (see Framebuffer), or a grid of numbers a
+//! simulation updates every frame.
+//!
+//! What it holds:
+//! - Texture: the image, loaded from a file or made empty.
+//! - TextureDesc: its shape, size and pixel format.
+//! - LoadOptions: what to do to a file while loading it.
+//! - liveTextures(), textureMemory(): to spot leaks and watch memory.
+// ****************************************************************************
+
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/PixelFormat.hpp"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <span>
 #include <string>
 #include <vector>
@@ -25,6 +43,9 @@ using TextureHandle = Handle<struct TextureTag>;
 
 // ****************************************************************************
 //! \brief What a texture is to be: its shape, its size and what a pixel holds.
+//!
+//! The order form filled in before a texture is made: how big, which kind of
+//! pixels, how to read it.
 //!
 //! One description covering every shape, rather than a class per shape. A cube
 //! map differs from a 2D texture by holding six images, and an array by holding
@@ -74,10 +95,15 @@ struct TextureDesc
     //! other fields keep their defaults and can be chained:
     //! \code
     //! COMPAGES_TRY(m_texture.allocate(
-    //!     compages::gpu::TextureDesc::image(256u,
-    //!     256u).filter(compages::gpu::Filter::Nearest)
-    //!                                       .wrap(compages::gpu::Wrap::Repeat)));
+    //!     compages::gpu::TextureDesc::image(256u, 256u)
+    //!         .filter(compages::gpu::Filter::Nearest)
+    //!         .wrap(compages::gpu::Wrap::Repeat)));
     //! \endcode
+    //!
+    //! \param[in] p_width pixels across.
+    //! \param[in] p_height pixels down.
+    //! \param[in] p_format what one pixel holds.
+    //! \return the description, to chain filter() and wrap().
     // ------------------------------------------------------------------------
     [[nodiscard]] static TextureDesc
     image(std::uint32_t p_width,
@@ -92,6 +118,8 @@ struct TextureDesc
     }
 
     //! \brief Read the same way magnified and reduced.
+    //! \param[in] p_filter Nearest for sharp pixels, Linear for smooth ones.
+    //! \return this description, so calls can be chained.
     TextureDesc& filter(Filter p_filter)
     {
         magnify = p_filter;
@@ -100,6 +128,8 @@ struct TextureDesc
     }
 
     //! \brief Do the same beyond every edge.
+    //! \param[in] p_wrap what happens outside the image on every axis.
+    //! \return this description, so calls can be chained.
     TextureDesc& wrap(Wrap p_wrap)
     {
         wrap_x = p_wrap;
@@ -111,6 +141,14 @@ struct TextureDesc
 
 // ****************************************************************************
 //! \brief What to do to an image while loading it from a file.
+//!
+//! Two presets cover most files: picture() for what is meant to be looked at,
+//! data() for what holds numbers.
+//!
+//! \code
+//! COMPAGES_TRY(m_tiles.loadFile(
+//!     "tiles.png", compages::gpu::LoadOptions::picture().nearest()));
+//! \endcode
 // ****************************************************************************
 struct LoadOptions
 {
@@ -140,9 +178,10 @@ struct LoadOptions
     //! \brief For a picture meant to be looked at, a photograph or a painted
     //! material: its colours are gamma corrected.
     //! \code
-    //! COMPAGES_TRY(m_grass.load(dataPath("grass.png").string(),
-    //! compages::gpu::LoadOptions::picture()));
+    //! COMPAGES_TRY(m_grass.loadFile(dataPath("grass.png"),
+    //!                               compages::gpu::LoadOptions::picture()));
     //! \endcode
+    //! \return options for a picture: sRGB on.
     // ------------------------------------------------------------------------
     [[nodiscard]] static LoadOptions picture()
     {
@@ -153,19 +192,24 @@ struct LoadOptions
 
     //! \brief For a file holding numbers rather than light: a blend map, a
     //! normal map, a height field. The defaults.
+    //! \return options for data: sRGB off.
     [[nodiscard]] static LoadOptions data()
     {
         return LoadOptions{};
     }
 
-    //! \brief Stretch the edge pixels rather than repeating the image.
+    //! \brief Stretch the edge pixels rather than repeating the image. For a
+    //! picture shown once, whose opposite edge would otherwise bleed in.
+    //! \return these options, so calls can be chained.
     LoadOptions& clampToEdge()
     {
         wrap = Wrap::ClampToEdge;
         return *this;
     }
 
-    //! \brief Keep the pixels square rather than blending neighbours.
+    //! \brief Keep the pixels square rather than blending neighbours. For
+    //! pixel art, and for data where a blend would invent values.
+    //! \return these options, so calls can be chained.
     LoadOptions& nearest()
     {
         filter = Filter::Nearest;
@@ -174,23 +218,28 @@ struct LoadOptions
 };
 
 // ****************************************************************************
-//! \brief An image living on the device, of any shape.
+//! \brief A picture stored on the graphics card, ready to be painted onto
+//! shapes or drawn into.
+//!
+//! A texture is what a shader reads when it gives a surface its look: the
+//! grain of wood on a crate, the sky around a scene. It can also be a blank
+//! sheet the card draws into, or a grid of numbers a simulation updates.
 //!
 //! \code
 //! // Loaded from a file, with its mipmaps built.
 //! compages::gpu::Texture wood;
-//! COMPAGES_TRY(wood.load("textures/wood.png"));
+//! COMPAGES_TRY(wood.loadFile("textures/wood.png"));
 //!
 //! // Or made empty, to be written into or rendered to.
 //! compages::gpu::Texture state;
-//! COMPAGES_TRY(state.allocate({
-//!     .format = compages::gpu::PixelFormat::RGBA32F,
-//!     .width = 512u, .height = 512u,
-//!     .magnify = compages::gpu::Filter::Nearest, .minify =
-//!     compages::gpu::Filter::Nearest }));
+//! COMPAGES_TRY(state.allocate(
+//!     compages::gpu::TextureDesc::image(512u, 512u,
+//!                                       compages::gpu::PixelFormat::RGBA32F)
+//!         .filter(compages::gpu::Filter::Nearest)));
 //! \endcode
 //!
-//! The in place load(), loadCube() and allocate() suit a member. The static
+//! The in place loadFile(), loadCubeFiles(), loadVolumeFiles() and allocate()
+//! suit a member. The static
 //! fromFile(), cubeFromFiles() and create() return the texture as a Result,
 //! which suits code filling a container.
 //!
@@ -200,12 +249,13 @@ struct LoadOptions
 //! source of failures that appear far from their cause. To change the size,
 //! make another one.
 // ****************************************************************************
-class Texture
+class Texture: private compages::NotCopiable
 {
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief An empty texture, owning nothing.
+    //! \brief An empty texture: valid() is false until allocate() or a load
+    //! succeeds.
     // ------------------------------------------------------------------------
     Texture() = default;
 
@@ -233,7 +283,8 @@ public:
     //! stb_image understands, in which case its own words are passed on.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Texture>
-    fromFile(std::string const& p_path, LoadOptions const& p_options = {});
+    fromFile(std::filesystem::path const& p_path,
+             LoadOptions const& p_options = {});
 
     // ------------------------------------------------------------------------
     //! \brief Read six image files into a cube map.
@@ -243,15 +294,18 @@ public:
     //! negative z.
     //! \param[in] p_options what to do to them on the way in. Flipping is off
     //! by default for a cube map, whose faces are stored the way files are.
+    //! \return the cube map, or why not: a missing file, or faces that are not
+    //! all square and of the same size.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Texture>
-    cubeFromFiles(std::array<std::string, 6u> const& p_paths,
+    cubeFromFiles(std::array<std::filesystem::path, 6u> const& p_paths,
                   LoadOptions const& p_options = { .flip_vertically = false,
                                                    .wrap = Wrap::ClampToEdge });
 
     // ------------------------------------------------------------------------
     //! \brief Same as create(), into this object.
     //!
+    //! \param[in] p_desc what the texture is to be.
     //! \return why not, in which case this object is left as it was.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status allocate(TextureDesc const& p_desc);
@@ -260,19 +314,27 @@ public:
     //! \brief Same as fromFile(), into this object.
     //!
     //! \code
-    //! COMPAGES_TRY(m_texture.load(dataPath("textures/wooden-crate.jpg").string()));
+    //! COMPAGES_TRY(m_texture.loadFile(dataPath("textures/wooden-crate.jpg")));
     //! \endcode
+    //!
+    //! \param[in] p_path the file to read.
+    //! \param[in] p_options what to do to it on the way in.
+    //! \return why not, in which case this object is left as it was.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status load(std::string const& p_path,
-                              LoadOptions const& p_options = {});
+    [[nodiscard]] Status loadFile(std::filesystem::path const& p_path,
+                                  LoadOptions const& p_options = {});
 
     // ------------------------------------------------------------------------
     //! \brief Same as cubeFromFiles(), into this object.
+    //!
+    //! \param[in] p_paths the six faces: +x, -x, +y, -y, +z, -z.
+    //! \param[in] p_options what to do to them on the way in.
+    //! \return why not, in which case this object is left as it was.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadCube(std::array<std::string, 6u> const& p_paths,
-                                  LoadOptions const& p_options = {
-                                      .flip_vertically = false,
-                                      .wrap = Wrap::ClampToEdge });
+    [[nodiscard]] Status
+    loadCubeFiles(std::array<std::filesystem::path, 6u> const& p_paths,
+                  LoadOptions const& p_options = { .flip_vertically = false,
+                                                   .wrap = Wrap::ClampToEdge });
 
     // ------------------------------------------------------------------------
     //! \brief Read image files of the same size into the layers of a 3D
@@ -281,32 +343,45 @@ public:
     //! A shader samples it with three coordinates; the third blends between
     //! the images, which is how a terrain goes from sand to snow:
     //! \code
-    //! COMPAGES_TRY(m_layers.loadVolume({ dataPath("sand.png").string(),
-    //! dataPath("snow.png").string() }));
+    //! COMPAGES_TRY(m_layers.loadVolumeFiles({ dataPath("sand.png"),
+    //!                                         dataPath("snow.png") }));
     //! \endcode
     //!
     //! No mipmaps by default: the smaller levels of a 3D texture also halve
     //! its depth, which would blend the layers together from afar.
+    //!
+    //! \param[in] p_paths the layers, in depth order, all the same size.
+    //! \param[in] p_options what to do to them on the way in.
+    //! \return the texture, or why not: a missing file or a size that differs.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Texture> volumeFromFiles(
-        std::vector<std::string> const& p_paths,
+        std::vector<std::filesystem::path> const& p_paths,
         LoadOptions const& p_options = { .mipmaps = false,
                                          .wrap = Wrap::ClampToEdge });
 
     //! \brief Same as volumeFromFiles(), into this object.
-    [[nodiscard]] Status loadVolume(std::vector<std::string> const& p_paths,
-                                    LoadOptions const& p_options = {
-                                        .mipmaps = false,
-                                        .wrap = Wrap::ClampToEdge });
+    //! \param[in] p_paths the layers, in depth order, all the same size.
+    //! \param[in] p_options what to do to them on the way in.
+    //! \return why not, in which case this object is left as it was.
+    [[nodiscard]] Status loadVolumeFiles(
+        std::vector<std::filesystem::path> const& p_paths,
+        LoadOptions const& p_options = { .mipmaps = false,
+                                         .wrap = Wrap::ClampToEdge });
 
+    //! \brief Take over the image of p_other, which is left not valid().
+    //! \param[in,out] p_other the texture to empty.
     Texture(Texture&& p_other) noexcept;
+    //! \brief Release this image, then take over p_other's.
+    //! \param[in,out] p_other the texture to empty.
+    //! \return this object, now owning the other image.
     Texture& operator=(Texture&& p_other) noexcept;
-    Texture(Texture const&) = delete;
-    Texture& operator=(Texture const&) = delete;
+    //! \brief Release the image. A framebuffer still naming it fails on its
+    //! next pass.
     ~Texture();
 
     // ------------------------------------------------------------------------
     //! \brief Give the memory back now rather than at the end of the scope.
+    //! The object can be filled again with allocate() or a load.
     // ------------------------------------------------------------------------
     void release();
 
@@ -317,6 +392,8 @@ public:
     //! bytes as the level needs. A count that does not match is refused rather
     //! than read past its end.
     //! \param[in] p_level which level of detail, zero being the largest.
+    //! \return an error on a byte count that does not match, or a released
+    //! texture.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status write(std::span<const std::byte> p_pixels,
                                std::uint32_t p_level = 0u);
@@ -329,6 +406,8 @@ public:
     //! \param[in] p_width, p_height, p_depth how large the region is.
     //! \param[in] p_pixels the pixels, as many bytes as the region needs.
     //! \param[in] p_level which level of detail.
+    //! \return an error when the region runs past the level or the byte count
+    //! does not match.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status write(std::uint32_t p_x,
                                std::uint32_t p_y,
@@ -340,7 +419,14 @@ public:
                                std::uint32_t p_level = 0u);
 
     // ------------------------------------------------------------------------
-    //! \brief Fill one face of a cube map, or one layer of an array.
+    //! \brief Fill one face of a cube map, or one layer of an array, whole.
+    //!
+    //! \param[in] p_layer the face (0 to 5, in the order +x, -x, +y, -y, +z,
+    //! -z) or the layer.
+    //! \param[in] p_pixels the pixels of one face or layer.
+    //! \param[in] p_level which level of detail.
+    //! \return an error on a layer past the last one or a byte count that does
+    //! not match.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status writeLayer(std::uint32_t p_layer,
                                     std::span<const std::byte> p_pixels,
@@ -351,6 +437,10 @@ public:
     //!
     //! Waits for the device to finish with the image, so this belongs in tests,
     //! in screenshots and in debugging rather than in a frame.
+    //!
+    //! \param[in] p_level which level of detail.
+    //! \return the pixels of that level, bottom row first, as write() takes
+    //! them; an error for a level the texture does not have.
     // ------------------------------------------------------------------------
     [[nodiscard]] Result<std::vector<std::byte>>
     read(std::uint32_t p_level = 0u) const;
@@ -358,17 +448,29 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Build the smaller levels of detail from the largest one.
     //!
-    //! Needed after writing to a texture created with more than one level.
+    //! Needed after writing to a texture created with more than one level;
+    //! loadFile() does it when LoadOptions::mipmaps is on.
+    //! \return an error when the texture has a single level.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status generateMipmaps();
 
     // ------------------------------------------------------------------------
-    //! \brief Change how the texture is read between its pixels.
+    //! \brief Change how the texture is read between its pixels, after it was
+    //! made: the only settings of a texture that can change.
+    //!
+    //! \param[in] p_magnify how it is read when seen up close.
+    //! \param[in] p_minify how it is read when seen from afar.
+    //! \return an error when the texture is gone.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status setFilter(Filter p_magnify, Filter p_minify);
 
     // ------------------------------------------------------------------------
     //! \brief Change what happens outside the texture.
+    //!
+    //! \param[in] p_x beyond the left and right edges.
+    //! \param[in] p_y beyond the top and bottom edges.
+    //! \param[in] p_z beyond the front and back, for a 3D texture.
+    //! \return an error when the texture is gone.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status
     setWrap(Wrap p_x, Wrap p_y, Wrap p_z = Wrap::ClampToEdge);
@@ -382,6 +484,9 @@ public:
     //!
     //! A released texture or a unit the driver does not have is recorded as the
     //! frame error (see Errors.hpp).
+    //!
+    //! \param[in] p_unit the texture unit, from 0 to
+    //! DeviceInfo::max_texture_units - 1.
     // ------------------------------------------------------------------------
     void bind(std::uint32_t p_unit) const;
 
@@ -396,27 +501,38 @@ public:
     //! \param[in] p_unit which image unit.
     //! \param[in] p_access what the shader is going to do with it.
     //! \param[in] p_level which level of detail to expose.
+    //! \return an error on a unit the driver does not have, or a released
+    //! texture.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status bindAsImage(std::uint32_t p_unit,
                                      ImageAccess p_access,
                                      std::uint32_t p_level = 0u) const;
 
     // ------------------------------------------------------------------------
-    //! \brief What the texture is.
+    //! \brief The description it was made with. Filter and wrap follow later
+    //! calls to setFilter() and setWrap().
+    //! \return the description, kept up to date.
     // ------------------------------------------------------------------------
     [[nodiscard]] TextureDesc const& description() const;
 
-    //! \brief How many pixels across.
+    //! \brief How many pixels across, at level 0.
+    //! \return the width in pixels.
     [[nodiscard]] std::uint32_t width() const;
-    //! \brief How many pixels down.
+    //! \brief How many pixels down, at level 0. 1 for a 1D texture.
+    //! \return the height in pixels.
     [[nodiscard]] std::uint32_t height() const;
-    //! \brief How deep, or how many layers.
+    //! \brief How deep, or how many layers. 1 for a 2D texture.
+    //! \return the depth or the layer count.
     [[nodiscard]] std::uint32_t depth() const;
     //! \brief What one pixel holds.
+    //! \return the pixel format.
     [[nodiscard]] PixelFormat format() const;
     //! \brief What shape it is.
+    //! \return the texture kind.
     [[nodiscard]] TextureKind kind() const;
-    //! \brief How many levels of detail it holds.
+    //! \brief How many levels of detail it holds, the levels = 0 of a
+    //! description resolved to the real count.
+    //! \return the number of levels, at least 1.
     [[nodiscard]] std::uint32_t levels() const;
 
     // ------------------------------------------------------------------------
@@ -424,16 +540,21 @@ public:
     //! level and every face counted.
     //!
     //! What an overlay shows to say how much memory a scene is using.
+    //! \return the bytes on the card, an estimate.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t bytes() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Is there an image here?
+    //! \brief False when default constructed, moved from, released, or after
+    //! gpu::shutdown().
+    //! \return true when the image exists.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool valid() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Name of the image, for the parts of the library that take one.
+    //! \brief The handle naming this image, for a Framebuffer attachment or
+    //! code that keeps it without owning it.
+    //! \return the handle; empty when not valid().
     // ------------------------------------------------------------------------
     [[nodiscard]] TextureHandle handle() const
     {
@@ -448,6 +569,7 @@ public:
     //! \code
     //! ImGui::Image(ImTextureID(m_color.nativeId()), size);
     //! \endcode
+    //! \return the driver name, 0 when not valid().
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uintptr_t nativeId() const;
 
@@ -459,12 +581,16 @@ private:
 };
 
 // ----------------------------------------------------------------------------
-//! \brief How many textures are alive. Used to spot leaks.
+//! \brief How many textures are alive, every kind together. Used to spot
+//! leaks.
+//! \return the number of live textures.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t liveTextures();
 
 // ----------------------------------------------------------------------------
-//! \brief How many bytes every live texture occupies, added up.
+//! \brief How many bytes every live texture occupies, added up: an estimate,
+//! since the driver may pad or compress.
+//! \return the bytes, added up.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t textureMemory();
 

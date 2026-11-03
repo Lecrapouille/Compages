@@ -28,7 +28,7 @@ namespace examples
 //! costs nothing:
 //! \code
 //! m_stars.swap();
-//! m_points.vertices(m_stars.input());
+//! m_points.borrowVertices(m_stars.input());
 //! m_points.draw();
 //! \endcode
 // ****************************************************************************
@@ -50,9 +50,9 @@ private:
 
     struct Star
     {
-        compages::core::Vector2f position;
-        compages::core::Vector2f velocity;
-        compages::core::Vector4f color;
+        compages::Vector2f position;
+        compages::Vector2f velocity;
+        compages::Vector4f color;
     };
 
     //! \brief Stars on circular orbits, the state at time zero.

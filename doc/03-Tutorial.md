@@ -68,7 +68,7 @@ compages::gpu::Drawable m_triangle;
 
 // The one step that can fail for a reason outside the program: a shader
 // that does not compile. COMPAGES_TRY hands the compiler log to the caller.
-COMPAGES_TRY(m_triangle.load(VERTEX_SHADER, FRAGMENT_SHADER));
+COMPAGES_TRY(m_triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 
 // One value per vertex, attribute by attribute.
 m_triangle["position"] = { { -0.8f, -0.6f },
@@ -97,24 +97,24 @@ What happened:
 
 A wrong name, or a `vec2` given three numbers, does not crash: the message is kept and lists what the shader really declares. `prepare()` returns it before your loop; during the loop, read it with `compages::gpu::takeFrameError()` ([chapter 10](10-Debugging.md)).
 
-When your vertices are already a struct, the field names must match the shader. `01c_InterleavedTriangle` sends them once, in a buffer that never changes and has no CPU copy:
+When your vertices are already a struct, the field names must match the shader. You also say whether they will change. In `01c_InterleavedTriangle` they never do, so they are `Static`: sent once, then the CPU frees its copy:
 
 ```cpp
 struct Vertex
 {
-    compages::core::Vector2f position;
-    compages::core::Vector3f color;
+    compages::Vector2f position;
+    compages::Vector3f color;
 };
 
-COMPAGES_TRY_ASSIGN(m_vertices,
-                    compages::gpu::Buffer<Vertex>::from(
-                        corners,
-                        { .usage = compages::gpu::BufferUsage::Immutable,
-                          .cpu_mirror = false }));
-m_triangle.vertices(m_vertices);
+m_triangle.setVertices<Vertex>(
+    { { { -0.8f, -0.6f }, { 0.1f, 0.9f, 0.9f } },
+      { { 0.8f, -0.6f }, { 0.9f, 0.1f, 0.9f } },
+      { { 0.0f, 0.8f }, { 0.9f, 0.9f, 0.1f } } });
 ```
 
-📌 Remember: **the shader names, C++ fills, `draw()` sends.** Next steps in the gallery: `02_DynamicGeometry` (only the moved vertex is sent), then `10_ScientificAndCompute/` (Game of Life, particles, galaxy).
+`01d_BorrowedTriangle` keeps the corners in a `Buffer` you own, read by two drawables with `borrowVertices()`. `02a_DynamicGeometry` gives the other answer, `BufferUsage::Dynamic`, and moves one corner with `editVertex()`; `02b_VertexSyntax` shows every syntax side by side. [Chapter 4 §3](04-GPU-Layer.md#-3-typed-vertices) has the table of the choices.
+
+📌 Remember: **the shader names, C++ fills, `draw()` sends.** Next steps in the gallery: `02a_DynamicGeometry` (only the moved corner is sent), then `10_ScientificAndCompute/` (Game of Life, particles, galaxy).
 
 ---
 
@@ -132,8 +132,8 @@ Create `world.cpp`:
 #include <Compages/World/Entity.hpp>
 #include <iostream>
 
-struct Position { compages::core::Vector3f value{ 0, 0, 0 }; };
-struct Velocity { compages::core::Vector3f value{ 0, 0, 0 }; };
+struct Position { compages::Vector3f value{ 0, 0, 0 }; };
+struct Velocity { compages::Vector3f value{ 0, 0, 0 }; };
 
 int main()
 {
@@ -143,7 +143,7 @@ int main()
     world.entity("player").set(Position{}).set(Velocity{ { 1, 0, 0 } });
     world.entity("rock").set(Position{ { 0, 5, 0 } });
 
-    compages::core::Frame step;
+    compages::Frame step;
     step.elapsed = 1.0f / 60.0f;
 
     for (int i = 0; i < 60; ++i)
@@ -155,7 +155,7 @@ int main()
     }
 
     compages::world::Entity player = world.lookup("player");
-    compages::core::Vector3f const& x = player.get<Position>().value;
+    compages::Vector3f const& x = player.get<Position>().value;
     std::cout << "player after 1 s: " << x.x << " " << x.y << " " << x.z << "\n";
 
     // The scene graph: a child follows its parent.
@@ -215,14 +215,14 @@ int main()
     compages::world::Entity hand = shoulder.child("Hand").position(0.0f, 0.0f, 1.0f);
     world.entity("Fan").add<Spin>(2.0f);
 
-    compages::core::Frame step;
+    compages::Frame step;
     step.elapsed = 1.0f / 60.0f;
 
     for (auto angle : { 0.0_deg, 90.0_deg, 120.0_deg })
     {
         shoulder.joint().angle(angle);
         world.update(step);
-        compages::core::Vector3f p = hand.worldPosition();
+        compages::Vector3f p = hand.worldPosition();
         std::cout << "angle " << angle.value() << " deg -> hand at ("
                   << p.x << ", " << p.y << ", " << p.z << ")\n";
     }

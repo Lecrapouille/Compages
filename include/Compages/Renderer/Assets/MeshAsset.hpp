@@ -32,16 +32,16 @@ namespace compages::renderer
 // ****************************************************************************
 struct MeshVertex
 {
-    compages::core::Vector3f position;
-    compages::core::Vector3f normal;
+    compages::Vector3f position;
+    compages::Vector3f normal;
     //! \brief Texture coordinates. Unused by the lit shader; required by PBR
     //! and by meshes imported from glTF.
-    compages::core::Vector2f uv{ 0.0f, 0.0f };
+    compages::Vector2f uv{ 0.0f, 0.0f };
     //! \brief Four joint indices. Ignored when the mesh is rigid
     //! (\c uJointCount == 0 in the shader).
-    compages::core::Vector4i joints{ 0, 0, 0, 0 };
+    compages::Vector4i joints{ 0, 0, 0, 0 };
     //! \brief Four weights, defaulting to a rigid bind on joint 0.
-    compages::core::Vector4f weights{ 1.0f, 0.0f, 0.0f, 0.0f };
+    compages::Vector4f weights{ 1.0f, 0.0f, 0.0f, 0.0f };
 };
 
 // ****************************************************************************
@@ -59,18 +59,18 @@ struct MeshAsset
     //! the GPU when the mesh has fewer than 65536 vertices.
     std::vector<std::uint32_t> source_indices;
     //! \brief Vertex buffer holding \c MeshVertex records.
-    compages::gpu::Buffer<MeshVertex> vertices;
+    compages::gpu::VertexBuffer<MeshVertex> vertices;
     //! \brief Index buffer when \c index_type is UInt16.
-    compages::gpu::Buffer<std::uint16_t> short_indices;
+    compages::gpu::IndexBuffer<std::uint16_t> short_indices;
     //! \brief Index buffer when \c index_type is UInt32.
-    compages::gpu::Buffer<std::uint32_t> long_indices;
+    compages::gpu::IndexBuffer<std::uint32_t> long_indices;
     //! \brief Number of indices, cached to avoid a per-draw query.
     std::size_t index_count = 0u;
     //! \brief Kind of indices in the GPU buffer, chosen by upload().
     compages::gpu::IndexType index_type = compages::gpu::IndexType::UInt16;
     //! \brief Bounding box of the mesh in its own local space. What the
     //! renderer transforms per instance before culling.
-    compages::core::AABB local_bounds;
+    compages::AABB local_bounds;
     //! \brief Inverse-bind skeleton, empty when the mesh is rigid.
     SkinAssetId skin{};
     //! \brief Rest-pose vertices used to rebuild \c vertices each frame when
@@ -79,7 +79,7 @@ struct MeshAsset
     //! \brief Four joint indices per rest-pose vertex, matching \c rest_pose.
     std::vector<std::uint16_t> joint_indices;
     //! \brief Four weights per rest-pose vertex, matching \c rest_pose.
-    std::vector<compages::core::Vector4f> joint_weights;
+    std::vector<compages::Vector4f> joint_weights;
 
     //! \brief The GPU index buffer matching \c index_type.
     [[nodiscard]] compages::gpu::BufferHandle indexBuffer() const
@@ -100,9 +100,9 @@ struct MeshAsset
     //! source again.
     void releaseGpu()
     {
-        vertices = compages::gpu::Buffer<MeshVertex>();
-        short_indices = compages::gpu::Buffer<std::uint16_t>();
-        long_indices = compages::gpu::Buffer<std::uint32_t>();
+        vertices = compages::gpu::VertexBuffer<MeshVertex>();
+        short_indices = compages::gpu::IndexBuffer<std::uint16_t>();
+        long_indices = compages::gpu::IndexBuffer<std::uint32_t>();
     }
 
     [[nodiscard]] Status upload()
@@ -116,10 +116,9 @@ struct MeshAsset
             return failure("mesh has no CPU data to upload");
         }
         COMPAGES_TRY_ASSIGN(vertices,
-                            compages::gpu::Buffer<MeshVertex>::from(
+                            compages::gpu::VertexBuffer<MeshVertex>::from(
                                 std::span<const MeshVertex>(source_vertices),
-                                compages::gpu::BufferKind::Vertex,
-                                compages::gpu::BufferUsage::Immutable));
+                                compages::gpu::BufferUsage::Static));
         index_count = source_indices.size();
         if (source_vertices.size() <= 65536u)
         {
@@ -130,20 +129,18 @@ struct MeshAsset
             }
             index_type = compages::gpu::IndexType::UInt16;
             COMPAGES_TRY_ASSIGN(short_indices,
-                                compages::gpu::Buffer<std::uint16_t>::from(
+                                compages::gpu::IndexBuffer<std::uint16_t>::from(
                                     std::span<const std::uint16_t>(narrow),
-                                    compages::gpu::BufferKind::Index,
-                                    compages::gpu::BufferUsage::Immutable));
+                                    compages::gpu::BufferUsage::Static));
         }
         else
         {
             index_type = compages::gpu::IndexType::UInt32;
             COMPAGES_TRY_ASSIGN(
                 long_indices,
-                compages::gpu::Buffer<std::uint32_t>::from(
+                compages::gpu::IndexBuffer<std::uint32_t>::from(
                     std::span<const std::uint32_t>(source_indices),
-                    compages::gpu::BufferKind::Index,
-                    compages::gpu::BufferUsage::Immutable));
+                    compages::gpu::BufferUsage::Static));
         }
         return success();
     }

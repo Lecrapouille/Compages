@@ -70,12 +70,14 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 | `00c_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console |
 | `01a_ClearScreen` | `clear` and two passes, no shader |
 | `01b_Triangle` | `Drawable`, data by name |
-| `01c_InterleavedTriangle` | a `Vertex` struct, an immutable buffer |
-| `02_DynamicGeometry` | a dirty vertex follows the mouse |
+| `01c_InterleavedTriangle` | a `Vertex` struct, `BufferUsage::Static` |
+| `01d_BorrowedTriangle` | a `Buffer` we own, borrowed by two drawables (`borrowVertices`) |
+| `02a_DynamicGeometry` | `BufferUsage::Dynamic`: one edited corner follows the mouse |
+| `02b_VertexSyntax` | every way of writing and changing vertices, one small triangle each |
 | `03a_TexturedQuad` | `quad["image"] = texture` |
 | `03b_MultiTextureBlend` | five textures, a blend map painted with the mouse |
 | `04_DepthAndTransforms` | indices, depth, culling, three matrices |
-| `05a_MultiPassMesh` | one `Buffer<Vertex>`, three pipelines |
+| `05a_MultiPassMesh` | one `VertexBuffer<Vertex>`, borrowed by three drawables |
 | `05b_RenderToTexture` | a cube drawn off-screen, the texture read twice |
 | `05c_PostProcess` | a scene off-screen, then a full-screen pass |
 | `06a_Mandelbrot` | no vertex buffer, only `gl_VertexID` |

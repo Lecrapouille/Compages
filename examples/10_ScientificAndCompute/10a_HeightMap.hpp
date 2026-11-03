@@ -19,7 +19,7 @@ namespace examples
 //! on the CPU each frame. The vertices are changed where they are, and the
 //! whole array travels at the next draw because the whole array changed:
 //! \code
-//! for (Vertex& v : m_surface.vertices<Vertex>())
+//! for (Vertex& v : m_surface.editVertices<Vertex>())
 //! {
 //!     v.position.y = heightAt(v.position.x, v.position.z, time);
 //! }
@@ -27,8 +27,8 @@ namespace examples
 //! \endcode
 //!
 //! The triangles naming those points never move: the indices are given once
-//! and stay on the GPU. 02_DynamicGeometry changed one vertex; this changes all
-//! of them. Only the size of what is sent differs, not the code.
+//! and stay on the GPU. 02a_DynamicGeometry changed one vertex; this changes
+//! all of them. Only the size of what is sent differs, not the code.
 // ****************************************************************************
 class HeightMap: public Example
 {
@@ -47,8 +47,8 @@ private:
 
     struct Vertex
     {
-        compages::core::Vector3f position;
-        compages::core::Vector3f normal;
+        compages::Vector3f position;
+        compages::Vector3f normal;
     };
 
     compages::gpu::Drawable m_surface;

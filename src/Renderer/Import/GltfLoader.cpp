@@ -178,22 +178,23 @@ loadPrefabNode(cgltf_node* p_node,
 // --- Public: reusable prefab -------------------------------------------------
 // Parse file, build Prefab + animations; no compages::world::World entities.
 
-Result<PrefabId> loadGltf(std::string const& p_path,
+Result<PrefabId> loadGltf(std::filesystem::path const& p_path,
                           AssetManager& p_assets,
                           MaterialId p_shared_material)
 {
+    // cgltf and the asset names both want text: the path as written.
+    const std::string path = p_path.string();
     cgltf_options options{};
     cgltf_data* raw = nullptr;
-    if (cgltf_parse_file(&options, p_path.c_str(), &raw) !=
-        cgltf_result_success)
+    if (cgltf_parse_file(&options, path.c_str(), &raw) != cgltf_result_success)
     {
-        return failure("cgltf_parse_file failed for '" + p_path + "'");
+        return failure("cgltf_parse_file failed for '" + path + "'");
     }
     std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(raw, &cgltf_free);
-    if (cgltf_load_buffers(&options, data.get(), p_path.c_str()) !=
+    if (cgltf_load_buffers(&options, data.get(), path.c_str()) !=
         cgltf_result_success)
     {
-        return failure("cgltf_load_buffers failed for '" + p_path + "'");
+        return failure("cgltf_load_buffers failed for '" + path + "'");
     }
     if ((data->scenes_count == 0u) || (data->scene == nullptr))
     {
@@ -224,7 +225,7 @@ Result<PrefabId> loadGltf(std::string const& p_path,
     }
 
     Prefab prefab;
-    prefab.name = p_path;
+    prefab.name = path;
     prefab.root.name = "gltf-root";
     prefab.root.source_index = static_cast<std::uint32_t>(data->nodes_count);
 
@@ -241,7 +242,7 @@ Result<PrefabId> loadGltf(std::string const& p_path,
                                            textures,
                                            texture_count,
                                            skins,
-                                           p_path);
+                                           path);
         if (!child_result)
         {
             return failure(child_result.error());
@@ -250,9 +251,9 @@ Result<PrefabId> loadGltf(std::string const& p_path,
         prefab.root.children.emplace_back(std::move(child));
     }
     COMPAGES_TRY(
-        importAnimations(data.get(), p_assets, p_path, prefab.animations));
+        importAnimations(data.get(), p_assets, path, prefab.animations));
 
-    return p_assets.addPrefab(p_path, std::move(prefab));
+    return p_assets.addPrefab(path, std::move(prefab));
 }
 
 } // namespace compages::renderer

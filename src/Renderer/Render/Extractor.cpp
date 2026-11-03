@@ -70,14 +70,14 @@ aspectOf(compages::world::Camera::Viewport const& p_viewport,
 }
 
 CameraFrame buildCameraFrame(compages::world::Camera const& p_camera,
-                             compages::core::Matrix44f const& p_world_matrix,
+                             compages::Matrix44f const& p_world_matrix,
                              float p_aspect,
                              std::uint32_t p_width,
                              std::uint32_t p_height)
 {
     CameraFrame frame;
-    frame.view = compages::core::inverse(p_world_matrix);
-    frame.position = compages::core::Vector3f(p_world_matrix(0, 3),
+    frame.view = compages::inverse(p_world_matrix);
+    frame.position = compages::Vector3f(p_world_matrix(0, 3),
                                               p_world_matrix(1, 3),
                                               p_world_matrix(2, 3));
     applyViewport(frame, p_camera.viewport, p_width, p_height);
@@ -85,14 +85,14 @@ CameraFrame buildCameraFrame(compages::world::Camera const& p_camera,
     const float aspect = (p_aspect <= 0.0f) ? 1.0f : p_aspect;
     if (p_camera.projection == compages::world::Camera::Projection::Perspective)
     {
-        frame.projection = compages::core::perspective(
+        frame.projection = compages::perspective(
             p_camera.fov, aspect, p_camera.near_plane, p_camera.far_plane);
     }
     else
     {
         const float half_h = p_camera.ortho_half_height;
         const float half_w = half_h * aspect;
-        frame.projection = compages::core::ortho(-half_w,
+        frame.projection = compages::ortho(-half_w,
                                                  half_w,
                                                  -half_h,
                                                  half_h,
@@ -102,16 +102,16 @@ CameraFrame buildCameraFrame(compages::world::Camera const& p_camera,
     // Column vectors: clip = projection * view * world, so VP = P * V.
     frame.view_projection = frame.projection * frame.view;
     frame.inverse_view = p_world_matrix;
-    frame.inverse_projection = compages::core::inverse(frame.projection);
+    frame.inverse_projection = compages::inverse(frame.projection);
     frame.frustum =
-        compages::core::Frustum::fromViewProjection(frame.view_projection);
+        compages::Frustum::fromViewProjection(frame.view_projection);
     return frame;
 }
 
-compages::core::Vector3f forwardOf(compages::core::Matrix44f const& p_world)
+compages::Vector3f forwardOf(compages::Matrix44f const& p_world)
 {
     // Column 2 is local +Z in world space; the camera looks down local -Z.
-    return compages::core::Vector3f(-p_world(0, 2), -p_world(1, 2), -p_world(2, 2));
+    return compages::Vector3f(-p_world(0, 2), -p_world(1, 2), -p_world(2, 2));
 }
 
 Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
@@ -236,9 +236,9 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
                 return;
             }
             PointLightFrame frame;
-            const compages::core::Matrix44f& world_matrix =
+            const compages::Matrix44f& world_matrix =
                 world.worldMatrix(entity);
-            frame.position = compages::core::translation(world_matrix);
+            frame.position = compages::translation(world_matrix);
             frame.color = light.color;
             frame.intensity = light.intensity;
             frame.range = light.range;
@@ -248,10 +248,10 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
 
     // The shaders take a handful of lamps: the nearest ones to the camera,
     // so that walking down a corridor of torches lights the ones around.
-    const compages::core::Vector3f eye = snapshot.camera.position;
+    const compages::Vector3f eye = snapshot.camera.position;
     auto distance2 = [&eye](PointLightFrame const& p_light)
     {
-        const compages::core::Vector3f d = p_light.position - eye;
+        const compages::Vector3f d = p_light.position - eye;
         return (d.x * d.x) + (d.y * d.y) + (d.z * d.z);
     };
     std::stable_sort(

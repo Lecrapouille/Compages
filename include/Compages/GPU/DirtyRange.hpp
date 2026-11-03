@@ -7,6 +7,11 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief DirtyRange: which elements of a list must be sent to the card again.
+// ****************************************************************************
+
 #include <algorithm>
 #include <cstddef>
 
@@ -20,20 +25,21 @@ namespace compages::gpu
 //! Only the outermost bounds are kept, so touching element 1 and element 5000
 //! means everything between them is sent too. That is on purpose: one write of
 //! five thousand elements costs far less than five thousand writes of one, and
-//! keeping a list of individual holes would cost more to maintain than it saves.
+//! keeping a list of individual holes would cost more to maintain than it
+//! saves.
 //!
 //! The range is half open, [begin(), end()), the same convention as every
 //! standard container. This type exists mostly to make that convention
 //! impossible to get wrong. Its ancestor in this library, class Pending, was
-//! ambiguous about it: setPending(pos) recorded start == end == pos, meaning one
-//! element in an inclusive reading and nothing at all in an exclusive one, and
-//! the code that sent the bytes computed its length as end - start. Changing a
-//! single vertex therefore sent zero bytes, so it never reached the screen. The
-//! same code also always read from the front of the container while writing at
-//! the offset of the range, so a change to anything but the first element landed
-//! in the wrong place. Both mistakes were invisible in a review and expensive to
-//! find in a running program, hence one small type with one convention and its
-//! own tests.
+//! ambiguous about it: setPending(pos) recorded start == end == pos, meaning
+//! one element in an inclusive reading and nothing at all in an exclusive one,
+//! and the code that sent the bytes computed its length as end - start.
+//! Changing a single vertex therefore sent zero bytes, so it never reached the
+//! screen. The same code also always read from the front of the container while
+//! writing at the offset of the range, so a change to anything but the first
+//! element landed in the wrong place. Both mistakes were invisible in a review
+//! and expensive to find in a running program, hence one small type with one
+//! convention and its own tests.
 // ****************************************************************************
 class DirtyRange
 {
@@ -99,8 +105,8 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Drop whatever falls outside a container of that size.
     //!
-    //! Called after the container has shrunk: a range still naming elements that
-    //! no longer exist would send bytes from past the end of the vector.
+    //! Called after the container has shrunk: a range still naming elements
+    //! that no longer exist would send bytes from past the end of the vector.
     // ------------------------------------------------------------------------
     void clampTo(std::size_t p_size)
     {

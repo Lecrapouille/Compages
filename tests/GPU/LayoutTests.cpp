@@ -20,16 +20,16 @@ namespace
 //! \brief The everyday case: everything about one vertex, side by side.
 struct Vertex
 {
-    compages::core::Vector3f position;
-    compages::core::Vector3f normal;
-    compages::core::Vector2f uv;
+    compages::Vector3f position;
+    compages::Vector3f normal;
+    compages::Vector2f uv;
 };
 
 //! \brief A vertex packing its colour in four bytes rather than four floats.
 struct SmallVertex
 {
-    compages::core::Vector3f position;
-    compages::core::Vector<std::uint8_t, 4u> color;
+    compages::Vector3f position;
+    compages::Vector<std::uint8_t, 4u> color;
 };
 
 //! \brief A byte followed by a float, which the compiler pads.
@@ -42,7 +42,7 @@ struct Padded
 //! \brief The smallest vertex there is.
 struct Single
 {
-    compages::core::Vector2f position;
+    compages::Vector2f position;
 };
 
 //! \brief As many fields as reflection accepts.
@@ -57,7 +57,7 @@ struct Outer
 {
     struct Nested
     {
-        compages::core::Vector3f where;
+        compages::Vector3f where;
     };
 };
 
@@ -67,7 +67,7 @@ struct Outer
 // struct cannot go on being described as it was.
 TEST(Layout, ReadsTheFormatFromTheCppType)
 {
-    constexpr auto vec3 = compages::gpu::formatOf<compages::core::Vector3f>();
+    constexpr auto vec3 = compages::gpu::formatOf<compages::Vector3f>();
     ASSERT_EQ(vec3.scalar, compages::gpu::ScalarType::Float);
     ASSERT_EQ(vec3.components, 3u);
     ASSERT_EQ(vec3.slots, 1u);
@@ -84,7 +84,7 @@ TEST(Layout, ReadsTheFormatFromTheCppType)
 // otherwise, which is what an index or an identifier per vertex wants.
 TEST(Layout, KeepsWholeNumbersWholeByDefault)
 {
-    constexpr auto ivec = compages::gpu::formatOf<compages::core::Vector<std::int32_t, 2u>>();
+    constexpr auto ivec = compages::gpu::formatOf<compages::Vector<std::int32_t, 2u>>();
     ASSERT_EQ(ivec.scalar, compages::gpu::ScalarType::Int32);
     ASSERT_TRUE(ivec.as_integer);
     ASSERT_FALSE(ivec.normalized);
@@ -94,10 +94,10 @@ TEST(Layout, KeepsWholeNumbersWholeByDefault)
 TEST(Layout, NamesTheGlslTypeAShaderMustDeclare)
 {
     ASSERT_EQ(compages::gpu::formatOf<float>().glslType(), "float");
-    ASSERT_EQ(compages::gpu::formatOf<compages::core::Vector2f>().glslType(), "vec2");
-    ASSERT_EQ(compages::gpu::formatOf<compages::core::Vector3f>().glslType(), "vec3");
-    ASSERT_EQ(compages::gpu::formatOf<compages::core::Vector4f>().glslType(), "vec4");
-    using Vector3u = compages::core::Vector<std::uint32_t, 3u>;
+    ASSERT_EQ(compages::gpu::formatOf<compages::Vector2f>().glslType(), "vec2");
+    ASSERT_EQ(compages::gpu::formatOf<compages::Vector3f>().glslType(), "vec3");
+    ASSERT_EQ(compages::gpu::formatOf<compages::Vector4f>().glslType(), "vec4");
+    using Vector3u = compages::Vector<std::uint32_t, 3u>;
     ASSERT_EQ(compages::gpu::formatOf<Vector3u>().glslType(), "uvec3");
     ASSERT_EQ(compages::gpu::formatOf<std::int32_t>().glslType(), "int");
 }
@@ -219,7 +219,7 @@ TEST(Layout, ReflectionFindsNamesAndTypesAtCompileTime)
     static_assert(compages::gpu::reflect::fieldCount<Vertex>() == 3u);
     static_assert(compages::gpu::reflect::fieldName<Vertex, 0u>() == "position");
     static_assert(compages::gpu::reflect::fieldName<Vertex, 2u>() == "uv");
-    static_assert(std::is_same_v<compages::gpu::reflect::FieldType<Vertex, 1u>, compages::core::Vector3f>);
+    static_assert(std::is_same_v<compages::gpu::reflect::FieldType<Vertex, 1u>, compages::Vector3f>);
     static_assert(compages::gpu::reflect::fieldCount<Crowded>() == 16u);
     static_assert(compages::gpu::reflect::fieldName<Crowded, 15u>() == "last_one");
     static_assert(compages::gpu::reflect::fieldName<Outer::Nested, 0u>() == "where");
@@ -360,9 +360,9 @@ TEST(Layout, RefusesTwoFieldsWithTheSameName)
 // mistake worth catching, and it shows up as a field running off the end.
 TEST(Layout, RefusesAFieldRunningPastTheEndOfTheVertex)
 {
-    // A field the size of a compages::core::Vector3f, placed where only 4 bytes remain.
+    // A field the size of a compages::Vector3f, placed where only 4 bytes remain.
     std::vector<compages::gpu::FieldDesc> fields{
-        compages::gpu::FieldDesc{ "aThing", compages::gpu::formatOf<compages::core::Vector3f>(), 4u, false }
+        compages::gpu::FieldDesc{ "aThing", compages::gpu::formatOf<compages::Vector3f>(), 4u, false }
     };
     const compages::gpu::VertexLayout layout(std::move(fields), 8u);
 
@@ -374,7 +374,7 @@ TEST(Layout, RefusesAFieldRunningPastTheEndOfTheVertex)
 TEST(Layout, RefusesAFieldWithoutAName)
 {
     std::vector<compages::gpu::FieldDesc> fields{
-        compages::gpu::FieldDesc{ "", compages::gpu::formatOf<compages::core::Vector3f>(), 0u, false }
+        compages::gpu::FieldDesc{ "", compages::gpu::formatOf<compages::Vector3f>(), 0u, false }
     };
     const compages::gpu::VertexLayout layout(std::move(fields), 12u);
 
@@ -385,7 +385,7 @@ TEST(Layout, RefusesAFieldWithoutAName)
 
 TEST(Layout, RefusesAFormatWithTooManyComponents)
 {
-    compages::gpu::AttributeFormat format = compages::gpu::formatOf<compages::core::Vector4f>();
+    compages::gpu::AttributeFormat format = compages::gpu::formatOf<compages::Vector4f>();
     format.components = 5u;
     ASSERT_FALSE(format.valid());
 

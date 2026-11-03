@@ -88,10 +88,10 @@ Status bindLighting(compages::renderer::Material& p_material,
         else
         {
             p_material.program.set(kPointPosNames[static_cast<std::size_t>(i)],
-                                   compages::core::Vector3f(0.0f, 0.0f, 0.0f));
+                                   compages::Vector3f(0.0f, 0.0f, 0.0f));
             p_material.program.set(
                 kPointColorNames[static_cast<std::size_t>(i)],
-                compages::core::Vector3f(0.0f, 0.0f, 0.0f));
+                compages::Vector3f(0.0f, 0.0f, 0.0f));
             p_material.program.set(
                 kPointRangeNames[static_cast<std::size_t>(i)], 1.0f);
         }
@@ -182,7 +182,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
         {
             material->program.set(
                 "uJoints",
-                std::span<const compages::core::Matrix44f>(
+                std::span<const compages::Matrix44f>(
                     p_snapshot.joint_palette.data() + item.joint_offset,
                     static_cast<std::size_t>(joint_count)));
         }

@@ -4,8 +4,8 @@ Compages: C++20 3D library in three stacked layers, each usable without the
 one above: **GPU** (`compages::gpu`, shader-named data, `Drawable`, compute),
 **World** (`compages::world`, scene graph + EnTT ECS, routines, joints,
 headless), **Renderer** (`compages::renderer`, `Scene`, assets, snapshot,
-drawing). Shared vocabulary in `compages::core` (vectors, matrices, `Frame`,
-`Result`). OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
+drawing). Shared vocabulary directly in `compages` (vectors, matrices,
+`Frame`, `Result`), from `Core/`. OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
 `.makefile/`, no CMake). Dual license GPL-3.0-or-later / commercial.
 
 Read only what the task needs. Load a skill instead of reading the docs:

@@ -19,6 +19,7 @@ using namespace units::literals;
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 constexpr char const* SCENE_VS = R"(#version 450 core
 in vec3 position;
 in vec2 uv;
@@ -33,6 +34,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* SCENE_FS = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D texID;
@@ -43,6 +45,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* SCREEN_VS = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
@@ -54,6 +57,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* SCREEN_FS = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D texID;
@@ -72,6 +76,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 static compages::Status loadTexture(char const* p_file,
                                     compages::gpu::Texture& p_out)
 {
@@ -84,23 +89,26 @@ static compages::Status loadTexture(char const* p_file,
     // sRGB so the sampled colour is linear before the wavy pass.
     compages::gpu::LoadOptions options;
     options.srgb = true;
-    return p_out.load(path.string(), options);
+    return p_out.loadFile(path, options);
 }
 
-static compages::renderer::MeshVertex
-meshVertex(compages::core::Vector3f p_position, compages::core::Vector2f p_uv)
+// ----------------------------------------------------------------------------
+static compages::renderer::MeshVertex meshVertex(compages::Vector3f p_position,
+                                                 compages::Vector2f p_uv)
 {
-    return compages::renderer::MeshVertex{
-        p_position, compages::core::Vector3f(0.0f, 1.0f, 0.0f), p_uv
-    };
+    return compages::renderer::MeshVertex{ p_position,
+                                           compages::Vector3f(0.0f, 1.0f, 0.0f),
+                                           p_uv };
 }
 
+// ----------------------------------------------------------------------------
 std::string PostProcess::description() const
 {
     return "Legacy 13_PostProdFrameBuffer: textured cube and floor rendered "
            "offscreen with depth, then a wavy fullscreen post pass.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status PostProcess::ensureTarget(std::uint32_t p_width,
                                            std::uint32_t p_height)
 {
@@ -125,6 +133,7 @@ compages::Status PostProcess::ensureTarget(std::uint32_t p_width,
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status PostProcess::setUp()
 {
     COMPAGES_TRY(loadTexture("wooden-crate.jpg", m_crate_texture));
@@ -133,111 +142,111 @@ compages::Status PostProcess::setUp()
     // Thirty six vertices, six per face: no index buffer, each corner is
     // stored once per triangle that uses it.
     const std::array<compages::renderer::MeshVertex, 36u> cube{
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(-1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, -1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, -1.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(1.0f, 1.0f, 1.0f),
-                   compages::core::Vector2f(1.0f, 1.0f))
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(-1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, -1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, -1.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(1.0f, 1.0f, 1.0f),
+                   compages::Vector2f(1.0f, 1.0f))
     };
 
     const std::array<compages::renderer::MeshVertex, 6u> floor{
-        meshVertex(compages::core::Vector3f(5.0f, -1.5f, 5.0f),
-                   compages::core::Vector2f(0.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, 5.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, -5.0f),
-                   compages::core::Vector2f(0.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(5.0f, -1.5f, 5.0f),
-                   compages::core::Vector2f(1.0f, 0.0f)),
-        meshVertex(compages::core::Vector3f(-5.0f, -1.5f, -5.0f),
-                   compages::core::Vector2f(1.0f, 1.0f)),
-        meshVertex(compages::core::Vector3f(5.0f, -1.5f, -5.0f),
-                   compages::core::Vector2f(0.0f, 1.0f))
+        meshVertex(compages::Vector3f(5.0f, -1.5f, 5.0f),
+                   compages::Vector2f(0.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-5.0f, -1.5f, 5.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-5.0f, -1.5f, -5.0f),
+                   compages::Vector2f(0.0f, 1.0f)),
+        meshVertex(compages::Vector3f(5.0f, -1.5f, 5.0f),
+                   compages::Vector2f(1.0f, 0.0f)),
+        meshVertex(compages::Vector3f(-5.0f, -1.5f, -5.0f),
+                   compages::Vector2f(1.0f, 1.0f)),
+        meshVertex(compages::Vector3f(5.0f, -1.5f, -5.0f),
+                   compages::Vector2f(0.0f, 1.0f))
     };
 
     // The cube and the floor are two drawables of the same shader, each with
     // its own model matrix and texture.
     for (compages::gpu::Drawable* scene : { &m_cube, &m_floor })
     {
-        COMPAGES_TRY(scene->load(SCENE_VS, SCENE_FS));
-        scene->depthTest().cull(compages::gpu::CullMode::Back);
+        COMPAGES_TRY(scene->loadSources(SCENE_VS, SCENE_FS));
+        scene->state().depth_test = true;
+        scene->state().cull = compages::gpu::CullMode::Back;
     }
-    m_cube.vertices<compages::renderer::MeshVertex>(cube);
+    m_cube.setVertices(cube);
     m_cube["texID"] = m_crate_texture;
-    m_floor.vertices<compages::renderer::MeshVertex>(floor);
+    m_floor.setVertices(floor);
     m_floor["texID"] = m_floor_texture;
-    m_floor["model"] =
-        compages::core::Matrix44f(compages::core::matrix::Identity);
+    m_floor["model"] = compages::Matrix44f(compages::matrix::Identity);
 
     // Two triangles covering the screen, by name.
-    COMPAGES_TRY(m_screen.load(SCREEN_VS, SCREEN_FS));
+    COMPAGES_TRY(m_screen.loadSources(SCREEN_VS, SCREEN_FS));
     m_screen["position"] = { { -1, 1 }, { -1, -1 }, { 1, -1 },
                              { -1, 1 }, { 1, -1 },  { 1, 1 } };
     m_screen["uv"] = { { 0, 1 }, { 0, 0 }, { 1, 0 },
@@ -246,6 +255,7 @@ compages::Status PostProcess::setUp()
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void PostProcess::draw(compages::world::ViewFrame const& p_frame)
 {
     if (!compages::gpu::check(ensureTarget(p_frame.width, p_frame.height)))
@@ -254,21 +264,21 @@ void PostProcess::draw(compages::world::ViewFrame const& p_frame)
     }
 
     // Shared by the cube and the floor; only the cube's model turns.
-    const compages::core::Matrix44f projection =
-        compages::core::perspective(50.0_deg, aspect(p_frame), 0.1f, 10.0f);
-    const compages::core::Matrix44f view =
-        compages::core::lookAt(compages::core::Vector3f(3.0f, 3.0f, 3.0f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::Matrix44f projection =
+        compages::perspective(50.0_deg, aspect(p_frame), 0.1f, 10.0f);
+    const compages::Matrix44f view =
+        compages::lookAt(compages::Vector3f(3.0f, 3.0f, 3.0f),
+                         compages::Vector3f(0.0f, 0.0f, 0.0f),
+                         compages::Vector3f(0.0f, 1.0f, 0.0f));
     for (compages::gpu::Drawable* scene : { &m_cube, &m_floor })
     {
         (*scene)["view"] = view;
         (*scene)["projection"] = projection;
     }
-    m_cube["model"] = compages::core::rotate(
-        compages::core::Matrix44f(compages::core::matrix::Identity),
-        units::angle::radian_t(p_frame.total * 0.7f),
-        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    m_cube["model"] =
+        compages::rotate(compages::Matrix44f(compages::matrix::Identity),
+                         units::angle::radian_t(p_frame.total * 0.7f),
+                         compages::Vector3f(0.0f, 1.0f, 0.0f));
 
     // Into the framebuffer, over the window pass.
     {

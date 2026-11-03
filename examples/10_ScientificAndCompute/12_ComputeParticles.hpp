@@ -20,7 +20,8 @@ namespace examples
 //! particles live in a storage buffer that the compute shader moves and the
 //! drawable reads as its vertices. There is no copy and no trip to the CPU:
 //! \code
-//! m_points.vertices(m_particles);           // once: read from this buffer
+//! m_points.borrowVertices(m_particles);           // once: read from this
+//! buffer
 //! ...
 //! COMPAGES_TRY(m_step.dispatchItems(COUNT));
 //! compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
@@ -48,12 +49,12 @@ private:
     //! \brief The same bytes as the GLSL struct, std430 rules.
     struct Particle
     {
-        compages::core::Vector2f position;
-        compages::core::Vector2f velocity;
-        compages::core::Vector4f color;
+        compages::Vector2f position;
+        compages::Vector2f velocity;
+        compages::Vector4f color;
     };
 
-    compages::gpu::Buffer<Particle> m_particles;
+    compages::gpu::StorageBuffer<Particle> m_particles;
     compages::gpu::ComputeProgram m_step;
     compages::gpu::Drawable m_points;
 };

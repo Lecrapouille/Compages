@@ -99,7 +99,7 @@ private:
         Kind kind;
         compages::world::Entity root;
         Mood mood = Mood::Wander;
-        compages::core::Vector3f heading{ 0.0f, 0.0f, 1.0f };
+        compages::Vector3f heading{ 0.0f, 0.0f, 1.0f };
         float health = 6.0f;
         //! \brief Seconds before choosing another way to wander.
         float wander = 0.0f;
@@ -123,14 +123,14 @@ private:
     {
         compages::world::Entity light;
         compages::world::Entity flame;
-        compages::core::Vector3f at;
+        compages::Vector3f at;
         bool lit = true;
     };
 
     struct Barrel
     {
         compages::world::Entity body;
-        compages::core::Vector3f at;
+        compages::Vector3f at;
         float health = 3.0f;
         //! \brief Seconds before it goes off, set by a blast nearby.
         float fuse = -1.0f;
@@ -140,7 +140,7 @@ private:
     struct Pickup
     {
         compages::world::Entity body;
-        compages::core::Vector3f at;
+        compages::Vector3f at;
         //! \brief 'A' shells, 'H' health.
         char kind;
         bool taken = false;
@@ -149,8 +149,8 @@ private:
     //! \brief A shot of a soldier, slow enough to be seen and dodged.
     struct Bolt
     {
-        compages::core::Vector3f position;
-        compages::core::Vector3f velocity;
+        compages::Vector3f position;
+        compages::Vector3f velocity;
         float life;
     };
 
@@ -172,8 +172,8 @@ private:
     struct Target
     {
         float distance;
-        compages::core::Vector3f point;
-        compages::core::Vector3f normal;
+        compages::Vector3f point;
+        compages::Vector3f normal;
         Enemy* enemy = nullptr;
         Barrel* barrel = nullptr;
     };
@@ -191,7 +191,7 @@ private:
     //! \brief The body on the map: position, view angles, health, ammo.
     struct PlayerState
     {
-        compages::core::Vector3f position{ 0.0f, 0.0f, 0.0f };
+        compages::Vector3f position{ 0.0f, 0.0f, 0.0f };
         float yaw = 0.0f;
         float pitch = 0.0f;
         float health = 100.0f;
@@ -239,7 +239,7 @@ private:
         std::vector<Pickup> pickups;
         std::vector<Bolt> bolts;
         std::vector<Blast> blasts;
-        compages::core::Vector3f exit{ 0.0f, 0.0f, 0.0f };
+        compages::Vector3f exit{ 0.0f, 0.0f, 0.0f };
     };
 
     //! \brief glTF and textures loaded once for both levels.
@@ -282,7 +282,7 @@ private:
               compages::renderer::Look const& p_hazard);
     void placeTorch(std::size_t p_column, std::size_t p_row);
     [[nodiscard]] compages::Status placeEnemy(Kind p_kind,
-                                              compages::core::Vector3f p_at);
+                                              compages::Vector3f p_at);
     void say(std::string p_message);
 
     void tickTimers(float p_dt);
@@ -300,12 +300,12 @@ private:
     void useTorch();
     void pickUp(float p_dt);
     [[nodiscard]] std::optional<Target>
-    shootRay(compages::core::Vector3f p_origin,
-             compages::core::Vector3f p_direction);
+    shootRay(compages::Vector3f p_origin,
+             compages::Vector3f p_direction);
     //! \brief The torch under the crosshair, close enough to reach.
     [[nodiscard]] std::optional<std::size_t> torchAimedAt() const;
-    [[nodiscard]] compages::core::Vector3f eye() const;
-    [[nodiscard]] compages::core::Vector3f aim() const;
+    [[nodiscard]] compages::Vector3f eye() const;
+    [[nodiscard]] compages::Vector3f aim() const;
 
     // The enemies (DoomLike/Enemies.cpp).
     void moveEnemies(float p_dt);
@@ -314,8 +314,8 @@ private:
     void moveBarrels(float p_dt);
     void damageEnemy(Enemy& p_enemy,
                      float p_damage,
-                     compages::core::Vector3f p_point,
-                     compages::core::Vector3f p_direction);
+                     compages::Vector3f p_point,
+                     compages::Vector3f p_direction);
     void explode(Barrel& p_barrel);
     void hurtPlayer(float p_damage);
 

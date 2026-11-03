@@ -53,7 +53,7 @@ flowchart TB
   BUF --> GL
 ```
 
-`Core/` (vectors, matrices, `Result`, `Frame`, files) is the shared vocabulary, in the `compages::core` namespace. It is not a fourth layer: no simulation and no drawing starts there.
+`Core/` (vectors, matrices, `Result`, `Frame`, files) is the shared vocabulary, directly in the `compages` namespace. It is not a fourth layer: no simulation and no drawing starts there.
 
 ---
 
@@ -116,13 +116,13 @@ An OpenGL program is a shader with named data. `Drawable::operator[]` and `verti
 
 | Type | Role |
 |------|------|
-| `Buffer<T>` | CPU mirror, storage buffer, shared between compute and draw |
+| `Buffer<T, Kind>` | CPU mirror, storage buffer, shared between compute and draw |
 | `Pipeline`, `Program` | one mesh, several shaders |
 | `Texture`, `Framebuffer`, `RenderPass` | targets, post-processing |
 | `ComputeProgram`, `barrier` | compute grids |
 | `UniformBlock` | uniform blocks shared by several passes |
 
-Handles live in pools (index + generation). Destroying twice is harmless. `Buffer<T>` cannot be copied.
+Handles live in pools (index + generation). Destroying twice is harmless. `Buffer<T, Kind>` cannot be copied.
 
 ---
 
@@ -170,7 +170,7 @@ renderer       drawing, asset ids resolved
 gpu            sends the CPU changes to the backend, draws and dispatches
 ```
 
-- `compages::core::Frame`: time and size. Enough for a headless simulation.
+- `compages::Frame`: time and size. Enough for a headless simulation.
 - `compages::world::ViewFrame`: a `Frame` plus input.
 
 ---
@@ -180,7 +180,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 | Goal | File | Demo |
 |------|------|------|
 | triangle | `GPU/Drawable.hpp` | `01b_Triangle` |
-| compute | `GPU/Compute.hpp` | `12_ComputeParticles` |
+| compute | `GPU/ComputeProgram.hpp` | `12_ComputeParticles` |
 | headless world | `World/World.hpp` | `30_HeadlessWorld` |
 | joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
 | scene | `Renderer/Scene/Scene.hpp` | `50_ThreeJsLike` |

@@ -13,8 +13,8 @@
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
-#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -122,6 +122,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* SCREEN_VERTEX = R"(#version 450 core
 void main()
 {
@@ -444,6 +445,7 @@ void main()
 
 } // namespace
 
+// ----------------------------------------------------------------------------
 std::string SweatAndDecals::description() const
 {
     return "The head of three.js webgl_decals sweats. Water and decals live in "
@@ -453,6 +455,7 @@ std::string SweatAndDecals::description() const
            "turns.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SweatAndDecals::setUp()
 {
     const std::filesystem::path head =
@@ -464,7 +467,7 @@ compages::Status SweatAndDecals::setUp()
     }
 
     m_scene.background(0.09f, 0.10f, 0.12f).ambient(0.30f, 0.30f, 0.33f);
-    COMPAGES_TRY_ASSIGN(m_root, m_scene.load(head.string()));
+    COMPAGES_TRY_ASSIGN(m_root, m_scene.loadFile(head));
     m_world.each<compages::renderer::MeshRenderer>(
         [this](compages::world::Entity p_entity,
                compages::renderer::MeshRenderer&) { m_head = p_entity; });
@@ -491,17 +494,17 @@ compages::Status SweatAndDecals::setUp()
 
     // frameAll() sees the shoulders too: come closer, in front of the face.
     m_scene.frameAll();
-    const compages::core::Matrix44f& model = m_head.worldMatrix();
-    const compages::core::Vector3f low =
-        compages::core::transformPoint(model, m_bounds.min);
-    const compages::core::Vector3f high =
-        compages::core::transformPoint(model, m_bounds.max);
-    const compages::core::Vector3f face((low.x + high.x) * 0.5f,
-                                        low.y + 0.68f * (high.y - low.y),
-                                        (low.z + high.z) * 0.5f);
+    const compages::Matrix44f& model = m_head.worldMatrix();
+    const compages::Vector3f low =
+        compages::transformPoint(model, m_bounds.min);
+    const compages::Vector3f high =
+        compages::transformPoint(model, m_bounds.max);
+    const compages::Vector3f face((low.x + high.x) * 0.5f,
+                                  low.y + 0.68f * (high.y - low.y),
+                                  (low.z + high.z) * 0.5f);
     const float height = high.y - low.y;
     m_scene.activeCamera()
-        .position(face + compages::core::Vector3f(
+        .position(face + compages::Vector3f(
                              0.2f * height, 0.05f * height, 0.75f * height))
         .lookAt(face)
         .add<compages::world::Orbit>(face);
@@ -511,6 +514,7 @@ compages::Status SweatAndDecals::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status
 SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
 {
@@ -518,8 +522,7 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
     // is swapped for ours. The renderer still sets every PBR uniform.
     m_scene.look(
         p_mesh.id(),
-        compages::renderer::texture(
-            dataPath("LeePerrySmith/Map-COL.jpg").string()));
+        compages::renderer::texture(dataPath("LeePerrySmith/Map-COL.jpg")));
 
     std::string source = compages::renderer::shaders::pbrFragment();
     source = source.substr(0u, source.find("out vec4 oColor;")) + SKIN_MAIN;
@@ -554,16 +557,15 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
     instance->material = m_skin;
 
     // A normal map holds directions, not colours: no sRGB.
-    COMPAGES_TRY(m_normal_map.load(
-        dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")
-            .string()));
+    COMPAGES_TRY(m_normal_map.loadFile(
+        dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")));
     compages::gpu::LoadOptions picture;
     picture.srgb = true;
     picture.wrap = compages::gpu::Wrap::ClampToEdge;
-    return m_decal_image.load(dataPath("decal/decal-diffuse.png").string(),
-                              picture);
+    return m_decal_image.loadFile(dataPath("decal/decal-diffuse.png"), picture);
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SweatAndDecals::makeTargets()
 {
     compages::gpu::TextureDesc field{ .format =
@@ -598,32 +600,39 @@ compages::Status SweatAndDecals::makeTargets()
     const compages::gpu::RenderState flat{ .depth_test = false,
                                            .cull =
                                                compages::gpu::CullMode::None };
-    COMPAGES_TRY(m_force_pass.load(UV_VERTEX, FORCE_FRAGMENT));
-    m_force_pass.vertices(m_vertices);
+    // The head never changes shape and two passes read it: one Static buffer,
+    // borrowed by both. m_vertices stays on the CPU for the raycast.
+    COMPAGES_TRY_ASSIGN(
+        m_head_vertices,
+        compages::gpu::VertexBuffer<compages::renderer::MeshVertex>::from(
+            m_vertices, compages::gpu::BufferUsage::Static));
+    COMPAGES_TRY(m_force_pass.loadSources(UV_VERTEX, FORCE_FRAGMENT));
+    m_force_pass.borrowVertices(m_head_vertices);
     m_force_pass.indices(m_indices);
     m_force_pass.state() = flat;
     const float height = std::max(m_bounds.max.y - m_bounds.min.y, 1e-6f);
     m_force_pass["zone"] =
-        compages::core::Vector2f(m_bounds.min.y + 0.55f * height, height);
+        compages::Vector2f(m_bounds.min.y + 0.55f * height, height);
     m_force_pass["wobble"] = 1.2f;
 
-    COMPAGES_TRY(m_decal_pass.load(UV_VERTEX, DECAL_FRAGMENT));
-    m_decal_pass.vertices(m_vertices);
+    COMPAGES_TRY(m_decal_pass.loadSources(UV_VERTEX, DECAL_FRAGMENT));
+    m_decal_pass.borrowVertices(m_head_vertices);
     m_decal_pass.indices(m_indices);
     m_decal_pass.state() = flat;
-    m_decal_pass.blend(compages::gpu::Blend::alpha());
+    m_decal_pass.state().blend = compages::gpu::Blend::alpha();
     m_decal_pass["picture"] = m_decal_image;
 
-    COMPAGES_TRY(m_wash_pass.load(SCREEN_VERTEX, WASH_FRAGMENT));
+    COMPAGES_TRY(m_wash_pass.loadSources(SCREEN_VERTEX, WASH_FRAGMENT));
     m_wash_pass["film"] = FILM;
 
-    COMPAGES_TRY(m_fluid_pass.load(SCREEN_VERTEX, FLUID_FRAGMENT));
+    COMPAGES_TRY(m_fluid_pass.loadSources(SCREEN_VERTEX, FLUID_FRAGMENT));
     m_fluid_pass["film"] = FILM;
     m_fluid_pass["start"] = START;
     return compages::success();
 }
 
-void SweatAndDecals::clear(compages::gpu::Framebuffer const& p_target)
+// ----------------------------------------------------------------------------
+void SweatAndDecals::clear(compages::gpu::Framebuffer const& p_target) const
 {
     compages::gpu::RenderPass const pass(p_target,
                                          { .clear_color = true,
@@ -631,15 +640,16 @@ void SweatAndDecals::clear(compages::gpu::Framebuffer const& p_target)
                                            .clear_depth = false });
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::computeForces()
 {
     // Gravity is fixed; the head turns: the field is made again every frame.
-    const compages::core::Matrix44f& model = m_head.worldMatrix();
+    const compages::Matrix44f& model = m_head.worldMatrix();
     m_force_pass["model"] = model;
-    m_force_pass["gravity"] = compages::core::Vector3f(0.0f, -1.0f, 0.0f);
-    const float size = compages::core::vector::norm(
-        compages::core::transformPoint(model, m_bounds.max) -
-        compages::core::transformPoint(model, m_bounds.min));
+    m_force_pass["gravity"] = compages::Vector3f(0.0f, -1.0f, 0.0f);
+    const float size =
+        compages::vector::norm(compages::transformPoint(model, m_bounds.max) -
+                               compages::transformPoint(model, m_bounds.min));
     m_force_pass["scale"] = 1.0f / std::max(size, 1e-6f);
     compages::gpu::RenderPass const pass(m_forces_target,
                                          { .clear_color = true,
@@ -648,14 +658,15 @@ void SweatAndDecals::computeForces()
     m_force_pass.draw();
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::simulate(float p_dt)
 {
-    const compages::core::Matrix44f& model = m_head.worldMatrix();
-    const float height = compages::core::vector::norm(
-        compages::core::transformPoint(
-            model, compages::core::Vector3f(0.0f, m_bounds.max.y, 0.0f)) -
-        compages::core::transformPoint(
-            model, compages::core::Vector3f(0.0f, m_bounds.min.y, 0.0f)));
+    const compages::Matrix44f& model = m_head.worldMatrix();
+    const float height = compages::vector::norm(
+        compages::transformPoint(
+            model, compages::Vector3f(0.0f, m_bounds.max.y, 0.0f)) -
+        compages::transformPoint(
+            model, compages::Vector3f(0.0f, m_bounds.min.y, 0.0f)));
 
     // At most one texel per step: long times are cut into more steps.
     const int steps =
@@ -673,17 +684,17 @@ void SweatAndDecals::simulate(float p_dt)
         const int next = 1 - m_current;
         m_fluid_pass["previous"] = m_fluid[m_current];
         m_fluid_pass["drop"] =
-            (i == 0) ? m_drop
-                     : compages::core::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+            (i == 0) ? m_drop : compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
         compages::gpu::RenderPass const pass(
             m_fluid_target[next],
             { .clear_color = false, .clear_depth = false });
         m_fluid_pass.draw(3u);
         m_current = next;
     }
-    m_drop = compages::core::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    m_drop = compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::wash(float p_dt)
 {
     const int next = 1 - m_paint;
@@ -699,21 +710,21 @@ void SweatAndDecals::wash(float p_dt)
     m_paint = next;
 }
 
+// ----------------------------------------------------------------------------
 std::optional<SweatAndDecals::Hit>
-SweatAndDecals::raycast(compages::core::Vector2f p_pixel) const
+SweatAndDecals::raycast(compages::Vector2f p_pixel) const
 {
     compages::renderer::CameraFrame const& camera = m_scene.lastCamera();
     if ((camera.viewport_width == 0u) || (camera.viewport_height == 0u))
     {
         return std::nullopt;
     }
-    const compages::core::Ray ray =
-        camera.screenRay(p_pixel.x - camera.viewport_x,
-                         p_pixel.y - camera.viewport_y,
-                         camera.viewport_width,
-                         camera.viewport_height);
-    namespace vec = compages::core::vector;
-    const compages::core::Matrix44f& model = m_head.worldMatrix();
+    const compages::Ray ray = camera.screenRay(p_pixel.x - camera.viewport_x,
+                                               p_pixel.y - camera.viewport_y,
+                                               camera.viewport_width,
+                                               camera.viewport_height);
+    namespace vec = compages::vector;
+    const compages::Matrix44f& model = m_head.worldMatrix();
 
     // Möller-Trumbore against every triangle; the nearest wins.
     std::optional<Hit> best;
@@ -723,25 +734,25 @@ SweatAndDecals::raycast(compages::core::Vector2f p_pixel) const
         compages::renderer::MeshVertex const& a = m_vertices[m_indices[i]];
         compages::renderer::MeshVertex const& b = m_vertices[m_indices[i + 1u]];
         compages::renderer::MeshVertex const& c = m_vertices[m_indices[i + 2u]];
-        const compages::core::Vector3f p0 =
-            compages::core::transformPoint(model, a.position);
-        const compages::core::Vector3f e1 =
-            compages::core::transformPoint(model, b.position) - p0;
-        const compages::core::Vector3f e2 =
-            compages::core::transformPoint(model, c.position) - p0;
-        const compages::core::Vector3f h = vec::cross(ray.direction, e2);
+        const compages::Vector3f p0 =
+            compages::transformPoint(model, a.position);
+        const compages::Vector3f e1 =
+            compages::transformPoint(model, b.position) - p0;
+        const compages::Vector3f e2 =
+            compages::transformPoint(model, c.position) - p0;
+        const compages::Vector3f h = vec::cross(ray.direction, e2);
         const float det = vec::dot(e1, h);
         if (std::abs(det) < 1e-12f)
         {
             continue;
         }
-        const compages::core::Vector3f s = ray.origin - p0;
+        const compages::Vector3f s = ray.origin - p0;
         const float u = vec::dot(s, h) / det;
         if ((u < 0.0f) || (u > 1.0f))
         {
             continue;
         }
-        const compages::core::Vector3f q = vec::cross(s, e1);
+        const compages::Vector3f q = vec::cross(s, e1);
         const float v = vec::dot(ray.direction, q) / det;
         if ((v < 0.0f) || (u + v > 1.0f))
         {
@@ -753,7 +764,7 @@ SweatAndDecals::raycast(compages::core::Vector2f p_pixel) const
             continue;
         }
         nearest = t;
-        compages::core::Vector3f normal = vec::normalize(vec::cross(e1, e2));
+        compages::Vector3f normal = vec::normalize(vec::cross(e1, e2));
         if (vec::dot(normal, ray.direction) > 0.0f)
         {
             normal = normal * -1.0f;
@@ -765,29 +776,27 @@ SweatAndDecals::raycast(compages::core::Vector2f p_pixel) const
     return best;
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::stampDecal(Hit const& p_hit)
 {
-    namespace vec = compages::core::vector;
+    namespace vec = compages::vector;
     std::uniform_real_distribution<float> unit(0.0f, 1.0f);
-    const compages::core::Matrix44f& model = m_head.worldMatrix();
-    const float head =
-        vec::norm(compages::core::transformPoint(model, m_bounds.max) -
-                  compages::core::transformPoint(model, m_bounds.min));
+    const compages::Matrix44f& model = m_head.worldMatrix();
+    const float head = vec::norm(compages::transformPoint(model, m_bounds.max) -
+                                 compages::transformPoint(model, m_bounds.min));
 
     // The box of three.js: facing the skin, turned at random, of random size.
-    const compages::core::Vector3f forward = p_hit.normal * -1.0f;
-    const compages::core::Vector3f helper =
-        (std::abs(forward.y) < 0.99f)
-            ? compages::core::Vector3f(0.0f, 1.0f, 0.0f)
-            : compages::core::Vector3f(1.0f, 0.0f, 0.0f);
-    const compages::core::Vector3f x =
-        vec::normalize(vec::cross(helper, forward));
-    const compages::core::Vector3f y = vec::cross(forward, x);
+    const compages::Vector3f forward = p_hit.normal * -1.0f;
+    const compages::Vector3f helper =
+        (std::abs(forward.y) < 0.99f) ? compages::Vector3f(0.0f, 1.0f, 0.0f)
+                                      : compages::Vector3f(1.0f, 0.0f, 0.0f);
+    const compages::Vector3f x = vec::normalize(vec::cross(helper, forward));
+    const compages::Vector3f y = vec::cross(forward, x);
     const float angle = unit(m_random) * 2.0f * std::numbers::pi_v<float>;
     const float half = head * (0.035f + 0.035f * unit(m_random));
-    const compages::core::Vector3f right =
+    const compages::Vector3f right =
         ((x * std::cos(angle)) + (y * std::sin(angle))) * half;
-    const compages::core::Vector3f up =
+    const compages::Vector3f up =
         ((y * std::cos(angle)) - (x * std::sin(angle))) * half;
 
     m_decal_pass["model"] = model;
@@ -795,21 +804,21 @@ void SweatAndDecals::stampDecal(Hit const& p_hit)
     m_decal_pass["right"] = right;
     m_decal_pass["up"] = up;
     m_decal_pass["forward"] = forward * half;
-    m_decal_pass["tint"] =
-        compages::core::Vector3f(0.2f + 0.8f * unit(m_random),
-                                 0.2f + 0.8f * unit(m_random),
-                                 0.2f + 0.8f * unit(m_random));
+    m_decal_pass["tint"] = compages::Vector3f(0.2f + 0.8f * unit(m_random),
+                                              0.2f + 0.8f * unit(m_random),
+                                              0.2f + 0.8f * unit(m_random));
     compages::gpu::RenderPass const pass(
         m_decals_target[m_paint],
         { .clear_color = false, .clear_depth = false });
     m_decal_pass.draw();
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
 {
-    m_root.rotation(compages::core::Quatf::fromAngleAxis(
+    m_root.rotation(compages::Quatf::fromAngleAxis(
                         units::angle::radian_t(m_roll), { 0.0f, 0.0f, 1.0f }) *
-                    compages::core::Quatf::fromAngleAxis(
+                    compages::Quatf::fromAngleAxis(
                         units::angle::radian_t(m_pitch), { 1.0f, 0.0f, 0.0f }));
     m_scene.update(p_frame);
 
@@ -835,8 +844,7 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
             }
             else
             {
-                m_drop =
-                    compages::core::Vector4f(hit->uv.x, hit->uv.y, 0.0f, 1.0f);
+                m_drop = compages::Vector4f(hit->uv.x, hit->uv.y, 0.0f, 1.0f);
             }
         }
     }
@@ -846,12 +854,11 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
     {
         m_first_decals = true;
         compages::renderer::CameraFrame const& camera = m_scene.lastCamera();
-        for (compages::core::Vector2f at :
-             { compages::core::Vector2f(0.40f, 0.62f),
-               compages::core::Vector2f(0.62f, 0.45f),
-               compages::core::Vector2f(0.47f, 0.30f) })
+        for (compages::Vector2f at : { compages::Vector2f(0.40f, 0.62f),
+                                       compages::Vector2f(0.62f, 0.45f),
+                                       compages::Vector2f(0.47f, 0.30f) })
         {
-            const compages::core::Vector2f pixel(
+            const compages::Vector2f pixel(
                 camera.viewport_x + at.x * float(camera.viewport_width),
                 camera.viewport_y + at.y * float(camera.viewport_height));
             if (std::optional<Hit> hit = raycast(pixel))
@@ -881,6 +888,7 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
     m_scene.render();
 }
 
+// ----------------------------------------------------------------------------
 void SweatAndDecals::controls()
 {
     ImGui::TextUnformatted("Left click");

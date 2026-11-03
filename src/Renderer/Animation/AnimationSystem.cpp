@@ -29,19 +29,19 @@ namespace compages::renderer
 namespace
 {
 
-[[nodiscard]] compages::core::Quatf
-slerp(compages::core::Quatf p_a, compages::core::Quatf p_b, float p_t)
+[[nodiscard]] compages::Quatf
+slerp(compages::Quatf p_a, compages::Quatf p_b, float p_t)
 {
     float dot =
         (p_a.a * p_b.a) + (p_a.b * p_b.b) + (p_a.c * p_b.c) + (p_a.d * p_b.d);
     if (dot < 0.0f)
     {
-        p_b = compages::core::Quatf(-p_b.a, -p_b.b, -p_b.c, -p_b.d);
+        p_b = compages::Quatf(-p_b.a, -p_b.b, -p_b.c, -p_b.d);
         dot = -dot;
     }
     if (dot > 0.9995f)
     {
-        compages::core::Quatf result(p_a.a + (p_t * (p_b.a - p_a.a)),
+        compages::Quatf result(p_a.a + (p_t * (p_b.a - p_a.a)),
                                      p_a.b + (p_t * (p_b.b - p_a.b)),
                                      p_a.c + (p_t * (p_b.c - p_a.c)),
                                      p_a.d + (p_t * (p_b.d - p_a.d)));
@@ -52,7 +52,7 @@ slerp(compages::core::Quatf p_a, compages::core::Quatf p_b, float p_t)
     const float s = std::sin(theta);
     const float w0 = std::sin((1.0f - p_t) * theta) / s;
     const float w1 = std::sin(p_t * theta) / s;
-    return compages::core::Quatf((w0 * p_a.a) + (w1 * p_b.a),
+    return compages::Quatf((w0 * p_a.a) + (w1 * p_b.a),
                                  (w0 * p_a.b) + (w1 * p_b.b),
                                  (w0 * p_a.c) + (w1 * p_b.c),
                                  (w0 * p_a.d) + (w1 * p_b.d));
@@ -117,12 +117,12 @@ void applyChannel(compages::renderer::AnimationChannel const& p_channel,
         {
             return;
         }
-        // glTF stores xyzw; compages::core::Quatf is wxyz.
-        const compages::core::Quatf a(p_channel.values[i0 + 3u],
+        // glTF stores xyzw; compages::Quatf is wxyz.
+        const compages::Quatf a(p_channel.values[i0 + 3u],
                                       p_channel.values[i0 + 0u],
                                       p_channel.values[i0 + 1u],
                                       p_channel.values[i0 + 2u]);
-        const compages::core::Quatf b(p_channel.values[i1 + 3u],
+        const compages::Quatf b(p_channel.values[i1 + 3u],
                                       p_channel.values[i1 + 0u],
                                       p_channel.values[i1 + 1u],
                                       p_channel.values[i1 + 2u]);
@@ -137,13 +137,13 @@ void applyChannel(compages::renderer::AnimationChannel const& p_channel,
     {
         return;
     }
-    const compages::core::Vector3f a(p_channel.values[i0 + 0u],
+    const compages::Vector3f a(p_channel.values[i0 + 0u],
                                      p_channel.values[i0 + 1u],
                                      p_channel.values[i0 + 2u]);
-    const compages::core::Vector3f b(p_channel.values[i1 + 0u],
+    const compages::Vector3f b(p_channel.values[i1 + 0u],
                                      p_channel.values[i1 + 1u],
                                      p_channel.values[i1 + 2u]);
-    const compages::core::Vector3f mixed = a + ((b - a) * blend);
+    const compages::Vector3f mixed = a + ((b - a) * blend);
     if (p_channel.path ==
         compages::renderer::AnimationChannel::Path::Translation)
     {
@@ -155,24 +155,24 @@ void applyChannel(compages::renderer::AnimationChannel const& p_channel,
     }
 }
 
-[[nodiscard]] compages::core::Vector3f
-transformAffinePoint(compages::core::Matrix44f const& p_matrix,
-                     compages::core::Vector3f const& p_point)
+[[nodiscard]] compages::Vector3f
+transformAffinePoint(compages::Matrix44f const& p_matrix,
+                     compages::Vector3f const& p_point)
 {
-    const compages::core::Vector4f out =
+    const compages::Vector4f out =
         p_matrix *
-        compages::core::Vector4f(p_point.x, p_point.y, p_point.z, 1.0f);
-    return compages::core::Vector3f(out.x, out.y, out.z);
+        compages::Vector4f(p_point.x, p_point.y, p_point.z, 1.0f);
+    return compages::Vector3f(out.x, out.y, out.z);
 }
 
-[[nodiscard]] compages::core::Vector3f
-transformVector(compages::core::Matrix44f const& p_matrix,
-                compages::core::Vector3f const& p_vector)
+[[nodiscard]] compages::Vector3f
+transformVector(compages::Matrix44f const& p_matrix,
+                compages::Vector3f const& p_vector)
 {
-    const compages::core::Vector4f out =
+    const compages::Vector4f out =
         p_matrix *
-        compages::core::Vector4f(p_vector.x, p_vector.y, p_vector.z, 0.0f);
-    return compages::core::Vector3f(out.x, out.y, out.z);
+        compages::Vector4f(p_vector.x, p_vector.y, p_vector.z, 0.0f);
+    return compages::Vector3f(out.x, out.y, out.z);
 }
 
 } // namespace
@@ -261,14 +261,14 @@ Status compages::renderer::AnimationSystem::pose(
                 return;
             }
 
-            const compages::core::Matrix44f mesh_world =
+            const compages::Matrix44f mesh_world =
                 p_world.worldMatrix(p_entity);
-            const compages::core::Matrix44f inverse_mesh =
-                compages::core::inverse(mesh_world);
+            const compages::Matrix44f inverse_mesh =
+                compages::inverse(mesh_world);
             const std::size_t joint_count = skin_asset->inverse_bind.size();
             p_instance.pose.assign(
                 joint_count,
-                compages::core::Matrix44f(compages::core::matrix::Identity));
+                compages::Matrix44f(compages::matrix::Identity));
             for (std::size_t j = 0u; j < joint_count; ++j)
             {
                 if (j >= p_instance.joints.size() ||
@@ -320,18 +320,18 @@ Status compages::renderer::AnimationSystem::skin(
                 return;
             }
 
-            std::vector<compages::core::Matrix44f> const& joint_matrices =
+            std::vector<compages::Matrix44f> const& joint_matrices =
                 p_instance.pose;
             posed = mesh->rest_pose;
-            compages::core::AABB bounds;
+            compages::AABB bounds;
             for (std::size_t v = 0u; v < posed.size(); ++v)
             {
-                const compages::core::Vector4f weights =
+                const compages::Vector4f weights =
                     (v < mesh->joint_weights.size())
                         ? mesh->joint_weights[v]
-                        : compages::core::Vector4f(1.0f, 0.0f, 0.0f, 0.0f);
-                compages::core::Vector3f position(0.0f, 0.0f, 0.0f);
-                compages::core::Vector3f normal(0.0f, 0.0f, 0.0f);
+                        : compages::Vector4f(1.0f, 0.0f, 0.0f, 0.0f);
+                compages::Vector3f position(0.0f, 0.0f, 0.0f);
+                compages::Vector3f normal(0.0f, 0.0f, 0.0f);
                 float weight_sum = 0.0f;
                 for (std::size_t k = 0u; k < 4u; ++k)
                 {
@@ -349,7 +349,7 @@ Status compages::renderer::AnimationSystem::skin(
                     {
                         continue;
                     }
-                    compages::core::Matrix44f const& skin_matrix =
+                    compages::Matrix44f const& skin_matrix =
                         joint_matrices[joint];
                     position += transformAffinePoint(
                                     skin_matrix, mesh->rest_pose[v].position) *
@@ -365,7 +365,7 @@ Status compages::renderer::AnimationSystem::skin(
                     normal = mesh->rest_pose[v].normal;
                 }
                 posed[v].position = position;
-                const float nlen = compages::core::vector::norm(normal);
+                const float nlen = compages::vector::norm(normal);
                 posed[v].normal = (nlen > 1.0e-8f) ? (normal / nlen)
                                                    : mesh->rest_pose[v].normal;
                 bounds.expand(posed[v].position);

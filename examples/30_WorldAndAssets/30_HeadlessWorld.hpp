@@ -22,8 +22,8 @@ namespace examples
 //! entity is made, named, and given components in one chain; a system is a
 //! loop over the entities having some components:
 //! \code
-//! struct Position { compages::core::Vector3f value; };
-//! struct Velocity { compages::core::Vector3f value; };
+//! struct Position { compages::Vector3f value; };
+//! struct Velocity { compages::Vector3f value; };
 //!
 //! m_world.entity("player").set(Position{}).set(Velocity{ { 1, 0, 0 } });
 //!

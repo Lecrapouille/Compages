@@ -91,9 +91,9 @@ inline constexpr int glfwRightShift = 344;
 struct Input
 {
     //! \brief Cursor in pixels, origin bottom-left (OpenGL convention).
-    compages::core::Vector2f mouse{ 0.0f, 0.0f };
+    compages::Vector2f mouse{ 0.0f, 0.0f };
     //! \brief Pointer motion this frame.
-    compages::core::Vector2f mouse_delta{ 0.0f, 0.0f };
+    compages::Vector2f mouse_delta{ 0.0f, 0.0f };
     //! \brief Scroll wheel delta (positive = zoom out in orbit controls).
     float scroll = 0.0f;
     //! \brief Pointer is over the render viewport.

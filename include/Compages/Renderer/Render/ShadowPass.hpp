@@ -52,7 +52,7 @@ private:
     struct Sun
     {
         bool enabled = false;
-        compages::core::Matrix44f light_view_projection{ compages::core::matrix::Identity };
+        compages::Matrix44f light_view_projection{ compages::matrix::Identity };
         float texel = 0.0f;
         float bias = 0.0f;
     };
@@ -62,8 +62,8 @@ private:
     struct Lamps
     {
         bool any = false;
-        compages::core::Vector4f enabled{ 0.0f, 0.0f, 0.0f, 0.0f };
-        std::array<compages::core::Matrix44f, 24u> faces{};
+        compages::Vector4f enabled{ 0.0f, 0.0f, 0.0f, 0.0f };
+        std::array<compages::Matrix44f, 24u> faces{};
     };
 
     [[nodiscard]] Status renderSun(RenderSnapshot const& p_snapshot,

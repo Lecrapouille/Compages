@@ -23,25 +23,25 @@ namespace
 
 //! \brief Rotation of a camera turned by \p p_yaw about Y, then \p p_pitch
 //! about X: forward is \c rotation * (0, 0, -1).
-compages::core::Quatf yawPitch(float p_yaw, float p_pitch)
+compages::Quatf yawPitch(float p_yaw, float p_pitch)
 {
-    const compages::core::Quatf q_yaw = compages::core::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_yaw)), compages::core::Vector3f(0.0f, 1.0f, 0.0f));
-    const compages::core::Quatf q_pitch = compages::core::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_pitch)), compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+    const compages::Quatf q_yaw = compages::Quatf::fromAngleAxis(
+        units::angle::radian_t(static_cast<double>(p_yaw)), compages::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::Quatf q_pitch = compages::Quatf::fromAngleAxis(
+        units::angle::radian_t(static_cast<double>(p_pitch)), compages::Vector3f(1.0f, 0.0f, 0.0f));
     return q_yaw * q_pitch;
 }
 
 //! \brief Eye of a camera looking at \p p_target from \p p_distance.
-compages::core::Vector3f eyeOf(compages::core::Vector3f const& p_target, float p_yaw, float p_pitch, float p_distance)
+compages::Vector3f eyeOf(compages::Vector3f const& p_target, float p_yaw, float p_pitch, float p_distance)
 {
-    const compages::core::Vector3f forward = yawPitch(p_yaw, p_pitch) * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::Vector3f forward = yawPitch(p_yaw, p_pitch) * compages::Vector3f(0.0f, 0.0f, -1.0f);
     return p_target - (forward * p_distance);
 }
 
 //! \brief Where the ray of the camera through the clip point \p p_mouse
 //! meets the plane \c y = \p p_ground, or nothing (the ray looks up).
-std::optional<compages::core::Vector3f> groundUnder(compages::core::Vector3f const& p_target,
+std::optional<compages::Vector3f> groundUnder(compages::Vector3f const& p_target,
                                                     float p_yaw,
                                                     float p_pitch,
                                                     float p_distance,
@@ -49,9 +49,9 @@ std::optional<compages::core::Vector3f> groundUnder(compages::core::Vector3f con
                                                     float p_ground)
 {
     const float half = std::tan(p_input.fov * 0.5f);
-    const compages::core::Vector3f local(p_input.mouse.x * half * p_input.aspect, p_input.mouse.y * half, -1.0f);
-    const compages::core::Vector3f ray = yawPitch(p_yaw, p_pitch) * local;
-    const compages::core::Vector3f eye = eyeOf(p_target, p_yaw, p_pitch, p_distance);
+    const compages::Vector3f local(p_input.mouse.x * half * p_input.aspect, p_input.mouse.y * half, -1.0f);
+    const compages::Vector3f ray = yawPitch(p_yaw, p_pitch) * local;
+    const compages::Vector3f eye = eyeOf(p_target, p_yaw, p_pitch, p_distance);
     if (ray.y > -1.0e-4f)
     {
         return std::nullopt;
@@ -74,14 +74,14 @@ float glide(float p_sharpness, float p_dt)
 
 } // namespace
 
-RigInput rigInput(Input const& p_input, compages::core::Frame const& p_frame, float p_fov)
+RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, float p_fov)
 {
     RigInput rig;
-    rig.aspect = compages::core::aspect(p_frame);
+    rig.aspect = compages::aspect(p_frame);
     rig.fov = p_fov;
     if (p_frame.width > 0u && p_frame.height > 0u)
     {
-        rig.mouse = compages::core::Vector2f((p_input.mouse.x / float(p_frame.width)) * 2.0f - 1.0f,
+        rig.mouse = compages::Vector2f((p_input.mouse.x / float(p_frame.width)) * 2.0f - 1.0f,
                                              (p_input.mouse.y / float(p_frame.height)) * 2.0f - 1.0f);
     }
     if (p_input.mouse_over)
@@ -117,7 +117,7 @@ void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_i
     if (p_input.pan)
     {
         // The grabbed point stays under the mouse in the wanted view.
-        const std::optional<compages::core::Vector3f> hit = groundUnder(target, yaw, pitch, distance, p_input, ground);
+        const std::optional<compages::Vector3f> hit = groundUnder(target, yaw, pitch, distance, p_input, ground);
         if (!m_grabbing)
         {
             m_grabbing = hit.has_value();
@@ -134,8 +134,8 @@ void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_i
     }
 
     // --- The keys ---------------------------------------------------------
-    const compages::core::Vector3f ahead(-std::sin(yaw), 0.0f, -std::cos(yaw));
-    const compages::core::Vector3f side(std::cos(yaw), 0.0f, -std::sin(yaw));
+    const compages::Vector3f ahead(-std::sin(yaw), 0.0f, -std::cos(yaw));
+    const compages::Vector3f side(std::cos(yaw), 0.0f, -std::sin(yaw));
     const float step = move_speed * fast * distance * p_dt;
     const float forward = float(p_input.forward) - float(p_input.back);
     const float sideways = float(p_input.right) - float(p_input.left);

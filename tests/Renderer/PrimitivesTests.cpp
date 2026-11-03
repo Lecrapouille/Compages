@@ -40,7 +40,7 @@ TEST_F(PrimitivesTest, SphereFitsInsideItsBounds)
     ASSERT_TRUE(bool(mesh)) << mesh.error();
     const compages::renderer::MeshAsset built = mesh.take();
     ASSERT_FALSE(built.local_bounds.empty());
-    const compages::core::Vector3f extent = built.local_bounds.extent();
+    const compages::Vector3f extent = built.local_bounds.extent();
     ASSERT_NEAR(extent.x, 0.5f, 1.0e-3f);
     ASSERT_NEAR(extent.y, 0.5f, 1.0e-3f);
     ASSERT_NEAR(extent.z, 0.5f, 1.0e-3f);
@@ -61,7 +61,7 @@ TEST_F(PrimitivesTest, CylinderHasClosedSidesAndTwoCaps)
     const compages::renderer::MeshAsset built = mesh.take();
     // 2 triangles per side + 1 triangle per slice on each cap.
     ASSERT_EQ(built.index_count, (6u * slices) + (2u * 3u * slices));
-    const compages::core::Vector3f extent = built.local_bounds.extent();
+    const compages::Vector3f extent = built.local_bounds.extent();
     EXPECT_NEAR(extent.x, 0.5f, 1.0e-3f);
     EXPECT_NEAR(extent.y, 0.5f, 1.0e-3f);
     EXPECT_NEAR(extent.z, 1.0f, 1.0e-3f);
@@ -112,17 +112,17 @@ TEST_F(PrimitivesTest, TrianglesFaceTheirNormals)
                 mesh.source_vertices[mesh.source_indices[i + 1u]];
             compages::renderer::MeshVertex const& c =
                 mesh.source_vertices[mesh.source_indices[i + 2u]];
-            const compages::core::Vector3f face = compages::core::vector::cross(
+            const compages::Vector3f face = compages::vector::cross(
                 b.position - a.position, c.position - a.position);
-            const compages::core::Vector3f normal =
+            const compages::Vector3f normal =
                 a.normal + b.normal + c.normal;
             // The pole of a sphere folds whole triangles onto a point: no area,
             // no side, nothing drawn.
-            if (compages::core::vector::dot(face, face) < 1.0e-10f)
+            if (compages::vector::dot(face, face) < 1.0e-10f)
             {
                 continue;
             }
-            if (compages::core::vector::dot(face, normal) < 0.0f)
+            if (compages::vector::dot(face, normal) < 0.0f)
             {
                 ++wrong;
             }

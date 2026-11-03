@@ -29,7 +29,7 @@
 #include <cmath>
 #include <limits>
 
-namespace compages::core
+namespace compages
 {
 
 //! \brief Post-multiply by a translation: \c M * T ( \c T applied first on \c x
@@ -343,4 +343,4 @@ Matrix<T, 3u, 3u> normalMatrix(Matrix<T, 4u, 4u> const& modelMatrix,
     return Vector3f(h.x / w, h.y / w, h.z / w);
 }
 
-} // namespace compages::core
+} // namespace compages

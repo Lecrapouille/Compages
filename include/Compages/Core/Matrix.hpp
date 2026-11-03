@@ -14,7 +14,7 @@
 
 #include "Compages/Core/Vector.hpp"
 
-namespace compages::core
+namespace compages
 {
 namespace matrix
 {
@@ -94,8 +94,7 @@ public:
     //! initializer list is too short.
     //--------------------------------------------------------------------------
     template <typename U = T>
-    Matrix(std::initializer_list<U> initList,
-           T const remainder = zero<T>())
+    Matrix(std::initializer_list<U> initList, T const remainder = zero<T>())
     {
         size_t m = std::min(rows * cols, size_t(initList.size()));
         auto iter = initList.begin();
@@ -929,8 +928,7 @@ Matrix<T, 4u, 4u> inverse(Matrix<T, 4u, 4u> const& m)
     T t20 = +(v4 * m10 - v2 * m11 + v0 * m13);
     T t30 = -(v3 * m10 - v1 * m11 + v0 * m12);
 
-    T invDet =
-        one<T>() / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
+    T invDet = one<T>() / (t00 * m00 + t10 * m01 + t20 * m02 + t30 * m03);
     // assert(invDet != zero<T>() && "The matrix cannot be
     // inversed");
 
@@ -1126,4 +1124,4 @@ Matrix<T, 4u, 4u> scalingMatrix(Vector<T, 3u> const& scal)
     m[3][3] = T(1);
     return m;
 }
-} // namespace compages::core
+} // namespace compages

@@ -14,6 +14,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 compages::renderer::CanvasTexture::Color CanvasPaint::swatchColor(int p_index)
 {
     switch (p_index)
@@ -30,12 +31,14 @@ compages::renderer::CanvasTexture::Color CanvasPaint::swatchColor(int p_index)
     }
 }
 
+// ----------------------------------------------------------------------------
 std::string CanvasPaint::description() const
 {
     return "Left drag paints on a canvas texture. Pick a colour in Try it "
            "(Space clears). The brush follows the raycast hit on the easel.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status CanvasPaint::setUp()
 {
     m_scene.background(0.10f, 0.12f, 0.16f).ambient(0.18f, 0.18f, 0.20f);
@@ -43,7 +46,7 @@ compages::Status CanvasPaint::setUp()
     m_scene.camera()
         .position(0.0f, 1.6f, 4.5f)
         .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 1.2f, 0.0f));
+            compages::Vector3f(0.0f, 1.2f, 0.0f));
 
     m_scene.box("Easel", compages::renderer::color(0.45f, 0.32f, 0.22f))
         .position(-0.05f, 1.0f, 0.0f)
@@ -61,7 +64,7 @@ compages::Status CanvasPaint::setUp()
 
     COMPAGES_TRY(m_paint.create(512u, 512u));
     m_paint.setMapping(
-        compages::core::AABB::fromCorners({ -0.5f, -0.5f, 0.0f },
+        compages::AABB::fromCorners({ -0.5f, -0.5f, 0.0f },
                                           { 0.5f, 0.5f, 0.0f }));
     COMPAGES_TRY(m_paint.bind(m_scene.assets(), "canvas_paint"));
     m_paint.applyLook(m_scene, m_canvas);
@@ -69,6 +72,7 @@ compages::Status CanvasPaint::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void CanvasPaint::draw(compages::world::ViewFrame const& p_frame)
 {
     if (compages::world::pressed(p_frame.input,
@@ -123,6 +127,7 @@ void CanvasPaint::draw(compages::world::ViewFrame const& p_frame)
     m_prev_input = p_frame.input;
 }
 
+// ----------------------------------------------------------------------------
 void CanvasPaint::controls()
 {
     ImGui::TextUnformatted("Paint colour");

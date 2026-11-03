@@ -26,8 +26,8 @@ namespace
 //! in a single buffer.
 struct Vertex
 {
-    compages::core::Vector3f position;
-    compages::core::Vector2f uv;
+    compages::Vector3f position;
+    compages::Vector2f uv;
 };
 
 } // namespace
@@ -59,8 +59,8 @@ protected:
 
 TEST_F(BufferTest, ReservesMemoryOfTheRightSize)
 {
-    auto created = compages::gpu::Buffer<Vertex>::create(
-        1000u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<Vertex>::create(
+        1000u, compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
 
     auto buffer = created.take();
@@ -76,19 +76,19 @@ TEST_F(BufferTest, ReservesMemoryOfTheRightSize)
 // from.
 TEST_F(BufferTest, RefusesAnEmptyBuffer)
 {
-    auto created = compages::gpu::Buffer<Vertex>::create(
-        0u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<Vertex>::create(
+        0u, compages::gpu::BufferUsage::Stream);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("zero"));
 }
 
-// Immutable memory is the fastest the driver has, and the deal is that it is
+// Static memory is the fastest the driver has, and the deal is that it is
 // written once at creation. Asking for it empty can only end in a buffer that
 // can never be filled, so it is refused where the mistake was made.
 TEST_F(BufferTest, RefusesAnEmptyImmutableBuffer)
 {
-    auto created = compages::gpu::Buffer<Vertex>::create(
-        4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Immutable);
+    auto created = compages::gpu::VertexBuffer<Vertex>::create(
+        4u, compages::gpu::BufferUsage::Static);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("must be given its contents"));
 }
@@ -100,8 +100,9 @@ TEST_F(BufferTest, GivesBackWhatWasPutIn)
     std::vector<float> sent(256u);
     std::iota(sent.begin(), sent.end(), 1.0f);
 
-    auto created = compages::gpu::Buffer<float>::from(
-        sent, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Immutable);
+    auto created = compages::gpu::VertexBuffer<float>::from(
+        sent,
+        compages::gpu::BufferUsage::Static);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -115,10 +116,11 @@ TEST_F(BufferTest, GivesBackWhatWasPutIn)
 TEST_F(BufferTest, UploadsOnlyWhenTheCpuMirrorIsAskedToSynchronize)
 {
     const std::array<int, 4u> initial{ 1, 2, 3, 4 };
-    auto created = compages::gpu::Buffer<int>::from(initial);
+    auto created = compages::gpu::VertexBuffer<int>::from(
+        initial, compages::gpu::BufferUsage::Dynamic);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
-    ASSERT_TRUE(buffer.mirrored());
+    ASSERT_EQ(buffer.usage(), compages::gpu::BufferUsage::Dynamic);
 
     buffer[2u] = 42;
     auto before = buffer.read();
@@ -133,8 +135,8 @@ TEST_F(BufferTest, UploadsOnlyWhenTheCpuMirrorIsAskedToSynchronize)
 
 TEST_F(BufferTest, WritesPartOfABuffer)
 {
-    auto created = compages::gpu::Buffer<int>::create(
-        8u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::create(
+        8u, compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -155,8 +157,9 @@ TEST_F(BufferTest, WritesPartOfABuffer)
 TEST_F(BufferTest, WritesASingleElement)
 {
     const std::array<int, 4u> initial{ 1, 2, 3, 4 };
-    auto created = compages::gpu::Buffer<int>::from(
-        initial, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::from(
+        initial,
+        compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -174,8 +177,8 @@ TEST_F(BufferTest, WritesASingleElement)
 // in the message, turns a hang into a sentence.
 TEST_F(BufferTest, RefusesToWritePastTheEnd)
 {
-    auto created = compages::gpu::Buffer<int>::create(
-        4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::create(
+        4u, compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -194,8 +197,9 @@ TEST_F(BufferTest, RefusesToWritePastTheEnd)
 TEST_F(BufferTest, RefusesToWriteAnImmutableBuffer)
 {
     const std::array<int, 4u> initial{ 1, 2, 3, 4 };
-    auto created = compages::gpu::Buffer<int>::from(
-        initial, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Immutable);
+    auto created = compages::gpu::VertexBuffer<int>::from(
+        initial,
+        compages::gpu::BufferUsage::Static);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -210,8 +214,8 @@ TEST_F(BufferTest, ReleasesItsMemoryWhenItGoesOutOfScope)
 {
     ASSERT_EQ(compages::gpu::liveBuffers(), 0u);
     {
-        auto created = compages::gpu::Buffer<int>::create(
-            4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+        auto created = compages::gpu::VertexBuffer<int>::create(
+            4u, compages::gpu::BufferUsage::Stream);
         ASSERT_TRUE(bool(created)) << created.error();
         auto buffer = created.take();
         ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
@@ -221,8 +225,8 @@ TEST_F(BufferTest, ReleasesItsMemoryWhenItGoesOutOfScope)
 
 TEST_F(BufferTest, ReleasesEarlyWhenAsked)
 {
-    auto created = compages::gpu::Buffer<int>::create(
-        4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::create(
+        4u, compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
     auto buffer = created.take();
 
@@ -241,13 +245,14 @@ TEST_F(BufferTest, ReleasesEarlyWhenAsked)
 TEST_F(BufferTest, HandsMemoryOverWhenMoved)
 {
     const std::array<int, 4u> initial{ 1, 2, 3, 4 };
-    auto created = compages::gpu::Buffer<int>::from(
-        initial, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::from(
+        initial,
+        compages::gpu::BufferUsage::Stream);
     ASSERT_TRUE(bool(created)) << created.error();
     auto first = created.take();
     const compages::gpu::BufferHandle handle = first.handle();
 
-    compages::gpu::Buffer<int> second = std::move(first);
+    compages::gpu::VertexBuffer<int> second = std::move(first);
     ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
     ASSERT_FALSE(first.valid());
     ASSERT_TRUE(second.valid());
@@ -263,11 +268,11 @@ TEST_F(BufferTest, HandsMemoryOverWhenMoved)
 // reassigned every frame leaks the whole scene.
 TEST_F(BufferTest, FreesWhatItHeldWhenAssigned)
 {
-    auto first = compages::gpu::Buffer<int>::create(
-                     4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+    auto first = compages::gpu::VertexBuffer<int>::create(
+                     4u, compages::gpu::BufferUsage::Stream)
                      .take();
-    auto second = compages::gpu::Buffer<int>::create(
-                      8u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+    auto second = compages::gpu::VertexBuffer<int>::create(
+                      8u, compages::gpu::BufferUsage::Stream)
                       .take();
     ASSERT_EQ(compages::gpu::liveBuffers(), 2u);
 
@@ -281,8 +286,8 @@ TEST_F(BufferTest, FreesWhatItHeldWhenAssigned)
 // memory.
 TEST_F(BufferTest, RefusesToUseAHandleWhoseMemoryIsGone)
 {
-    auto buffer = compages::gpu::Buffer<int>::create(
-                      4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+    auto buffer = compages::gpu::VertexBuffer<int>::create(
+                      4u, compages::gpu::BufferUsage::Stream)
                       .take();
     const compages::gpu::BufferHandle stale = buffer.handle();
     buffer.release();
@@ -303,14 +308,14 @@ TEST_F(BufferTest, DoesNotConfuseANewBufferWithAnOldOne)
 {
     compages::gpu::BufferHandle stale;
     {
-        auto first = compages::gpu::Buffer<int>::create(
-                         4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+        auto first = compages::gpu::VertexBuffer<int>::create(
+                         4u, compages::gpu::BufferUsage::Stream)
                          .take();
         stale = first.handle();
     }
 
-    auto second = compages::gpu::Buffer<int>::create(
-                      4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+    auto second = compages::gpu::VertexBuffer<int>::create(
+                      4u, compages::gpu::BufferUsage::Stream)
                       .take();
 
     // The same slot, since the pool reuses it, but not the same buffer.
@@ -328,8 +333,8 @@ TEST_F(BufferTest, RefusesAUniformBufferLargerThanTheDriverAllows)
     const std::size_t too_big =
         static_cast<std::size_t>(compages::gpu::device().max_uniform_block_size) + 16u;
 
-    auto created = compages::gpu::Buffer<char>::create(
-        too_big, compages::gpu::BufferKind::Uniform, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::UniformBuffer<char>::create(
+        too_big, compages::gpu::BufferUsage::Stream);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("storage buffer instead"));
 }
@@ -340,8 +345,8 @@ TEST_F(BufferTest, RefusesToCreateWithoutADevice)
 {
     compages::gpu::shutdown();
 
-    auto created = compages::gpu::Buffer<int>::create(
-        4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic);
+    auto created = compages::gpu::VertexBuffer<int>::create(
+        4u, compages::gpu::BufferUsage::Stream);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("compages::gpu::init()"));
 }
@@ -351,8 +356,8 @@ TEST_F(BufferTest, RefusesToCreateWithoutADevice)
 // naming anything.
 TEST_F(BufferTest, SurvivesABufferOutlivingTheDevice)
 {
-    auto buffer = compages::gpu::Buffer<int>::create(
-                      4u, compages::gpu::BufferKind::Vertex, compages::gpu::BufferUsage::Dynamic)
+    auto buffer = compages::gpu::VertexBuffer<int>::create(
+                      4u, compages::gpu::BufferUsage::Stream)
                       .take();
     ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
 

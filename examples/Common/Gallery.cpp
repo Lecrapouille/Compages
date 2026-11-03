@@ -35,7 +35,7 @@ namespace examples
 static Gallery* g_gallery = nullptr;
 
 //! \brief The colour behind everything, and what an example starts from.
-const compages::core::Vector4f BACKGROUND{ 0.1f, 0.1f, 0.12f, 1.0f };
+const compages::Vector4f BACKGROUND{ 0.1f, 0.1f, 0.12f, 1.0f };
 
 // ----------------------------------------------------------------------------
 //! \brief What is left over between two counts, as a sentence, or nothing at
@@ -182,6 +182,7 @@ static std::string const& layoutFile()
     return path;
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::add(std::string p_name, std::string p_source, Factory p_factory)
 {
     Entry entry;
@@ -196,6 +197,7 @@ void Gallery::add(std::string p_name, std::string p_source, Factory p_factory)
     m_entries.emplace_back(std::move(entry));
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::checkManifest(std::string const& p_actual, char const* p_expected)
 {
     const std::string expected = p_expected;
@@ -222,6 +224,7 @@ void Gallery::checkManifest(std::string const& p_actual, char const* p_expected)
     }
 }
 
+// ----------------------------------------------------------------------------
 Gallery::~Gallery()
 {
     // The example goes first: it holds device resources, and the context they
@@ -234,6 +237,7 @@ Gallery::~Gallery()
     }
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::onLog(compages::gpu::LogLevel p_level, std::string_view p_message)
 {
     Gallery* self = g_gallery;
@@ -264,6 +268,7 @@ void Gallery::onLog(compages::gpu::LogLevel p_level, std::string_view p_message)
     }
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::fail(std::string const& p_why)
 {
     Entry& entry = m_entries[m_index];
@@ -278,6 +283,7 @@ void Gallery::fail(std::string const& p_why)
     hide();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::hide()
 {
     if (m_current == nullptr)
@@ -325,6 +331,7 @@ void syncImGuiMouseCapture(bool p_captured)
 
 } // namespace
 
+// ----------------------------------------------------------------------------
 void Gallery::captureMouse(bool p_captured)
 {
     if (p_captured == m_mouse_captured)
@@ -336,6 +343,7 @@ void Gallery::captureMouse(bool p_captured)
     syncImGuiMouseCapture(p_captured);
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::show(std::size_t p_index)
 {
     hide();
@@ -383,6 +391,7 @@ void Gallery::show(std::size_t p_index)
     }
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::resizeView(std::uint32_t p_width, std::uint32_t p_height)
 {
     if ((p_width == m_view_width) && (p_height == m_view_height))
@@ -424,6 +433,7 @@ void Gallery::resizeView(std::uint32_t p_width, std::uint32_t p_height)
     m_view_height = p_height;
 }
 
+// ----------------------------------------------------------------------------
 compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
                                               std::uint32_t p_height)
 {
@@ -480,6 +490,7 @@ compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
     return frame;
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::runExample()
 {
     // Counted even when nothing runs, so that a run walking the list does not
@@ -536,6 +547,7 @@ void Gallery::runExample()
     }
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::handleShortcuts()
 {
     ImGuiIO const& io = ImGui::GetIO();
@@ -597,6 +609,7 @@ void Gallery::handleShortcuts()
     }
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Gallery::run(Options const& p_options)
 {
     if (!m_manifest_problems.empty())
@@ -779,6 +792,7 @@ compages::Status Gallery::run(Options const& p_options)
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void Gallery::saveScreenshot(std::string const& p_directory,
                              bool p_whole_window)
 {
@@ -838,6 +852,7 @@ void Gallery::saveScreenshot(std::string const& p_directory,
     std::cerr << said << std::endl;
 }
 
+// ----------------------------------------------------------------------------
 Gallery::SourceFile const& Gallery::sourceFile(std::string const& p_relative)
 {
     auto found = m_sources.find(p_relative);

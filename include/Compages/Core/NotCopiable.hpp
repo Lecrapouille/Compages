@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace compages::core
+namespace compages
 {
 // ****************************************************************************
 //! \brief Base for unique owners (World, stores, GPU handles): no copy, move
@@ -30,5 +30,4 @@ protected:
     ~NotCopiable() = default;
 };
 
-} // namespace compages::core
-
+} // namespace compages

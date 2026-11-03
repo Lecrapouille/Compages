@@ -37,21 +37,21 @@ public:
 
     void clear();
 
-    void line(compages::core::Vector3f const& p_a,
-              compages::core::Vector3f const& p_b,
-              compages::core::Vector3f const& p_color =
-                  compages::core::Vector3f(1.0f, 0.2f, 0.2f));
+    void line(compages::Vector3f const& p_a,
+              compages::Vector3f const& p_b,
+              compages::Vector3f const& p_color =
+                  compages::Vector3f(1.0f, 0.2f, 0.2f));
 
-    void box(compages::core::AABB const& p_local_bounds,
-             compages::core::Matrix44f const& p_world_matrix,
-             compages::core::Vector3f const& p_color =
-                 compages::core::Vector3f(0.2f, 1.0f, 0.4f));
+    void box(compages::AABB const& p_local_bounds,
+             compages::Matrix44f const& p_world_matrix,
+             compages::Vector3f const& p_color =
+                 compages::Vector3f(0.2f, 1.0f, 0.4f));
 
-    void ray(compages::core::Vector3f const& p_origin,
-             compages::core::Vector3f const& p_direction,
+    void ray(compages::Vector3f const& p_origin,
+             compages::Vector3f const& p_direction,
              float p_length,
-             compages::core::Vector3f const& p_color =
-                 compages::core::Vector3f(1.0f, 1.0f, 0.2f));
+             compages::Vector3f const& p_color =
+                 compages::Vector3f(1.0f, 1.0f, 0.2f));
 
     [[nodiscard]] Status flush(CameraFrame const& p_camera);
 
@@ -59,14 +59,14 @@ private:
 
     struct DebugVertex
     {
-        compages::core::Vector3f position;
-        compages::core::Vector3f color;
+        compages::Vector3f position;
+        compages::Vector3f color;
     };
 
     bool m_ready = false;
     compages::gpu::Program m_program;
     compages::gpu::Pipeline m_pipeline;
-    compages::gpu::Buffer<DebugVertex> m_vertices;
+    compages::gpu::VertexBuffer<DebugVertex> m_vertices;
     std::vector<DebugVertex> m_pending;
 };
 

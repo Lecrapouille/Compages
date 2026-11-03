@@ -24,7 +24,7 @@ TEST(OrbitController, PlacesTheCameraOppositeTheForwardAxis)
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
-    orbit.target = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+    orbit.target = compages::Vector3f(0.0f, 0.0f, 0.0f);
     orbit.yaw = 0.0f;
     orbit.pitch = 0.0f;
     orbit.distance = 10.0f;
@@ -53,7 +53,7 @@ TEST(FlyController, ForwardMovesAlongLook)
 {
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(camera).position = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+    world.transform(camera).position = compages::Vector3f(0.0f, 0.0f, 0.0f);
     compages::world::FlyController fly;
     fly.yaw = 0.0f;
     fly.pitch = 0.0f;
@@ -69,7 +69,7 @@ TEST(FPSController, WalksOnTheGroundWithoutClimbing)
 {
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(camera).position = compages::core::Vector3f(0.0f, 1.7f, 0.0f);
+    world.transform(camera).position = compages::Vector3f(0.0f, 1.7f, 0.0f);
     compages::world::FPSController fps;
     fps.yaw = 0.0f;
     fps.pitch = -0.4f;
@@ -87,10 +87,10 @@ TEST(ThirdPersonController, FollowsTheTargetEntity)
     compages::world::World world;
     const compages::world::EntityId target = world.create("hero");
     const compages::world::EntityId camera = world.create("cam");
-    world.transform(target).position = compages::core::Vector3f(10.0f, 0.0f, 0.0f);
+    world.transform(target).position = compages::Vector3f(10.0f, 0.0f, 0.0f);
     compages::world::ThirdPersonController follow;
     follow.target = target;
-    follow.look_offset = compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+    follow.look_offset = compages::Vector3f(0.0f, 0.0f, 0.0f);
     follow.yaw = 0.0f;
     follow.pitch = 0.0f;
     follow.distance = 6.0f;
@@ -110,7 +110,7 @@ TEST(RigController, GlidesTheSameWayAtAnyFrameRate)
         const compages::world::EntityId camera = world.create("cam");
         compages::world::RigController rig;
         rig.snap(world, camera);
-        rig.target = compages::core::Vector3f(1.0f, 0.0f, 0.0f);
+        rig.target = compages::Vector3f(1.0f, 0.0f, 0.0f);
         for (int i = 0; i < p_steps; ++i)
         {
             rig.apply(world, camera, compages::world::RigInput{}, p_dt);
@@ -135,11 +135,11 @@ TEST(RigController, PanKeepsTheGrabbedGroundUnderTheMouse)
 
     compages::world::RigInput input;
     input.pan = true;
-    input.mouse = compages::core::Vector2f(0.0f, 0.0f);
+    input.mouse = compages::Vector2f(0.0f, 0.0f);
     rig.apply(world, camera, input, 0.0f);   // grab the target point
-    input.mouse = compages::core::Vector2f(0.5f, 0.0f);
+    input.mouse = compages::Vector2f(0.5f, 0.0f);
     rig.apply(world, camera, input, 0.0f);
-    const compages::core::Vector3f moved = rig.target;
+    const compages::Vector3f moved = rig.target;
     // Dragging the mouse to the right drags the ground to the right: the
     // target goes to the left of the camera (-X at yaw 0).
     ASSERT_LT(moved.x, -0.1f);

@@ -161,7 +161,7 @@ using Status = Result<void>;
 //! forwarding the error to our own caller.
 //!
 //! \code
-//! COMPAGES_TRY(m_texture.load("wood.png"));
+//! COMPAGES_TRY(m_texture.loadFile("wood.png"));
 //! \endcode
 // ****************************************************************************
 #define COMPAGES_TRY(expr)                                          \
@@ -189,10 +189,10 @@ using Status = Result<void>;
 //! }
 //! \endcode
 //!
-//! Most objects of the gpu layer have a load() that fills them in place and
-//! returns a Status, which reads better still:
+//! Most objects of the gpu layer have a loadFile() or a loadSource() that
+//! fills them in place and returns a Status, which reads better still:
 //! \code
-//! COMPAGES_TRY(m_program.load(VERTEX_SHADER, FRAGMENT_SHADER));
+//! COMPAGES_TRY(m_program.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 //! \endcode
 // ****************************************************************************
 #define COMPAGES_TRY_ASSIGN(target, expr)                           \

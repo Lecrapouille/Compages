@@ -14,24 +14,24 @@
 
 TEST(AABB, StartsEmpty)
 {
-    const compages::core::AABB box;
+    const compages::AABB box;
     ASSERT_TRUE(box.empty());
 }
 
 TEST(AABB, IntersectsOverlappingBoxes)
 {
-    const compages::core::AABB a = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                          compages::core::Vector3f(1.0f, 1.0f, 1.0f));
-    const compages::core::AABB b = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.5f, 0.0f, 0.0f),
-                                          compages::core::Vector3f(1.0f, 1.0f, 1.0f));
+    const compages::AABB a = compages::AABB::fromCenterExtent(compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                          compages::Vector3f(1.0f, 1.0f, 1.0f));
+    const compages::AABB b = compages::AABB::fromCenterExtent(compages::Vector3f(0.5f, 0.0f, 0.0f),
+                                          compages::Vector3f(1.0f, 1.0f, 1.0f));
     ASSERT_TRUE(a.intersects(b));
-    ASSERT_FALSE(a.intersects(compages::core::AABB{}));
+    ASSERT_FALSE(a.intersects(compages::AABB{}));
 }
 
 TEST(AABB, HoldsTheCornersItWasBuiltFrom)
 {
-    const compages::core::AABB box = compages::core::AABB::fromCorners(compages::core::Vector3f(1.0f, 2.0f, 3.0f),
-                                       compages::core::Vector3f(-1.0f, 4.0f, 0.0f));
+    const compages::AABB box = compages::AABB::fromCorners(compages::Vector3f(1.0f, 2.0f, 3.0f),
+                                       compages::Vector3f(-1.0f, 4.0f, 0.0f));
     ASSERT_FALSE(box.empty());
     ASSERT_FLOAT_EQ(box.min.x, -1.0f);
     ASSERT_FLOAT_EQ(box.min.y, 2.0f);
@@ -43,9 +43,9 @@ TEST(AABB, HoldsTheCornersItWasBuiltFrom)
 
 TEST(AABB, GrowsToHoldAPoint)
 {
-    compages::core::AABB box = compages::core::AABB::fromCorners(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                 compages::core::Vector3f(1.0f, 1.0f, 1.0f));
-    box.expand(compages::core::Vector3f(2.0f, -1.0f, 0.5f));
+    compages::AABB box = compages::AABB::fromCorners(compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                 compages::Vector3f(1.0f, 1.0f, 1.0f));
+    box.expand(compages::Vector3f(2.0f, -1.0f, 0.5f));
     ASSERT_FLOAT_EQ(box.min.y, -1.0f);
     ASSERT_FLOAT_EQ(box.max.x, 2.0f);
 }
@@ -55,12 +55,12 @@ TEST(AABB, GrowsToHoldAPoint)
 // array, which is the last column the shader reads.
 TEST(AABB, FollowsATranslationTheShaderWouldApply)
 {
-    const compages::core::AABB local = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                              compages::core::Vector3f(1.0f, 1.0f, 1.0f));
-    const compages::core::Matrix44f model =
-        compages::core::translate(compages::core::Matrix44f(compages::core::matrix::Identity),
-                          compages::core::Vector3f(10.0f, 0.0f, 0.0f));
-    const compages::core::AABB world = local.transformed(model);
+    const compages::AABB local = compages::AABB::fromCenterExtent(compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                              compages::Vector3f(1.0f, 1.0f, 1.0f));
+    const compages::Matrix44f model =
+        compages::translate(compages::Matrix44f(compages::matrix::Identity),
+                          compages::Vector3f(10.0f, 0.0f, 0.0f));
+    const compages::AABB world = local.transformed(model);
     ASSERT_NEAR(world.center().x, 10.0f, 1.0e-5f);
     ASSERT_NEAR(world.min.x, 9.0f, 1.0e-5f);
     ASSERT_NEAR(world.max.x, 11.0f, 1.0e-5f);

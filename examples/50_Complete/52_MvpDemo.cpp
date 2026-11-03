@@ -16,13 +16,16 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief What a unit box covers, around its own origin.
-const compages::core::AABB UNIT =
-    compages::core::AABB::fromCorners({ -0.5f, -0.5f, -0.5f },
-                                      { 0.5f, 0.5f, 0.5f });
+// ----------------------------------------------------------------------------
+const compages::AABB UNIT =
+    compages::AABB::fromCorners({ -0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f });
 
+// ----------------------------------------------------------------------------
 //! \brief Falls, and bounces on the floor losing a part of its speed, then
 //! starts again from where it was.
+// ----------------------------------------------------------------------------
 struct Bounce: compages::world::Routine
 {
     void start() override
@@ -34,7 +37,7 @@ struct Bounce: compages::world::Routine
     {
         // Gravity, then a bounce that loses speed. Once it barely moves, it
         // is put back where it started.
-        compages::core::Vector3f position = entity().position();
+        compages::Vector3f position = entity().position();
         speed -= 9.81f * p_dt;
         position.y += speed * p_dt;
         if (position.y < 0.5f)
@@ -50,11 +53,13 @@ struct Bounce: compages::world::Routine
         entity().position(position).rotate(p_dt, { 1.0f, 0.0f, 0.0f });
     }
 
-    compages::core::Vector3f from;
+    compages::Vector3f from;
     float speed = 0.0f;
 };
 
+// ----------------------------------------------------------------------------
 //! \brief Goes round the vertical axis, at its height and its distance.
+// ----------------------------------------------------------------------------
 struct Circle: compages::world::Routine
 {
     void update(float) override
@@ -65,7 +70,9 @@ struct Circle: compages::world::Routine
     }
 };
 
+// ----------------------------------------------------------------------------
 //! \brief Turns on itself.
+// ----------------------------------------------------------------------------
 struct MvpDemo::Spin: compages::world::Routine
 {
     void update(float p_dt) override
@@ -74,6 +81,7 @@ struct MvpDemo::Spin: compages::world::Routine
     }
 };
 
+// ----------------------------------------------------------------------------
 std::string MvpDemo::description() const
 {
     return "Falling cubes bouncing on a floor, a spinning block and a lamp "
@@ -81,14 +89,14 @@ std::string MvpDemo::description() const
            "around the cubes.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status MvpDemo::setUp()
 {
     // A sun, and a lamp that goes round on its own.
     m_scene.background(0.04f, 0.06f, 0.10f).ambient(0.08f, 0.09f, 0.12f);
     m_scene.camera()
         .position(0.0f, 12.0f, 28.0f)
-        .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 2.0f, 0.0f));
+        .add<compages::world::Orbit>(compages::Vector3f(0.0f, 2.0f, 0.0f));
     m_scene.sun("Sun", { 1.0f, 0.96f, 0.88f }, 0.8f);
     // The lamp casts shadows too: the cubes are drawn six more times, once
     // per face of a cube of 90 degree views around it.
@@ -105,13 +113,13 @@ compages::Status MvpDemo::setUp()
         .position(0.0f, 1.0f, -6.0f)
         .add<Spin>();
 
-    const std::array<compages::core::Vector3f, 4u> starts{
-        compages::core::Vector3f(-4.0f, 8.0f, -2.0f),
-        compages::core::Vector3f(0.0f, 10.0f, 1.0f),
-        compages::core::Vector3f(3.0f, 12.0f, -1.0f),
-        compages::core::Vector3f(-2.0f, 14.0f, 3.0f)
+    const std::array<compages::Vector3f, 4u> starts{
+        compages::Vector3f(-4.0f, 8.0f, -2.0f),
+        compages::Vector3f(0.0f, 10.0f, 1.0f),
+        compages::Vector3f(3.0f, 12.0f, -1.0f),
+        compages::Vector3f(-2.0f, 14.0f, 3.0f)
     };
-    for (compages::core::Vector3f const& start : starts)
+    for (compages::Vector3f const& start : starts)
     {
         m_cubes.emplace_back(
             m_scene.box("Cube", compages::renderer::color(0.9f, 0.2f, 0.2f))
@@ -121,11 +129,12 @@ compages::Status MvpDemo::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void MvpDemo::draw(compages::world::ViewFrame const& p_frame)
 {
     // Moved first, so that the boxes are drawn where the cubes are now.
     m_scene.update(p_frame);
-    for (compages::world::Entity& cube : m_cubes)
+    for (compages::world::Entity const& cube : m_cubes)
     {
         m_scene.debug().box(UNIT, cube.worldMatrix(), { 1.0f, 0.8f, 0.2f });
     }

@@ -314,16 +314,16 @@ public:
 
     Entity& position(float p_x, float p_y, float p_z)
     {
-        return position(compages::core::Vector3f(p_x, p_y, p_z));
+        return position(compages::Vector3f(p_x, p_y, p_z));
     }
 
-    Entity& position(compages::core::Vector3f const& p_position)
+    Entity& position(compages::Vector3f const& p_position)
     {
         place().position = p_position;
         return *this;
     }
 
-    [[nodiscard]] compages::core::Vector3f position() const
+    [[nodiscard]] compages::Vector3f position() const
     {
         if (LocalTransform const* origin = joint().origin())
         {
@@ -332,7 +332,7 @@ public:
         return world().transforms().position(m_id);
     }
 
-    Entity& rotation(compages::core::Quatf const& p_rotation)
+    Entity& rotation(compages::Quatf const& p_rotation)
     {
         place().rotation = p_rotation;
         return *this;
@@ -340,19 +340,19 @@ public:
 
     //! \brief Set the orientation to an angle around an axis.
     Entity& rotation(units::angle::radian_t p_radians,
-                     compages::core::Vector3f const& p_axis)
+                     compages::Vector3f const& p_axis)
     {
-        return rotation(compages::core::Quatf::fromAngleAxis(
-            p_radians, compages::core::vector::normalize(p_axis)));
+        return rotation(compages::Quatf::fromAngleAxis(
+            p_radians, compages::vector::normalize(p_axis)));
     }
 
     //! \brief Set the orientation to an angle, in radians, around an axis.
-    Entity& rotation(float p_radians, compages::core::Vector3f const& p_axis)
+    Entity& rotation(float p_radians, compages::Vector3f const& p_axis)
     {
         return rotation(units::angle::radian_t(p_radians), p_axis);
     }
 
-    [[nodiscard]] compages::core::Quatf rotation() const
+    [[nodiscard]] compages::Quatf rotation() const
     {
         if (LocalTransform const* origin = joint().origin())
         {
@@ -362,7 +362,7 @@ public:
     }
 
     //! \brief Turn by an angle, in radians, around an axis of the entity.
-    Entity& rotate(float p_radians, compages::core::Vector3f const& p_axis)
+    Entity& rotate(float p_radians, compages::Vector3f const& p_axis)
     {
         place().rotate(p_radians, p_axis);
         return *this;
@@ -370,21 +370,21 @@ public:
 
     Entity& scale(float p_scale)
     {
-        return scale(compages::core::Vector3f(p_scale, p_scale, p_scale));
+        return scale(compages::Vector3f(p_scale, p_scale, p_scale));
     }
 
     Entity& scale(float p_x, float p_y, float p_z)
     {
-        return scale(compages::core::Vector3f(p_x, p_y, p_z));
+        return scale(compages::Vector3f(p_x, p_y, p_z));
     }
 
-    Entity& scale(compages::core::Vector3f const& p_scale)
+    Entity& scale(compages::Vector3f const& p_scale)
     {
         place().scale = p_scale;
         return *this;
     }
 
-    [[nodiscard]] compages::core::Vector3f scale() const
+    [[nodiscard]] compages::Vector3f scale() const
     {
         if (LocalTransform const* origin = joint().origin())
         {
@@ -395,9 +395,9 @@ public:
 
     //! \brief Turn so as to face a point, given in the parent's axes: the
     //! entity's -z axis points at it, as a camera looks.
-    Entity& lookAt(compages::core::Vector3f const& p_target,
-                   compages::core::Vector3f const& p_up =
-                       compages::core::Vector3f(0.0f, 1.0f, 0.0f))
+    Entity& lookAt(compages::Vector3f const& p_target,
+                   compages::Vector3f const& p_up =
+                       compages::Vector3f(0.0f, 1.0f, 0.0f))
     {
         compages::world::lookAt(place(), p_target, p_up);
         return *this;
@@ -405,7 +405,7 @@ public:
 
     Entity& lookAt(float p_x, float p_y, float p_z)
     {
-        return lookAt(compages::core::Vector3f(p_x, p_y, p_z));
+        return lookAt(compages::Vector3f(p_x, p_y, p_z));
     }
 
     // ------------------------------------------------------------------------
@@ -428,7 +428,7 @@ public:
     //! \code
     //! Entity arm = base.child("Arm").revolute({ 0, 0, 1 }, -90.0_deg, 90.0_deg);
     //! \endcode
-    Entity& revolute(compages::core::Vector3f const& p_axis,
+    Entity& revolute(compages::Vector3f const& p_axis,
                      units::angle::radian_t p_min = units::angle::radian_t(
                          -std::numeric_limits<double>::infinity()),
                      units::angle::radian_t p_max = units::angle::radian_t(
@@ -440,7 +440,7 @@ public:
 
     //! \brief Make the entity slide along an axis, within an interval of
     //! offsets (JointHandle::prismatic). Kept here to chain while building.
-    Entity& prismatic(compages::core::Vector3f const& p_axis,
+    Entity& prismatic(compages::Vector3f const& p_axis,
                       units::length::meter_t p_min = units::length::meter_t(
                           -std::numeric_limits<double>::infinity()),
                       units::length::meter_t p_max = units::length::meter_t(
@@ -459,16 +459,16 @@ public:
     }
 
     //! \brief The place in the world, as of the last update of the World.
-    [[nodiscard]] compages::core::Matrix44f const& worldMatrix() const
+    [[nodiscard]] compages::Matrix44f const& worldMatrix() const
     {
         return world().worldMatrix(m_id);
     }
 
     //! \brief Where the entity is in the world, as of the last update.
-    [[nodiscard]] compages::core::Vector3f worldPosition() const
+    [[nodiscard]] compages::Vector3f worldPosition() const
     {
-        compages::core::Matrix44f const& m = worldMatrix();
-        return compages::core::translation(m);
+        compages::Matrix44f const& m = worldMatrix();
+        return compages::translation(m);
     }
 
 private:
@@ -504,7 +504,7 @@ inline Input const& Routine::input() const
     return m_world->input();
 }
 
-inline compages::core::Frame const& Routine::frame() const
+inline compages::Frame const& Routine::frame() const
 {
     return m_world->frame();
 }

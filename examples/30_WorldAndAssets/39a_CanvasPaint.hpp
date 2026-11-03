@@ -46,7 +46,7 @@ private:
     compages::renderer::Scene m_scene{ m_world };
     compages::world::Entity m_canvas;
     compages::renderer::CanvasTexture m_paint;
-    compages::core::Vector3f m_last_stroke{};
+    compages::Vector3f m_last_stroke{};
     bool m_has_last_stroke = false;
     compages::world::Input m_prev_input{};
     int m_color_index = 2;

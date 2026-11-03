@@ -296,7 +296,7 @@ LocalTransform World::transform(EntityId p_entity) const
     return m_transforms.local(p_entity);
 }
 
-compages::core::Matrix44f const& World::worldMatrix(EntityId p_entity) const
+compages::Matrix44f const& World::worldMatrix(EntityId p_entity) const
 {
     assert(alive(p_entity) && "World::worldMatrix on a stale entity");
     return m_transforms.world(p_entity);
@@ -313,7 +313,7 @@ World::~World()
     m_routines.clear();
 }
 
-void World::step(compages::core::Frame const& p_frame)
+void World::step(compages::Frame const& p_frame)
 {
     m_frame = p_frame;
     // A headless step has no input: do not keep the keys and the mouse of a
@@ -335,7 +335,7 @@ void World::endStep()
     update();
 }
 
-void World::update(compages::core::Frame const& p_frame)
+void World::update(compages::Frame const& p_frame)
 {
     step(p_frame);
     update();

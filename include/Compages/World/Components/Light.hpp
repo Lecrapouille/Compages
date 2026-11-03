@@ -29,7 +29,7 @@ namespace compages::world
 // ****************************************************************************
 struct DirectionalLight
 {
-    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
 };
 
@@ -47,7 +47,7 @@ struct DirectionalLight
 // ****************************************************************************
 struct PointLight
 {
-    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
     //! \brief Distance at which the light has faded out: a fifth of it at
     //! half this distance, nothing beyond.

@@ -20,37 +20,38 @@ namespace examples
 using namespace doom;
 
 //! \brief A turn around an axis, in radians.
-static compages::core::Quatf turn(float p_radians, compages::core::Vector3f const& p_axis)
+static compages::Quatf turn(float p_radians, compages::Vector3f const& p_axis)
 {
-    return compages::core::Quatf::fromAngleAxis(units::angle::radian_t(double(p_radians)), p_axis);
+    return compages::Quatf::fromAngleAxis(units::angle::radian_t(double(p_radians)), p_axis);
 }
 
 //! \brief The length of a vector lying on the floor.
-static float flatLength(compages::core::Vector3f const& p_v)
+static float flatLength(compages::Vector3f const& p_v)
 {
     return std::sqrt((p_v.x * p_v.x) + (p_v.z * p_v.z));
 }
 
 //! \brief The shortest turn bringing +Y onto \c p_to, of length one.
-static compages::core::Quatf fromUp(compages::core::Vector3f const& p_to)
+static compages::Quatf fromUp(compages::Vector3f const& p_to)
 {
-    const compages::core::Vector3f up(0.0f, 1.0f, 0.0f);
-    const float cosine = std::clamp(compages::core::vector::dot(up, p_to), -1.0f, 1.0f);
-    compages::core::Vector3f axis = compages::core::vector::cross(up, p_to);
+    const compages::Vector3f up(0.0f, 1.0f, 0.0f);
+    const float cosine = std::clamp(compages::vector::dot(up, p_to), -1.0f, 1.0f);
+    compages::Vector3f axis = compages::vector::cross(up, p_to);
     if (axis.norm() < 1.0e-5f)
     {
-        return (cosine > 0.0f) ? compages::core::Quatf() : turn(PI, compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+        return (cosine > 0.0f) ? compages::Quatf() : turn(PI, compages::Vector3f(1.0f, 0.0f, 0.0f));
     }
     axis.normalize();
     return turn(std::acos(cosine), axis);
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::moveEnemies(float p_dt)
 {
     for (Enemy& enemy : m_cast.enemies)
     {
         const bool soldier = (enemy.kind == Kind::Soldier);
-        const compages::core::Vector3f position = enemy.root.position();
+        const compages::Vector3f position = enemy.root.position();
         // The soldier model looks down -Z, the robot down +Z.
         const float facing = soldier ? PI : 0.0f;
 
@@ -62,16 +63,16 @@ void DoomLike::moveEnemies(float p_dt)
             {
                 const float tilt = std::min(enemy.action * 3.0f, PI * 0.5f);
                 enemy.root.rotation(turn(std::atan2(enemy.heading.x, enemy.heading.z) + facing,
-                                         compages::core::Vector3f(0.0f, 1.0f, 0.0f)) *
-                                    turn(tilt, compages::core::Vector3f(1.0f, 0.0f, 0.0f)));
+                                         compages::Vector3f(0.0f, 1.0f, 0.0f)) *
+                                    turn(tilt, compages::Vector3f(1.0f, 0.0f, 0.0f)));
             }
             continue;
         }
 
-        const compages::core::Vector3f to_player = m_player.position - position;
+        const compages::Vector3f to_player = m_player.position - position;
         const float distance = flatLength(to_player);
         const bool sees = (distance < 22.0f) && m_content.map.clearLine(position, m_player.position);
-        const compages::core::Vector3f toward = to_player * (1.0f / std::max(distance, 1.0e-3f));
+        const compages::Vector3f toward = to_player * (1.0f / std::max(distance, 1.0e-3f));
         float speed = 0.0f;
 
         if (enemy.mood == Mood::Hurt)
@@ -100,11 +101,11 @@ void DoomLike::moveEnemies(float p_dt)
                 if ((enemy.cooldown <= 0.0f) && bool(enemy.muzzle))
                 {
                     enemy.cooldown = m_content.effects.random(1.1f, 1.9f);
-                    const compages::core::Vector3f from = enemy.muzzle.worldPosition();
-                    const compages::core::Vector3f target = eye() + compages::core::Vector3f(m_content.effects.random(-0.4f, 0.4f),
+                    const compages::Vector3f from = enemy.muzzle.worldPosition();
+                    const compages::Vector3f target = eye() + compages::Vector3f(m_content.effects.random(-0.4f, 0.4f),
                                                              m_content.effects.random(-0.5f, 0.1f),
                                                              m_content.effects.random(-0.4f, 0.4f));
-                    compages::core::Vector3f direction = target - from;
+                    compages::Vector3f direction = target - from;
                     direction.normalize();
                     m_cast.bolts.emplace_back(Bolt{ from, direction * 16.0f, 2.5f });
                     m_content.effects.muzzle(from, direction);
@@ -168,21 +169,22 @@ void DoomLike::moveEnemies(float p_dt)
         }
 
         // Wandering: straight on, turning at the walls and now and then.
-        const compages::core::Vector3f step = enemy.heading * (speed * p_dt);
-        const compages::core::Vector3f moved = m_content.map.slide(position, step, soldier ? SOLDIER_RADIUS : ROBOT_RADIUS);
+        const compages::Vector3f step = enemy.heading * (speed * p_dt);
+        const compages::Vector3f moved = m_content.map.slide(position, step, soldier ? SOLDIER_RADIUS : ROBOT_RADIUS);
         const bool stuck = (speed > 0.0f) && (flatLength(moved - position) < speed * p_dt * 0.5f);
         enemy.wander -= p_dt;
         if ((enemy.mood == Mood::Wander) && (stuck || (enemy.wander < 0.0f)))
         {
             const float angle = float(int(m_content.effects.random(0.0f, 3.99f))) * (PI * 0.5f);
-            enemy.heading = compages::core::Vector3f(std::sin(angle), 0.0f, std::cos(angle));
+            enemy.heading = compages::Vector3f(std::sin(angle), 0.0f, std::cos(angle));
             enemy.wander = m_content.effects.random(2.0f, 5.0f);
         }
         enemy.root.position(moved).rotation(
-            turn(std::atan2(enemy.heading.x, enemy.heading.z) + facing, compages::core::Vector3f(0.0f, 1.0f, 0.0f)));
+            turn(std::atan2(enemy.heading.x, enemy.heading.z) + facing, compages::Vector3f(0.0f, 1.0f, 0.0f)));
     }
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::aimArms()
 {
     // After the clips: the arms of the soldiers aiming are pointed at the
@@ -190,7 +192,7 @@ void DoomLike::aimArms()
     // of the model run along their own +Y, so each arm is given the turn
     // bringing +Y onto the direction wanted, in the space of its parent.
     bool turned = false;
-    const compages::core::Vector3f target = eye() - compages::core::Vector3f(0.0f, 0.2f, 0.0f);
+    const compages::Vector3f target = eye() - compages::Vector3f(0.0f, 0.2f, 0.0f);
     for (Enemy& enemy : m_cast.enemies)
     {
         if ((enemy.kind != Kind::Soldier) || (enemy.mood != Mood::Attack) ||
@@ -198,14 +200,14 @@ void DoomLike::aimArms()
         {
             continue;
         }
-        const compages::core::Vector3f right = compages::core::vector::cross(enemy.heading, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+        const compages::Vector3f right = compages::vector::cross(enemy.heading, compages::Vector3f(0.0f, 1.0f, 0.0f));
         for (int side = 0; side < 2; ++side)
         {
             const compages::world::EntityId arm = (side == 0) ? enemy.right_arm : enemy.left_arm;
             const compages::world::EntityId forearm = (side == 0) ? enemy.right_forearm : enemy.left_forearm;
-            compages::core::Matrix44f const& shoulder = m_level_scene.world->worldMatrix(arm);
-            compages::core::Vector3f direction =
-                target - compages::core::translation(shoulder);
+            compages::Matrix44f const& shoulder = m_level_scene.world->worldMatrix(arm);
+            compages::Vector3f direction =
+                target - compages::translation(shoulder);
             direction.normalize();
             if (side == 1)
             {
@@ -213,20 +215,20 @@ void DoomLike::aimArms()
                 direction = direction + (right * 0.35f);
                 direction.normalize();
             }
-            compages::core::Matrix44f const& parent = m_level_scene.world->worldMatrix(m_level_scene.world->parent(arm));
-            compages::core::Vector3f local;
+            compages::Matrix44f const& parent = m_level_scene.world->worldMatrix(m_level_scene.world->parent(arm));
+            compages::Vector3f local;
             for (int axis = 0; axis < 3; ++axis)
             {
-                compages::core::Vector3f row(parent[std::size_t(axis)].x, parent[std::size_t(axis)].y,
+                compages::Vector3f row(parent[std::size_t(axis)].x, parent[std::size_t(axis)].y,
                              parent[std::size_t(axis)].z);
                 row.normalize();
-                local[std::size_t(axis)] = compages::core::vector::dot(direction, row);
+                local[std::size_t(axis)] = compages::vector::dot(direction, row);
             }
             local.normalize();
             compages::world::Entity(*m_level_scene.world, arm).rotation(fromUp(local));
             if (forearm.valid())
             {
-                compages::world::Entity(*m_level_scene.world, forearm).rotation(compages::core::Quatf());
+                compages::world::Entity(*m_level_scene.world, forearm).rotation(compages::Quatf());
             }
             turned = true;
         }
@@ -238,23 +240,24 @@ void DoomLike::aimArms()
     }
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::moveBolts(float p_dt)
 {
     for (Bolt& bolt : m_cast.bolts)
     {
-        const compages::core::Vector3f from = bolt.position;
+        const compages::Vector3f from = bolt.position;
         bolt.position = bolt.position + (bolt.velocity * p_dt);
         bolt.life -= p_dt;
-        compages::core::Vector3f direction = bolt.velocity;
+        compages::Vector3f direction = bolt.velocity;
         direction.normalize();
 
         // What it looks like: a hot ball and a short streak behind it.
-        m_content.effects.glow(bolt.position, compages::core::Vector3f(1.0f, 0.45f, 0.1f), 0.18f);
+        m_content.effects.glow(bolt.position, compages::Vector3f(1.0f, 0.45f, 0.1f), 0.18f);
         m_content.effects.tracer(bolt.position - (direction * 0.6f), bolt.position,
-                         compages::core::Vector3f(1.0f, 0.5f, 0.15f), 0.02f);
+                         compages::Vector3f(1.0f, 0.5f, 0.15f), 0.02f);
 
         // The player, a barrel, or the stone.
-        const compages::core::Vector3f to_player = bolt.position - m_player.position;
+        const compages::Vector3f to_player = bolt.position - m_player.position;
         if ((flatLength(to_player) < PLAYER_RADIUS + 0.1f) && (bolt.position.y < EYE + 0.2f))
         {
             hurtPlayer(9.0f);
@@ -288,6 +291,7 @@ void DoomLike::moveBolts(float p_dt)
     std::erase_if(m_cast.bolts, [](Bolt const& b) { return b.life <= 0.0f; });
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::moveBarrels(float p_dt)
 {
     // A barrel caught in a blast goes off a moment later: a chain.
@@ -304,7 +308,8 @@ void DoomLike::moveBarrels(float p_dt)
     }
 }
 
-void DoomLike::damageEnemy(Enemy& p_enemy, float p_damage, compages::core::Vector3f p_point, compages::core::Vector3f p_direction)
+// ----------------------------------------------------------------------------
+void DoomLike::damageEnemy(Enemy& p_enemy, float p_damage, compages::Vector3f p_point, compages::Vector3f p_direction)
 {
     if (p_enemy.mood == Mood::Dead)
     {
@@ -333,7 +338,7 @@ void DoomLike::damageEnemy(Enemy& p_enemy, float p_damage, compages::core::Vecto
     }
 
     p_enemy.health -= damage;
-    const compages::core::Vector3f position = p_enemy.root.position();
+    const compages::Vector3f position = p_enemy.root.position();
     if (p_enemy.health <= 0.0f)
     {
         p_enemy.mood = Mood::Dead;
@@ -354,7 +359,7 @@ void DoomLike::damageEnemy(Enemy& p_enemy, float p_damage, compages::core::Vecto
     }
 
     // Pushed back a step, staggered, and now after the player.
-    const compages::core::Vector3f push(p_direction.x, 0.0f, p_direction.z);
+    const compages::Vector3f push(p_direction.x, 0.0f, p_direction.z);
     p_enemy.root.position(m_content.map.slide(position, push * 0.12f, soldier ? SOLDIER_RADIUS : ROBOT_RADIUS));
     if (p_enemy.mood != Mood::Attack)
     {
@@ -363,6 +368,7 @@ void DoomLike::damageEnemy(Enemy& p_enemy, float p_damage, compages::core::Vecto
     }
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::explode(Barrel& p_barrel)
 {
     if (p_barrel.gone)
@@ -371,18 +377,18 @@ void DoomLike::explode(Barrel& p_barrel)
     }
     p_barrel.gone = true;
     p_barrel.body.enable(false);
-    const compages::core::Vector3f middle = p_barrel.at + compages::core::Vector3f(0.0f, 0.6f, 0.0f);
+    const compages::Vector3f middle = p_barrel.at + compages::Vector3f(0.0f, 0.6f, 0.0f);
 
     // Fire, smoke, a flash of light, a black mark on the floor and on the
     // walls it reaches.
     m_content.effects.explosion(middle);
     m_cast.blasts.emplace_back(Blast{
-        m_level_scene.scene->lamp("Blast", compages::core::Vector3f(1.0f, 0.6f, 0.25f), 9.0f, 12.0f).position(middle + compages::core::Vector3f(0.0f, 0.6f, 0.0f)) });
-    m_content.effects.mark(Mark::Scorch, compages::core::Vector3f(p_barrel.at.x, 0.0f, p_barrel.at.z), compages::core::Vector3f(0.0f, 1.0f, 0.0f), 3.2f);
+        m_level_scene.scene->lamp("Blast", compages::Vector3f(1.0f, 0.6f, 0.25f), 9.0f, 12.0f).position(middle + compages::Vector3f(0.0f, 0.6f, 0.0f)) });
+    m_content.effects.mark(Mark::Scorch, compages::Vector3f(p_barrel.at.x, 0.0f, p_barrel.at.z), compages::Vector3f(0.0f, 1.0f, 0.0f), 3.2f);
     for (int i = 0; i < 8; ++i)
     {
         const float angle = float(i) * PI * 0.25f;
-        const compages::core::Vector3f direction(std::sin(angle), 0.0f, std::cos(angle));
+        const compages::Vector3f direction(std::sin(angle), 0.0f, std::cos(angle));
         if (const std::optional<Hit> wall = m_content.map.cast(middle, direction, 2.5f))
         {
             m_content.effects.mark(Mark::Scorch, wall->point, wall->normal, 2.0f);
@@ -393,14 +399,14 @@ void DoomLike::explode(Barrel& p_barrel)
     constexpr float REACH = 5.0f;
     for (Enemy& enemy : m_cast.enemies)
     {
-        const compages::core::Vector3f to = enemy.root.position() - p_barrel.at;
+        const compages::Vector3f to = enemy.root.position() - p_barrel.at;
         const float d = flatLength(to);
         if ((d < REACH) && (enemy.mood != Mood::Dead) && m_content.map.clearLine(p_barrel.at, enemy.root.position()))
         {
-            compages::core::Vector3f direction(to.x, 0.3f, to.z);
+            compages::Vector3f direction(to.x, 0.3f, to.z);
             direction.normalize();
             damageEnemy(enemy, 14.0f * (1.0f - (d / REACH)) + 1.0f,
-                        enemy.root.position() + compages::core::Vector3f(0.0f, 1.0f, 0.0f), direction);
+                        enemy.root.position() + compages::Vector3f(0.0f, 1.0f, 0.0f), direction);
         }
     }
     const float d = flatLength(m_player.position - p_barrel.at);
@@ -418,6 +424,7 @@ void DoomLike::explode(Barrel& p_barrel)
     }
 }
 
+// ----------------------------------------------------------------------------
 void DoomLike::hurtPlayer(float p_damage)
 {
     if (m_session.state != State::Playing)

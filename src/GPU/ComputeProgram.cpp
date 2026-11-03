@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "Compages/GPU/Compute.hpp"
+#include "Compages/GPU/ComputeProgram.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
@@ -57,7 +57,8 @@ Result<ComputeProgram> ComputeProgram::fromSource(std::string_view p_source)
     return ComputeProgram(std::move(program));
 }
 
-Result<ComputeProgram> ComputeProgram::fromFile(std::string const& p_path)
+Result<ComputeProgram>
+ComputeProgram::fromFile(std::filesystem::path const& p_path)
 {
     auto program_result = Program::fromComputeFile(p_path);
     if (!program_result)

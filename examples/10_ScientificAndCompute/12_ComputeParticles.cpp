@@ -15,6 +15,7 @@ namespace examples
 
 constexpr std::uint32_t COUNT = 4096u;
 
+// ----------------------------------------------------------------------------
 constexpr const char* STEP = R"(#version 450 core
 layout(local_size_x = 64) in;
 
@@ -58,6 +59,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec4 color;
@@ -71,6 +73,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
 in vec4 vColor;
 out vec4 oColor;
@@ -87,6 +90,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string ComputeParticles::description() const
 {
     return "Four thousand particles bounce in a box. A compute shader moves "
@@ -95,6 +99,7 @@ std::string ComputeParticles::description() const
            "two is what makes the writes visible to the draw.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status ComputeParticles::setUp()
 {
     // Positions, speeds and colours decided once. The compute shader only
@@ -107,30 +112,31 @@ compages::Status ComputeParticles::setUp()
     for (Particle& p : seed)
     {
         const float t = hue(rng);
-        p.position = compages::core::Vector2f(place(rng), place(rng));
-        p.velocity = compages::core::Vector2f(speed(rng), speed(rng));
-        p.color = compages::core::Vector4f(
+        p.position = compages::Vector2f(place(rng), place(rng));
+        p.velocity = compages::Vector2f(speed(rng), speed(rng));
+        p.color = compages::Vector4f(
             0.4f + (0.6f * t), 0.5f + (0.4f * (1.0f - t)), 0.9f, 0.9f);
     }
 
     // Storage: a compute shader may write it, a draw may read it.
     COMPAGES_TRY_ASSIGN(m_particles,
-                        compages::gpu::Buffer<Particle>::from(
-                            seed,
-                            compages::gpu::BufferKind::Storage,
-                            compages::gpu::BufferUsage::Storage));
+                        compages::gpu::StorageBuffer<Particle>::from(
+                            seed, compages::gpu::BufferUsage::Stream));
 
-    COMPAGES_TRY(m_step.load(STEP));
+    COMPAGES_TRY(m_step.loadSource(STEP));
     COMPAGES_TRY(m_step.bind("Particles", m_particles));
     m_step.set("count", COUNT);
 
-    COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
-    m_points.vertices(m_particles);
-    m_points.primitive(compages::gpu::Primitive::Points)
-        .blend(compages::gpu::Blend::additive());
+    COMPAGES_TRY(m_points.loadSources(VERTEX, FRAGMENT));
+    // The compute shader moves the particles on the graphics card. The
+    // drawable reads them there, without a copy: it borrows m_particles.
+    m_points.borrowVertices(m_particles);
+    m_points.state().primitive = compages::gpu::Primitive::Points;
+    m_points.state().blend = compages::gpu::Blend::additive();
     return m_points.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void ComputeParticles::draw(compages::world::ViewFrame const& p_frame)
 {
     // Move them, then wait until those writes are visible as vertices.

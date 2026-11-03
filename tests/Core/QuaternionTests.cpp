@@ -20,7 +20,7 @@
 
 
 template <typename T, size_t r, size_t c>
-static void check_matrix(compages::core::Matrix<T, r, c> const& a, compages::core::Matrix<T, r, c> const& b)
+static void check_matrix(compages::Matrix<T, r, c> const& a, compages::Matrix<T, r, c> const& b)
 {
     for (size_t i = 0_z; i < r * c; ++i)
     {
@@ -31,7 +31,7 @@ static void check_matrix(compages::core::Matrix<T, r, c> const& a, compages::cor
 TEST(TestQuaternions, testCreator)
 {
     {
-        compages::core::Quatf q;
+        compages::Quatf q;
 
         ASSERT_EQ(1.0f, q.a);
         ASSERT_EQ(0.0f, q.b);
@@ -51,7 +51,7 @@ TEST(TestQuaternions, testCreator)
     }
 
     {
-        compages::core::Quatf q(1.0f, 0.0f, 0.0f, 0.0f);
+        compages::Quatf q(1.0f, 0.0f, 0.0f, 0.0f);
 
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
@@ -60,7 +60,7 @@ TEST(TestQuaternions, testCreator)
     }
 
     {
-        compages::core::Quatf q(1.0f, compages::core::Vector3f(0.0f, 0.0f, 0.0f));
+        compages::Quatf q(1.0f, compages::Vector3f(0.0f, 0.0f, 0.0f));
 
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
@@ -69,7 +69,7 @@ TEST(TestQuaternions, testCreator)
     }
 
     {
-        compages::core::Quatf q(0.0f, 0.0f, 0.0f);
+        compages::Quatf q(0.0f, 0.0f, 0.0f);
 
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
@@ -78,8 +78,8 @@ TEST(TestQuaternions, testCreator)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q1(q);
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q1(q);
 
         ASSERT_EQ(1.0f, q1[0]);
         ASSERT_EQ(2.0f, q1[1]);
@@ -88,8 +88,8 @@ TEST(TestQuaternions, testCreator)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q1 = q;
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q1 = q;
 
         ASSERT_EQ(1.0f, q1[0]);
         ASSERT_EQ(2.0f, q1[1]);
@@ -102,7 +102,7 @@ TEST(TestQuaternions, testDisplay)
 {
     std::stringstream buffer;
     std::streambuf* old = std::cout.rdbuf(buffer.rdbuf());
-    std::cout << compages::core::Quatf{} << std::endl;
+    std::cout << compages::Quatf{} << std::endl;
     ASSERT_STREQ(buffer.str().c_str(), "Quat(1, (0i, 0j, 0k))\n");
     std::cout.rdbuf(old);
 }
@@ -110,9 +110,9 @@ TEST(TestQuaternions, testDisplay)
 TEST(TestQuaternions, testangles)
 {
     {
-        compages::core::Quatf q;
+        compages::Quatf q;
 
-        compages::core::Vector3f v = q.axis();
+        compages::Vector3f v = q.axis();
         ASSERT_EQ(0.0f, v.x);
         ASSERT_EQ(0.0f, v.y);
         ASSERT_EQ(1.0f, v.z);
@@ -120,8 +120,8 @@ TEST(TestQuaternions, testangles)
     }
 
     {
-        compages::core::Quatf q = compages::core::Quatf::fromAngleAxis(units::angle::degree_t(0.0f),
-                                       compages::core::Vector3f(0, 0, 1));
+        compages::Quatf q = compages::Quatf::fromAngleAxis(units::angle::degree_t(0.0f),
+                                       compages::Vector3f(0, 0, 1));
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
         ASSERT_EQ(0.0f, q[2]);
@@ -129,7 +129,7 @@ TEST(TestQuaternions, testangles)
     }
 
     {
-        compages::core::Quatf q(units::angle::degree_t(0.0f), compages::core::Vector3f(0, 0, 1));
+        compages::Quatf q(units::angle::degree_t(0.0f), compages::Vector3f(0, 0, 1));
         ASSERT_EQ(1.0f, q[0]);
         ASSERT_EQ(0.0f, q[1]);
         ASSERT_EQ(0.0f, q[2]);
@@ -140,16 +140,16 @@ TEST(TestQuaternions, testangles)
 TEST(TestQuaternions, testmatrix)
 {
     {
-        compages::core::Quatf q;
-        compages::core::Matrix44f m = q.toMatrix();
-        check_matrix(compages::core::Matrix44f(compages::core::matrix::Identity), m);
+        compages::Quatf q;
+        compages::Matrix44f m = q.toMatrix();
+        check_matrix(compages::Matrix44f(compages::matrix::Identity), m);
     }
 
     {
-        compages::core::Quatf q = compages::core::Quatf::fromAngleAxis(units::angle::degree_t(45.0f),
-                                       compages::core::Vector3f(0, 1, 0));
-        compages::core::Matrix44f m = q.toMatrix();
-        check_matrix(compages::core::Matrix44f({ 0.707107f,
+        compages::Quatf q = compages::Quatf::fromAngleAxis(units::angle::degree_t(45.0f),
+                                       compages::Vector3f(0, 1, 0));
+        compages::Matrix44f m = q.toMatrix();
+        check_matrix(compages::Matrix44f({ 0.707107f,
                                  0.0f,
                                  0.707107f,
                                  0.0f,
@@ -171,15 +171,15 @@ TEST(TestQuaternions, testmatrix)
     // toMatrix(), rotate() and fromMatrix() shall agree on the convention.
     {
         const units::angle::degree_t angle(30.0f);
-        const compages::core::Vector3f axis(0.371391f, 0.557086f, 0.742781f);
-        compages::core::Quatf q = compages::core::Quatf::fromAngleAxis(angle, axis);
-        compages::core::Matrix44f m = q.toMatrix();
-        check_matrix(compages::core::rotate(compages::core::Matrix44f(compages::core::matrix::Identity),
+        const compages::Vector3f axis(0.371391f, 0.557086f, 0.742781f);
+        compages::Quatf q = compages::Quatf::fromAngleAxis(angle, axis);
+        compages::Matrix44f m = q.toMatrix();
+        check_matrix(compages::rotate(compages::Matrix44f(compages::matrix::Identity),
                                             angle,
                                             axis),
                      m);
 
-        compages::core::Quatf back = compages::core::Quatf::fromMatrix(m);
+        compages::Quatf back = compages::Quatf::fromMatrix(m);
         ASSERT_NEAR(q[0], back[0], 0.0001f);
         ASSERT_NEAR(q[1], back[1], 0.0001f);
         ASSERT_NEAR(q[2], back[2], 0.0001f);
@@ -190,9 +190,9 @@ TEST(TestQuaternions, testmatrix)
 TEST(TestQuaternions, testoperators)
 {
     {
-        compages::core::Quatf q1(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q2(5.0f, 6.0f, 7.0f, 8.0f);
-        compages::core::Quatf q = q1 + q2;
+        compages::Quatf q1(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q2(5.0f, 6.0f, 7.0f, 8.0f);
+        compages::Quatf q = q1 + q2;
 
         ASSERT_EQ(6.0f, q[0]);
         ASSERT_EQ(8.0f, q[1]);
@@ -201,10 +201,10 @@ TEST(TestQuaternions, testoperators)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
         float k = 3.0f;
-        compages::core::Quatf q1 = q * k;
-        compages::core::Quatf q2 = k * q;
+        compages::Quatf q1 = q * k;
+        compages::Quatf q2 = k * q;
 
         ASSERT_EQ(3.0f, q1[0]);
         ASSERT_EQ(6.0f, q1[1]);
@@ -216,7 +216,7 @@ TEST(TestQuaternions, testoperators)
         ASSERT_EQ(9.0f, q2[2]);
         ASSERT_EQ(12.0f, q2[3]);
 
-        compages::core::Quatf q3 = q / k;
+        compages::Quatf q3 = q / k;
         ASSERT_EQ(1.0f / k, q3[0]);
         ASSERT_EQ(2.0f / k, q3[1]);
         ASSERT_EQ(3.0f / k, q3[2]);
@@ -224,7 +224,7 @@ TEST(TestQuaternions, testoperators)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
         q *= 3.0f;
 
         ASSERT_EQ(3.0f, q[0]);
@@ -241,8 +241,8 @@ TEST(TestQuaternions, testoperators)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q1(5.0f, 6.0f, 7.0f, 8.0f);
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q1(5.0f, 6.0f, 7.0f, 8.0f);
         q += q1;
 
         ASSERT_EQ(6.0f, q[0]);
@@ -262,7 +262,7 @@ TEST(TestQuaternions, testoperators)
 TEST(TestQuaternions, testoperations)
 {
     {
-        compages::core::Quatf q;
+        compages::Quatf q;
 
         ASSERT_EQ(1.0f, q.norm());
         ASSERT_EQ(1.0f, q[0]);
@@ -272,8 +272,8 @@ TEST(TestQuaternions, testoperations)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q1 = q.conjugate();
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q1 = q.conjugate();
         ASSERT_EQ(1.0f, q1[0]);
         ASSERT_EQ(-2.0f, q1[1]);
         ASSERT_EQ(-3.0f, q1[2]);
@@ -281,8 +281,8 @@ TEST(TestQuaternions, testoperations)
     }
 
     {
-        compages::core::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
-        compages::core::Quatf q1 = -q;
+        compages::Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
+        compages::Quatf q1 = -q;
         ASSERT_EQ(-1.0f, q1[0]);
         ASSERT_EQ(-2.0f, q1[1]);
         ASSERT_EQ(-3.0f, q1[2]);
@@ -293,8 +293,8 @@ TEST(TestQuaternions, testoperations)
 //--------------------------------------------------------------------------
 TEST(TestQuaternions, angleAxisNormalizesTheAxis)
 {
-    using compages::core::Quatd;
-    using compages::core::Vector3g;
+    using compages::Quatd;
+    using compages::Vector3g;
     // A long axis gives the same rotation as a unit one.
     Quatd const q = Quatd::fromAngleAxis(units::angle::radian_t(1.0), Vector3g(0.0, 0.0, 5.0));
     Quatd const r = Quatd::fromAngleAxis(units::angle::radian_t(1.0), Vector3g(0.0, 0.0, 1.0));
@@ -309,17 +309,17 @@ TEST(TestQuaternions, angleAxisNormalizesTheAxis)
 //--------------------------------------------------------------------------
 TEST(TestQuaternions, rpyAndYaw)
 {
-    using compages::core::Quatd;
+    using compages::Quatd;
     Quatd const q = Quatd::fromRpy(units::angle::radian_t(0.0),
                                    units::angle::radian_t(0.0),
                                    units::angle::radian_t(0.7));
-    EXPECT_NEAR(compages::core::yaw(q).value(), 0.7, 1e-12);
+    EXPECT_NEAR(compages::yaw(q).value(), 0.7, 1e-12);
     // Roll then pitch then yaw about the fixed axes: X is turned to -Y by
     // a yaw of -pi/2 after a roll that keeps X in place.
     Quatd const r = Quatd::fromRpy(units::angle::radian_t(0.5),
                                    units::angle::radian_t(0.0),
                                    units::angle::radian_t(-1.5707963267948966));
-    compages::core::Vector3g const x = r * compages::core::Vector3g(1.0, 0.0, 0.0);
+    compages::Vector3g const x = r * compages::Vector3g(1.0, 0.0, 0.0);
     EXPECT_NEAR(x.x, 0.0, 1e-12);
     EXPECT_NEAR(x.y, -1.0, 1e-12);
     EXPECT_NEAR(x.z, 0.0, 1e-12);
@@ -328,15 +328,15 @@ TEST(TestQuaternions, rpyAndYaw)
 //--------------------------------------------------------------------------
 TEST(TestQuaternions, basisAndDot)
 {
-    using compages::core::Quatd;
-    using compages::core::Vector3g;
+    using compages::Quatd;
+    using compages::Vector3g;
     // Frame with X along world Y, Y along -X, Z up: a quarter turn about Z.
     Quatd const q = Quatd::fromBasis(Vector3g(0.0, 1.0, 0.0),
                                      Vector3g(-1.0, 0.0, 0.0),
                                      Vector3g(0.0, 0.0, 1.0));
-    EXPECT_NEAR(compages::core::yaw(q).value(), 1.5707963267948966, 1e-12);
+    EXPECT_NEAR(compages::yaw(q).value(), 1.5707963267948966, 1e-12);
     // dot keeps double precision.
     Quatd const a(1.0 / 3.0, 0.0, 0.0, 0.0);
-    double const d = compages::core::dot(a, a);
+    double const d = compages::dot(a, a);
     EXPECT_DOUBLE_EQ(d, (1.0 / 3.0) * (1.0 / 3.0)); // a float result would differ
 }

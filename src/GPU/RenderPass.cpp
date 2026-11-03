@@ -197,7 +197,7 @@ PassDesc const& currentPass()
     return g_open.empty() ? nothing : g_open.back().desc;
 }
 
-void clear(compages::core::Vector4f const& p_color)
+void clear(compages::Vector4f const& p_color)
 {
     if (g_open.empty())
     {
@@ -212,9 +212,9 @@ void clear(compages::core::Vector4f const& p_color)
     rebind(desc);
 }
 
-void clear(compages::core::Vector3f const& p_color)
+void clear(compages::Vector3f const& p_color)
 {
-    clear(compages::core::Vector4f(p_color[0], p_color[1], p_color[2], 1.0f));
+    clear(compages::Vector4f(p_color[0], p_color[1], p_color[2], 1.0f));
 }
 
 void clear(std::initializer_list<float> p_color)
@@ -226,7 +226,7 @@ void clear(std::initializer_list<float> p_color)
             "four with the alpha");
     }
     const float* c = p_color.begin();
-    clear(compages::core::Vector4f(
+    clear(compages::Vector4f(
         c[0], c[1], c[2], (p_color.size() == 4u) ? c[3] : 1.0f));
 }
 
@@ -245,7 +245,7 @@ void clearDepth(float p_depth)
     rebind(desc);
 }
 
-void clear(compages::core::Vector3f const& p_color, float p_depth)
+void clear(compages::Vector3f const& p_color, float p_depth)
 {
     clear(p_color);
     clearDepth(p_depth);

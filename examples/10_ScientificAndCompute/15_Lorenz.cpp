@@ -23,6 +23,7 @@ constexpr float SIGMA = 10.0f;
 constexpr float RHO = 28.0f;
 constexpr float BETA = 8.0f / 3.0f;
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
 in vec3 position;
 in vec3 color;
@@ -40,6 +41,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
 in vec3 vColor;
 out vec4 oColor;
@@ -50,41 +52,43 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string Lorenz::description() const
 {
     return "A line that grows. Each step of the attractor is one "
-           "emplace_back(), "
-           "and the next draw sends only the points added since the last one. "
-           "HeightMap rewrote every vertex; this appends. The trail stops at "
-           "twenty thousand points.";
+           "emplace_back(), and the next draw sends only the points added "
+           "since the last one. HeightMap rewrote every vertex; this appends. "
+           "The trail stops at twenty thousand points.";
 }
 
+// ----------------------------------------------------------------------------
 void Lorenz::step()
 {
     // One Euler step of the attractor, then one vertex at the end of the trail.
-    const compages::core::Vector3f s = m_state;
+    const compages::Vector3f s = m_state;
     m_state.x += DT * SIGMA * (s.y - s.x);
     m_state.y += DT * ((s.x * (RHO - s.z)) - s.y);
     m_state.z += DT * ((s.x * s.y) - (BETA * s.z));
 
     // The attractor spans tens of units: bring it in front of the camera.
-    const compages::core::Vector3f point(
+    const compages::Vector3f point(
         m_state.x * 0.04f, (m_state.z * 0.04f) - 1.0f, m_state.y * 0.04f);
-    const compages::core::Vector3f color(
+    const compages::Vector3f color(
         0.5f + (0.5f * std::tanh(m_state.x * 0.05f)),
         0.35f + (0.45f * std::tanh(m_state.y * 0.05f)),
         0.7f + (0.3f * std::tanh((m_state.z - 25.0f) * 0.04f)));
     m_trail.emplace_back(Vertex{ point, color });
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Lorenz::setUp()
 {
-    COMPAGES_TRY(m_trail.load(VERTEX, FRAGMENT));
-    m_trail.primitive(compages::gpu::Primitive::LineStrip).depthTest();
-    m_trail["view"] =
-        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.2f, 3.4f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    COMPAGES_TRY(m_trail.loadSources(VERTEX, FRAGMENT));
+    m_trail.state().primitive = compages::gpu::Primitive::LineStrip;
+    m_trail.state().depth_test = true;
+    m_trail["view"] = compages::lookAt(compages::Vector3f(0.0f, 0.2f, 3.4f),
+                                       compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                       compages::Vector3f(0.0f, 1.0f, 0.0f));
 
     // Enough of a trail that the first frame already looks like the attractor.
     for (std::size_t i = 0u; i < 800u; ++i)
@@ -94,23 +98,24 @@ compages::Status Lorenz::setUp()
     return m_trail.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Lorenz::draw(compages::world::ViewFrame const& p_frame)
 {
     // A few new points per frame. Past the capacity the trail stops growing;
     // what is already there keeps turning.
     for (std::size_t i = 0u;
-         (i < STEPS_PER_FRAME) && (m_trail.count() < CAPACITY);
+         (i < STEPS_PER_FRAME) && (m_trail.vertexCount() < CAPACITY);
          ++i)
     {
         step();
     }
 
-    m_trail["model"] = compages::core::rotate(
-        compages::core::Matrix44f(compages::core::matrix::Identity),
-        units::angle::radian_t(p_frame.total * 0.35f),
-        compages::core::Vector3f(0.15f, 1.0f, 0.1f));
+    m_trail["model"] =
+        compages::rotate(compages::Matrix44f(compages::matrix::Identity),
+                         units::angle::radian_t(p_frame.total * 0.35f),
+                         compages::Vector3f(0.15f, 1.0f, 0.1f));
     m_trail["projection"] =
-        compages::core::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);
+        compages::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);
 
     compages::gpu::clear({ 0.04f, 0.04f, 0.06f });
     compages::gpu::clearDepth();

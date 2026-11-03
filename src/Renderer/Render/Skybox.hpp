@@ -13,6 +13,7 @@
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 
 #include <array>
+#include <filesystem>
 #include <string>
 
 namespace compages::renderer
@@ -27,7 +28,8 @@ namespace compages::renderer
 //!
 //! \code
 //! compages::renderer::Skybox sky;
-//! COMPAGES_TRY(sky.load({ "px.jpg", "nx.jpg", "py.jpg", "ny.jpg", "pz.jpg", "nz.jpg" }));
+//! COMPAGES_TRY(sky.loadFiles(
+//!     { "px.jpg", "nx.jpg", "py.jpg", "ny.jpg", "pz.jpg", "nz.jpg" }));
 //! sky.draw(camera); // inside a render pass, before the scene
 //! \endcode
 // ****************************************************************************
@@ -36,7 +38,8 @@ class Skybox
 public:
 
     //! \brief Load the six faces: +X, -X, +Y, -Y, +Z, -Z.
-    [[nodiscard]] Status load(std::array<std::string, 6u> const& p_faces);
+    [[nodiscard]] Status
+    loadFiles(std::array<std::filesystem::path, 6u> const& p_faces);
 
     //! \brief Was a sky loaded?
     [[nodiscard]] bool valid() const

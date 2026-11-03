@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Core/Result.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
 #include "Compages/GPU/Pipeline.hpp"
@@ -35,13 +36,11 @@ class AssetManager;
 //! into one pass (main + overlay, main + gizmos) without the Renderer needing
 //! to know.
 // ****************************************************************************
-class Renderer
+class Renderer: private compages::NotCopiable
 {
 public:
 
     Renderer() = default;
-    Renderer(Renderer const&) = delete;
-    Renderer& operator=(Renderer const&) = delete;
 
     // ------------------------------------------------------------------------
     //! \brief Draw the snapshot into the open pass.

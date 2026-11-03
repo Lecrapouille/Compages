@@ -25,7 +25,7 @@ class World;
 //! \brief The routines of one entity, as a component of the World: they are
 //! destroyed with their entity.
 // ****************************************************************************
-struct RoutineList: compages::core::NotCopiable
+struct RoutineList: compages::NotCopiable
 {
     RoutineList() = default;
     RoutineList(RoutineList&&) = default;
@@ -47,7 +47,7 @@ struct RoutineList: compages::core::NotCopiable
 //! auto* orbit = world.routines().find<compages::world::Orbit>(camera);
 //! \endcode
 // ****************************************************************************
-class RoutineSystem: private compages::core::NotCopiable
+class RoutineSystem: private compages::NotCopiable
 {
 public:
 

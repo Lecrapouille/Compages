@@ -43,7 +43,7 @@ public:
     //! angles. Its current place becomes the place of the joint at zero. A
     //! zero axis makes a joint that does not move.
     // ------------------------------------------------------------------------
-    JointHandle& revolute(compages::core::Vector3f const& p_axis,
+    JointHandle& revolute(compages::Vector3f const& p_axis,
                           units::angle::radian_t p_min = units::angle::radian_t(
                               -std::numeric_limits<double>::infinity()),
                           units::angle::radian_t p_max = units::angle::radian_t(
@@ -53,7 +53,7 @@ public:
     //! \brief Make the entity slide along an axis, within an interval of
     //! offsets. Its current place becomes the place of the joint at zero.
     // ------------------------------------------------------------------------
-    JointHandle& prismatic(compages::core::Vector3f const& p_axis,
+    JointHandle& prismatic(compages::Vector3f const& p_axis,
                            units::length::meter_t p_min = units::length::meter_t(
                                -std::numeric_limits<double>::infinity()),
                            units::length::meter_t p_max = units::length::meter_t(

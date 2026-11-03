@@ -51,11 +51,15 @@ Result<BufferHandle> createBuffer(std::size_t p_bytes,
                        "count of zero is almost always a count computed wrong");
     }
 
-    if ((p_usage == BufferUsage::Immutable) && (p_data == nullptr))
+    // Only a compute pass can fill a Static buffer created empty, and it
+    // writes storage buffers alone.
+    if ((p_usage == BufferUsage::Static) && (p_data == nullptr) &&
+        (p_kind != BufferKind::Storage))
     {
         return failure(
-            "an immutable buffer can never be written, so it must be "
-            "given its contents when created");
+            "a Static buffer is never written by the CPU, so it must be given "
+            "its contents when created: use from(data, BufferUsage::Static), "
+            "or create(count, BufferUsage::Stream) to write() it later");
     }
 
     // A storage buffer is what a compute pass writes into, and the driver has
@@ -139,13 +143,12 @@ Status writeBuffer(BufferHandle p_handle,
         return failure(staleHandleMessage());
     }
 
-    if (record->usage == BufferUsage::Immutable)
+    if (record->usage == BufferUsage::Static)
     {
         return failure(
-            "this buffer was created immutable, which is a promise to the "
-            "driver "
-            "that it would never be written again in exchange for the fastest "
-            "memory available. Create it with BufferUsage::Dynamic to write "
+            "this buffer was created Static, which is a promise to the driver "
+            "that the CPU would never write it again, in exchange for the "
+            "fastest memory available. Create it Stream or Dynamic to write "
             "it");
     }
 

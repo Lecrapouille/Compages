@@ -7,17 +7,15 @@
 
 #pragma once
 
-#include <array>
-#include <cstddef>
-#include <string_view>
-#include <tuple>
-#include <type_traits>
-#include <utility>
-
 // ****************************************************************************
 //! \file
-//! \brief The names, types and positions of the fields of a plain struct,
-//! found by the compiler rather than written down.
+//! \brief Let the compiler read the names and types of the fields of a struct,
+//! so they never have to be listed by hand.
+//!
+//! Given a struct with a position and a colour, the library needs to tell the
+//! shader "here is position, here is color". Rather than asking for that list
+//! to be written (and kept in step when the struct changes), it is read off the
+//! struct itself, at compile time.
 //!
 //! This is what lets a vertex struct feed a shader with no macro and no list of
 //! fields:
@@ -25,8 +23,8 @@
 //! \code
 //! struct Vertex
 //! {
-//!     compages::core::Vector3f position;
-//!     compages::core::Vector2f uv;
+//!     compages::Vector3f position;
+//!     compages::Vector2f uv;
 //! };
 //!
 //! static_assert(compages::gpu::reflect::fieldCount<Vertex>() == 2u);
@@ -57,6 +55,13 @@
 //! changes: callers ask for fieldCount(), fieldName() and forEachField() and
 //! never see how they are answered.
 // ****************************************************************************
+
+#include <array>
+#include <cstddef>
+#include <string_view>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace compages::gpu::reflect
 {
@@ -132,12 +137,13 @@ constexpr auto tie(T& p_object) noexcept
 {
     // One branch per count, since a structured binding needs its names
     // written out. Generated rather than typed, to keep the sixteen in step.
-#define COMPAGES_REFLECT_TIE(n, ...)                                         \
-    if constexpr (N == n)                                                    \
-    {                                                                        \
-        auto& [__VA_ARGS__] = p_object;                                      \
-        return std::tie(__VA_ARGS__);                                        \
-    }                                                                        \
+//! \cond Doxygen_Suppress
+#define COMPAGES_REFLECT_TIE(n, ...)    \
+    if constexpr (N == n)               \
+    {                                   \
+        auto& [__VA_ARGS__] = p_object; \
+        return std::tie(__VA_ARGS__);   \
+    }                                   \
     else
     COMPAGES_REFLECT_TIE(1u, a)
     COMPAGES_REFLECT_TIE(2u, a, b)
@@ -160,6 +166,7 @@ constexpr auto tie(T& p_object) noexcept
         return std::tuple<>{};
     }
 #undef COMPAGES_REFLECT_TIE
+    //! \endcond
 }
 
 // ----------------------------------------------------------------------------
@@ -270,10 +277,11 @@ constexpr bool checkReflectable()
                   "that is have no constructor, no virtual function and no "
                   "private field. A vertex is plain data; give it none of "
                   "those");
-    static_assert(std::is_standard_layout_v<T>,
-                  "this struct cannot be reflected: it must be standard layout, "
-                  "which rules out a base class holding fields and fields of "
-                  "mixed access");
+    static_assert(
+        std::is_standard_layout_v<T>,
+        "this struct cannot be reflected: it must be standard layout, "
+        "which rules out a base class holding fields and fields of "
+        "mixed access");
     static_assert(countFields<T>() <= MAX_FIELDS,
                   "this struct has more fields than can be reflected: sixteen "
                   "at most, which is also as many attributes as a vertex can "
@@ -284,7 +292,12 @@ constexpr bool checkReflectable()
 } // namespace detail
 
 // ----------------------------------------------------------------------------
-//! \brief How many fields T has.
+//! \brief How many fields T has, checked to be at most MAX_FIELDS.
+//!
+//! \code
+//! static_assert(compages::gpu::reflect::fieldCount<Vertex>() == 2u);
+//! \endcode
+//! \return the number of fields, known at compile time.
 // ----------------------------------------------------------------------------
 template <typename T>
 [[nodiscard]] consteval std::size_t fieldCount()
@@ -294,7 +307,8 @@ template <typename T>
 }
 
 // ----------------------------------------------------------------------------
-//! \brief The type of field I of T.
+//! \brief The type of field I of T, without const or reference: Vector3f for
+//! a field declared as compages::Vector3f position.
 // ----------------------------------------------------------------------------
 template <typename T, std::size_t I>
 using FieldType = std::remove_cvref_t<std::tuple_element_t<
@@ -305,16 +319,22 @@ using FieldType = std::remove_cvref_t<std::tuple_element_t<
 //! \brief The name of field I of T, as written in the struct.
 //!
 //! \code
-//! struct Vertex { compages::core::Vector3f position; compages::core::Vector2f uv; };
+//! struct Vertex
+//! {
+//!     compages::Vector3f position;
+//!     compages::Vector2f uv;
+//! };
 //! static_assert(compages::gpu::reflect::fieldName<Vertex, 1u>() == "uv");
 //! \endcode
+//! \return the field name, a view into a compile time string.
 // ----------------------------------------------------------------------------
 template <typename T, std::size_t I>
 [[nodiscard]] consteval std::string_view fieldName()
 {
     static_assert(I < fieldCount<T>(), "there is no field of this index");
-    return detail::fieldNameIn(detail::signature<&std::get<I>(
-        detail::tie<fieldCount<T>()>(detail::FAKE<T>.value))>());
+    return detail::fieldNameIn(
+        detail::signature<&std::get<I>(
+            detail::tie<fieldCount<T>()>(detail::FAKE<T>.value))>());
 }
 
 // ----------------------------------------------------------------------------
@@ -322,6 +342,10 @@ template <typename T, std::size_t I>
 //!
 //! Measured on a real object, since subtracting addresses is not something a
 //! compiler agrees to do at compile time.
+//!
+//! \param[in] p_object any object of type T; a default constructed one is
+//! enough, since only addresses are compared.
+//! \return the offset in bytes from the start of p_object.
 // ----------------------------------------------------------------------------
 template <std::size_t I, typename T>
 [[nodiscard]] std::size_t fieldOffset(T const& p_object)
@@ -346,11 +370,15 @@ template <std::size_t I, typename T>
 //!               << sizeof(Type) << " bytes" << std::endl;
 //! });
 //! \endcode
+//!
+//! \param[in] p_visit a generic lambda taking the index; called fieldCount()
+//! times, at run time, the index being a compile time constant.
 // ----------------------------------------------------------------------------
 template <typename T, typename F>
 void forEachField(F&& p_visit)
 {
-    [&]<std::size_t... I>(std::index_sequence<I...>) {
+    [&]<std::size_t... I>(std::index_sequence<I...>)
+    {
         (p_visit(std::integral_constant<std::size_t, I>{}), ...);
     }(std::make_index_sequence<fieldCount<T>()>{});
 }

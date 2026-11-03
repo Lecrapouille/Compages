@@ -20,6 +20,7 @@ namespace examples
 constexpr std::uint32_t TARGET = 512u;
 constexpr float H = 0.6f;
 
+// ----------------------------------------------------------------------------
 constexpr const char* SCENE_VERTEX = R"(#version 450 core
 in vec3 position;
 in vec3 normal;
@@ -40,6 +41,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* SCENE_FRAGMENT = R"(#version 450 core
 in vec3 vNormal;
 in vec3 vColor;
@@ -53,9 +55,11 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 //! \brief A triangle covering the target, built from the vertex index. The
 //! texture coordinate is the clip position mapped into [0, 1], so sampling the
 //! offscreen picture stretches it over the pass.
+// ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
 out vec2 vUV;
 
@@ -68,6 +72,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* BLIT_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D image;
@@ -79,9 +84,11 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 //! \brief The same picture, read three times a few pixels apart. That is what
 //! makes the second pass a treatment rather than a copy: the cube is never
 //! drawn here, only the texture it left behind.
+// ----------------------------------------------------------------------------
 constexpr const char* PROCESS_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D image;
@@ -98,6 +105,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string RenderToTexture::description() const
 {
     return "The cube is drawn into a framebuffer, never into the window. The "
@@ -108,18 +116,21 @@ std::string RenderToTexture::description() const
            "owned.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status RenderToTexture::makeCube()
 {
-    COMPAGES_TRY(m_cube.load(SCENE_VERTEX, SCENE_FRAGMENT));
+    COMPAGES_TRY(m_cube.loadSources(SCENE_VERTEX, SCENE_FRAGMENT));
 
     // The cube of 04_DepthAndTransforms, from Common/ColoredCube.hpp.
     const CubeMesh cube = createCube(2.0f * H);
-    m_cube.vertices(cube.vertices);
+    m_cube.setVertices(cube.vertices);
     m_cube.indices(cube.indices);
-    m_cube.depthTest().cull(compages::gpu::CullMode::Back);
+    m_cube.state().depth_test = true;
+    m_cube.state().cull = compages::gpu::CullMode::Back;
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status RenderToTexture::makeTarget()
 {
     // A size of its own, whatever the window does.
@@ -135,6 +146,7 @@ compages::Status RenderToTexture::makeTarget()
     return m_target.attach(m_color, m_depth);
 }
 
+// ----------------------------------------------------------------------------
 compages::Status RenderToTexture::setUp()
 {
     COMPAGES_TRY(makeCube());
@@ -142,28 +154,27 @@ compages::Status RenderToTexture::setUp()
 
     // Two screen passes over the same colour target: a copy, and the
     // split-colour effect.
-    COMPAGES_TRY(m_blit.load(SCREEN_VERTEX, BLIT_FRAGMENT));
-    COMPAGES_TRY(m_process.load(SCREEN_VERTEX, PROCESS_FRAGMENT));
+    COMPAGES_TRY(m_blit.loadSources(SCREEN_VERTEX, BLIT_FRAGMENT));
+    COMPAGES_TRY(m_process.loadSources(SCREEN_VERTEX, PROCESS_FRAGMENT));
     m_blit["image"] = m_color;
     m_process["image"] = m_color;
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void RenderToTexture::draw(compages::world::ViewFrame const& p_frame)
 {
-    const compages::core::Matrix44f identity(compages::core::matrix::Identity);
+    const compages::Matrix44f identity(compages::matrix::Identity);
     m_cube["model"] =
-        compages::core::rotate(identity,
-                               units::angle::radian_t(p_frame.total * 0.7f),
-                               compages::core::Vector3f(0.3f, 1.0f, 0.2f));
-    m_cube["view"] =
-        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 3.0f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+        compages::rotate(identity,
+                         units::angle::radian_t(p_frame.total * 0.7f),
+                         compages::Vector3f(0.3f, 1.0f, 0.2f));
+    m_cube["view"] = compages::lookAt(compages::Vector3f(0.0f, 0.0f, 3.0f),
+                                      compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                      compages::Vector3f(0.0f, 1.0f, 0.0f));
     // The aspect of the offscreen picture, not of the window. Stretching is
     // what the screen passes do, on purpose.
-    m_cube["projection"] =
-        compages::core::perspective(60.0_deg, 1.0f, 0.1f, 20.0f);
+    m_cube["projection"] = compages::perspective(60.0_deg, 1.0f, 0.1f, 20.0f);
 
     // Into the texture. The pass covers the whole framebuffer and suspends
     // the window pass until the end of the scope.

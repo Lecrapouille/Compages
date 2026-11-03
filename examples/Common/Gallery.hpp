@@ -265,7 +265,7 @@ private:
     std::uint32_t m_view_width = 0u;
     std::uint32_t m_view_height = 0u;
     //! \brief Where the mouse is over the viewport, in its pixels, y up.
-    compages::core::Vector2f m_view_mouse{ 0.0f, 0.0f };
+    compages::Vector2f m_view_mouse{ 0.0f, 0.0f };
     bool m_view_hovered = false;
     bool m_view_focused = false;
     //! \brief A drag started on the viewport goes on to the example even when

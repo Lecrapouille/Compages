@@ -39,7 +39,7 @@
 #include <ostream>
 #include <type_traits>
 
-namespace compages::core
+namespace compages
 {
 
 
@@ -284,7 +284,7 @@ public:
     //--------------------------------------------------------------------------
     //! \brief Constructor.
     //--------------------------------------------------------------------------
-    Vector(const T scalar_x, const T scalar_y)
+    Vector(const T scalar_x, const T scalar_y) noexcept
     {
         x = scalar_x;
         y = scalar_y;
@@ -408,7 +408,7 @@ public:
     //--------------------------------------------------------------------------
     Vector(const T scalar_x,
            const T scalar_y,
-           const T scalar_z = zero<T>())
+           const T scalar_z = zero<T>()) noexcept
     {
         x = scalar_x;
         y = scalar_y;
@@ -621,7 +621,7 @@ public:
     Vector(const T scalar_x,
            const T scalar_y,
            const T scalar_z,
-           const T scalar_w)
+           const T scalar_w) noexcept
     {
         x = scalar_x;
         y = scalar_y;
@@ -1089,7 +1089,7 @@ compare(Vector<T, n> const& a, Vector<T, n> const& b)
 
 DEFINE_FUN2_OPERATOR(min, std::min)
 DEFINE_FUN2_OPERATOR(max, std::max)
-DEFINE_FUN1_OPERATOR(abs, ::compages::core::abs)
+DEFINE_FUN1_OPERATOR(abs, ::compages::abs)
 DEFINE_BOOL_OPERATOR(ge, >=)
 DEFINE_BOOL_OPERATOR(gt, >)
 DEFINE_BOOL_OPERATOR(le, <=)
@@ -1117,7 +1117,7 @@ Vector<T, n> lerp(Vector<T, n> const& a, Vector<T, n> const& b, float t)
     size_t i = n;
     while (i--)
     {
-        r[i] = ::compages::core::lerp(a[i], b[i], t);
+        r[i] = ::compages::lerp(a[i], b[i], t);
     }
 
     return r;
@@ -1197,7 +1197,7 @@ Vector<T, n> clamp(Vector<T, n> const& a, T const lower, T const upper)
     size_t i = n;
 
     while (i--)
-        result[i] = ::compages::core::clamp(a[i], lower, upper);
+        result[i] = ::compages::clamp(a[i], lower, upper);
     return result;
 }
 
@@ -1565,5 +1565,5 @@ T operator%(Vector<T, 2u> const& a, Vector<T, 2u> const& b)
 #undef DEFINE_FUN2_OPERATOR
 #undef DEFINE_BOOL_OPERATOR
 
-} // namespace compages::core
+} // namespace compages
 

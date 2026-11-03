@@ -10,6 +10,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/World/Entity.hpp"
 
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <string>
@@ -42,10 +43,10 @@ struct UrdfVisual
     UrdfGeometry kind = UrdfGeometry::Box;
     //! \brief Mesh file, as written in the URDF (maybe "package://...").
     std::string filename;
-    compages::core::Vector3f size{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f size{ 1.0f, 1.0f, 1.0f };
     float radius = 0.5f;
     float length = 1.0f;
-    std::optional<compages::core::Vector4f> rgba;
+    std::optional<compages::Vector4f> rgba;
 };
 
 struct UrdfLink
@@ -69,7 +70,7 @@ struct UrdfJoint
     std::string parent;
     std::string child;
     LocalTransform origin{};
-    compages::core::Vector3f axis{ 1.0f, 0.0f, 0.0f };
+    compages::Vector3f axis{ 1.0f, 0.0f, 0.0f };
     std::optional<double> lower;
     std::optional<double> upper;
     double velocity = 0.0;
@@ -90,7 +91,7 @@ using UrdfLinkHook = std::function<Status(UrdfLink const&, Entity)>;
 // ----------------------------------------------------------------------------
 //! \brief Read a URDF file. Nothing is created.
 // ----------------------------------------------------------------------------
-[[nodiscard]] Result<UrdfRobot> parseUrdf(std::string const& p_path);
+[[nodiscard]] Result<UrdfRobot> parseUrdf(std::filesystem::path const& p_path);
 
 // ----------------------------------------------------------------------------
 //! \brief Build the kinematic chain of a robot: one entity per link, named
@@ -118,7 +119,7 @@ using UrdfLinkHook = std::function<Status(UrdfLink const&, Entity)>;
 //! \endcode
 // ----------------------------------------------------------------------------
 [[nodiscard]] Result<Entity> loadUrdf(World& p_world,
-                                      std::string const& p_path,
+                                      std::filesystem::path const& p_path,
                                       EntityId p_parent = {});
 
 } // namespace compages::world

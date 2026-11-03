@@ -17,6 +17,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 constexpr char const* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
@@ -30,6 +31,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D backgroundTexture;
@@ -55,7 +57,8 @@ void main()
 }
 )";
 
-//! \brief The sampler each texture file feeds, in the order of m_textures.
+// ----------------------------------------------------------------------------
+// The sampler each texture file feeds, in the order of m_textures.
 constexpr std::array<std::pair<char const*, char const*>, 5u> MAPS{ {
     { "blendMap", "blendMap.png" },
     { "backgroundTexture", "grassy2.png" },
@@ -64,28 +67,31 @@ constexpr std::array<std::pair<char const*, char const*>, 5u> MAPS{ {
     { "bTexture", "path.png" },
 } };
 
+// ----------------------------------------------------------------------------
 std::string MultiTextureBlend::description() const
 {
     return "A blend map mixes four ground materials on one quad: its red, "
-           "green "
-           "and blue say how much mud, flowers and path there is at each "
-           "place, "
-           "and what is left is grass. Five textures, one draw.\n\n"
-           "Drag with the left button on the picture to paint the blend map. "
-           "In "
-           "Try it, pick the layer (mud, flowers, path, or erase back to "
-           "grass).";
+           "green and blue say how much mud, flowers and path there is at each "
+           "place, and what is left is grass. Five textures, one draw.\n\nDrag "
+           "with the left button on the picture to paint the blend map. In Try "
+           "it, pick the layer (mud, flowers, path, or erase back to grass).";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status MultiTextureBlend::setUp()
 {
-    COMPAGES_TRY(m_plane.load(VERTEX, FRAGMENT));
+    COMPAGES_TRY(m_plane.loadSources(VERTEX, FRAGMENT));
+
+    // The quad is a triangle strip, so the four corners are sent in the order
     m_plane["position"] = {
         { -0.9f, -0.9f }, { 0.9f, -0.9f }, { -0.9f, 0.9f }, { 0.9f, 0.9f }
     };
     m_plane["uv"] = { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } };
-    m_plane.primitive(compages::gpu::Primitive::TriangleStrip);
+    m_plane.state().primitive = compages::gpu::Primitive::TriangleStrip;
 
+    // The textures are loaded in the order of MAPS, and each is attached to the
+    // sampler of the same name. The blend map is first, so that its pixels are
+    // read and stored in m_blend_pixels, which is then modified by the brush.
     for (std::size_t i = 0u; i < MAPS.size(); ++i)
     {
         const std::filesystem::path path = dataPath(MAPS[i].second);
@@ -97,12 +103,17 @@ compages::Status MultiTextureBlend::setUp()
         const compages::gpu::LoadOptions options =
             (i == 0u) ? compages::gpu::LoadOptions::data()
                       : compages::gpu::LoadOptions::picture();
-        COMPAGES_TRY(m_textures[i].load(path.string(), options));
+        COMPAGES_TRY(m_textures[i].loadFile(path, options));
         m_plane[MAPS[i].first] = m_textures[i];
     }
 
+    // The blend map is read once, so that its pixels are stored in
+    // m_blend_pixels, which is then modified by the brush.
     m_blend_width = m_textures[0u].width();
     m_blend_height = m_textures[0u].height();
+
+    // The brush is a circle of this radius in pixels, and the strength of each
+    // stroke is this fraction of the channel range (0-255).
     std::vector<std::byte> pixels;
     COMPAGES_TRY_ASSIGN(pixels, m_textures[0u].read());
     m_blend_pixels.resize(pixels.size());
@@ -110,38 +121,38 @@ compages::Status MultiTextureBlend::setUp()
     {
         m_blend_pixels[i] = static_cast<std::uint8_t>(pixels[i]);
     }
+
     return m_plane.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void MultiTextureBlend::paintAt(float p_u, float p_v)
 {
     if ((m_blend_width == 0u) || (m_blend_height == 0u))
     {
         return;
     }
-    const int center_x = int(p_u * float(m_blend_width));
-    const int center_y = int(p_v * float(m_blend_height));
-    const int radius = int(std::max(1.0f, m_brush));
-    const int min_x = std::max(0, center_x - radius);
-    const int max_x = int(m_blend_width) - 1;
-    const int min_y = std::max(0, center_y - radius);
-    const int max_y = int(m_blend_height) - 1;
-    const float radius_sq = float(radius * radius);
+    const auto center_x = int(p_u * float(m_blend_width));
+    const auto center_y = int(p_v * float(m_blend_height));
+    const auto radius = int(std::max(1.0f, m_brush));
+    const auto min_x = std::max(0, center_x - radius);
+    const auto max_x = int(m_blend_width) - 1;
+    const auto min_y = std::max(0, center_y - radius);
+    const auto max_y = int(m_blend_height) - 1;
+    const auto radius_sq = float(radius * radius);
 
     for (int y = min_y; y <= std::min(center_y + radius, max_y); ++y)
     {
         for (int x = min_x; x <= std::min(center_x + radius, max_x); ++x)
         {
-            const float dx = float(x - center_x);
-            const float dy = float(y - center_y);
+            const auto dx = float(x - center_x);
+            const auto dy = float(y - center_y);
             if ((dx * dx) + (dy * dy) > radius_sq)
             {
                 continue;
             }
             const std::size_t at =
-                (static_cast<std::size_t>(y) * m_blend_width +
-                 static_cast<std::size_t>(x)) *
-                4u;
+                (std::size_t(y) * m_blend_width + std::size_t(x)) * 4u;
             if (at + 3u >= m_blend_pixels.size())
             {
                 continue;
@@ -194,6 +205,7 @@ void MultiTextureBlend::paintAt(float p_u, float p_v)
     m_blend_dirty = true;
 }
 
+// ----------------------------------------------------------------------------
 void MultiTextureBlend::uploadBlendMapIfNeeded()
 {
     if (!m_blend_dirty)
@@ -205,11 +217,13 @@ void MultiTextureBlend::uploadBlendMapIfNeeded()
         std::as_bytes(std::span<const std::uint8_t>(m_blend_pixels))));
 }
 
+// ----------------------------------------------------------------------------
 void MultiTextureBlend::draw(compages::world::ViewFrame const& p_frame)
 {
     if (p_frame.input.mouse_over && p_frame.input.mouse_left)
     {
-        const compages::core::Vector2f clip = compages::world::mouseInClipSpace(p_frame);
+        const compages::Vector2f clip =
+            compages::world::mouseInClipSpace(p_frame);
         const float u = std::clamp((clip.x + 0.9f) / 1.8f, 0.0f, 1.0f);
         const float v = std::clamp((clip.y + 0.9f) / 1.8f, 0.0f, 1.0f);
         paintAt(u, v);
@@ -220,6 +234,7 @@ void MultiTextureBlend::draw(compages::world::ViewFrame const& p_frame)
     m_plane.draw();
 }
 
+// ----------------------------------------------------------------------------
 void MultiTextureBlend::controls()
 {
     if (ImGui::BeginTabBar("##blend_layers"))

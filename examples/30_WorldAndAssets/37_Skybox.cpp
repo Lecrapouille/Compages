@@ -11,6 +11,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string Skybox::description() const
 {
     return "Six JPG faces from Compages-data around a spinning cube. The sky "
@@ -18,14 +19,16 @@ std::string Skybox::description() const
            "around.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Skybox::setUp()
 {
     // The six faces, in the order a cube map expects.
-    std::array<std::string, 6u> faces{ "right.jpg",  "left.jpg",  "top.jpg",
-                                       "bottom.jpg", "front.jpg", "back.jpg" };
-    for (std::string& face : faces)
+    std::array<std::filesystem::path, 6u> faces{ "right.jpg", "left.jpg",
+                                                 "top.jpg",   "bottom.jpg",
+                                                 "front.jpg", "back.jpg" };
+    for (std::filesystem::path& face : faces)
     {
-        face = dataPath(face).string();
+        face = dataPath(face);
         if (face.empty())
         {
             return compages::failure(
@@ -44,6 +47,7 @@ compages::Status Skybox::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Skybox::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns. The sky only turns when the camera does.

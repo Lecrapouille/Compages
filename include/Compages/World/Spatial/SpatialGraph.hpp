@@ -141,7 +141,7 @@ enum class ReparentPolicy
 //! g.setParent(g.attach(world.create("Child")), root);
 //! \endcode
 // ****************************************************************************
-class SpatialGraph: private compages::core::NotCopiable
+class SpatialGraph: private compages::NotCopiable
 {
 public:
 

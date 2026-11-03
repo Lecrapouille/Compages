@@ -70,22 +70,22 @@ TEST_F(SceneSerializerTest, RoundTripsAMeshRenderer)
     ASSERT_TRUE(bool(material));
     auto instance = assets.addMaterialInstance(
         "red",
-        compages::renderer::MaterialInstance{ material.value(), compages::core::Vector3f(1.0f, 0.0f, 0.0f) });
+        compages::renderer::MaterialInstance{ material.value(), compages::Vector3f(1.0f, 0.0f, 0.0f) });
     ASSERT_TRUE(bool(instance));
 
     compages::world::World world;
     compages::world::EntityId root = world.create("Root");
     compages::world::EntityId box = world.create("Box");
-    world.transform(box).position = compages::core::Vector3f(1.0f, 2.0f, 3.0f);
+    world.transform(box).position = compages::Vector3f(1.0f, 2.0f, 3.0f);
     world.add(box, compages::renderer::MeshRenderer{ mesh.value(), instance.value() });
     world.setParent(box, root);
     world.update();
 
     const std::string path = tempScenePath();
-    ASSERT_TRUE(bool(compages::renderer::save(world, assets, path)));
+    ASSERT_TRUE(bool(compages::renderer::saveWorld(world, assets, path)));
 
     compages::world::World loaded;
-    auto roots = compages::renderer::load(loaded, assets, path);
+    auto roots = compages::renderer::loadWorld(loaded, assets, path);
     ASSERT_TRUE(bool(roots));
     ASSERT_EQ(roots.value().size(), 1u);
     compages::world::EntityId loaded_box = loaded.find(roots.value().front(), "Box");
@@ -111,18 +111,18 @@ TEST_F(SceneSerializerTest, SaveSceneRoundTripsPresentationAndPointLight)
     ASSERT_TRUE(bool(material));
     auto instance = assets.addMaterialInstance(
         "red",
-        compages::renderer::MaterialInstance{ material.value(), compages::core::Vector3f(1.0f, 0.0f, 0.0f) });
+        compages::renderer::MaterialInstance{ material.value(), compages::Vector3f(1.0f, 0.0f, 0.0f) });
     ASSERT_TRUE(bool(instance));
 
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
     compages::world::EntityId lamp = world.create("Lamp");
-    world.add(lamp, compages::world::PointLight{ compages::core::Vector3f(1.0f, 0.5f, 0.2f), 2.0f, 15.0f, true });
+    world.add(lamp, compages::world::PointLight{ compages::Vector3f(1.0f, 0.5f, 0.2f), 2.0f, 15.0f, true });
     compages::world::EntityId box = world.create("Box");
     world.add(box, compages::renderer::MeshRenderer{ mesh.value(), instance.value() });
     compages::world::EntityId camera = world.create("Camera");
     scene.activeCamera(camera);
-    scene.renderSettings().clear_color = compages::core::Vector4f(0.1f, 0.2f, 0.3f, 1.0f);
+    scene.renderSettings().clear_color = compages::Vector4f(0.1f, 0.2f, 0.3f, 1.0f);
     world.update();
 
     const std::string path = tempScenePath();

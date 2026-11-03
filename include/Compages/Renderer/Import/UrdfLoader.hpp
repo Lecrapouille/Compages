@@ -10,6 +10,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/World/Import/UrdfLoader.hpp"
 
+#include <filesystem>
 #include <string>
 
 namespace compages::renderer
@@ -21,7 +22,7 @@ class Scene;
 //! \brief A URDF robot with the visuals of its links: STL meshes, glTF
 //! models, boxes, cylinders and spheres, in the colour of their URDF material.
 //! Mesh paths are relative to the URDF file; a "package://" prefix is dropped.
-//! What Scene::load() does for a ".urdf" file.
+//! What Scene::loadFile() does for a ".urdf" file.
 //!
 //! The chain itself is built by compages::world::buildUrdf(); this adds the
 //! visuals to each link. Without a picture, use compages::world::loadUrdf().
@@ -32,7 +33,7 @@ class Scene;
 // ****************************************************************************
 [[nodiscard]] Result<compages::world::Entity>
 loadUrdf(Scene& p_scene,
-         std::string const& p_path,
+         std::filesystem::path const& p_path,
          compages::world::EntityId p_parent = {});
 
 } // namespace compages::renderer

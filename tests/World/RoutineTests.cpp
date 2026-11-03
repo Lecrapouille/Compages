@@ -65,18 +65,18 @@ struct Velocity
     float x = 0.0f;
 };
 
-compages::core::Frame frameOf(float p_dt)
+compages::Frame frameOf(float p_dt)
 {
-    compages::core::Frame frame;
+    compages::Frame frame;
     frame.width = 640u;
     frame.height = 480u;
     frame.elapsed = p_dt;
     return frame;
 }
 
-float distanceBetween(compages::core::Vector3f const& p_a, compages::core::Vector3f const& p_b)
+float distanceBetween(compages::Vector3f const& p_a, compages::Vector3f const& p_b)
 {
-    const compages::core::Vector3f d = p_a - p_b;
+    const compages::Vector3f d = p_a - p_b;
     return std::sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
 }
 
@@ -120,7 +120,7 @@ struct Follower : compages::world::Routine
         seen = entity().worldPosition();
     }
 
-    compages::core::Vector3f seen{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f seen{ 0.0f, 0.0f, 0.0f };
 };
 
 } // namespace
@@ -217,15 +217,15 @@ TEST(Entity, EachVisitsEntitiesWithEveryComponent)
 
 TEST(Orbit, StartsFromWhereTheCameraWasPlaced)
 {
-    const compages::core::Vector3f targets[] = { compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                 compages::core::Vector3f(0.0f, 8.0f, 0.0f),
-                                 compages::core::Vector3f(1.0f, 2.0f, -3.0f) };
-    const compages::core::Vector3f places[] = { compages::core::Vector3f(0.0f, 7.0f, 14.0f),
-                                compages::core::Vector3f(0.0f, 25.0f, 90.0f),
-                                compages::core::Vector3f(-6.0f, 1.0f, 4.0f) };
-    for (compages::core::Vector3f const& target : targets)
+    const compages::Vector3f targets[] = { compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                 compages::Vector3f(0.0f, 8.0f, 0.0f),
+                                 compages::Vector3f(1.0f, 2.0f, -3.0f) };
+    const compages::Vector3f places[] = { compages::Vector3f(0.0f, 7.0f, 14.0f),
+                                compages::Vector3f(0.0f, 25.0f, 90.0f),
+                                compages::Vector3f(-6.0f, 1.0f, 4.0f) };
+    for (compages::Vector3f const& target : targets)
     {
-        for (compages::core::Vector3f const& place : places)
+        for (compages::Vector3f const& place : places)
         {
             compages::world::World world;
             compages::world::Entity camera =
@@ -245,18 +245,18 @@ TEST(Fly, KeepsTheDirectionTheCameraWasLooking)
     compages::world::World world;
     compages::world::Entity camera = world.entity("Camera").position(0.0f, 3.0f, 10.0f);
     camera.lookAt(2.0f, 0.0f, 0.0f);
-    const compages::core::Quatf before = camera.rotation();
-    const compages::core::Vector3f forward_before = before * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::Quatf before = camera.rotation();
+    const compages::Vector3f forward_before = before * compages::Vector3f(0.0f, 0.0f, -1.0f);
 
     camera.add<compages::world::Fly>();
     world.update(frameOf(0.016f));
 
-    const compages::core::Vector3f forward_after = camera.rotation() * compages::core::Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::Vector3f forward_after = camera.rotation() * compages::Vector3f(0.0f, 0.0f, -1.0f);
     EXPECT_LT(distanceBetween(forward_before, forward_after), 1.0e-3f);
-    EXPECT_LT(distanceBetween(camera.position(), compages::core::Vector3f(0.0f, 3.0f, 10.0f)), 1.0e-3f);
+    EXPECT_LT(distanceBetween(camera.position(), compages::Vector3f(0.0f, 3.0f, 10.0f)), 1.0e-3f);
 }
 
-// Regression: a headless update(compages::core::Frame) kept the keys and the mouse of the last
+// Regression: a headless update(compages::Frame) kept the keys and the mouse of the last
 // update(compages::world::ViewFrame), so a routine saw them held forever.
 struct InputProbe : compages::world::Routine
 {

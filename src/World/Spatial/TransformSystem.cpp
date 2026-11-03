@@ -19,13 +19,13 @@ namespace compages::world
 namespace
 {
 
-const compages::core::Matrix44f IDENTITY(compages::core::matrix::Identity);
+const compages::Matrix44f IDENTITY(compages::matrix::Identity);
 
 //! \brief A node waiting to be visited, with what its parent left for it.
 struct Pending
 {
     NodeId node;
-    compages::core::Matrix44f parent_world;
+    compages::Matrix44f parent_world;
     bool parent_was_dirty;
 };
 
@@ -51,7 +51,7 @@ void TransformSystem::update(SpatialGraph const& p_graph,
             stack.pop_back();
 
             const EntityId entity = p_graph.entityOf(pending.node);
-            compages::core::Matrix44f world_matrix = pending.parent_world;
+            compages::Matrix44f world_matrix = pending.parent_world;
             const bool has_transform =
                 entity.valid() && p_transforms.has(entity);
             const bool dirty = pending.parent_was_dirty ||

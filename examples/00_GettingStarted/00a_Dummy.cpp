@@ -10,6 +10,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string Dummy::description() const
 {
     return "The smallest example: a name, this sentence, a setUp() that builds "
@@ -17,6 +18,7 @@ std::string Dummy::description() const
            "window, the loop, the panels, belongs to the gallery.";
 }
 
+// ----------------------------------------------------------------------------
 void Dummy::draw(compages::world::ViewFrame const&)
 {
     // The window is already a pass: the gallery opened it before calling draw.

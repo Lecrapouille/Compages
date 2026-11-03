@@ -98,7 +98,7 @@ void shutdown();
 //! \param[in] p_bytes how much memory, never zero.
 //! \param[in] p_data what to put in it, or nullptr to leave it uninitialized.
 //! \param[in] p_kind what the memory is for.
-//! \param[in] p_usage how often it will be written from the CPU. Immutable
+//! \param[in] p_usage how often it will be written from the CPU. Static
 //! means never again, and the backend is expected to tell the driver so.
 //! \return what the backend calls the new object, or why it could not be made.
 // ----------------------------------------------------------------------------

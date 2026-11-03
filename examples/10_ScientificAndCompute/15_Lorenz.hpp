@@ -43,15 +43,15 @@ private:
 
     struct Vertex
     {
-        compages::core::Vector3f position;
-        compages::core::Vector3f color;
+        compages::Vector3f position;
+        compages::Vector3f color;
     };
 
     //! \brief One step of the attractor, appended to the trail.
     void step();
 
     compages::gpu::Drawable m_trail;
-    compages::core::Vector3f m_state{ 0.1f, 0.0f, 0.0f };
+    compages::Vector3f m_state{ 0.1f, 0.0f, 0.0f };
 };
 
 } // namespace examples

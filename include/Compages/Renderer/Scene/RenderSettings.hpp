@@ -21,7 +21,7 @@ namespace compages::renderer
 struct RenderSettings
 {
     //! \brief What the framebuffer starts from before the frame draws.
-    compages::core::Vector4f clear_color{ 0.0f, 0.0f, 0.1f, 1.0f };
+    compages::Vector4f clear_color{ 0.0f, 0.0f, 0.1f, 1.0f };
     //! \brief Whether frustum culling is enabled. Disable it to compare the
     //! cost of the cull against the cost of drawing more objects.
     bool frustum_culling = true;

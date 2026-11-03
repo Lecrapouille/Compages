@@ -38,7 +38,7 @@ TEST(GltfLoaderHeadless, LoadsReusableAssetsWithoutAWorldOrDevice)
     ASSERT_FALSE(compages::gpu::initialized());
 
     compages::renderer::AssetManager assets;
-    auto loaded = assets.load(path.string());
+    auto loaded = assets.loadFile(path);
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     ASSERT_NE(assets.prefab(loaded.value()), nullptr);
     ASSERT_GT(assets.meshCount(), 0u);
@@ -89,7 +89,7 @@ TEST_F(GltfLoaderTest, SeparatesLoadingFromInstantiation)
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
 
-    auto loaded = assets.load(path.string());
+    auto loaded = assets.loadFile(path);
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     ASSERT_EQ(world.living(), 0u);
 
@@ -105,7 +105,7 @@ TEST_F(GltfLoaderTest, SeparatesLoadingFromInstantiation)
     compages::renderer::AssetManager shortcut_assets;
     compages::world::World shortcut_world;
     compages::renderer::Scene shortcut(shortcut_world, shortcut_assets);
-    auto direct = shortcut.load(path.string());
+    auto direct = shortcut.loadFile(path);
     ASSERT_TRUE(bool(direct)) << direct.error();
     ASSERT_GT(shortcut_world.living(), 0u);
 }
@@ -121,7 +121,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene view(world, assets);
-    auto imported = view.load(path.string());
+    auto imported = view.loadFile(path);
     ASSERT_TRUE(bool(imported)) << imported.error();
     ASSERT_TRUE(imported.value().id().valid());
     ASSERT_GT(assets.meshCount(), 0u);
@@ -143,7 +143,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
             << "the PBR Material was never registered with the AssetManager";
     }
 
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     std::size_t mesh_index = 0u;
     world.each<compages::renderer::MeshRenderer>(
         [&](compages::world::EntityId p_entity, compages::renderer::MeshRenderer const& p_renderer) {
@@ -155,7 +155,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
         ++mesh_index;
     });
     ASSERT_FALSE(bounds.empty());
-    const compages::core::Vector3f extent = bounds.extent();
+    const compages::Vector3f extent = bounds.extent();
     EXPECT_TRUE(std::isfinite(bounds.center().x));
     EXPECT_TRUE(std::isfinite(bounds.center().y));
     EXPECT_TRUE(std::isfinite(bounds.center().z));
@@ -172,7 +172,7 @@ TEST_F(GltfLoaderTest, LoadsTheKhronosDuck)
     lens.far_plane = 50.0f;
     world.add(camera, lens);
     world.transform(camera).position =
-        bounds.center() + compages::core::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
+        bounds.center() + compages::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
     world.update();
 
     view.activeCamera(camera);
@@ -200,10 +200,10 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene view(world, assets);
-    auto imported = view.load(path.string());
+    auto imported = view.loadFile(path);
     ASSERT_TRUE(bool(imported)) << imported.error();
 
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     auto const renderers = world.view<compages::renderer::MeshRenderer>();
     ASSERT_GT(renderers.size(), 0u);
     auto const first = *renderers.begin();
@@ -219,8 +219,8 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
             one->local_bounds.transformed(world.worldMatrix(p_entity)));
     });
 
-    const compages::core::Vector3f center = bounds.center();
-    const compages::core::Vector3f extent = bounds.extent();
+    const compages::Vector3f center = bounds.center();
+    const compages::Vector3f extent = bounds.extent();
 
     compages::world::EntityId camera = world.create("Camera");
     compages::world::Camera lens;
@@ -230,12 +230,12 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     lens.far_plane = std::max(extent.y * 40.0f, 20.0f);
     world.add(camera, lens);
     world.transform(camera).position =
-        center + compages::core::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
+        center + compages::Vector3f(0.0f, extent.y * 0.3f, extent.y * 4.0f);
     world.update();
 
     view.activeCamera(camera);
     view.renderSettings().frustum_culling = false;
-    view.environment().ambient = compages::core::Vector3f(0.4f, 0.4f, 0.4f);
+    view.environment().ambient = compages::Vector3f(0.4f, 0.4f, 0.4f);
 
     constexpr std::uint32_t width = 128u;
     constexpr std::uint32_t height = 128u;
@@ -246,7 +246,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     compages::gpu::PassDesc desc;
     desc.width = width;
     desc.height = height;
-    desc.color = compages::core::Vector4f(0.12f, 0.14f, 0.18f, 1.0f);
+    desc.color = compages::Vector4f(0.12f, 0.14f, 0.18f, 1.0f);
     desc.clear_depth = true;
     auto pass = compages::gpu::RenderPass::begin(desc);
     ASSERT_TRUE(bool(pass)) << pass.error();
@@ -281,7 +281,7 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
         }
     }
 
-    const compages::core::Vector3f cam_pos = world.transform(camera).position;
+    const compages::Vector3f cam_pos = world.transform(camera).position;
     ASSERT_GT(lit, 80u)
         << "Duck produced a draw but almost no visible pixels"
         << " items=" << snapshot.value().items.size()

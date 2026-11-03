@@ -7,27 +7,16 @@
 
 #pragma once
 
-#include "Compages/GPU/Buffer.hpp"
-#include "Compages/GPU/DirtyRange.hpp"
-#include "Compages/GPU/Std140.hpp"
-#include "Compages/GPU/Shader.hpp"
-
-#include <array>
-#include <cstring>
-#include <span>
-#include <string>
-#include <vector>
-
 // ****************************************************************************
 //! \file
-//! \brief Values that several programs read from the same memory.
+//! \brief Values that several shaders read from the same memory, such as the
+//! camera of a frame.
 //!
 //! A uniform set with Program::set() belongs to one program: three programs
 //! needing the same projection matrix means three calls, and three copies the
 //! driver keeps. A uniform block is one buffer, written once, bound to a
 //! numbered point, and read by every program declaring a block on that point.
-//! That is what makes a frame of several passes cheap, and it is what
-//! 06_MultiPassMesh shows.
+//! That is what makes a frame of several passes cheap (05a_MultiPassMesh).
 //!
 //! There are two ways to fill one, and the difference between them is the whole
 //! subject of this file.
@@ -50,15 +39,16 @@
 //! \code
 //! struct Matrices
 //! {
-//!     compages::core::Matrix44f projection;
-//!     compages::core::Matrix44f view;
+//!     compages::Matrix44f projection;
+//!     compages::Matrix44f view;
 //! };
 //! GPU_STD140(Matrices, projection, view);
 //!
 //! compages::gpu::TypedUniformBlock<Matrices> block;
-//! COMPAGES_TRY_ASSIGN(block,
-//!                     compages::gpu::TypedUniformBlock<Matrices>::create(program,
-//!                     "Matrices"));
+//! COMPAGES_TRY_ASSIGN(
+//!     block,
+//!     compages::gpu::TypedUniformBlock<Matrices>::create(program,
+//!                                                        "Matrices"));
 //! block.modify().projection = projection;
 //! COMPAGES_TRY(block.bind());
 //! \endcode
@@ -70,13 +60,27 @@
 //! this particular driver reports, which is the mistake of assuming the rules
 //! were followed. The first names a line of C++; the second names a member and
 //! two numbers.
+//!
+//! What it holds:
+//! - UniformBlock: filled by member name, checked on every write.
+//! - TypedUniformBlock<T>: filled from a struct described with GPU_STD140.
 // ****************************************************************************
+
+#include "Compages/Core/NotCopiable.hpp"
+#include "Compages/GPU/Buffer.hpp"
+#include "Compages/GPU/DirtyRange.hpp"
+#include "Compages/GPU/Shader.hpp"
+#include "Compages/GPU/Std140.hpp"
+
+#include <array>
+#include <cstring>
+#include <span>
+#include <string>
+#include <vector>
 
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -104,7 +108,19 @@ checkAgainstDriver(UniformBlock const& p_block,
 } // namespace detail
 
 // ****************************************************************************
-//! \brief A block filled member by member, at the offsets the driver reports.
+//! \brief A set of values shared by several shaders, such as the camera,
+//! filled one named value at a time.
+//!
+//! Like a notice board in a shared office: written once, read by everyone who
+//! walks past. The camera matrices of a frame go on the board, and every
+//! shader that draws with that camera reads them there.
+//!
+//! \code
+//! auto camera = compages::gpu::UniformBlock::create(program, "Camera").take();
+//! COMPAGES_TRY(camera.set("view", view));
+//! COMPAGES_TRY(camera.set("projection", projection));
+//! COMPAGES_TRY(camera.bind());   // sends what changed, then shares it
+//! \endcode
 //!
 //! The safe one, and the one to reach for first. Every set() asks the
 //! reflection of the program where the member lives and what it is declared as,
@@ -114,12 +130,12 @@ checkAgainstDriver(UniformBlock const& p_block,
 //! Writing marks the bytes it touched and bind() sends those and no more, so a
 //! block where one matrix out of eight changed sends 64 bytes.
 // ****************************************************************************
-class UniformBlock
+class UniformBlock: private compages::NotCopiable
 {
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief A block owning nothing.
+    //! \brief A block owning nothing: valid() is false until create().
     // ------------------------------------------------------------------------
     UniformBlock() = default;
 
@@ -144,57 +160,96 @@ public:
     [[nodiscard]] static Result<UniformBlock>
     create(Program& p_program, std::string const& p_name, int p_binding = -1);
 
+    //! \brief Take over the memory of another block, left not valid().
     UniformBlock(UniformBlock&&) noexcept = default;
+    //! \brief Release this block, then take over another's memory.
+    //! \return this block, now owning the other memory.
     UniformBlock& operator=(UniformBlock&&) noexcept = default;
-    UniformBlock(UniformBlock const&) = delete;
-    UniformBlock& operator=(UniformBlock const&) = delete;
 
     // ------------------------------------------------------------------------
     //! \brief Write one member, checking that the shader declares it as this
     //! type.
     //!
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
     //! \return why nothing was written: no member of that name in this block,
     //! or one declared as something else, in which case the message says what
     //! the shader declares and what was offered.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status set(std::string_view p_name, float p_value);
     //! \brief Write a vec2 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector2f const& p_value);
+                             compages::Vector2f const& p_value);
     //! \brief Write a vec3 member. The member after it in a block may well sit
     //! in the four bytes of padding that follow, which is why writing a block
     //! by hand goes wrong so often and why this function exists.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector3f const& p_value);
+                             compages::Vector3f const& p_value);
     //! \brief Write a vec4 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector4f const& p_value);
+                             compages::Vector4f const& p_value);
     //! \brief Write an int member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name, std::int32_t p_value);
     //! \brief Write a uint member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name, std::uint32_t p_value);
     //! \brief Write a bool member, which occupies four bytes in a block.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name, bool p_value);
     //! \brief Write an ivec2 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector2i const& p_value);
+                             compages::Vector2i const& p_value);
     //! \brief Write an ivec3 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector3i const& p_value);
+                             compages::Vector3i const& p_value);
     //! \brief Write an ivec4 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Vector4i const& p_value);
+                             compages::Vector4i const& p_value);
     //! \brief Write a mat2 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Matrix22f const& p_value);
+                             compages::Matrix22f const& p_value);
     //! \brief Write a mat3 member. Padded to 48 bytes in a block rather than
     //! the 36 a C++ matrix of three by three occupies, each column being
     //! rounded up to 16, so this one is copied a column at a time.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Matrix33f const& p_value);
+                             compages::Matrix33f const& p_value);
     //! \brief Write a mat4 member.
+    //! \param[in] p_name the member, as named inside the block.
+    //! \param[in] p_value its new value, sent at the next update() or bind().
+    //! \return why nothing was written: no such member, or one of another type.
     [[nodiscard]] Status set(std::string_view p_name,
-                             compages::core::Matrix44f const& p_value);
+                             compages::Matrix44f const& p_value);
 
     // ------------------------------------------------------------------------
     //! \brief Write one element of an array member.
@@ -207,6 +262,10 @@ public:
     //! is at least 16 bytes whatever the element is. An array of floats copied
     //! from a packed C++ array is the other classic way of getting a block
     //! wrong; going through this is how not to.
+    //!
+    //! \tparam T any type set() accepts.
+    //! \return why nothing was written: no such array, an index past its end,
+    //! or another type.
     // ------------------------------------------------------------------------
     template <typename T>
     [[nodiscard]] Status
@@ -223,12 +282,19 @@ public:
     //! Nothing is checked beyond the range fitting, so the offsets have to come
     //! from somewhere trustworthy, which means from the reflection of the
     //! program.
+    //!
+    //! \param[in] p_offset where to start, in bytes from the start of the
+    //! block.
+    //! \param[in] p_bytes what to write there, sent at the next update().
+    //! \return an error when the range runs past bytes().
     // ------------------------------------------------------------------------
     [[nodiscard]] Status setRaw(std::size_t p_offset,
                                 std::span<const std::byte> p_bytes);
 
     // ------------------------------------------------------------------------
-    //! \brief Send what was written since the last time, and no more.
+    //! \brief Send what was written since the last time, and no more: one
+    //! range from the first byte written to the last. bind() calls it.
+    //! \return why the buffer could not be written.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status update();
 
@@ -239,11 +305,14 @@ public:
     //! Both halves in one call on purpose. A block bound without being updated
     //! draws the frame with the values of the previous one, which looks like a
     //! lag of exactly one frame and is hunted for hours.
+    //! \return why the block could not be sent or bound.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status bind();
 
     // ------------------------------------------------------------------------
-    //! \brief Which numbered point this block is read from.
+    //! \brief Which numbered point this block is read from: the one asked for
+    //! at create(), or the one the shader declared.
+    //! \return the binding point.
     // ------------------------------------------------------------------------
     [[nodiscard]] int binding() const
     {
@@ -251,7 +320,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief How many bytes the driver wants the block to be.
+    //! \brief How many bytes the driver wants the block to be, padding
+    //! included: often more than the sum of its members.
+    //! \return the size in bytes.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t bytes() const
     {
@@ -259,7 +330,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief The name of the block, as the shader declares it.
+    //! \brief The name of the block, as the shader declares it (Camera in
+    //! "uniform Camera { ... } cam;", not cam).
+    //! \return the block name.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string const& name() const
     {
@@ -269,6 +342,7 @@ public:
     // ------------------------------------------------------------------------
     //! \brief What the driver said about the block: its members, their offsets
     //! and their strides.
+    //! \return the description, copied at create().
     // ------------------------------------------------------------------------
     [[nodiscard]] BlockInfo const& info() const
     {
@@ -276,7 +350,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Is there a block here?
+    //! \brief False when default constructed or moved from. Stays true when
+    //! the program is released: the block owns its memory.
+    //! \return true when the block owns its memory.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool valid() const
     {
@@ -288,11 +364,14 @@ public:
     //!
     //! The answer to "why is my shader reading rubbish out of this block".
     //! Printing this next to the C++ struct usually ends the investigation.
+    //! \return one line per member.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string describe() const;
 
     // ------------------------------------------------------------------------
-    //! \brief The memory itself, for the parts of the library taking a buffer.
+    //! \brief The buffer holding the block, for code binding it by hand, such
+    //! as a compute pass reading the same values.
+    //! \return the buffer handle.
     // ------------------------------------------------------------------------
     [[nodiscard]] BufferHandle handle() const
     {
@@ -301,7 +380,9 @@ public:
 
 private:
 
-    UniformBlock(Buffer<std::byte>&& p_buffer, BlockInfo p_info, int p_binding);
+    UniformBlock(Buffer<std::byte, BufferKind::Uniform>&& p_buffer,
+                 BlockInfo p_info,
+                 int p_binding);
 
     // ------------------------------------------------------------------------
     //! \brief Find the member, check its declared type, and stage the bytes.
@@ -330,8 +411,9 @@ private:
     //! can be written without reading the device back.
     std::vector<std::byte> m_bytes;
     //! \brief What of it has been written since the last update.
+    //! \brief In bytes.
     DirtyRange m_dirty;
-    Buffer<std::byte> m_buffer;
+    Buffer<std::byte, BufferKind::Uniform> m_buffer;
     //! \brief What the driver said about this block. Copied rather than pointed
     //! at, because a program may be released while a block still holds its
     //! memory.
@@ -340,7 +422,23 @@ private:
 };
 
 // ****************************************************************************
-//! \brief A block filled by copying a C++ struct whole.
+//! \brief A set of values shared by several shaders, filled from a C++
+//! struct in one copy.
+//!
+//! The same notice board as UniformBlock, but the whole notice is written as
+//! one C++ struct and pinned up in one go. Faster when the values change every
+//! frame, at the price of describing the struct once with GPU_STD140.
+//!
+//! \code
+//! struct Camera { compages::Matrix44f view, projection; };
+//! GPU_STD140(Camera, view, projection);
+//!
+//! auto camera =
+//!     compages::gpu::TypedUniformBlock<Camera>::create(program, "Camera")
+//!         .take();
+//! camera.modify().view = view;
+//! COMPAGES_TRY(camera.bind());
+//! \endcode
 //!
 //! The fast one. Nothing is looked up per member and nothing is checked per
 //! write, which is paid for by two checks made once. See the head of this file
@@ -349,7 +447,7 @@ private:
 //! \tparam T the struct, described with GPU_STD140.
 // ****************************************************************************
 template <typename T>
-class TypedUniformBlock
+class TypedUniformBlock: private compages::NotCopiable
 {
 public:
 
@@ -366,7 +464,7 @@ public:
         "with compages::gpu::UniformBlock instead");
 
     // ------------------------------------------------------------------------
-    //! \brief A block owning nothing.
+    //! \brief A block owning nothing: valid() is false until create().
     // ------------------------------------------------------------------------
     TypedUniformBlock() = default;
 
@@ -395,13 +493,16 @@ public:
         return TypedUniformBlock(std::move(block));
     }
 
+    //! \brief Take over another block, left not valid().
     TypedUniformBlock(TypedUniformBlock&&) noexcept = default;
+    //! \brief Release this block, then take over another.
+    //! \return this block, now owning the other.
     TypedUniformBlock& operator=(TypedUniformBlock&&) noexcept = default;
-    TypedUniformBlock(TypedUniformBlock const&) = delete;
-    TypedUniformBlock& operator=(TypedUniformBlock const&) = delete;
 
     // ------------------------------------------------------------------------
-    //! \brief Read what the block holds.
+    //! \brief The struct as last written on the CPU, which may not have been
+    //! sent yet. Never read back from the card.
+    //! \return the struct.
     // ------------------------------------------------------------------------
     [[nodiscard]] T const& value() const
     {
@@ -419,6 +520,7 @@ public:
     //! handed out by reference cannot say which of its members was touched.
     //! That costs nothing worth measuring, a block being small, and it is the
     //! lookup per member that this class exists to avoid rather than the copy.
+    //! \return the struct, to change in place.
     // ------------------------------------------------------------------------
     [[nodiscard]] T& modify()
     {
@@ -427,7 +529,10 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Replace the whole struct.
+    //! \brief Replace the whole struct; it is sent at the next update() or
+    //! bind().
+    //!
+    //! \param[in] p_value the new values.
     // ------------------------------------------------------------------------
     void assign(T const& p_value)
     {
@@ -436,7 +541,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Send the struct, if it has been written since the last time.
+    //! \brief Send the struct, if it has been written since the last time,
+    //! turning its matrices into the column layout the shader reads.
+    //! \return why the buffer could not be written.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status update()
     {
@@ -459,6 +566,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Make the block readable, sending the struct first if it changed.
+    //! \return why the block could not be sent or bound.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status bind()
     {
@@ -467,36 +575,44 @@ public:
     }
 
     //! \brief Which numbered point this block is read from.
+    //! \return the binding point.
     [[nodiscard]] int binding() const
     {
         return m_block.binding();
     }
 
-    //! \brief How many bytes the driver wants the block to be.
+    //! \brief How many bytes the driver wants the block to be; create() has
+    //! checked it against sizeof(T).
+    //! \return the size in bytes.
     [[nodiscard]] std::size_t bytes() const
     {
         return m_block.bytes();
     }
 
-    //! \brief Is there a block here?
+    //! \brief False when default constructed or moved from.
+    //! \return true when the block owns its memory.
     [[nodiscard]] bool valid() const
     {
         return m_block.valid();
     }
 
-    //! \brief Where the driver put every member.
+    //! \brief Where the driver put every member, to print next to the struct
+    //! when values arrive in the wrong place.
+    //! \return one line per member.
     [[nodiscard]] std::string describe() const
     {
         return m_block.describe();
     }
 
-    //! \brief The memory itself, for the parts of the library taking a buffer.
+    //! \brief The buffer holding the block, for code binding it by hand.
+    //! \return the buffer handle.
     [[nodiscard]] BufferHandle handle() const
     {
         return m_block.handle();
     }
 
     //! \brief The block underneath, for the odd write that has to go by name.
+    //! \return the untyped block, to write by name.
     [[nodiscard]] UniformBlock& untyped()
     {
         return m_block;

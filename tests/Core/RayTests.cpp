@@ -13,10 +13,10 @@
 
 TEST(Ray, HitsABoxInFront)
 {
-    const compages::core::Ray ray = compages::core::Ray::fromPoints(compages::core::Vector3f(0.0f, 0.0f, 10.0f),
-                                    compages::core::Vector3f(0.0f, 0.0f, 0.0f));
-    const compages::core::AABB box = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                            compages::core::Vector3f(1.0f, 1.0f, 1.0f));
+    const compages::Ray ray = compages::Ray::fromPoints(compages::Vector3f(0.0f, 0.0f, 10.0f),
+                                    compages::Vector3f(0.0f, 0.0f, 0.0f));
+    const compages::AABB box = compages::AABB::fromCenterExtent(compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                            compages::Vector3f(1.0f, 1.0f, 1.0f));
     const auto t = intersect(ray, box);
     ASSERT_TRUE(t.has_value());
     ASSERT_NEAR(*t, 9.0f, 1.0e-4f);
@@ -24,18 +24,18 @@ TEST(Ray, HitsABoxInFront)
 
 TEST(Ray, MissesABoxBesideIt)
 {
-    const compages::core::Ray ray = compages::core::Ray::fromPoints(compages::core::Vector3f(0.0f, 0.0f, 10.0f),
-                                    compages::core::Vector3f(0.0f, 0.0f, 0.0f));
-    const compages::core::AABB box = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(20.0f, 0.0f, 0.0f),
-                                            compages::core::Vector3f(1.0f, 1.0f, 1.0f));
+    const compages::Ray ray = compages::Ray::fromPoints(compages::Vector3f(0.0f, 0.0f, 10.0f),
+                                    compages::Vector3f(0.0f, 0.0f, 0.0f));
+    const compages::AABB box = compages::AABB::fromCenterExtent(compages::Vector3f(20.0f, 0.0f, 0.0f),
+                                            compages::Vector3f(1.0f, 1.0f, 1.0f));
     ASSERT_FALSE(intersect(ray, box).has_value());
 }
 
 TEST(Ray, ReportsZeroWhenItStartsInside)
 {
-    const compages::core::Ray ray{ compages::core::Vector3f(0.0f, 0.0f, 0.0f), compages::core::Vector3f(0.0f, 0.0f, -1.0f) };
-    const compages::core::AABB box = compages::core::AABB::fromCenterExtent(compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                                            compages::core::Vector3f(2.0f, 2.0f, 2.0f));
+    const compages::Ray ray{ compages::Vector3f(0.0f, 0.0f, 0.0f), compages::Vector3f(0.0f, 0.0f, -1.0f) };
+    const compages::AABB box = compages::AABB::fromCenterExtent(compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                            compages::Vector3f(2.0f, 2.0f, 2.0f));
     const auto t = intersect(ray, box);
     ASSERT_TRUE(t.has_value());
     ASSERT_NEAR(*t, 0.0f, 1.0e-5f);
@@ -43,6 +43,6 @@ TEST(Ray, ReportsZeroWhenItStartsInside)
 
 TEST(Ray, IgnoresAnEmptyBox)
 {
-    const compages::core::Ray ray{ compages::core::Vector3f(0.0f, 0.0f, 0.0f), compages::core::Vector3f(0.0f, 0.0f, -1.0f) };
-    ASSERT_FALSE(intersect(ray, compages::core::AABB{}).has_value());
+    const compages::Ray ray{ compages::Vector3f(0.0f, 0.0f, 0.0f), compages::Vector3f(0.0f, 0.0f, -1.0f) };
+    ASSERT_FALSE(intersect(ray, compages::AABB{}).has_value());
 }

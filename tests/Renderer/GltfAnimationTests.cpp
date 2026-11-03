@@ -60,7 +60,7 @@ TEST_F(GltfAnimationTest, LoadsSoldierClipsAndSkins)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto loaded = assets.load(path.string());
+    auto loaded = assets.loadFile(path);
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     compages::renderer::Prefab const* prefab = assets.prefab(loaded.value());
     ASSERT_NE(prefab, nullptr);
@@ -96,7 +96,7 @@ TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto imported = scene.load(path.string());
+    auto imported = scene.loadFile(path);
     ASSERT_TRUE(bool(imported)) << imported.error();
 
     if (world.has<compages::renderer::Animator>(imported.value().id()))
@@ -109,10 +109,10 @@ TEST_F(GltfAnimationTest, BindPoseKeepsRestVertices)
     float worst = 0.0f;
     world.each<compages::world::SkinInstance>(
         [&](compages::world::EntityId, compages::world::SkinInstance const& p_skin) {
-        for (compages::core::Matrix44f const& joint : p_skin.pose)
+        for (compages::Matrix44f const& joint : p_skin.pose)
         {
-            const compages::core::Vector3f t = compages::core::translation(joint);
-            worst = std::max(worst, compages::core::vector::norm(t));
+            const compages::Vector3f t = compages::translation(joint);
+            worst = std::max(worst, compages::vector::norm(t));
         }
     });
     EXPECT_LT(worst, 8.0f) << "bind-pose joint matrices translated too far";
@@ -129,7 +129,7 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     compages::renderer::AssetManager assets;
     compages::world::World world;
     compages::renderer::Scene scene(world, assets);
-    auto imported = scene.load(path.string());
+    auto imported = scene.loadFile(path);
     ASSERT_TRUE(bool(imported)) << imported.error();
 
     compages::renderer::MeshAsset const* body = nullptr;
@@ -148,7 +148,7 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     ASSERT_NE(body, nullptr);
 
     ASSERT_TRUE(bool(compages::renderer::AnimationSystem::pose(world, assets)));
-    std::vector<compages::core::Matrix44f> bind;
+    std::vector<compages::Matrix44f> bind;
     auto const skins = world.view<compages::world::SkinInstance>();
     ASSERT_FALSE(skins.empty());
     auto const first_skin = *skins.begin();
@@ -161,9 +161,9 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     ASSERT_EQ(after.size(), bind.size());
     for (std::size_t j = 0u; j < bind.size(); ++j)
     {
-        const compages::core::Vector3f d = compages::core::translation(after[j]) -
-                                           compages::core::translation(bind[j]);
-        worst = std::max(worst, compages::core::vector::norm(d));
+        const compages::Vector3f d = compages::translation(after[j]) -
+                                           compages::translation(bind[j]);
+        worst = std::max(worst, compages::vector::norm(d));
     }
     EXPECT_GT(worst, 0.05f) << "Walk clip left the bind pose unchanged";
 }

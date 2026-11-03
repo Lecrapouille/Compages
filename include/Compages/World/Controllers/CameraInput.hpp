@@ -34,7 +34,7 @@ struct CameraInput
 {
     //! \brief Mouse motion this frame, in pixels, y up. Look is typically
     //! applied only when \c look is true.
-    compages::core::Vector2f look_delta{ 0.0f, 0.0f };
+    compages::Vector2f look_delta{ 0.0f, 0.0f };
     //! \brief Scroll wheel this frame. Positive is "away from the user",
     //! which an orbit controller treats as zoom in.
     float zoom_delta = 0.0f;

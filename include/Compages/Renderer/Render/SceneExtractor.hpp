@@ -30,7 +30,7 @@ class Scene;
 //! - the AssetManager, to skip items that refer to stale ids.
 //!
 //! It writes a RenderSnapshot: a value that stands on its own.
-//! compages::core::Frustum culling happens here, before the snapshot exists,
+//! compages::Frustum culling happens here, before the snapshot exists,
 //! not after: an item whose world bounds fall entirely outside the camera
 //! frustum is left out. LOD, visibility, batching and light selection belong
 //! here later.

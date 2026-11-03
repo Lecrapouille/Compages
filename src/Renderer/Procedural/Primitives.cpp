@@ -66,40 +66,40 @@ void addGridCell(std::vector<std::uint16_t>& p_indices,
     addTriangle(p_indices, i1, i2, i3);
 }
 
-[[nodiscard]] compages::core::Vector3f
-scaled(compages::core::Vector3f const& p_unit,
-       compages::core::Vector3f const& p_half)
+[[nodiscard]] compages::Vector3f
+scaled(compages::Vector3f const& p_unit,
+       compages::Vector3f const& p_half)
 {
-    return compages::core::Vector3f(
+    return compages::Vector3f(
         p_unit.x * p_half.x, p_unit.y * p_half.y, p_unit.z * p_half.z);
 }
 
 void addBoxFace(std::vector<MeshVertex>& p_corners,
                 std::vector<std::uint16_t>& p_indices,
-                compages::core::Vector3f const& p_normal,
-                compages::core::Vector3f const& p_half)
+                compages::Vector3f const& p_normal,
+                compages::Vector3f const& p_half)
 {
-    const compages::core::Vector3f up =
+    const compages::Vector3f up =
         (std::abs(p_normal.y) > 0.5f)
-            ? compages::core::Vector3f(0.0f, 0.0f, 1.0f)
-            : compages::core::Vector3f(0.0f, 1.0f, 0.0f);
-    const compages::core::Vector3f right =
-        compages::core::vector::cross(up, p_normal);
-    const compages::core::Vector3f top =
-        compages::core::vector::cross(p_normal, right);
+            ? compages::Vector3f(0.0f, 0.0f, 1.0f)
+            : compages::Vector3f(0.0f, 1.0f, 0.0f);
+    const compages::Vector3f right =
+        compages::vector::cross(up, p_normal);
+    const compages::Vector3f top =
+        compages::vector::cross(p_normal, right);
     const std::uint16_t first = u16(p_corners.size());
     p_corners.emplace_back(scaled(p_normal - right - top, p_half),
                            p_normal,
-                           compages::core::Vector2f(0.0f, 0.0f));
+                           compages::Vector2f(0.0f, 0.0f));
     p_corners.emplace_back(scaled(p_normal + right - top, p_half),
                            p_normal,
-                           compages::core::Vector2f(1.0f, 0.0f));
+                           compages::Vector2f(1.0f, 0.0f));
     p_corners.emplace_back(scaled(p_normal + right + top, p_half),
                            p_normal,
-                           compages::core::Vector2f(1.0f, 1.0f));
+                           compages::Vector2f(1.0f, 1.0f));
     p_corners.emplace_back(scaled(p_normal - right + top, p_half),
                            p_normal,
-                           compages::core::Vector2f(0.0f, 1.0f));
+                           compages::Vector2f(0.0f, 1.0f));
     addQuad(
         p_indices, first, u16(first + 1u), u16(first + 2u), u16(first + 3u));
 }
@@ -118,9 +118,9 @@ void addTubeRing(std::vector<MeshVertex>& p_corners,
         const float c = std::cos(p_angle[i]);
         const float s = std::sin(p_angle[i]);
         p_corners.emplace_back(
-            compages::core::Vector3f(p_radius * c, p_radius * s, p_z),
-            compages::core::Vector3f(p_side_xy * c, p_side_xy * s, p_side_z),
-            compages::core::Vector2f(p_u[i], p_v));
+            compages::Vector3f(p_radius * c, p_radius * s, p_z),
+            compages::Vector3f(p_side_xy * c, p_side_xy * s, p_side_z),
+            compages::Vector2f(p_u[i], p_v));
     }
 }
 
@@ -130,7 +130,7 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
                 std::uint32_t p_slices,
                 float p_radius,
                 float p_z,
-                compages::core::Vector3f const& p_normal,
+                compages::Vector3f const& p_normal,
                 bool p_ccw_from_outside)
 {
     const std::uint16_t ring_start = u16(p_corners.size());
@@ -139,14 +139,14 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
         const float c = std::cos(a);
         const float s = std::sin(a);
         p_corners.emplace_back(
-            compages::core::Vector3f(p_radius * c, p_radius * s, p_z),
+            compages::Vector3f(p_radius * c, p_radius * s, p_z),
             p_normal,
-            compages::core::Vector2f(0.5f + (0.5f * c), 0.5f + (0.5f * s)));
+            compages::Vector2f(0.5f + (0.5f * c), 0.5f + (0.5f * s)));
     }
     const std::uint16_t center = u16(p_corners.size());
-    p_corners.emplace_back(compages::core::Vector3f(0.0f, 0.0f, p_z),
+    p_corners.emplace_back(compages::Vector3f(0.0f, 0.0f, p_z),
                            p_normal,
-                           compages::core::Vector2f(0.5f, 0.5f));
+                           compages::Vector2f(0.5f, 0.5f));
     for (std::uint32_t i = 0u; i < p_slices; ++i)
     {
         const std::uint16_t a = u16(ring_start + i);
@@ -165,7 +165,7 @@ void addDiskCap(std::vector<MeshVertex>& p_corners,
 Result<MeshAsset> uploadMesh(std::vector<MeshVertex> p_corners,
                              std::vector<std::uint16_t> p_indices)
 {
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     for (MeshVertex const& corner : p_corners)
     {
         bounds.expand(corner.position);
@@ -245,22 +245,22 @@ Result<MeshAsset> makeBox(float p_width, float p_height, float p_depth)
         return failure("makeBox needs positive width, height and depth");
     }
 
-    const compages::core::Vector3f half(
+    const compages::Vector3f half(
         p_width * 0.5f, p_height * 0.5f, p_depth * 0.5f);
-    const std::array<compages::core::Vector3f, 6u> normals{
-        compages::core::Vector3f(0.0f, 0.0f, 1.0f),
-        compages::core::Vector3f(0.0f, 0.0f, -1.0f),
-        compages::core::Vector3f(1.0f, 0.0f, 0.0f),
-        compages::core::Vector3f(-1.0f, 0.0f, 0.0f),
-        compages::core::Vector3f(0.0f, 1.0f, 0.0f),
-        compages::core::Vector3f(0.0f, -1.0f, 0.0f)
+    const std::array<compages::Vector3f, 6u> normals{
+        compages::Vector3f(0.0f, 0.0f, 1.0f),
+        compages::Vector3f(0.0f, 0.0f, -1.0f),
+        compages::Vector3f(1.0f, 0.0f, 0.0f),
+        compages::Vector3f(-1.0f, 0.0f, 0.0f),
+        compages::Vector3f(0.0f, 1.0f, 0.0f),
+        compages::Vector3f(0.0f, -1.0f, 0.0f)
     };
 
     std::vector<MeshVertex> corners;
     std::vector<std::uint16_t> indices;
     corners.reserve(24u);
     indices.reserve(36u);
-    for (compages::core::Vector3f const& normal : normals)
+    for (compages::Vector3f const& normal : normals)
     {
         addBoxFace(corners, indices, normal, half);
     }
@@ -294,19 +294,19 @@ makeSphere(float p_radius, std::uint32_t p_stacks, std::uint32_t p_slices)
         const float v =
             static_cast<float>(stack) / static_cast<float>(p_stacks);
         const float phi =
-            (v * compages::core::PI<float>)-compages::core::HALF_PI<float>;
+            (v * compages::PI<float>)-compages::HALF_PI<float>;
         const float cos_phi = std::cos(phi);
         const float sin_phi = std::sin(phi);
         for (std::uint32_t slice = 0u; slice <= p_slices; ++slice)
         {
             const float u =
                 static_cast<float>(slice) / static_cast<float>(p_slices);
-            const float theta = u * compages::core::TWO_PI<float>;
-            const compages::core::Vector3f normal(
+            const float theta = u * compages::TWO_PI<float>;
+            const compages::Vector3f normal(
                 cos_phi * std::cos(theta), sin_phi, cos_phi * std::sin(theta));
             corners.emplace_back(normal * p_radius,
                                  normal,
-                                 compages::core::Vector2f(u, 1.0f - v));
+                                 compages::Vector2f(u, 1.0f - v));
         }
     }
 
@@ -347,7 +347,7 @@ Result<MeshAsset> makePlane(float p_width,
 
     const float half_w = p_width * 0.5f;
     const float half_h = p_height * 0.5f;
-    const compages::core::Vector3f normal(0.0f, 0.0f, 1.0f);
+    const compages::Vector3f normal(0.0f, 0.0f, 1.0f);
 
     std::vector<MeshVertex> corners;
     std::vector<std::uint16_t> indices;
@@ -364,9 +364,9 @@ Result<MeshAsset> makePlane(float p_width,
             const float u =
                 static_cast<float>(x) / static_cast<float>(p_x_segments);
             corners.emplace_back(
-                compages::core::Vector3f((u * p_width) - half_w, py, 0.0f),
+                compages::Vector3f((u * p_width) - half_w, py, 0.0f),
                 normal,
-                compages::core::Vector2f(u, v));
+                compages::Vector2f(u, v));
         }
     }
 
@@ -422,9 +422,9 @@ Result<MeshAsset> makeTube(float p_top_radius,
 
     std::vector<float> angle;
     std::vector<float> tex_u;
-    compages::core::linspace(
-        0.0f, compages::core::TWO_PI<float>, ring, angle, true);
-    compages::core::linspace(0.0f, 1.0f, ring, tex_u, true);
+    compages::linspace(
+        0.0f, compages::TWO_PI<float>, ring, angle, true);
+    compages::linspace(0.0f, 1.0f, ring, tex_u, true);
 
     const float half_h = p_height * 0.5f;
     const float top_z = p_tip_along_negative_z ? -half_h : half_h;
@@ -468,7 +468,7 @@ Result<MeshAsset> makeTube(float p_top_radius,
 
     if (top_cap)
     {
-        const compages::core::Vector3f normal(
+        const compages::Vector3f normal(
             0.0f, 0.0f, p_tip_along_negative_z ? -1.0f : 1.0f);
         addDiskCap(corners,
                    indices,
@@ -481,7 +481,7 @@ Result<MeshAsset> makeTube(float p_top_radius,
     }
     if (base_cap)
     {
-        const compages::core::Vector3f normal(
+        const compages::Vector3f normal(
             0.0f, 0.0f, p_tip_along_negative_z ? 1.0f : -1.0f);
         addDiskCap(corners,
                    indices,

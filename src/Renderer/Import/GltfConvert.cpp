@@ -239,28 +239,28 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
 
     std::vector<MeshVertex> vertices;
     vertices.reserve(positions->count);
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     for (std::size_t i = 0u; i < positions->count; ++i)
     {
         MeshVertex vertex;
         vertex.position =
-            compages::core::Vector3f(position_data[(i * 3u) + 0u],
+            compages::Vector3f(position_data[(i * 3u) + 0u],
                                      position_data[(i * 3u) + 1u],
                                      position_data[(i * 3u) + 2u]);
         if (!normal_data.empty())
         {
             vertex.normal =
-                compages::core::Vector3f(normal_data[(i * 3u) + 0u],
+                compages::Vector3f(normal_data[(i * 3u) + 0u],
                                          normal_data[(i * 3u) + 1u],
                                          normal_data[(i * 3u) + 2u]);
         }
         else
         {
-            vertex.normal = compages::core::vector::normalize(vertex.position);
+            vertex.normal = compages::vector::normalize(vertex.position);
         }
         if (!uv_data.empty())
         {
-            vertex.uv = compages::core::Vector2f(uv_data[(i * 2u) + 0u],
+            vertex.uv = compages::Vector2f(uv_data[(i * 2u) + 0u],
                                                  uv_data[(i * 2u) + 1u]);
         }
         bounds.expand(vertex.position);
@@ -268,7 +268,7 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
     }
 
     std::vector<std::uint16_t> joint_indices;
-    std::vector<compages::core::Vector4f> joint_weights;
+    std::vector<compages::Vector4f> joint_weights;
     if (skinned)
     {
         joint_indices.resize(vertices.size() * 4u);
@@ -285,12 +285,12 @@ meshFromPrimitive(cgltf_primitive const* p_primitive)
             joint_indices[(i * 4u) + 2u] = static_cast<std::uint16_t>(raw[2]);
             joint_indices[(i * 4u) + 3u] = static_cast<std::uint16_t>(raw[3]);
             joint_weights[i] =
-                compages::core::Vector4f(weight_data[(i * 4u) + 0u],
+                compages::Vector4f(weight_data[(i * 4u) + 0u],
                                          weight_data[(i * 4u) + 1u],
                                          weight_data[(i * 4u) + 2u],
                                          weight_data[(i * 4u) + 3u]);
             vertices[i].joints =
-                compages::core::Vector4i(static_cast<int>(raw[0]),
+                compages::Vector4i(static_cast<int>(raw[0]),
                                          static_cast<int>(raw[1]),
                                          static_cast<int>(raw[2]),
                                          static_cast<int>(raw[3]));
@@ -352,7 +352,7 @@ materialInstanceFromGltf(cgltf_material const* p_material,
         const cgltf_pbr_metallic_roughness& pbr =
             p_material->pbr_metallic_roughness;
         instance.base_color_factor =
-            compages::core::Vector3f(pbr.base_color_factor[0],
+            compages::Vector3f(pbr.base_color_factor[0],
                                      pbr.base_color_factor[1],
                                      pbr.base_color_factor[2]);
         if (pbr.base_color_texture.texture != nullptr)
@@ -403,18 +403,18 @@ importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
         for (std::size_t i = 0u; i < p_skin->joints_count; ++i)
         {
             // glTF is column-major, Matrix is row-major.
-            compages::core::Matrix44f column_major;
+            compages::Matrix44f column_major;
             std::memcpy(column_major.data(),
                         raw.data() + (i * 16u),
                         sizeof(float) * 16u);
-            asset.inverse_bind[i] = compages::core::transpose(column_major);
+            asset.inverse_bind[i] = compages::transpose(column_major);
         }
     }
     else
     {
         asset.inverse_bind.assign(
             p_skin->joints_count,
-            compages::core::Matrix44f(compages::core::matrix::Identity));
+            compages::Matrix44f(compages::matrix::Identity));
     }
     const std::string name = (p_skin->name != nullptr)
                                  ? p_skin->name

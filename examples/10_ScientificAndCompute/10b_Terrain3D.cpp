@@ -21,6 +21,7 @@ namespace examples
 
 constexpr std::uint32_t SIDE = 40u;
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
 in vec3 position;
 in vec3 layer_coord;
@@ -37,6 +38,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
 in vec3 vLayerCoord;
 uniform sampler3D layers;
@@ -48,8 +50,10 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 //! \brief Random heights, blurred five times and stretched back to [0, 1], with
 //! a border at zero so the island is surrounded by deep water.
+// ----------------------------------------------------------------------------
 static std::vector<float> makeAltitudes(std::uint32_t p_side)
 {
     std::mt19937 rng(42u);
@@ -91,15 +95,16 @@ static std::vector<float> makeAltitudes(std::uint32_t p_side)
     return height;
 }
 
+// ----------------------------------------------------------------------------
 std::string Terrain3D::description() const
 {
     return "A random island coloured by a 3D texture: six pictures stacked "
-           "from "
-           "deep water to snow. The altitude of each vertex is the third "
+           "from deep water to snow. The altitude of each vertex is the third "
            "texture coordinate, so the hardware blends the two nearest "
            "pictures and the shore fades into the fields by itself.";
 }
 
+// ----------------------------------------------------------------------------
 void Terrain3D::makeTerrain(std::uint32_t p_side)
 {
     constexpr float MAX_HEIGHT = 0.2f;
@@ -117,12 +122,11 @@ void Terrain3D::makeTerrain(std::uint32_t p_side)
         for (std::uint32_t y = 0u; y < p_side; ++y)
         {
             const float a = altitude[(x * p_side) + y];
-            const compages::core::Vector3f uv(
+            const compages::Vector3f uv(
                 float(x) / side, float(y) / side, a * MAX_LAYER);
-            grid.emplace_back(Vertex{ compages::core::Vector3f(uv.x - 0.5f,
-                                                               uv.y - 0.5f,
-                                                               a * MAX_HEIGHT),
-                                      uv });
+            grid.emplace_back(
+                compages::Vector3f(uv.x - 0.5f, uv.y - 0.5f, a * MAX_HEIGHT),
+                uv);
         }
     }
 
@@ -143,15 +147,16 @@ void Terrain3D::makeTerrain(std::uint32_t p_side)
         }
     }
 
-    m_terrain.vertices(grid);
+    m_terrain.setVertices(grid);
     m_terrain.indices(indices);
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Terrain3D::setUp()
 {
     // Six pictures, deep water first and snow last: the order is the depth
     // axis of the 3D texture.
-    std::vector<std::string> pictures;
+    std::vector<std::filesystem::path> pictures;
     for (const char* file : { "deep_water.png",
                               "shallow_water.png",
                               "shore.png",
@@ -159,7 +164,7 @@ compages::Status Terrain3D::setUp()
                               "rocks.png",
                               "snow.png" })
     {
-        pictures.emplace_back(dataPath(file).string());
+        pictures.emplace_back(dataPath(file));
         if (pictures.back().empty())
         {
             return compages::failure(
@@ -168,30 +173,31 @@ compages::Status Terrain3D::setUp()
         }
     }
     COMPAGES_TRY(
-        m_layers.loadVolume(pictures,
-                            { .mipmaps = false,
-                              .srgb = true,
-                              .wrap = compages::gpu::Wrap::ClampToEdge }));
+        m_layers.loadVolumeFiles(pictures,
+                                 { .mipmaps = false,
+                                   .srgb = true,
+                                   .wrap = compages::gpu::Wrap::ClampToEdge }));
 
-    COMPAGES_TRY(m_terrain.load(VERTEX, FRAGMENT));
+    COMPAGES_TRY(m_terrain.loadSources(VERTEX, FRAGMENT));
     makeTerrain(SIDE);
     // The sampler and the camera stay put; only the projection follows the
     // window, in draw().
     m_terrain["layers"] = m_layers;
     m_terrain["view"] =
-        compages::core::lookAt(compages::core::Vector3f(0.75f, -0.75f, 0.75f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 0.0f, 1.0f));
-    m_terrain.depthTest();
+        compages::lookAt(compages::Vector3f(0.75f, -0.75f, 0.75f),
+                         compages::Vector3f(0.0f, 0.0f, 0.0f),
+                         compages::Vector3f(0.0f, 0.0f, 1.0f));
+    m_terrain.state().depth_test = true;
     return m_terrain.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Terrain3D::draw(compages::world::ViewFrame const& p_frame)
 {
     // Rebuilt each frame: a projection remembered from setUp stretches when
     // the window is resized.
     m_terrain["projection"] =
-        compages::core::perspective(60.0_deg, aspect(p_frame), 0.1f, 10.0f);
+        compages::perspective(60.0_deg, aspect(p_frame), 0.1f, 10.0f);
 
     compages::gpu::clear({ 0.0f, 0.0f, 0.4f });
     compages::gpu::clearDepth();

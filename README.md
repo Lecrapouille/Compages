@@ -86,7 +86,7 @@ Here is a hello-world example drawing a single triangle. The shader declares `po
 compages::gpu::Drawable triangle;
 
 // At setup
-triangle.load(VERTEX_SHADER, FRAGMENT_SHADER);   // GLSL: in vec2 position; in vec3 color;
+triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER);   // GLSL: in vec2 position; in vec3 color;
 triangle["position"] = { { -0.8f, -0.6f }, { 0.8f, -0.6f }, { 0.0f, 0.8f } };
 triangle["color"]    = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 
@@ -102,7 +102,7 @@ The same door leads to simulations: in `13_Galaxy`, 8000 stars attract each othe
 ### 🟦 World — things that move, without any screen
 
 ```cpp
-struct Velocity { compages::core::Vector3f value; };      // your data: a plain struct
+struct Velocity { compages::Vector3f value; };      // your data: a plain struct
 
 compages::world::World world;
 compages::world::Entity ship = world.entity("Ship").set(Velocity{ { 1, 0, 0 } });
@@ -133,7 +133,7 @@ scene.draw(frame);
 
 <img src="doc/images/50_ThreeJsLike.png" alt="Cube" width="360"> <img src="doc/images/53_DoomLike.png" alt="Doom-like" width="360">
 
-`scene.load(...)` reads some glTF files used for games but also files such as STL and URDF used in robotic (with their joints). The gallery goes up to a small Doom-like game or basic robot forward kinematic.
+`scene.loadFile(...)` reads some glTF files used for games but also files such as STL and URDF used in robotic (with their joints). The gallery goes up to a small Doom-like game or basic robot forward kinematic.
 
 ---
 

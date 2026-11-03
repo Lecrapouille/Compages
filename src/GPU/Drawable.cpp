@@ -89,16 +89,17 @@ std::string unknownName(std::string const& p_name, Program const& p_program)
 
 } // namespace
 
-Status Drawable::load(std::string_view p_vertex, std::string_view p_fragment)
+Status Drawable::loadSources(std::string_view p_vertex,
+                             std::string_view p_fragment)
 {
     Program program;
-    COMPAGES_TRY(program.load(p_vertex, p_fragment));
+    COMPAGES_TRY(program.loadSources(p_vertex, p_fragment));
     adoptProgram(std::move(program));
     return success();
 }
 
-Status Drawable::loadFiles(std::string const& p_vertex,
-                           std::string const& p_fragment)
+Status Drawable::loadFiles(std::filesystem::path const& p_vertex,
+                           std::filesystem::path const& p_fragment)
 {
     Program program;
     COMPAGES_TRY(program.loadFiles(p_vertex, p_fragment));
@@ -135,13 +136,13 @@ void Drawable::clear()
     m_dirty.clear();
 }
 
-void Drawable::indices(std::span<const std::uint32_t> p_indices)
+void Drawable::replaceIndices(std::span<const std::uint32_t> p_indices)
 {
     m_indices.assign(p_indices.begin(), p_indices.end());
     m_indices_changed = true;
 }
 
-void Drawable::indices(std::span<const std::uint16_t> p_indices)
+void Drawable::replaceIndices(std::span<const std::uint16_t> p_indices)
 {
     m_indices.assign(p_indices.begin(), p_indices.end());
     m_indices_changed = true;
@@ -206,7 +207,7 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
     if (!m_program.valid())
     {
         reportError("drawable[\"" + p_name +
-                    "\"] before load(): the shader "
+                    "\"] before loading a shader: the shader "
                     "is what says what '" +
                     p_name + "' is");
         return nullptr;
@@ -257,6 +258,14 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
         m_rebuild = true;
     }
 
+    if (m_borrowing)
+    {
+        reportError("drawable[\"" + p_name +
+                    "\"] on borrowed vertices, which live on the GPU only: "
+                    "edit the Buffer you own instead");
+        return nullptr;
+    }
+
     FieldDesc const* field = m_layout.find(p_name);
     if (field == nullptr)
     {
@@ -275,7 +284,7 @@ FieldDesc const* Drawable::attributeField(std::string const& p_name,
                         std::to_string(p_count) + " values, but there are " +
                         std::to_string(m_count) +
                         " vertices: to change their number, give the vertices "
-                        "again with vertices<Vertex>()");
+                        "again with setVertices<Vertex>()");
             return nullptr;
         }
         // The other attributes keep what they had and are checked at the
@@ -405,15 +414,15 @@ void Drawable::assignFlat(std::string const& p_name,
                 m_program.set(p_name, v[0]);
                 return;
             case 2u:
-                m_program.set(p_name, compages::core::Vector2f(v[0], v[1]));
+                m_program.set(p_name, compages::Vector2f(v[0], v[1]));
                 return;
             case 3u:
                 m_program.set(p_name,
-                              compages::core::Vector3f(v[0], v[1], v[2]));
+                              compages::Vector3f(v[0], v[1], v[2]));
                 return;
             case 4u:
                 m_program.set(p_name,
-                              compages::core::Vector4f(v[0], v[1], v[2], v[3]));
+                              compages::Vector4f(v[0], v[1], v[2], v[3]));
                 return;
             default:
                 reportError("the uniform '" + p_name + "' was given " +
@@ -525,7 +534,7 @@ bool Drawable::expectUniform(std::string const& p_name)
     if (!m_program.valid())
     {
         reportError("drawable[\"" + p_name +
-                    "\"] before load(): the shader "
+                    "\"] before loading a shader: the shader "
                     "is what says what '" +
                     p_name + "' is");
         return false;
@@ -553,7 +562,8 @@ void Drawable::assignTexture(std::string const& p_name,
 {
     if (!m_program.valid())
     {
-        reportError("drawable[\"" + p_name + "\"] = texture before load()");
+        reportError("drawable[\"" + p_name +
+                    "\"] = texture before loading a shader");
         return;
     }
     UniformInfo const* uniform = m_program.reflection().uniform(p_name);
@@ -584,30 +594,12 @@ void Drawable::assignTexture(std::string const& p_name,
 
 Status Drawable::sendVertices()
 {
-    if (m_borrowing || m_bytes.empty())
+    if (m_borrowing)
     {
         return success();
     }
-    if (m_usage == BufferUsage::Immutable)
+    if (m_bytes.empty())
     {
-        if (!m_device.valid())
-        {
-            COMPAGES_TRY_ASSIGN(
-                m_device,
-                Buffer<std::byte>::from(std::span<const std::byte>(m_bytes),
-                                        BufferKind::Vertex,
-                                        BufferUsage::Immutable));
-            m_dirty.clear();
-        }
-        else if (!m_dirty.empty() || (m_device.count() != m_bytes.size()))
-        {
-            m_dirty.clear();
-            return failure(
-                "the vertices of a drawable whose usage is Immutable changed "
-                "after its first draw. Say "
-                "usage(compages::gpu::BufferUsage::Dynamic) for "
-                "vertices meant to change");
-        }
         return success();
     }
     if (!m_device.valid() || (m_device.count() < m_bytes.size()))
@@ -617,9 +609,7 @@ Status Drawable::sendVertices()
         const std::size_t capacity =
             std::max(m_bytes.size(), 2u * m_device.count());
         COMPAGES_TRY_ASSIGN(m_device,
-                            Buffer<std::byte>::create(capacity,
-                                                      BufferKind::Vertex,
-                                                      BufferUsage::Dynamic));
+                            VertexBuffer<std::byte>::create(capacity, BufferUsage::Stream));
         m_dirty.addAll(m_bytes.size());
     }
     m_dirty.clampTo(m_bytes.size());
@@ -648,9 +638,8 @@ Status Drawable::sendIndices()
     }
     COMPAGES_TRY_ASSIGN(
         m_index_device,
-        Buffer<std::uint32_t>::from(std::span<const std::uint32_t>(m_indices),
-                                    BufferKind::Index,
-                                    BufferUsage::Dynamic));
+        IndexBuffer<std::uint32_t>::from(std::span<const std::uint32_t>(m_indices),
+                                    BufferUsage::Stream));
     return success();
 }
 
@@ -658,7 +647,8 @@ Status Drawable::ready()
 {
     if (!m_program.valid())
     {
-        return failure("a drawable was drawn before load() succeeded");
+        return failure("a drawable was drawn before loadSources() or "
+                       "loadFiles() succeeded");
     }
 
     if (m_type == nullptr)
@@ -732,21 +722,10 @@ void Drawable::draw()
                            "first, or say how many the shader makes with "
                            "draw(count)");
     }
-    drawRange(0u, count);
+    draw(count);
 }
 
-void Drawable::draw(Primitive p_primitive)
-{
-    m_state.primitive = p_primitive;
-    draw();
-}
-
-void Drawable::draw(std::size_t p_count)
-{
-    drawRange(0u, p_count);
-}
-
-void Drawable::drawRange(std::size_t p_first, std::size_t p_count)
+void Drawable::draw(std::size_t p_count, std::size_t p_first)
 {
     if (!check(ready()))
     {
@@ -763,13 +742,13 @@ void Drawable::drawRange(std::size_t p_first, std::size_t p_count)
                     p_count,
                     p_first);
     }
-    else if (!m_borrowing && m_bytes.empty())
+    else if (!m_borrowing && (m_count == 0u))
     {
         if (p_first != 0u)
         {
-            return reportError("drawRange() from vertex " +
+            return reportError("draw(count, first = " +
                                std::to_string(p_first) +
-                               " of a shader making its own vertices: "
+                               ") on a shader making its own vertices: "
                                "offset gl_VertexID in the shader instead");
         }
         drawWithoutVertices(m_pipeline, p_count);
@@ -792,7 +771,7 @@ void Drawable::drawInstanced(std::size_t p_instances, std::size_t p_vertices)
         m_pipeline, vertexBuffer(), vertices, p_instances);
 }
 
-void Drawable::drawIndirect(Buffer<DrawIndirectCommand> const& p_commands)
+void Drawable::drawIndirect(StorageBuffer<DrawIndirectCommand> const& p_commands)
 {
     if (!check(ready()))
     {
@@ -810,10 +789,7 @@ std::string Drawable::describe() const
     {
         text += "read from a GPU buffer the drawable does not own\n";
     }
-    else if (m_usage == BufferUsage::Immutable)
-    {
-        text += "sent once and never changed (usage Immutable)\n";
-    }
+
     if (m_pipeline.valid())
     {
         text += "\n" + m_pipeline.describeAttributes();

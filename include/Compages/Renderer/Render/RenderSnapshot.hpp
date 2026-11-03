@@ -39,8 +39,8 @@ struct RenderItem
     compages::world::EntityId entity;
     compages::renderer::MeshAssetId mesh;
     compages::renderer::MaterialInstanceId material_instance;
-    compages::core::Matrix44f world_matrix{ compages::core::matrix::Identity };
-    compages::core::AABB world_bounds;
+    compages::Matrix44f world_matrix{ compages::matrix::Identity };
+    compages::AABB world_bounds;
     compages::renderer::RenderFlags flags = compages::renderer::RenderFlags::None;
     //! \brief Offset into \c RenderSnapshot::joint_palette. Zero and a
     //! \c joint_count of zero means a rigid mesh.
@@ -53,8 +53,8 @@ struct RenderItem
 // ****************************************************************************
 struct DirectionalLightFrame
 {
-    compages::core::Vector3f direction{ 0.0f, -1.0f, 0.0f };
-    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f direction{ 0.0f, -1.0f, 0.0f };
+    compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
 };
 
@@ -63,8 +63,8 @@ struct DirectionalLightFrame
 // ****************************************************************************
 struct PointLightFrame
 {
-    compages::core::Vector3f position{ 0.0f, 0.0f, 0.0f };
-    compages::core::Vector3f color{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f position{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     float intensity = 1.0f;
     float range = 100.0f;
     bool shadows = false;
@@ -85,13 +85,13 @@ struct RenderSnapshot
     std::vector<PointLightFrame> point_lights;
     //! \brief Packed joint matrices for every skinned item, in the same
     //! space the vertex shader multiplies rest-pose vertices with.
-    std::vector<compages::core::Matrix44f> joint_palette;
+    std::vector<compages::Matrix44f> joint_palette;
     compages::renderer::Environment environment{};
 };
 
 //! \brief Direction the light of the sun travels, and its colour: the first
 //! directional light, else the default of the environment.
-[[nodiscard]] inline std::pair<compages::core::Vector3f, compages::core::Vector3f>
+[[nodiscard]] inline std::pair<compages::Vector3f, compages::Vector3f>
 sunOf(RenderSnapshot const& p_snapshot)
 {
     if (!p_snapshot.directional_lights.empty())

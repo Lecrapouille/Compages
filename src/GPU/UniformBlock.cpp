@@ -47,10 +47,10 @@ namespace
 //! bool, an int or an unsigned int without any of them being a mistake worth
 //! stopping for.
 template <typename T, std::size_t Rows, std::size_t Cols>
-compages::core::Matrix<T, Rows, Cols> matrixForStd140(
-    compages::core::Matrix<T, Rows, Cols> const& p_matrix)
+compages::Matrix<T, Rows, Cols> matrixForStd140(
+    compages::Matrix<T, Rows, Cols> const& p_matrix)
 {
-    return compages::core::transpose(p_matrix);
+    return compages::transpose(p_matrix);
 }
 
 bool interchangeable(DataType p_declared, DataType p_offered)
@@ -87,7 +87,7 @@ std::size_t suppliedBytes(DataType p_type)
 
 } // namespace
 
-UniformBlock::UniformBlock(Buffer<std::byte>&& p_buffer,
+UniformBlock::UniformBlock(Buffer<std::byte, BufferKind::Uniform>&& p_buffer,
                            BlockInfo p_info,
                            int p_binding)
     : m_buffer(std::move(p_buffer)),
@@ -141,12 +141,12 @@ Result<UniformBlock> UniformBlock::create(Program& p_program,
         binding = p_binding;
     }
 
-    // Dynamic rather than Immutable: a block whose contents never change would
+    // Dynamic rather than Static: a block whose contents never change would
     // be better made immutable, but it is not what a block is for, and the cost
     // of being wrong the other way round is a buffer that cannot be written at
     // all.
-    auto buffer_result = Buffer<std::byte>::create(
-        info.bytes, BufferKind::Uniform, BufferUsage::Dynamic);
+    auto buffer_result = Buffer<std::byte, BufferKind::Uniform>::create(
+        info.bytes, BufferUsage::Stream);
     if (!buffer_result)
     {
         return failure(buffer_result.error());
@@ -284,19 +284,19 @@ Status UniformBlock::set(std::string_view p_name, float p_value)
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector2f const& p_value)
+                         compages::Vector2f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec2, &p_value);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector3f const& p_value)
+                         compages::Vector3f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec3, &p_value);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector4f const& p_value)
+                         compages::Vector4f const& p_value)
 {
     return writeMember(p_name, 0u, DataType::Vec4, &p_value);
 }
@@ -320,41 +320,41 @@ Status UniformBlock::set(std::string_view p_name, bool p_value)
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector2i const& p_value)
+                         compages::Vector2i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec2, &p_value);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector3i const& p_value)
+                         compages::Vector3i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec3, &p_value);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Vector4i const& p_value)
+                         compages::Vector4i const& p_value)
 {
     return writeMember(p_name, 0u, DataType::IVec4, &p_value);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Matrix22f const& p_value)
+                         compages::Matrix22f const& p_value)
 {
-    const compages::core::Matrix22f staged = matrixForStd140(p_value);
+    const compages::Matrix22f staged = matrixForStd140(p_value);
     return writeMember(p_name, 0u, DataType::Mat2, &staged);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Matrix33f const& p_value)
+                         compages::Matrix33f const& p_value)
 {
-    const compages::core::Matrix33f staged = matrixForStd140(p_value);
+    const compages::Matrix33f staged = matrixForStd140(p_value);
     return writeMember(p_name, 0u, DataType::Mat3, &staged);
 }
 
 Status UniformBlock::set(std::string_view p_name,
-                         compages::core::Matrix44f const& p_value)
+                         compages::Matrix44f const& p_value)
 {
-    const compages::core::Matrix44f staged = matrixForStd140(p_value);
+    const compages::Matrix44f staged = matrixForStd140(p_value);
     return writeMember(p_name, 0u, DataType::Mat4, &staged);
 }
 
@@ -369,10 +369,10 @@ Status UniformBlock::update()
         return success();
     }
 
-    const std::size_t first = m_dirty.begin();
-    const std::size_t count = m_dirty.end() - first;
-    COMPAGES_TRY(detail::writeBuffer(
-        m_buffer.handle(), first, count, m_bytes.data() + first));
+    COMPAGES_TRY(detail::writeBuffer(m_buffer.handle(),
+                                     m_dirty.begin(),
+                                     m_dirty.count(),
+                                     m_bytes.data() + m_dirty.begin()));
     m_dirty.clear();
     return success();
 }

@@ -12,16 +12,16 @@
 namespace compages::renderer
 {
 
-compages::core::Ray CameraFrame::screenRay(float p_x,
+compages::Ray CameraFrame::screenRay(float p_x,
                            float p_y,
                            std::uint32_t p_width,
                            std::uint32_t p_height) const
 {
     if ((p_width == 0u) || (p_height == 0u))
     {
-        const compages::core::Vector3f forward = compages::core::transformPoint(
-            inverse_view, compages::core::Vector3f(0.0f, 0.0f, -1.0f)) - position;
-        return compages::core::Ray::fromPoints(position, position + forward);
+        const compages::Vector3f forward = compages::transformPoint(
+            inverse_view, compages::Vector3f(0.0f, 0.0f, -1.0f)) - position;
+        return compages::Ray::fromPoints(position, position + forward);
     }
 
     const float ndc_x =
@@ -31,12 +31,12 @@ compages::core::Ray CameraFrame::screenRay(float p_x,
 
     // Column-vector unprojection: \c p_world = inverse(view_projection) * \c p_clip.
     // Near is z = -1, far is z = +1 (OpenGL clip convention).
-    const compages::core::Matrix44f inv_vp = compages::core::inverse(view_projection);
-    const compages::core::Vector3f world_near =
-        compages::core::transformPoint(inv_vp, compages::core::Vector3f(ndc_x, ndc_y, -1.0f));
-    const compages::core::Vector3f world_far =
-        compages::core::transformPoint(inv_vp, compages::core::Vector3f(ndc_x, ndc_y, 1.0f));
-    return compages::core::Ray::fromPoints(world_near, world_far);
+    const compages::Matrix44f inv_vp = compages::inverse(view_projection);
+    const compages::Vector3f world_near =
+        compages::transformPoint(inv_vp, compages::Vector3f(ndc_x, ndc_y, -1.0f));
+    const compages::Vector3f world_far =
+        compages::transformPoint(inv_vp, compages::Vector3f(ndc_x, ndc_y, 1.0f));
+    return compages::Ray::fromPoints(world_near, world_far);
 }
 
 } // namespace compages::renderer

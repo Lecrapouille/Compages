@@ -12,6 +12,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string ManyCubes::description() const
 {
     return "1728 cubes sharing one mesh and five looks. They are drawn sorted "
@@ -19,6 +20,7 @@ std::string ManyCubes::description() const
            "counter of the overlay shows the survivors as the camera turns.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status ManyCubes::setUp()
 {
     // The camera turns by itself, so the culling has something to drop as the
@@ -66,6 +68,7 @@ compages::Status ManyCubes::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void ManyCubes::draw(compages::world::ViewFrame const& p_frame)
 {
     // Sorting and frustum culling happen inside the draw, from the camera

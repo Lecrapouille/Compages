@@ -132,6 +132,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string Galaxy::description() const
 {
     return "Eight thousand stars pull on each other, inside a dark matter "
@@ -141,6 +142,7 @@ std::string Galaxy::description() const
            "stars to galaxy.csv.";
 }
 
+// ----------------------------------------------------------------------------
 std::vector<Galaxy::Star> Galaxy::seed()
 {
     // A disk, densest at the centre, with two arms. Each star starts on a
@@ -166,7 +168,7 @@ std::vector<Galaxy::Star> Galaxy::seed()
         const float arm = (i % 2u == 0u) ? 0.0f : std::numbers::pi_v<float>;
         const float angle =
             arm + (std::log(radius) * 2.2f) + (0.5f * (unit(rng) - 0.5f));
-        const compages::core::Vector2f at(radius * std::cos(angle),
+        const compages::Vector2f at(radius * std::cos(angle),
                                           radius * std::sin(angle));
 
         // Pull toward the centre, as the shader computes it.
@@ -180,15 +182,15 @@ std::vector<Galaxy::Star> Galaxy::seed()
         // Some disorder, as in a real disk: a perfectly cold disk breaks
         // into clumps within one turn (Toomre).
         const float speed = std::sqrt(pull * radius);
-        const compages::core::Vector2f around(-at.y / radius, at.x / radius);
-        const compages::core::Vector2f out(at.x / radius, at.y / radius);
-        const compages::core::Vector2f velocity =
+        const compages::Vector2f around(-at.y / radius, at.x / radius);
+        const compages::Vector2f out(at.x / radius, at.y / radius);
+        const compages::Vector2f velocity =
             (around * (speed * (1.0f + (0.12f * jitter(rng))))) +
             (out * (speed * 0.12f * jitter(rng)));
 
         stars[i].position = at;
         stars[i].velocity = velocity;
-        stars[i].color = compages::core::Vector4f(0.55f + (0.45f * unit(rng)),
+        stars[i].color = compages::Vector4f(0.55f + (0.45f * unit(rng)),
                                                   0.55f + (0.25f * unit(rng)),
                                                   0.95f,
                                                   0.85f);
@@ -196,6 +198,7 @@ std::vector<Galaxy::Star> Galaxy::seed()
     return stars;
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Galaxy::setUp()
 {
     const std::vector<Star> stars = seed();
@@ -203,7 +206,7 @@ compages::Status Galaxy::setUp()
         m_stars,
         compages::gpu::PingPong<Star>::from(std::span<const Star>(stars)));
 
-    COMPAGES_TRY(m_step.load(STEP));
+    COMPAGES_TRY(m_step.loadSource(STEP));
     // Gravity and the halo stay put; only the time step changes per frame.
     m_step.set("count", COUNT);
     m_step.set("G", G);
@@ -211,14 +214,16 @@ compages::Status Galaxy::setUp()
     m_step.set("haloMass", HALO_MASS);
     m_step.set("haloCore", HALO_CORE);
 
-    COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
-    m_points.vertices(m_stars.input());
+    COMPAGES_TRY(m_points.loadSources(VERTEX, FRAGMENT));
+    // The stars live on the graphics card: borrowed, never copied.
+    m_points.borrowVertices(m_stars.input());
     m_points["aspect"] = 1.0f;
-    m_points.primitive(compages::gpu::Primitive::Points)
-        .blend(compages::gpu::Blend::additive());
+    m_points.state().primitive = compages::gpu::Primitive::Points;
+    m_points.state().blend = compages::gpu::Blend::additive();
     return m_points.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Galaxy::draw(compages::world::ViewFrame const& p_frame)
 {
     if (m_restart)
@@ -258,11 +263,12 @@ void Galaxy::draw(compages::world::ViewFrame const& p_frame)
     }
 
     compages::gpu::clear({ 0.01f, 0.01f, 0.03f });
-    m_points["aspect"] = compages::core::aspect(p_frame);
-    m_points.vertices(m_stars.input());
+    m_points["aspect"] = compages::aspect(p_frame);
+    m_points.borrowVertices(m_stars.input());
     m_points.draw();
 }
 
+// ----------------------------------------------------------------------------
 void Galaxy::save(std::string const& p_path)
 {
     // The stars live on the GPU: read the buffer last written back to the CPU
@@ -287,6 +293,7 @@ void Galaxy::save(std::string const& p_path)
     std::cout << "[13_Galaxy] " << m_said << std::endl;
 }
 
+// ----------------------------------------------------------------------------
 void Galaxy::controls()
 {
     ImGui::Checkbox("Run", &m_running);

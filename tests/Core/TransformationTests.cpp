@@ -32,11 +32,11 @@
 
 TEST(TestTransformation, testTranslate)
 {
-    compages::core::Matrix44f I(compages::core::matrix::Identity);
-    compages::core::Matrix44f M = compages::core::translate(I, compages::core::Vector3f(2.0f, 3.0f, 4.0f));
+    compages::Matrix44f I(compages::matrix::Identity);
+    compages::Matrix44f M = compages::translate(I, compages::Vector3f(2.0f, 3.0f, 4.0f));
 
     ASSERT_MATRIX(M,
-                  compages::core::Matrix44f({ 1.0f,
+                  compages::Matrix44f({ 1.0f,
                               0.0f,
                               0.0f,
                               2.0f,
@@ -56,11 +56,11 @@ TEST(TestTransformation, testTranslate)
 
 TEST(TestTransformation, testScale)
 {
-    compages::core::Matrix44f I(compages::core::matrix::Identity);
-    compages::core::Matrix44f M = compages::core::scale(I, compages::core::Vector3f(2.0f, 3.0f, 4.0f));
+    compages::Matrix44f I(compages::matrix::Identity);
+    compages::Matrix44f M = compages::scale(I, compages::Vector3f(2.0f, 3.0f, 4.0f));
 
     ASSERT_MATRIX(M,
-                  compages::core::Matrix44f({ 2.0f,
+                  compages::Matrix44f({ 2.0f,
                               0.0f,
                               0.0f,
                               0.0f,
@@ -87,14 +87,14 @@ TEST(TestTransformation, testRotation)
     const float c = std::cos(angle.to<float>());
     const float s = std::sin(angle.to<float>());
     const float oc = 1.0f - c;
-    const compages::core::Vector3f axis(0.371391f, 0.557086f, 0.742781f);
-    compages::core::Matrix44f I(compages::core::matrix::Identity);
+    const compages::Vector3f axis(0.371391f, 0.557086f, 0.742781f);
+    compages::Matrix44f I(compages::matrix::Identity);
 
     // Actual
-    compages::core::Matrix44f A = compages::core::rotate(I, angle, axis);
+    compages::Matrix44f A = compages::rotate(I, angle, axis);
 
     // Expected https://fr.wikipedia.org/wiki/Matrice_de_rotation
-    compages::core::Matrix44f E = { //
+    compages::Matrix44f E = { //
                     axis[0] * axis[0] * oc + c,
                     axis[0] * axis[1] * oc - axis[2] * s,
                     axis[0] * axis[2] * oc + axis[1] * s,
@@ -132,12 +132,12 @@ TEST(TestTransformation, testOrtho)
     const float far = 6.0f;
 
     // Actual
-    compages::core::Matrix44f A = compages::core::ortho(left, right, bottom, top, near, far);
+    compages::Matrix44f A = compages::ortho(left, right, bottom, top, near, far);
 
-    // Expected: right-handed ortho consistent with compages::core::perspective. GLM's
+    // Expected: right-handed ortho consistent with compages::perspective. GLM's
     // orthoRH_NO puts -2/(f-n) at [2][2], and this library follows the same
     // convention so both projections can be swapped freely.
-    compages::core::Matrix44f E(compages::core::matrix::Identity);
+    compages::Matrix44f E(compages::matrix::Identity);
     E[0][0] = 2.0f / (right - left);
     E[1][1] = 2.0f / (top - bottom);
     E[2][2] = -2.0f / (far - near);
@@ -157,10 +157,10 @@ TEST(TestTransformation, testPersp)
     float const tanHalfFovY = std::tan(fov.to<float>() / 2.0f);
 
     // Actual
-    compages::core::Matrix44f A = compages::core::perspective(fov, aspect, near, far);
+    compages::Matrix44f A = compages::perspective(fov, aspect, near, far);
 
     // Expected: transpose of glm::perspective (glm stores column-major).
-    compages::core::Matrix44f E(0.0f);
+    compages::Matrix44f E(0.0f);
     E[0][0] = 1.0f / (aspect * tanHalfFovY);
     E[1][1] = 1.0f / (tanHalfFovY);
     E[2][2] = -(far + near) / (far - near);
@@ -172,18 +172,18 @@ TEST(TestTransformation, testPersp)
 
 TEST(TestTransformation, testLookAt)
 {
-    const compages::core::Vector3f position(1.0f, 1.0f, 1.0f);
-    const compages::core::Vector3f target(0.0f, 0.0f, 0.0f);
-    const compages::core::Vector3f upwards(0.0f, 0.0f, 1.0f);
+    const compages::Vector3f position(1.0f, 1.0f, 1.0f);
+    const compages::Vector3f target(0.0f, 0.0f, 0.0f);
+    const compages::Vector3f upwards(0.0f, 0.0f, 1.0f);
 
     // Actual
-    compages::core::Matrix44f A = compages::core::lookAt(position, target, upwards);
+    compages::Matrix44f A = compages::lookAt(position, target, upwards);
 
     // Expected
-    compages::core::Matrix44f E(compages::core::matrix::Identity);
-    compages::core::Vector3f const direction(compages::core::vector::normalize(target - position));
-    compages::core::Vector3f const right(compages::core::vector::normalize(compages::core::vector::cross(direction, upwards)));
-    compages::core::Vector3f const up(compages::core::vector::cross(right, direction));
+    compages::Matrix44f E(compages::matrix::Identity);
+    compages::Vector3f const direction(compages::vector::normalize(target - position));
+    compages::Vector3f const right(compages::vector::normalize(compages::vector::cross(direction, upwards)));
+    compages::Vector3f const up(compages::vector::cross(right, direction));
 
     E[0][0] = right.x;
     E[0][1] = right.y;
@@ -194,24 +194,24 @@ TEST(TestTransformation, testLookAt)
     E[2][0] = -direction.x;
     E[2][1] = -direction.y;
     E[2][2] = -direction.z;
-    E[0][3] = -(compages::core::vector::dot(right, position));
-    E[1][3] = -(compages::core::vector::dot(up, position));
-    E[2][3] = compages::core::vector::dot(direction, position);
+    E[0][3] = -(compages::vector::dot(right, position));
+    E[1][3] = -(compages::vector::dot(up, position));
+    E[2][3] = compages::vector::dot(direction, position);
 
     ASSERT_MATRIX_NEAR(A, E, 0.0001f);
 }
 
 TEST(TestTransformation, testOperations)
 {
-    compages::core::Matrix44f const I(compages::core::matrix::Identity);
-    compages::core::Vector4f x(1, 2, 3, 1); // Initial position
-    compages::core::Vector4f R;             // Final position
+    compages::Matrix44f const I(compages::matrix::Identity);
+    compages::Vector4f x(1, 2, 3, 1); // Initial position
+    compages::Vector4f R;             // Final position
 
     // Rotation order: translate a point (1,2,3) through a transform matrix
     // translation by (1,2,3).
     {
         // Translation matrix
-        compages::core::Matrix44f M({ 1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3, 0, 0, 0, 1 });
+        compages::Matrix44f M({ 1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3, 0, 0, 0, 1 });
 
         // Correct formula (Scilab code):
         // [1 0 0 1; 0 1 0 2; 0 0 1 3; 0 0 0 1] * [1 2 3 1]'
@@ -222,32 +222,32 @@ TEST(TestTransformation, testOperations)
 
         // x^T * M, written with the explicit transpose (Scilab code):
         // [1 2 3 1] * [1 0 0 1; 0 1 0 2; 0 0 1 3; 0 0 0 1]
-        R = compages::core::transpose(M) * x;
+        R = compages::transpose(M) * x;
         ASSERT_NEAR_VECTOR4(R, 1.0f, 2.0f, 3.0f, 15.0f, 0.0001f);
     }
 
     {
-        compages::core::Matrix44f M = compages::core::translate(I, compages::core::Vector3f(1, 2, 3));
+        compages::Matrix44f M = compages::translate(I, compages::Vector3f(1, 2, 3));
         R = M * x;
         ASSERT_NEAR_VECTOR4(R, 2.0f, 4.0f, 6.0f, 1.0f, 0.0001f);
     }
 
     // Scaling
     {
-        compages::core::Matrix44f M = compages::core::scale(I, compages::core::Vector3f(1, 2, 3));
+        compages::Matrix44f M = compages::scale(I, compages::Vector3f(1, 2, 3));
         R = M * x;
         ASSERT_NEAR_VECTOR4(R, 1.0f, 4.0f, 9.0f, 1.0f, 0.0001f);
     }
 
     // Multiple rotations
     {
-        x = compages::core::Vector4f(1, 0, 0, 1);
+        x = compages::Vector4f(1, 0, 0, 1);
         units::angle::degree_t angle(90.0f);
-        compages::core::Matrix44f M = compages::core::rotate(I, angle, compages::core::Vector3f::UNIT_Y);
+        compages::Matrix44f M = compages::rotate(I, angle, compages::Vector3f::UNIT_Y);
         R = M * x;
         ASSERT_NEAR_VECTOR4(R, 0.0f, 0.0f, -1.0f, 1.0f, 0.0001f);
 
-        compages::core::Matrix44f chain = M * M * M * M;
+        compages::Matrix44f chain = M * M * M * M;
         R = chain * x;
         // std::cout << "3 Rotates: "
         //           << x << " * " << M << " = " << R
@@ -292,35 +292,35 @@ void glm_lookAt(glm::vec3 const &position, glm::vec3 const &target, glm::vec3 co
     }
 }
 
-void qq_lookAt(compages::core::Vector3f const &position, compages::core::Vector3f const &target, compages::core::Vector3f const &up)
+void qq_lookAt(compages::Vector3f const &position, compages::Vector3f const &target, compages::Vector3f const &up)
 {
     std::cout << "\n\nQQ:" << std::endl;
-    compages::core::Matrix44f mat = compages::core::lookAt(position, target, up);
+    compages::Matrix44f mat = compages::lookAt(position, target, up);
     std::cout << "  qq::LookAt: " << mat << std::endl;
 
-    compages::core::Quatf orientation = compages::core::Quatf::fromMatrix(mat).conjugate();
+    compages::Quatf orientation = compages::Quatf::fromMatrix(mat).conjugate();
     std::cout << "  qq::quat: " << orientation << std::endl;
     std::cout << "  =>: " << orientation.angle() * 57.2958f << " angle: "
               << orientation.axis() << std::endl;
 
     // Camera::view
-    compages::core::Matrix44f I(compages::core::matrix::Identity);
-    compages::core::Matrix44f trans = compages::core::translate(I, -position);
+    compages::Matrix44f I(compages::matrix::Identity);
+    compages::Matrix44f trans = compages::translate(I, -position);
     std::cout << "  qq::trans " << trans << std::endl;
 
-    compages::core::Matrix44f rot = orientation.toMatrix();
+    compages::Matrix44f rot = orientation.toMatrix();
     std::cout << "  qq::rot " << rot << std::endl;
 
-    compages::core::Matrix44f view = trans * rot; // FIXME shall be rot * trans
+    compages::Matrix44f view = trans * rot; // FIXME shall be rot * trans
     std::cout << "  qq::view " << view << std::endl;
     //std::cout << "  qq::view\n" << operator*(rot, trans) << std::endl;
 
     {
-        compages::core::Matrix44f tra({1, 0, 0, 0,
+        compages::Matrix44f tra({1, 0, 0, 0,
                        0, 1, 0, 0,
                        0, 0, 1, 0,
                        -1, 0, 0, 1});
-        compages::core::Matrix44f rot({0, 0, -1, 0,
+        compages::Matrix44f rot({0, 0, -1, 0,
                        0, 1, 0, 0,
                        1, 0, 0, 0,
                        0, 0, 0, 1});
@@ -336,9 +336,9 @@ int main()
                glm::vec3(0,0,0),
                glm::vec3(0,1,0));
 
-    qq_lookAt(compages::core::Vector3f(1,0,0),
-              compages::core::Vector3f(0,0,0),
-              compages::core::Vector3f(0,1,0));
+    qq_lookAt(compages::Vector3f(1,0,0),
+              compages::Vector3f(0,0,0),
+              compages::Vector3f(0,1,0));
 
     return 0;
 }

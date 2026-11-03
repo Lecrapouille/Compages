@@ -113,21 +113,21 @@ TEST(WorldHierarchy, KeepWorldReparentPreservesRotatedAndScaledPose)
     compages::world::World world;
     compages::world::Entity parent = world.entity("parent")
                         .position(3.0f, 1.0f, -2.0f)
-                        .rotation(1.0f, compages::core::Vector3f(0.0f, 1.0f, 0.0f))
+                        .rotation(1.0f, compages::Vector3f(0.0f, 1.0f, 0.0f))
                         .scale(2.0f);
     compages::world::Entity child = parent.child("child")
                        .position(1.0f, 2.0f, 3.0f)
-                       .rotation(0.5f, compages::core::Vector3f(1.0f, 0.0f, 0.0f))
+                       .rotation(0.5f, compages::Vector3f(1.0f, 0.0f, 0.0f))
                        .scale(1.0f, 2.0f, 3.0f);
-    compages::core::Frame frame;
+    compages::Frame frame;
     frame.elapsed = 0.0f;
     world.update(frame);
-    const compages::core::Matrix44f before = world.worldMatrix(child.id());
+    const compages::Matrix44f before = world.worldMatrix(child.id());
 
     ASSERT_TRUE(bool(world.setParent(child.id(), compages::world::EntityId{},
                                      compages::world::ReparentPolicy::KeepWorld)));
     world.update(frame);
-    const compages::core::Matrix44f after = world.worldMatrix(child.id());
+    const compages::Matrix44f after = world.worldMatrix(child.id());
 
     for (std::size_t row = 0u; row < 4u; ++row)
     {
@@ -173,7 +173,7 @@ TEST(WorldHierarchy, UpdatesAndDestroysAVeryDeepChain)
     }
     root.position(1.0f, 2.0f, 3.0f);
     world.update();
-    const compages::core::Matrix44f at = world.worldMatrix(tip.id());
+    const compages::Matrix44f at = world.worldMatrix(tip.id());
     EXPECT_FLOAT_EQ(at(0, 3), 1.0f);
     EXPECT_FLOAT_EQ(at(1, 3), 2.0f);
     EXPECT_FLOAT_EQ(at(2, 3), 3.0f);

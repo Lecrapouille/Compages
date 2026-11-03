@@ -29,6 +29,7 @@ constexpr std::size_t BALL_COUNT = 12u;
 //! \brief Below this speed, a touch is resting, not a shock.
 constexpr float SHOCK_SPEED = 0.5f;
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::TinyEngine::hit(std::size_t p_a, int p_b, std::array<float, 3> p_normal, float p_speed)
 {
     if (p_speed < SHOCK_SPEED)
@@ -44,6 +45,7 @@ void ExternalPhysics::TinyEngine::hit(std::size_t p_a, int p_b, std::array<float
     hits.push_back(Hit{ p_a, p_b, point, p_normal, p_speed });
 }
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::TinyEngine::step(float p_dt)
 {
     // Gravity, a bounce on the floor and on the four walls, then the balls
@@ -80,6 +82,7 @@ void ExternalPhysics::TinyEngine::step(float p_dt)
     collide();
 }
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::TinyEngine::collide()
 {
     // Every pair of balls, same mass: push the two apart until they touch,
@@ -154,8 +157,8 @@ struct ExternalPhysics::Physics: compages::world::Routine
         // no collision itself.
         for (TinyEngine::Hit const& hit : engine.hits)
         {
-            const compages::core::Vector3f point(hit.point[0], hit.point[1], hit.point[2]);
-            const compages::core::Vector3f normal(hit.normal[0], hit.normal[1], hit.normal[2]);
+            const compages::Vector3f point(hit.point[0], hit.point[1], hit.point[2]);
+            const compages::Vector3f normal(hit.normal[0], hit.normal[1], hit.normal[2]);
             const compages::world::EntityId other = (hit.b < 0) ? floor : balls[std::size_t(hit.b)].id();
             world().routines().send(balls[hit.a], compages::world::Contact{ other, point, normal, hit.speed });
             if (hit.b >= 0)
@@ -197,6 +200,7 @@ struct ExternalPhysics::Squash: compages::world::Routine
     float swell = 0.0f;
 };
 
+// ----------------------------------------------------------------------------
 std::string ExternalPhysics::description() const
 {
     return "Compages has no physics engine: a small engine of the demo moves "
@@ -207,6 +211,7 @@ std::string ExternalPhysics::description() const
            "turns the camera.";
 }
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::throwBalls()
 {
     m_engine.bodies.clear();
@@ -222,6 +227,7 @@ void ExternalPhysics::throwBalls()
     }
 }
 
+// ----------------------------------------------------------------------------
 compages::Status ExternalPhysics::setUp()
 {
     m_scene.background(0.05f, 0.06f, 0.09f).ambient(0.15f, 0.15f, 0.18f);
@@ -249,6 +255,7 @@ compages::Status ExternalPhysics::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::draw(compages::world::ViewFrame const& p_frame)
 {
     // The Physics routine runs inside: fixedUpdate() at 60 Hz, whatever the
@@ -256,6 +263,7 @@ void ExternalPhysics::draw(compages::world::ViewFrame const& p_frame)
     m_scene.draw(p_frame);
 }
 
+// ----------------------------------------------------------------------------
 void ExternalPhysics::controls()
 {
     if (ImGui::Button("Throw again"))

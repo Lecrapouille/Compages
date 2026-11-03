@@ -16,7 +16,9 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief Turns its entity around its own vertical axis.
+// ----------------------------------------------------------------------------
 struct Routines::Spin: compages::world::Routine
 {
     explicit Spin(float p_speed) : speed(p_speed) {}
@@ -30,7 +32,9 @@ struct Routines::Spin: compages::world::Routine
     float speed;
 };
 
+// ----------------------------------------------------------------------------
 //! \brief Floats up and down around where it was when it started.
+// ----------------------------------------------------------------------------
 struct Routines::Bob: compages::world::Routine
 {
     void start() override
@@ -42,14 +46,16 @@ struct Routines::Bob: compages::world::Routine
     {
         // From the rest position recorded at start, so it does not drift up.
         const float height = 0.25f * std::sin(frame().total * 2.0f);
-        entity().position(rest + compages::core::Vector3f(0.0f, height, 0.0f));
+        entity().position(rest + compages::Vector3f(0.0f, height, 0.0f));
     }
 
-    compages::core::Vector3f rest;
+    compages::Vector3f rest;
 };
 
+// ----------------------------------------------------------------------------
 //! \brief Breathes, and grows while space or the button of the Try it panel
 //! is held; shrinks back when it is released.
+// ----------------------------------------------------------------------------
 struct Routines::GrowOnSpace: compages::world::Routine
 {
     explicit GrowOnSpace(bool const& p_button) : button(p_button) {}
@@ -69,17 +75,17 @@ struct Routines::GrowOnSpace: compages::world::Routine
     float size = 1.0f;
 };
 
+// ----------------------------------------------------------------------------
 std::string Routines::description() const
 {
     return "Three cubes, each driven by small routines attached to it: the "
            "blue one spins, the orange one floats and spins, the green one "
-           "breathes "
-           "and grows while SPACE is held (the mouse over the picture) or "
-           "while "
-           "the button of the Try it panel is. The camera control "
-           "is a routine too: right drag turns it.";
+           "breathes and grows while SPACE is held (the mouse over the "
+           "picture) or while the button of the Try it panel is. The camera "
+           "control is a routine too: right drag turns it.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Routines::setUp()
 {
     // The camera control is a routine too: Orbit, hung on the camera.
@@ -101,12 +107,14 @@ compages::Status Routines::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Routines::draw(compages::world::ViewFrame const& p_frame)
 {
     // update() of every routine runs inside the draw.
     m_scene.draw(p_frame);
 }
 
+// ----------------------------------------------------------------------------
 void Routines::controls()
 {
     // Held rather than clicked: true for as long as the button is pressed.

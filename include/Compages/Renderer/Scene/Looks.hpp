@@ -12,6 +12,7 @@
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include <filesystem>
 #include <string>
 
 namespace compages::world
@@ -40,10 +41,10 @@ struct Look
     //! \brief Which of the built-in shaders draws it.
     ShaderFamily family = ShaderFamily::Lit;
     //! \brief The colour, or what the picture is multiplied by.
-    compages::core::Vector3f color{ 0.8f, 0.8f, 0.8f };
+    compages::Vector3f color{ 0.8f, 0.8f, 0.8f };
     //! \brief The picture file, for a textured look. Loaded once whatever the
     //! number of shapes wearing it.
-    std::string texture;
+    std::filesystem::path texture;
     //! \brief What the depth look maps to black and to white.
     float depth_near = 1.0f;
     float depth_far = 100.0f;
@@ -55,16 +56,16 @@ struct Look
 [[nodiscard]] inline Look color(float p_red, float p_green, float p_blue)
 {
     Look look;
-    look.color = compages::core::Vector3f(p_red, p_green, p_blue);
+    look.color = compages::Vector3f(p_red, p_green, p_blue);
     return look;
 }
 
 //! \brief A picture, lit by the lights of the scene.
-[[nodiscard]] inline Look texture(std::string p_path)
+[[nodiscard]] inline Look texture(std::filesystem::path p_path)
 {
     Look look;
     look.family = ShaderFamily::PbrMinimal;
-    look.color = compages::core::Vector3f(1.0f, 1.0f, 1.0f);
+    look.color = compages::Vector3f(1.0f, 1.0f, 1.0f);
     look.texture = std::move(p_path);
     return look;
 }
@@ -131,7 +132,8 @@ public:
     [[nodiscard]] MaterialId familyMaterial(ShaderFamily p_family);
 
     //! \brief A picture file as a texture, loaded on first use.
-    [[nodiscard]] TextureAssetId pictureTexture(std::string const& p_path);
+    [[nodiscard]] TextureAssetId
+    pictureTexture(std::filesystem::path const& p_path);
 
     //! \brief The material instance a Look describes, not yet stored.
     [[nodiscard]] MaterialInstance instanceOf(Look const& p_look);

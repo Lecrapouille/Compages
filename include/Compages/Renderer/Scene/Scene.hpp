@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Core/Result.hpp"
 #include "Compages/Core/Vector.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
@@ -23,6 +24,7 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -57,7 +59,7 @@ namespace compages::renderer
 //!     m_scene.prepare();
 //! }
 //!
-//! void draw(compages::core::Frame const& p_frame)
+//! void draw(compages::Frame const& p_frame)
 //! {
 //!     m_scene.draw(p_frame);
 //! }
@@ -70,7 +72,7 @@ namespace compages::renderer
 //! and their own backgrounds; the second one then shares the assets of the
 //! first so that nothing is loaded twice.
 // ****************************************************************************
-class Scene
+class Scene: private compages::NotCopiable
 {
 public:
 
@@ -86,8 +88,6 @@ public:
     Scene(compages::world::World& p_world, AssetManager& p_assets);
 
     ~Scene();
-    Scene(Scene const&) = delete;
-    Scene& operator=(Scene const&) = delete;
 
     //! \brief The compages::world::World shown.
     [[nodiscard]] compages::world::World& world() const
@@ -180,16 +180,16 @@ public:
     //! It comes from above, in front and to the right; lookAt() turns it.
     // ------------------------------------------------------------------------
     compages::world::Entity sun(std::string p_name = "Sun",
-                                compages::core::Vector3f p_color =
-                                    compages::core::Vector3f(1.0f, 1.0f, 1.0f),
+                                compages::Vector3f p_color =
+                                    compages::Vector3f(1.0f, 1.0f, 1.0f),
                                 float p_intensity = 1.0f);
 
     // ------------------------------------------------------------------------
     //! \brief A light bulb: it lights around its position, up to \c p_range.
     // ------------------------------------------------------------------------
     compages::world::Entity lamp(std::string p_name = "Lamp",
-                                 compages::core::Vector3f p_color =
-                                     compages::core::Vector3f(1.0f, 1.0f, 1.0f),
+                                 compages::Vector3f p_color =
+                                     compages::Vector3f(1.0f, 1.0f, 1.0f),
                                  float p_intensity = 1.0f,
                                  float p_range = 10.0f);
 
@@ -202,7 +202,7 @@ public:
     //! loaded model whose size is not known in advance.
     //! \return the middle of what is drawn: what an Orbit turns around.
     // ------------------------------------------------------------------------
-    compages::core::Vector3f frameAll();
+    compages::Vector3f frameAll();
 
     // --- Files and prefabs ---------------------------------------------------
 
@@ -213,7 +213,8 @@ public:
     //! \return the root of what was placed, or why the file could not be read.
     // ------------------------------------------------------------------------
     [[nodiscard]] Result<compages::world::Entity>
-    load(std::string const& p_path, compages::world::EntityId p_parent = {});
+    loadFile(std::filesystem::path const& p_path,
+             compages::world::EntityId p_parent = {});
 
     //! \brief Place one more copy of an already loaded prefab.
     [[nodiscard]] Result<compages::world::Entity>
@@ -223,7 +224,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Play one of the clips a loaded model came with, from its start.
-    //! \param[in] p_model what load() returned.
+    //! \param[in] p_model what loadFile() returned.
     //! \param[in] p_clip the name of the clip in the file, "Walk" say.
     //! \return false when the model has no clip of that name.
     // ------------------------------------------------------------------------
@@ -250,14 +251,14 @@ public:
     //! \param[in] p_faces the files of the faces looking along +X, -X, +Y,
     //! -Y, +Z and -Z.
     // ------------------------------------------------------------------------
-    Scene& skybox(std::array<std::string, 6u> const& p_faces);
+    Scene& skybox(std::array<std::filesystem::path, 6u> const& p_faces);
 
     [[nodiscard]] RenderSettings& renderSettings();
     [[nodiscard]] RenderSettings const& renderSettings() const;
     [[nodiscard]] Environment& environment();
     [[nodiscard]] Environment const& environment() const;
 
-    // --- compages::core::Frame
+    // --- compages::Frame
     // ---------------------------------------------------------------
 
     // ------------------------------------------------------------------------
@@ -299,7 +300,7 @@ public:
     //! \c Input::mouse.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::optional<compages::renderer::RayHit>
-    pick(compages::core::Vector2f p_pixel) const;
+    pick(compages::Vector2f p_pixel) const;
 
     //! \brief Lines drawn over the next render(), then forgotten.
     [[nodiscard]] DebugDraw& debug();

@@ -12,6 +12,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
 out vec2 vClip;
 
@@ -23,6 +24,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
 in vec2 vClip;
 
@@ -62,6 +64,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string Mandelbrot::description() const
 {
     return "No vertex buffer. The shader builds a triangle covering the window "
@@ -71,11 +74,13 @@ std::string Mandelbrot::description() const
            "nothing else: drawable.draw(3u) with no vertex given.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Mandelbrot::setUp()
 {
-    return m_screen.load(VERTEX, FRAGMENT);
+    return m_screen.loadSources(VERTEX, FRAGMENT);
 }
 
+// ----------------------------------------------------------------------------
 void Mandelbrot::draw(compages::world::ViewFrame const& p_frame)
 {
     // The complex number under the mouse is computed at the scale of the last
@@ -83,12 +88,12 @@ void Mandelbrot::draw(compages::world::ViewFrame const& p_frame)
     // mouse at the new scale. Moving the cursor without zooming does nothing;
     // time is what closes in, and the cursor is what chooses where.
     const float scale = 1.5f * std::exp(-0.18f * p_frame.total);
-    const compages::core::Vector2f mouse =
+    const compages::Vector2f mouse =
         p_frame.input.mouse_over ? compages::world::mouseInClipSpace(p_frame)
-                                 : compages::core::Vector2f(0.0f, 0.0f);
-    const compages::core::Vector2f under(
-        m_center.x + (mouse.x * aspect(p_frame) * m_scale),
-        m_center.y + (mouse.y * m_scale));
+                                 : compages::Vector2f(0.0f, 0.0f);
+    const compages::Vector2f under(m_center.x +
+                                       (mouse.x * aspect(p_frame) * m_scale),
+                                   m_center.y + (mouse.y * m_scale));
     m_center.x = under.x - (mouse.x * aspect(p_frame) * scale);
     m_center.y = under.y - (mouse.y * scale);
     m_scale = scale;

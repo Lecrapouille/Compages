@@ -13,12 +13,12 @@ namespace examples
 
 struct Position
 {
-    compages::core::Vector3f value{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f value{ 0.0f, 0.0f, 0.0f };
 };
 
 struct Velocity
 {
-    compages::core::Vector3f value{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f value{ 0.0f, 0.0f, 0.0f };
 };
 
 //! \brief How many frames a routine has seen.
@@ -32,6 +32,7 @@ struct Ticks: compages::world::Routine
     std::size_t count = 0u;
 };
 
+// ----------------------------------------------------------------------------
 std::string HeadlessWorld::description() const
 {
     return "A World without a Scene: entities made in one chain, a system "
@@ -39,6 +40,7 @@ std::string HeadlessWorld::description() const
            "frames. Nothing is drawn; the frame fails if a system did not run.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status HeadlessWorld::setUp()
 {
     // One chain per entity: a name, then the components it carries. The rock
@@ -57,13 +59,16 @@ compages::Status HeadlessWorld::setUp()
                : compages::failure("the worker was not found under the root");
 }
 
+// ----------------------------------------------------------------------------
 void HeadlessWorld::draw(compages::world::ViewFrame const& p_frame)
 {
     compages::gpu::clear({ 0.05f, 0.05f, 0.07f });
 
     // A system is a loop: every entity having both components, and only them.
     m_world.each<Position, Velocity>(
-        [&](compages::world::Entity, Position& p_position, Velocity& p_velocity)
+        [&p_frame](compages::world::Entity,
+                   Position& p_position,
+                   Velocity const& p_velocity)
         { p_position.value += p_velocity.value * p_frame.elapsed; });
     m_world.update(p_frame); // the routines, then the transforms
 

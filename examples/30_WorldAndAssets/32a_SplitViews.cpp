@@ -12,6 +12,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string SplitViews::description() const
 {
     return "One World drawn twice per frame: an orbiting perspective camera "
@@ -19,6 +20,7 @@ std::string SplitViews::description() const
            "moves once; each camera draws into its own half.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SplitViews::setUp()
 {
     m_scene.background(0.05f, 0.08f, 0.20f);
@@ -45,7 +47,7 @@ compages::Status SplitViews::setUp()
     m_eye = m_scene.camera("Eye").position(30.0f, 55.0f, 85.0f);
     m_eye.get<compages::world::Camera>().viewport = { 0.0f, 0.0f, 0.5f, 1.0f };
     m_eye.add<compages::world::Orbit>(
-        compages::core::Vector3f(0.0f, 8.0f, 0.0f));
+        compages::Vector3f(0.0f, 8.0f, 0.0f));
 
     // The right half: an orthographic camera straight above, 80 units across
     // half its height, so that the whole ring fits.
@@ -62,6 +64,7 @@ compages::Status SplitViews::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void SplitViews::draw(compages::world::ViewFrame const& p_frame)
 {
     // The pillar turns, the World moves once, then each camera draws its half.

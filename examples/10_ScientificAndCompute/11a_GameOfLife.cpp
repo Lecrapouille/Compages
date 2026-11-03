@@ -16,7 +16,9 @@ namespace examples
 
 constexpr std::uint32_t SIZE = 256u;
 
+// ----------------------------------------------------------------------------
 //! \brief A triangle covering the target, made from gl_VertexID: no vertices.
+// ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
 out vec2 vUV;
 
@@ -29,6 +31,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* STEP_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D previous;
@@ -39,7 +42,7 @@ void main()
 {
     // The eight cells around this one. The centre is the cell itself, counted
     // apart so a live cell is not its own neighbour.
-    int neighbours = 0;
+    int neighbors = 0;
     for (int y = -1; y <= 1; ++y)
     {
         for (int x = -1; x <= 1; ++x)
@@ -48,18 +51,19 @@ void main()
             {
                 continue;
             }
-            neighbours += int(texture(previous, vUV + (vec2(x, y) * texel)).r > 0.5);
+            neighbors += int(texture(previous, vUV + (vec2(x, y) * texel)).r > 0.5);
         }
     }
 
-    // Stay alive with two or three neighbours, be born with three.
+    // Stay alive with two or three neighbors, be born with three.
     bool alive = texture(previous, vUV).r > 0.5;
-    bool next = alive ? ((neighbours == 2) || (neighbours == 3))
-                      : (neighbours == 3);
+    bool next = alive ? ((neighbors == 2) || (neighbors == 3))
+                      : (neighbors == 3);
     oColor = vec4(next ? 1.0 : 0.0);
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* SHOW_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D image;
@@ -72,6 +76,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string GameOfLife::description() const
 {
     return "Each cell is a pixel. A shader covering the texture reads this "
@@ -80,6 +85,7 @@ std::string GameOfLife::description() const
            "there are two of everything. The world wraps around its edges.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status GameOfLife::setUp()
 {
     // Two textures of one byte per cell, each wired to a framebuffer so that
@@ -109,13 +115,14 @@ compages::Status GameOfLife::setUp()
     COMPAGES_TRY(
         m_field[0].write(std::as_bytes(std::span<const std::uint8_t>(cells))));
 
-    COMPAGES_TRY(m_step.load(SCREEN_VERTEX, STEP_FRAGMENT));
+    COMPAGES_TRY(m_step.loadSources(SCREEN_VERTEX, STEP_FRAGMENT));
     m_step["texel"] =
-        compages::core::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
-    COMPAGES_TRY(m_show.load(SCREEN_VERTEX, SHOW_FRAGMENT));
+        compages::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
+    COMPAGES_TRY(m_show.loadSources(SCREEN_VERTEX, SHOW_FRAGMENT));
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void GameOfLife::draw(compages::world::ViewFrame const&)
 {
     // Read the current generation, write the next one into the other texture.

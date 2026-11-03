@@ -45,7 +45,7 @@ private:
 
     //! \brief Where the view is looking in the complex plane. Updated so that
     //! the point under the mouse stays there as the scale shrinks.
-    compages::core::Vector2f m_center{ -0.5f, 0.0f };
+    compages::Vector2f m_center{ -0.5f, 0.0f };
     float m_scale = 1.5f;
 };
 

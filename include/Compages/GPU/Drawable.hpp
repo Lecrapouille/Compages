@@ -7,19 +7,44 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief Drawable: a shape, its look and how to draw it, in one object. What
+//! most code draws with.
+//!
+//! The shader is where everything starts. It says which values each corner of
+//! a shape has (position, colour...), which settings it reads and which
+//! pictures it shows, so the rest is filled by those names. What changed on the
+//! CPU is sent to the graphics card when drawing, without being asked. The idea
+//! comes from Glumpy.
+//!
+//! \code
+//! compages::gpu::Drawable triangle;
+//! COMPAGES_TRY(triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
+//! triangle["position"] = { {-0.8f, -0.6f}, {0.8f, -0.6f}, {0.0f, 0.8f} };
+//! triangle["color"]    = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
+//! triangle.draw();
+//! \endcode
+//!
+//! Underneath it uses a Program, a Pipeline and Buffers; reach for those only
+//! for what Drawable does not cover.
+// ****************************************************************************
+
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/GPU/Buffer.hpp"
 #include "Compages/GPU/DirtyRange.hpp"
-#include "Compages/GPU/VertexLayout.hpp"
-#include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/GPU/Pipeline.hpp"
+#include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Texture.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <initializer_list>
 #include <ranges>
 #include <span>
@@ -28,21 +53,9 @@
 #include <type_traits>
 #include <vector>
 
-// ****************************************************************************
-//! \file
-//! \brief A shader with its data: the one object most code draws with.
-//!
-//! The idea comes from Glumpy: the shader is where everything starts. It says
-//! which attributes a vertex has, which uniforms it reads and which textures
-//! it samples, so the rest is filled by name, and what changed on the CPU is
-//! sent to the GPU when drawing, without being asked.
-// ****************************************************************************
-
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -70,8 +83,13 @@ concept AttributeValues =
 } // namespace detail
 
 // ****************************************************************************
-//! \brief A shader program, the vertices it draws, the uniforms and textures
-//! it reads, and how to draw them.
+//! \brief Something to draw, all in one object: its shape, its look and how
+//! to draw it.
+//!
+//! A Drawable is the shortest path from an idea to a picture. Give it a shader
+//! (the look), fill in its corners (the shape) by the names the shader uses,
+//! and call draw(). It sends to the card only what changed, and builds the
+//! Pipeline it needs by itself.
 //!
 //! **Filling the vertices by name.** The shader says what a vertex is, so the
 //! values are given attribute by attribute. They are stored interleaved,
@@ -79,7 +97,7 @@ concept AttributeValues =
 //! \code
 //! compages::gpu::Drawable m_triangle;
 //!
-//! COMPAGES_TRY(m_triangle.load(VERTEX_SHADER, FRAGMENT_SHADER));
+//! COMPAGES_TRY(m_triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 //! m_triangle["position"] = { {-0.8f, -0.6f}, {0.8f, -0.6f}, {0.0f, 0.8f} };
 //! m_triangle["color"]    = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
 //! ...
@@ -88,23 +106,42 @@ concept AttributeValues =
 //!
 //! **Filling the vertices from a struct.** When the vertices are computed, a
 //! struct is the natural shape. Its fields are matched to the shader
-//! attributes by name, read off the struct by the compiler:
+//! attributes by name, read off the struct by the compiler. The drawable
+//! keeps them on the CPU and sends only what changed:
 //! \code
-//! struct Vertex { compages::core::Vector2f position; compages::core::Vector3f
-//! color; };
+//! struct Vertex
+//! {
+//!     compages::Vector2f position;
+//!     compages::Vector3f color;
+//! };
 //!
-//! m_triangle.vertices<Vertex>({ { {-0.8f, -0.6f}, {1, 0, 0} },
-//!                               { { 0.8f, -0.6f}, {0, 1, 0} },
-//!                               { { 0.0f,  0.8f}, {0, 0, 1} } });
-//! m_triangle.vertex<Vertex>(2u).position.y = 0.5f;   // sent at next draw
+//! m_triangle.setVertices<Vertex>({ { {-0.8f, -0.6f}, {1, 0, 0} },
+//!                                  { { 0.8f, -0.6f}, {0, 1, 0} },
+//!                                  { { 0.0f,  0.8f}, {0, 0, 1} } });
+//! m_triangle.editVertex<Vertex>(2u).position.y = 0.5f; // sent at next draw
 //! \endcode
+//!
+//! **Reading vertices that live on the card.** When a compute pass makes the
+//! vertices, they are already where the card reads them. The drawable reads
+//! that Buffer where it is, without a copy:
+//! \code
+//! m_points.borrowVertices(m_particles);
+//! \endcode
+//!
+//! One rule: the drawable owns its vertices; borrow a Buffer when the
+//! vertices are made on the card, shared by several drawables, or large and
+//! never changed (a Static Buffer keeps no CPU copy).
+//! - from a struct: setVertices(data), editVertex(), emplace_back();
+//! - one attribute at a time: drawable["name"] = { ... };
+//! - borrowed: borrowVertices(buffer), the Buffer you own.
+//! The same table, with demos, is in doc/04-GPU-Layer.md §3.
 //!
 //! **Uniforms and textures, by name too.** A uniform is written immediately
 //! and keeps its value until written again. A texture is given a texture unit
 //! of its own and bound when drawing:
 //! \code
 //! m_quad["scale"] = 2.0f;
-//! m_quad["tint"]  = compages::core::Vector3f(1.0f, 0.8f, 0.6f);
+//! m_quad["tint"]  = compages::Vector3f(1.0f, 0.8f, 0.6f);
 //! m_quad["image"] = m_texture;   // the texture must outlive the drawable
 //! \endcode
 //!
@@ -113,16 +150,15 @@ concept AttributeValues =
 //! \code
 //! m_cube.state().depth_test = true;
 //! m_cube.indices({ 0, 1, 2, 2, 3, 0 });
-//! m_cube.draw();                         // or
-//! draw(compages::gpu::Primitive::Lines)
+//! m_cube.draw();
 //! \endcode
 //!
-//! Nothing here returns an error except load(): a misspelled name, values of
+//! Nothing here returns an error except loading: a misspelled name, values of
 //! the wrong type or a draw with nothing to draw are recorded as the frame
 //! error (see Errors.hpp), which the window shows. Call prepare() at the end
 //! of a set up to find them there rather than at the first frame.
 // ****************************************************************************
-class Drawable
+class Drawable: private compages::NotCopiable
 {
 public:
 
@@ -149,6 +185,10 @@ public:
         //! Whole numbers are welcome for a float attribute: the list is
         //! converted to what the shader declares. (No overload for lists of
         //! int: clang finds it as good as this one, so ambiguous.)
+        //!
+        //! \param[in] p_values one inner list per vertex, or a single inner
+        //! list for a uniform.
+        //! \return this slot, so assignments can be chained.
         // --------------------------------------------------------------------
         Slot&
         operator=(std::initializer_list<std::initializer_list<float>> p_values)
@@ -165,6 +205,10 @@ public:
         //! drawable["weight"] = { 0.0f, 0.5f, 1.0f };   // float attribute
         //! drawable["tint"]   = { 1.0f, 0.5f, 0.0f };   // vec3 uniform
         //! \endcode
+        //!
+        //! \param[in] p_values one number per vertex, or the components of
+        //! the uniform.
+        //! \return this slot.
         // --------------------------------------------------------------------
         Slot& operator=(std::initializer_list<float> p_values)
         {
@@ -177,9 +221,13 @@ public:
         //! the shader declares.
         //!
         //! \code
-        //! std::vector<compages::core::Vector3f> positions =
+        //! std::vector<compages::Vector3f> positions =
         //! computePositions(); drawable["position"] = positions;
         //! \endcode
+        //!
+        //! \param[in] p_values a std::vector, std::array or span, copied; its
+        //! element type must match the attribute (Vector3f for a vec3).
+        //! \return this slot.
         // --------------------------------------------------------------------
         template <detail::AttributeValues R>
         Slot& operator=(R const& p_values)
@@ -199,8 +247,13 @@ public:
         //! \code
         //! drawable["time"]  = p_frame.total;
         //! drawable["model"] =
-        //! compages::core::Matrix44f(compages::core::matrix::Identity);
+        //! compages::Matrix44f(compages::matrix::Identity);
         //! \endcode
+        //!
+        //! Written into the program at once, not at the next draw.
+        //!
+        //! \param[in] p_value any type Program::set() takes.
+        //! \return this slot.
         // --------------------------------------------------------------------
         template <detail::UniformValue T>
         Slot& operator=(T const& p_value)
@@ -214,6 +267,8 @@ public:
 
         //! \brief A double is taken as the float the shader holds, so that
         //! `drawable["scale"] = 2.0;` works as written.
+        //! \param[in] p_value the value, narrowed to float.
+        //! \return this slot.
         Slot& operator=(double p_value)
         {
             return operator=(static_cast<float>(p_value));
@@ -224,6 +279,10 @@ public:
         //!
         //! The drawable keeps a pointer to it, not a copy: the texture has to
         //! outlive the drawable, or be assigned again before the next draw.
+        //! Each sampler gets its own texture unit, bound at every draw.
+        //!
+        //! \param[in] p_texture the texture the sampler reads.
+        //! \return this slot.
         // --------------------------------------------------------------------
         Slot& operator=(Texture const& p_texture)
         {
@@ -235,8 +294,13 @@ public:
         //! \brief Change the value of one vertex of an attribute.
         //!
         //! \code
-        //! drawable["position"].set(2u, compages::core::Vector2f(0.0f, 0.5f));
+        //! drawable["position"].set(2u, compages::Vector2f(0.0f, 0.5f));
         //! \endcode
+        //!
+        //! Only that vertex is sent at the next draw.
+        //!
+        //! \param[in] p_vertex which vertex, which must already exist.
+        //! \param[in] p_value the value, of the type the attribute declares.
         // --------------------------------------------------------------------
         template <typename T>
         void set(std::size_t p_vertex, T const& p_value)
@@ -262,11 +326,13 @@ public:
         std::string m_name;
     };
 
+    //! \brief Nothing to draw yet: loadSources() or loadFiles() first.
     Drawable() = default;
+    //! \brief Take over everything of another drawable, left empty.
     Drawable(Drawable&&) noexcept = default;
+    //! \brief Release everything of this drawable, then take over another's.
+    //! \return this drawable, now owning what the other owned.
     Drawable& operator=(Drawable&&) noexcept = default;
-    Drawable(Drawable const&) = delete;
-    Drawable& operator=(Drawable const&) = delete;
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link the shader this drawable draws with.
@@ -274,47 +340,32 @@ public:
     //! Forgets any vertices, indices and textures given before, since the new
     //! shader may want other ones. The render state is kept.
     //!
+    //! \param[in] p_vertex the GLSL of the vertex stage, from its \#version
+    //! line.
+    //! \param[in] p_fragment the GLSL of the fragment stage.
     //! \return the compiler or linker log when it failed.
     // ------------------------------------------------------------------------
-    [[nodiscard]] Status load(std::string_view p_vertex,
-                              std::string_view p_fragment);
+    [[nodiscard]] Status loadSources(std::string_view p_vertex,
+                                     std::string_view p_fragment);
 
     // ------------------------------------------------------------------------
-    //! \brief Same as load(), reading the two stages from files.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadFiles(std::string const& p_vertex,
-                                   std::string const& p_fragment);
-
-    // ------------------------------------------------------------------------
-    //! \brief Load, then give the vertices, in one call.
+    //! \brief Same as loadSources(), reading the two stages from files.
     //!
-    //! \code
-    //! COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT, makeCloud()));
-    //! \endcode
+    //! \param[in] p_vertex path of the vertex stage, usually a .vert file.
+    //! \param[in] p_fragment path of the fragment stage, usually a .frag file.
+    //! \return the compiler or linker log, or why a file could not be read.
     // ------------------------------------------------------------------------
-    template <typename Vertex>
-    [[nodiscard]] Status load(std::string_view p_vertex,
-                              std::string_view p_fragment,
-                              std::span<const Vertex> p_vertices)
-    {
-        COMPAGES_TRY(load(p_vertex, p_fragment));
-        vertices<Vertex>(p_vertices);
-        return success();
-    }
-
-    //! \brief Same, taking the vertices from a std::vector.
-    template <typename Vertex>
-    [[nodiscard]] Status load(std::string_view p_vertex,
-                              std::string_view p_fragment,
-                              std::vector<Vertex> const& p_vertices)
-    {
-        return load(p_vertex, p_fragment, std::span<const Vertex>(p_vertices));
-    }
+    [[nodiscard]] Status loadFiles(std::filesystem::path const& p_vertex,
+                                   std::filesystem::path const& p_fragment);
 
     // ------------------------------------------------------------------------
     //! \brief The attribute, uniform or sampler called p_name.
     //!
-    //! See Slot for what can be assigned to it.
+    //! See Slot for what can be assigned to it. A name the shader does not
+    //! declare is reported when something is assigned, not here.
+    //!
+    //! \param[in] p_name the name in GLSL.
+    //! \return the slot, valid only for the statement that uses it.
     // ------------------------------------------------------------------------
     [[nodiscard]] Slot operator[](std::string_view p_name)
     {
@@ -322,44 +373,50 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Replace every vertex with the elements of a struct.
+    //! \brief Copy the vertices into the drawable, replacing any it had.
     //!
-    //! \param[in] p_vertices the vertices, copied.
+    //! The drawable keeps them on the CPU and sends what changes at the next
+    //! draw (see editVertex()). For large data the CPU never touches again,
+    //! keep it in a Static Buffer of your own and borrowVertices() it.
+    //!
+    //! \code
+    //! m_cube.setVertices(corners);   // a std::vector, std::array or span
+    //! m_triangle.setVertices<Vertex>({ { ... }, { ... }, { ... } });
+    //! \endcode
+    //!
+    //! \param[in] p_vertices the vertices, copied: any contiguous container
+    //! of a trivially copyable struct.
     //! \param[in] p_layout how the fields feed the shader. Read off the struct
     //! by default; give one to rename a field or read it per instance:
     //! \code
-    //! m_sprites.vertices<Sprite>(sprites,
-    //!                            compages::gpu::VertexLayout::of<Sprite>().perInstance());
+    //! m_sprites.setVertices(
+    //!     sprites, compages::gpu::VertexLayout::of<Sprite>().perInstance());
     //! \endcode
     // ------------------------------------------------------------------------
-    template <typename Vertex>
-    void vertices(std::span<const Vertex> p_vertices,
-                  VertexLayout p_layout = VertexLayout::of<Vertex>())
+    template <std::ranges::contiguous_range Range,
+              typename Vertex = std::ranges::range_value_t<Range>>
+    void setVertices(Range const& p_vertices,
+                     VertexLayout p_layout = VertexLayout::of<Vertex>())
     {
         static_assert(std::is_trivially_copyable_v<Vertex>,
                       "a vertex is sent to the GPU as the bytes it already is, "
                       "so it must be trivially copyable");
+        const std::span<const Vertex> vertices(std::ranges::data(p_vertices),
+                                               std::ranges::size(p_vertices));
         adopt(std::move(p_layout), &detail::TYPE_TAG<Vertex>, sizeof(Vertex));
-        replaceBytes(std::as_bytes(p_vertices), p_vertices.size());
+        replaceBytes(std::as_bytes(vertices), vertices.size());
     }
 
-    //! \brief Same, from braces: `vertices<Vertex>({ {...}, {...} })`.
+    //! \brief Same, from braces: `setVertices<Vertex>({ {...}, {...} })`.
+    //! \param[in] p_vertices the vertices, copied.
+    //! \param[in] p_layout how the fields feed the shader.
     template <typename Vertex>
-    void vertices(std::initializer_list<Vertex> p_vertices,
-                  VertexLayout p_layout = VertexLayout::of<Vertex>())
+    void setVertices(std::initializer_list<Vertex> p_vertices,
+                     VertexLayout p_layout = VertexLayout::of<Vertex>())
     {
-        vertices<Vertex>(
+        setVertices(
             std::span<const Vertex>(p_vertices.begin(), p_vertices.size()),
             std::move(p_layout));
-    }
-
-    //! \brief Same, from a std::vector.
-    template <typename Vertex>
-    void vertices(std::vector<Vertex> const& p_vertices,
-                  VertexLayout p_layout = VertexLayout::of<Vertex>())
-    {
-        vertices<Vertex>(std::span<const Vertex>(p_vertices),
-                         std::move(p_layout));
     }
 
     // ------------------------------------------------------------------------
@@ -370,18 +427,22 @@ public:
     //! \code
     //! COMPAGES_TRY(m_step.dispatchItems(COUNT));
     //! compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
-    //! m_points.vertices(m_particles);
+    //! m_points.borrowVertices(m_particles);
     //! m_points.draw();
     //! \endcode
     //!
-    //! The buffer has to outlive the drawable, or be given again before the
-    //! next draw. Giving it every frame costs nothing, which is how the
-    //! current half of a PingPong is drawn. The vertices cannot be read back
-    //! through vertices<Vertex>(): they are not on the CPU.
+    //! Borrowed, not owned: the buffer has to outlive the drawable, or be
+    //! given again before the next draw. Giving it every frame costs nothing,
+    //! which is how the current half of a PingPong is drawn. The vertices
+    //! cannot be edited through editVertices(): they are not on the CPU.
+    //!
+    //! \param[in] p_buffer the buffer to read, not copied.
+    //! \param[in] p_layout how the fields feed the shader.
     // ------------------------------------------------------------------------
-    template <typename Vertex>
-    void vertices(Buffer<Vertex> const& p_buffer,
-                  VertexLayout p_layout = VertexLayout::of<Vertex>())
+    template <typename Vertex, BufferKind Kind>
+        requires VertexSource<Kind>
+    void borrowVertices(Buffer<Vertex, Kind> const& p_buffer,
+                        VertexLayout p_layout = VertexLayout::of<Vertex>())
     {
         adopt(std::move(p_layout), &detail::TYPE_TAG<Vertex>, sizeof(Vertex));
         borrow(p_buffer.handle(), p_buffer.count());
@@ -392,39 +453,81 @@ public:
     //! the next draw.
     //!
     //! \code
-    //! for (Vertex& v : m_wave.vertices<Vertex>())
+    //! for (Vertex& v : m_wave.editVertices<Vertex>())
     //! {
     //!     v.position.y = std::sin(v.position.x + time);
     //! }
     //! \endcode
     //!
-    //! \tparam Vertex the struct given to vertices(). Asking for another one is
-    //! a programming error and asserts.
+    //! \tparam Vertex the struct given to setVertices(). Asking for another
+    //! one is a programming error and asserts. So is editing borrowed
+    //! vertices: they are not on the CPU.
+    //! \return every vertex, to change in place.
     // ------------------------------------------------------------------------
     template <typename Vertex>
-    [[nodiscard]] std::span<Vertex> vertices()
+    [[nodiscard]] std::span<Vertex> editVertices()
     {
         assertHolds<Vertex>();
-        assert(!m_borrowing && "these vertices live on the GPU only");
+        assertEditable();
         m_dirty.addAll(m_bytes.size());
         // The storage is a std::vector<std::byte>, whose memory comes from
         // operator new and is therefore aligned for any vertex field. The cast
         // goes through void* to say so to -Wcast-align.
-        return { static_cast<Vertex*>(static_cast<void*>(m_bytes.data())), m_count };
+        return { static_cast<Vertex*>(static_cast<void*>(m_bytes.data())),
+                 m_count };
+    }
+
+    // ------------------------------------------------------------------------
+    //! \brief A run of neighbouring vertices, to be changed in place. Only
+    //! that run is sent at the next draw.
+    //!
+    //! \code
+    //! for (Vertex& v : m_wave.editVertices<Vertex>(10u, 5u))   // 10 to 14
+    //! {
+    //!     v.position.y += 0.1f;
+    //! }
+    //! \endcode
+    //!
+    //! \tparam Vertex the struct given to setVertices().
+    //! \param[in] p_first the first vertex of the run.
+    //! \param[in] p_count how many; past the last vertex a debug build stops.
+    //! \return the run, to change in place.
+    // ------------------------------------------------------------------------
+    template <typename Vertex>
+    [[nodiscard]] std::span<Vertex> editVertices(std::size_t p_first,
+                                                 std::size_t p_count)
+    {
+        assertHolds<Vertex>();
+        assertEditable();
+        assert((p_first + p_count <= m_count) &&
+               "editVertices() past the last vertex");
+        m_dirty.add(p_first * sizeof(Vertex), p_count * sizeof(Vertex));
+        return { static_cast<Vertex*>(static_cast<void*>(m_bytes.data())) +
+                     p_first,
+                 p_count };
     }
 
     // ------------------------------------------------------------------------
     //! \brief One vertex, to be changed in place. Only it is sent at the next
     //! draw.
+    //!
+    //! \code
+    //! m_triangle.editVertex<Vertex>(2u).position = mouse;
+    //! \endcode
+    //!
+    //! \tparam Vertex the struct given to setVertices().
+    //! \param[in] p_index which vertex; past the last one a debug build stops.
+    //! \return the vertex, to change in place.
     // ------------------------------------------------------------------------
     template <typename Vertex>
-    [[nodiscard]] Vertex& vertex(std::size_t p_index)
+    [[nodiscard]] Vertex& editVertex(std::size_t p_index)
     {
         assertHolds<Vertex>();
-        assert(!m_borrowing && "these vertices live on the GPU only");
-        assert((p_index < m_count) && "vertex() past the last vertex");
+        assertEditable();
+        assert((p_index < m_count) && "editVertex() past the last vertex");
         m_dirty.add(p_index * sizeof(Vertex), sizeof(Vertex));
-        return static_cast<Vertex*>(static_cast<void*>(m_bytes.data()))[p_index];
+        return static_cast<Vertex*>(
+            static_cast<void*>(m_bytes.data()))[p_index];
     }
 
     // ------------------------------------------------------------------------
@@ -432,8 +535,12 @@ public:
     //!
     //! \code
     //! m_trail.emplace_back(Vertex{ point, color });
-    //! m_trail.emplace_back<Vertex>(point, color);   // same, built in place
     //! \endcode
+    //!
+    //! The first vertex added to an empty drawable fixes the struct and its
+    //! layout. Sent at the next draw, with the vertices added since.
+    //!
+    //! \param[in] p_vertex the vertex, copied.
     // ------------------------------------------------------------------------
     template <typename Vertex>
     void emplace_back(Vertex const& p_vertex)
@@ -448,24 +555,19 @@ public:
         appendBytes(std::as_bytes(std::span<const Vertex>(&p_vertex, 1u)));
     }
 
-    //! \brief Same, the vertex being built from \c p_args.
-    template <typename Vertex, typename... Args>
-        requires(sizeof...(Args) != 1u)
-    void emplace_back(Args&&... p_args)
-    {
-        emplace_back(Vertex{ std::forward<Args>(p_args)... });
-    }
-
     // ------------------------------------------------------------------------
-    //! \brief How many vertices there are.
+    //! \brief How many vertices there are, on the CPU or in the borrowed
+    //! buffer.
+    //! \return the number of vertices.
     // ------------------------------------------------------------------------
-    [[nodiscard]] std::size_t count() const
+    [[nodiscard]] std::size_t vertexCount() const
     {
         return m_count;
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Remove every vertex, keeping the layout.
+    //! \brief Remove every vertex, keeping the layout, so that the same
+    //! drawable can be refilled each frame.
     // ------------------------------------------------------------------------
     void clear();
 
@@ -475,31 +577,46 @@ public:
     //! \code
     //! m_quad.indices({ 0, 1, 2, 2, 3, 0 });
     //! \endcode
+    //!
+    //! A square needs four corners and six indices rather than six corners:
+    //! shared corners are stored once.
+    //!
+    //! \param[in] p_indices which vertices, in which order. Sent at the next
+    //! draw.
     // ------------------------------------------------------------------------
     void indices(std::initializer_list<std::uint32_t> p_indices)
     {
-        indices(std::span<const std::uint32_t>(p_indices.begin(),
-                                               p_indices.size()));
+        replaceIndices(std::span<const std::uint32_t>(p_indices.begin(),
+                                                      p_indices.size()));
     }
 
-    //! \brief Same, from 32 bit indices.
-    void indices(std::span<const std::uint32_t> p_indices);
-
-    //! \brief Same, from 16 bit indices, as mesh generators often produce.
-    void indices(std::span<const std::uint16_t> p_indices);
-
-    //! \brief Same, from a std::vector.
-    template <typename Index>
-    void indices(std::vector<Index> const& p_indices)
+    //! \brief Same, from any contiguous container of std::uint16_t (as mesh
+    //! generators often produce, widened on the way) or std::uint32_t.
+    //! \param[in] p_indices which vertices, in which order, copied.
+    template <std::ranges::contiguous_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>,
+                              std::uint16_t> ||
+                 std::same_as<std::ranges::range_value_t<Range>, std::uint32_t>
+    void indices(Range const& p_indices)
     {
-        indices(std::span<const Index>(p_indices));
+        using Index = std::ranges::range_value_t<Range>;
+        replaceIndices(std::span<const Index>(std::ranges::data(p_indices),
+                                              std::ranges::size(p_indices)));
     }
 
     // ------------------------------------------------------------------------
     //! \brief How to draw: primitive, depth test, blending, culling...
     //!
+    //! \code
+    //! m_cube.state().depth_test = true;
+    //! m_cube.state().cull = compages::gpu::CullMode::Back;
+    //! m_glass.state().blend = compages::gpu::Blend::alpha();
+    //! m_cloud.state().primitive = compages::gpu::Primitive::Points;
+    //! \endcode
+    //!
     //! Change it freely; the pipeline is rebuilt at the next draw when it
     //! differs from the one in use.
+    //! \return the render state, to change.
     // ------------------------------------------------------------------------
     [[nodiscard]] RenderState& state()
     {
@@ -507,64 +624,10 @@ public:
     }
 
     //! \brief How to draw, read only.
+    //! \return the render state, read only.
     [[nodiscard]] RenderState const& state() const
     {
         return m_state;
-    }
-
-    //! \brief Test and write depth, so that nearer faces hide farther ones.
-    Drawable& depthTest(bool p_enabled = true)
-    {
-        m_state.depth_test = p_enabled;
-        return *this;
-    }
-
-    //! \brief How colours written are mixed with those already there.
-    Drawable& blend(Blend const& p_blend)
-    {
-        m_state.blend = p_blend;
-        return *this;
-    }
-
-    //! \brief Which faces not to draw.
-    Drawable& cull(CullMode p_mode)
-    {
-        m_state.cull = p_mode;
-        return *this;
-    }
-
-    //! \brief What the vertices make: triangles, lines, points...
-    Drawable& primitive(Primitive p_primitive)
-    {
-        m_state.primitive = p_primitive;
-        return *this;
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief How often the vertices change once drawn.
-    //!
-    //! Dynamic by default: vertices can be changed and added at any time.
-    //! Immutable tells the driver they never will, which lets it keep them in
-    //! the fastest memory; changing one after the first draw is then an error.
-    //! \code
-    //! m_triangle.vertices<Vertex>({ ... });
-    //! m_triangle.usage(compages::gpu::BufferUsage::Immutable);
-    //! \endcode
-    // ------------------------------------------------------------------------
-    Drawable& usage(BufferUsage p_usage)
-    {
-        if (p_usage != m_usage)
-        {
-            m_usage = p_usage;
-            m_device.release();
-        }
-        return *this;
-    }
-
-    //! \brief How often the vertices change, as usage() said.
-    [[nodiscard]] BufferUsage usage() const
-    {
-        return m_usage;
     }
 
     // ------------------------------------------------------------------------
@@ -574,23 +637,16 @@ public:
     void draw();
 
     // ------------------------------------------------------------------------
-    //! \brief Draw everything as this primitive, which becomes the one kept in
-    //! state().
-    // ------------------------------------------------------------------------
-    void draw(Primitive p_primitive);
-
-    // ------------------------------------------------------------------------
-    //! \brief Draw the first p_count vertices (or indices).
+    //! \brief Draw p_count vertices (or indices) starting at p_first: one part
+    //! of a buffer holding several shapes.
     //!
     //! Also how a shader making its own vertices from gl_VertexID is drawn:
     //! `m_screen.draw(3u)` for a triangle covering the screen.
+    //!
+    //! \param[in] p_count how many vertices, or indices when there are some.
+    //! \param[in] p_first the first vertex, or index.
     // ------------------------------------------------------------------------
-    void draw(std::size_t p_count);
-
-    // ------------------------------------------------------------------------
-    //! \brief Draw p_count vertices (or indices) starting at p_first.
-    // ------------------------------------------------------------------------
-    void drawRange(std::size_t p_first, std::size_t p_count);
+    void draw(std::size_t p_count, std::size_t p_first = 0u);
 
     // ------------------------------------------------------------------------
     //! \brief Draw the vertices several times, once per instance.
@@ -600,7 +656,7 @@ public:
     //! of them. With a layout read per instance, each record is one instance
     //! and this is the number of corners the shader makes from gl_VertexID:
     //! \code
-    //! m_sprites.drawInstanced(m_sprites.count(), 4u);
+    //! m_sprites.drawInstanced(m_sprites.vertexCount(), 4u);
     //! \endcode
     // ------------------------------------------------------------------------
     void drawInstanced(std::size_t p_instances, std::size_t p_vertices = 0u);
@@ -612,10 +668,13 @@ public:
     //! never learns the count:
     //! \code
     //! compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib |
-    //! compages::gpu::Barrier::Command); m_kept_points.drawIndirect(m_command);
+    //!                        compages::gpu::Barrier::Command);
+    //! m_kept_points.drawIndirect(m_command);
     //! \endcode
+    //!
+    //! \param[in] p_commands a buffer holding one DrawIndirectCommand.
     // ------------------------------------------------------------------------
-    void drawIndirect(Buffer<DrawIndirectCommand> const& p_commands);
+    void drawIndirect(StorageBuffer<DrawIndirectCommand> const& p_commands);
 
     // ------------------------------------------------------------------------
     //! \brief Send everything waiting and build the pipeline now.
@@ -625,33 +684,32 @@ public:
     //! \code
     //! COMPAGES_TRY(m_triangle.prepare());
     //! \endcode
+    //! \return the first mistake found: a misspelled name, values of the wrong
+    //! type, a shader and vertices that disagree.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status prepare();
 
     // ------------------------------------------------------------------------
-    //! \brief The program, for what this class does not cover.
+    //! \brief The program, for what this class does not cover, such as a
+    //! uniform array or binding a uniform block.
+    //! \return the program, to change.
     // ------------------------------------------------------------------------
     [[nodiscard]] Program& program()
     {
         return m_program;
     }
 
-    //! \brief The program, read only.
+    //! \brief The program, read only: to ask what the shader declares.
+    //! \return the program, read only.
     [[nodiscard]] Program const& program() const
     {
         return m_program;
     }
 
-    //! \brief The vertex layout in use: read off the shader in named mode, off
-    //! the struct otherwise. Empty until vertices are given.
-    [[nodiscard]] VertexLayout const& layout() const
-    {
-        return m_layout;
-    }
-
     // ------------------------------------------------------------------------
     //! \brief Which field feeds which attribute, and how, once prepared. What
     //! to print when a shader and its vertices disagree.
+    //! \return a readable dump, several lines.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string describe() const;
 
@@ -672,6 +730,7 @@ private:
         std::size_t count = 0u;
     };
 
+    //! \brief Debug check: Vertex is the struct the vertices were given as.
     template <typename Vertex>
     void assertHolds() const
     {
@@ -679,13 +738,32 @@ private:
                "this drawable was given vertices of another struct");
     }
 
+    //! \brief Debug check: the vertices are on the CPU, so editing them
+    //! means something.
+    void assertEditable() const
+    {
+        assert(!m_borrowing && "these vertices are borrowed: they live on "
+                               "the GPU only");
+    }
+
+    //! \brief Take a freshly loaded shader and forget everything that came
+    //! with the previous one (vertices, indices, textures).
     void adoptProgram(Program p_program);
 
     // Filling from a struct.
+    //! \brief Remember the struct and its layout; rebuild the pipeline only
+    //! when they differ from the previous ones.
     void adopt(VertexLayout p_layout, const void* p_type, std::size_t p_stride);
+    //! \brief Copy all the vertices, as bytes, and mark them all to send.
     void replaceBytes(std::span<const std::byte> p_bytes, std::size_t p_count);
+    //! \brief Add one vertex, as bytes, and mark it to send.
     void appendBytes(std::span<const std::byte> p_bytes);
+    //! \brief Read the vertices from a buffer someone else owns.
     void borrow(BufferHandle p_buffer, std::size_t p_count);
+    //! \brief Copy the indices, widened to 32 bits, and mark them to send.
+    void replaceIndices(std::span<const std::uint32_t> p_indices);
+    //! \brief Same, from 16 bit indices.
+    void replaceIndices(std::span<const std::uint16_t> p_indices);
     //! \brief The buffer the vertices are read from: ours, or the one borrowed.
     [[nodiscard]] BufferHandle vertexBuffer() const;
 
@@ -704,6 +782,7 @@ private:
                    std::size_t p_vertex,
                    std::span<const std::byte> p_value);
     void assignTexture(std::string const& p_name, Texture const& p_texture);
+    //! \brief Is p_name a uniform of the shader? Records why not.
     [[nodiscard]] bool expectUniform(std::string const& p_name);
 
     //! \brief The field an attribute is written to, creating the named layout
@@ -714,39 +793,67 @@ private:
     void writeValue(FieldDesc const& p_field,
                     std::size_t p_vertex,
                     std::span<const double> p_components);
+    //! \brief Named mode: remember that p_name received p_count values.
     void markFilled(std::string const& p_name, std::size_t p_count);
 
     // Drawing.
+    //! \brief Everything a draw needs: attributes complete, pipeline built,
+    //! vertices and indices sent.
     [[nodiscard]] Status ready();
+    //! \brief Send what changed in m_bytes, creating or growing m_device.
     [[nodiscard]] Status sendVertices();
+    //! \brief Send m_indices when they changed.
     [[nodiscard]] Status sendIndices();
+    //! \brief Bind each texture to the unit its sampler was given.
     void bindTextures() const;
 
+    // The shader and how to draw with it.
+    //! \brief The shader, loaded by loadSources() or loadFiles().
     Program m_program;
+    //! \brief How m_program reads the vertices, with m_state. Built at the
+    //! first draw, rebuilt when m_rebuild is set or m_state changes.
     Pipeline m_pipeline;
+    //! \brief Depth test, blending, culling, primitive: see state().
     RenderState m_state;
-    //! \brief The layout the pipeline was last built with changed.
+    //! \brief The layout changed since m_pipeline was built.
     bool m_rebuild = true;
 
-    //! \brief The vertices, interleaved, as the layout describes them.
+    // The vertices, on the CPU.
+    //! \brief Where each attribute sits inside one vertex.
     VertexLayout m_layout;
+    //! \brief The vertices, interleaved, as m_layout describes them. Empty
+    //! when borrowed.
     std::vector<std::byte> m_bytes;
+    //! \brief How many vertices there are, even when m_bytes is empty.
     std::size_t m_count = 0u;
+    //! \brief In bytes: the part of m_bytes the card has not received yet.
     DirtyRange m_dirty;
-    //! \brief The struct given to vertices(), or nullptr in named mode.
+    //! \brief The struct given to setVertices(), or nullptr in named mode.
     const void* m_type = nullptr;
-    //! \brief Named mode: how many values each attribute received.
+    //! \brief Named mode: how many values each attribute received, to check
+    //! at the draw that they all have one per vertex.
     std::vector<Filled> m_filled;
-    BufferUsage m_usage = BufferUsage::Dynamic;
-    Buffer<std::byte> m_device;
-    //! \brief Vertices given as a GPU buffer someone else owns.
+
+    // The vertices, on the card.
+    //! \brief Our copy of m_bytes on the card. Unused when borrowing.
+    VertexBuffer<std::byte> m_device;
+    //! \brief The buffer read instead of m_device, when m_borrowing.
     BufferHandle m_borrowed{};
+    //! \brief The vertices come from borrowVertices(): m_bytes is empty and
+    //! m_device unused.
     bool m_borrowing = false;
 
+    // The indices.
+    //! \brief The order in which to join the vertices; empty to draw them in
+    //! order.
     std::vector<std::uint32_t> m_indices;
+    //! \brief m_indices changed since m_index_device received them.
     bool m_indices_changed = false;
-    Buffer<std::uint32_t> m_index_device;
+    //! \brief m_indices on the card.
+    IndexBuffer<std::uint32_t> m_index_device;
 
+    // The textures.
+    //! \brief One per sampler of the shader: its texture and its unit.
     std::vector<Sampler> m_samplers;
 };
 

@@ -56,13 +56,13 @@ TEST_F(PrefabTest, InstantiatesTheRobotHierarchy)
     ASSERT_TRUE(bool(material));
     ASSERT_TRUE(bool(assets.addMaterialInstance(
         "wood",
-        compages::renderer::MaterialInstance{ material.value(), compages::core::Vector3f(0.6f, 0.4f, 0.2f) })));
+        compages::renderer::MaterialInstance{ material.value(), compages::Vector3f(0.6f, 0.4f, 0.2f) })));
     ASSERT_TRUE(bool(assets.addMaterialInstance(
         "dark",
-        compages::renderer::MaterialInstance{ material.value(), compages::core::Vector3f(0.3f, 0.2f, 0.1f) })));
+        compages::renderer::MaterialInstance{ material.value(), compages::Vector3f(0.3f, 0.2f, 0.1f) })));
     ASSERT_TRUE(bool(assets.addMaterialInstance(
         "light",
-        compages::renderer::MaterialInstance{ material.value(), compages::core::Vector3f(0.9f, 0.9f, 0.8f) })));
+        compages::renderer::MaterialInstance{ material.value(), compages::Vector3f(0.9f, 0.9f, 0.8f) })));
 
     auto prefab_id = assets.addPrefab("robot", compages::renderer::makeRobotPrefab());
     ASSERT_TRUE(bool(prefab_id));

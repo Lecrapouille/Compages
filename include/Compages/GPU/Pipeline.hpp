@@ -7,46 +7,45 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief One complete way of drawing: a shader, the shape of a vertex, and the
+//! drawing settings.
+//!
+//! To draw, the graphics card needs a shader (the program saying where each
+//! corner goes and what colour each pixel is), the layout of the vertices it
+//! reads, and the settings (depth, transparency...). A Pipeline is the three,
+//! checked against each other when it is created.
+//!
+//! The layout is declared in C++, from the vertex struct, and the shader is
+//! only asked to confirm that it can be fed by it. One VertexBuffer<Vertex>
+//! holding position, normal and texture coordinates can thus feed a pass that
+//! reads all three and a shadow pass that reads only the position
+//! (05a_MultiPassMesh).
+//!
+//! The check is a real one: a layout offering "aPosition" to a shader declaring
+//! "position" is an error naming both lists, and so are a vec2 field feeding a
+//! vec3 attribute and whole numbers feeding a float.
+//!
+//! What it holds:
+//! - Pipeline: the checked recipe.
+//! - forgetRenderState(): resync after foreign code touched the context.
+//! - showWireframe(): a debug view of every triangle edge.
+//! - livePipelines(), vertexReadersHeld(): to spot leaks and check sharing.
+// ****************************************************************************
+
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/GPU/Handle.hpp"
-#include "Compages/GPU/VertexLayout.hpp"
 #include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Shader.hpp"
+#include "Compages/GPU/VertexLayout.hpp"
 
 #include <string>
 #include <type_traits>
 
-// ****************************************************************************
-//! \file
-//! \brief One complete way of drawing: a program, a vertex layout, and a state.
-//!
-//! This is where the reversal the whole library is built around actually
-//! happens, so it is worth stating plainly.
-//!
-//! The previous design derived the vertex layout from the shader. A program was
-//! introspected, a buffer was created for each attribute it declared, and a VAO
-//! belonged to one program forever: `GLProgram::bind(vao)` refused a VAO that
-//! had been used with another program. So a mesh could not be drawn twice with
-//! two different shaders, which is what a second material, a shadow pass or a
-//! wireframe overlay all need.
-//!
-//! Here the layout is declared in C++, and the shader is only asked to confirm
-//! that it can be fed by it. The consequence is the point of the exercise: one
-//! Buffer<Vertex> holding position, normal and texture coordinates feeds a
-//! forward pass that reads all three and a shadow pass that reads only the
-//! position, and neither pass knows about the other. That is example
-//! 06_MultiPassMesh.
-//!
-//! And the confirmation is a real one. A layout offering "aPosition" to a
-//! shader declaring "position" used to draw nothing, silently; it is now an
-//! error naming both lists. Same for a vec2 field feeding a vec3 attribute, and
-//! for whole numbers feeding a float attribute.
-// ****************************************************************************
-
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
@@ -54,8 +53,14 @@ namespace compages::gpu
 using PipelineHandle = Handle<struct PipelineTag>;
 
 // ****************************************************************************
-//! \brief A program, a vertex layout and a render state, checked against each
-//! other once and then never again.
+//! \brief One recipe for drawing: which shader, what a vertex looks like,
+//! and with which settings, checked once against each other.
+//!
+//! Like a recipe card, it is written once and then followed every time: the
+//! same pipeline draws a hundred meshes, as long as their vertices have the
+//! shape it was written for. A mistake in the recipe, such as a shader asking
+//! for a colour the vertices do not have, is found when the card is written,
+//! not in the middle of a frame.
 //!
 //! Immutable on purpose. Everything that could be wrong about a way of drawing
 //! is found out when the pipeline is created, which is at load time, where a
@@ -65,16 +70,18 @@ using PipelineHandle = Handle<struct PipelineTag>;
 //! \code
 //! struct Vertex
 //! {
-//!     compages::core::Vector3f position;
-//!     compages::core::Vector3f normal;
-//!     compages::core::Vector2f uv;
+//!     compages::Vector3f position;
+//!     compages::Vector3f normal;
+//!     compages::Vector2f uv;
 //! };
 //!
 //! // The layout is read off the struct: position, normal and uv feed the
 //! // shader attributes of the same names.
-//! COMPAGES_TRY_ASSIGN(m_forward, compages::gpu::Pipeline::create<Vertex>(
-//!     m_program, { .depth_test = true, .cull = compages::gpu::CullMode::Back
-//!     }));
+//! COMPAGES_TRY_ASSIGN(
+//!     m_forward,
+//!     compages::gpu::Pipeline::create<Vertex>(
+//!         m_program,
+//!         { .depth_test = true, .cull = compages::gpu::CullMode::Back }));
 //! \endcode
 //!
 //! Most code never builds one: compages::gpu::Drawable makes the pipeline it
@@ -85,12 +92,13 @@ using PipelineHandle = Handle<struct PipelineTag>;
 //! outlive it. Releasing the program first is caught rather than crashed on, as
 //! a failure the next time the pipeline is used.
 // ****************************************************************************
-class Pipeline
+class Pipeline: private compages::NotCopiable
 {
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief An empty pipeline, drawing nothing.
+    //! \brief An empty pipeline: valid() is false and drawing with it records
+    //! a frame error.
     // ------------------------------------------------------------------------
     Pipeline() = default;
 
@@ -123,6 +131,13 @@ public:
     //! which is why it is worth refusing here.
     //!
     //! \tparam Vertex the struct one element of the vertex buffer holds.
+    //! \param[in] p_program the linked program, which must outlive the
+    //! pipeline.
+    //! \param[in] p_layout what one vertex looks like; its stride must be
+    //! sizeof(Vertex).
+    //! \param[in] p_state how to draw.
+    //! \return the pipeline, or why not: a stride that is not sizeof(Vertex),
+    //! or what create() refuses.
     // ------------------------------------------------------------------------
     template <typename Vertex>
     [[nodiscard]] static Result<Pipeline>
@@ -154,7 +169,14 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Same, with the layout read off the struct by
-    //! VertexLayout::of<Vertex>().
+    //! VertexLayout::of<Vertex>(): each field feeds the shader attribute of
+    //! the same name. The shortest form, and the one to try first.
+    //!
+    //! \param[in] p_program the linked program, which must outlive the
+    //! pipeline.
+    //! \param[in] p_state how to draw.
+    //! \return the pipeline, or what the shader wants that the struct does not
+    //! offer.
     // ------------------------------------------------------------------------
     template <typename Vertex>
     [[nodiscard]] static Result<Pipeline>
@@ -163,10 +185,14 @@ public:
         return create<Vertex>(p_program, VertexLayout::of<Vertex>(), p_state);
     }
 
+    //! \brief Take over the pipeline of p_other, which is left not valid().
+    //! \param[in,out] p_other the pipeline to empty.
     Pipeline(Pipeline&& p_other) noexcept;
+    //! \brief Release this pipeline, then take over p_other's.
+    //! \param[in,out] p_other the pipeline to empty.
+    //! \return this object, now owning the other pipeline.
     Pipeline& operator=(Pipeline&& p_other) noexcept;
-    Pipeline(Pipeline const&) = delete;
-    Pipeline& operator=(Pipeline const&) = delete;
+    //! \brief Release the pipeline; the program stays.
     ~Pipeline();
 
     // ------------------------------------------------------------------------
@@ -177,7 +203,9 @@ public:
     void release();
 
     // ------------------------------------------------------------------------
-    //! \brief Is there a pipeline here?
+    //! \brief False when default constructed, moved from or released. Stays
+    //! true when the program is released; bind() is what notices that.
+    //! \return true when the pipeline exists.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool valid() const;
 
@@ -194,29 +222,37 @@ public:
     [[nodiscard]] Status bind() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Which program this draws with.
+    //! \brief Which program this draws with: a handle, since the pipeline
+    //! names the program without owning it.
+    //! \return the program handle; empty when not valid().
     // ------------------------------------------------------------------------
     [[nodiscard]] ProgramHandle program() const;
 
     // ------------------------------------------------------------------------
-    //! \brief What one vertex looks like, as it was checked.
+    //! \brief What one vertex looks like, as it was checked. Fields the shader
+    //! does not read are still listed here.
+    //! \return the layout checked at creation.
     // ------------------------------------------------------------------------
     [[nodiscard]] VertexLayout const& layout() const;
 
     // ------------------------------------------------------------------------
-    //! \brief How this draws.
+    //! \brief The settings given at creation, unchanged: a pipeline never
+    //! changes after it is made.
+    //! \return the render state given at creation.
     // ------------------------------------------------------------------------
     [[nodiscard]] RenderState const& state() const;
 
     // ------------------------------------------------------------------------
     //! \brief Distance in bytes from one vertex to the next, which is the size
     //! of the struct the vertex buffer holds.
+    //! \return the stride in bytes.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::uint32_t stride() const;
 
     // ------------------------------------------------------------------------
     //! \brief Does anything here change once per instance rather than once per
     //! vertex? True when this pipeline is meant for instanced drawing.
+    //! \return true when a field is read per instance.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool instanced() const;
 
@@ -227,11 +263,14 @@ public:
     //! The result of the check, kept because it is also the answer to "why is
     //! my attribute not arriving": a field absent from this list is one the
     //! shader never declared, and is not being sent anywhere.
+    //! \return a readable list, one line per attribute.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::string describeAttributes() const;
 
     // ------------------------------------------------------------------------
-    //! \brief Name of the pipeline.
+    //! \brief The handle naming this pipeline, for code that keeps it without
+    //! owning it.
+    //! \return the handle; empty when not valid().
     // ------------------------------------------------------------------------
     [[nodiscard]] PipelineHandle handle() const
     {
@@ -246,7 +285,9 @@ private:
 };
 
 // ----------------------------------------------------------------------------
-//! \brief How many pipelines are alive. Used to spot leaks.
+//! \brief How many pipelines are alive, including those Drawable made for
+//! itself. Used to spot leaks.
+//! \return the number of live pipelines.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t livePipelines();
 
@@ -254,10 +295,11 @@ private:
 //! \brief How many distinct ways of reading a vertex the device is holding.
 //!
 //! Pipelines that read a vertex the same way share one, so this is at most the
-//! number of live pipelines and usually far less: the three passes of
-//! 06_MultiPassMesh read the same vertex, so they cost one between them.
+//! number of live pipelines and usually far less: the passes of
+//! 05a_MultiPassMesh read the same vertex, so they cost one between them.
 //! Watching this number stay put while pipelines come and go is what says the
 //! sharing works.
+//! \return the number of vertex readers held.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t vertexReadersHeld();
 
@@ -284,10 +326,15 @@ void forgetRenderState();
 //! \code
 //! compages::gpu::showWireframe(true);   // until turned off again
 //! \endcode
+//!
+//! \param[in] p_enabled true to outline every filled triangle, false to go
+//! back to what each pipeline asks for. Lines and points are not affected.
 // ----------------------------------------------------------------------------
 void showWireframe(bool p_enabled);
 
-//! \brief Is every triangle drawn as its edges?
+//! \brief Is every triangle drawn as its edges? Read each time a pipeline is
+//! bound.
+//! \return true while showWireframe(true) is in effect.
 [[nodiscard]] bool wireframeShown();
 
 } // namespace compages::gpu

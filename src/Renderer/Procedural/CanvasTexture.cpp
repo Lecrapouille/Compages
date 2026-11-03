@@ -42,7 +42,7 @@ Status CanvasTexture::create(std::uint32_t p_width,
     return success();
 }
 
-void CanvasTexture::setMapping(compages::core::AABB p_local_bounds,
+void CanvasTexture::setMapping(compages::AABB p_local_bounds,
                                bool p_flip_u,
                                bool p_flip_v)
 {
@@ -126,7 +126,7 @@ Status CanvasTexture::bind(AssetManager& p_assets, std::string p_name)
     return success();
 }
 
-bool CanvasTexture::localToPixel(compages::core::Vector3f p_local,
+bool CanvasTexture::localToPixel(compages::Vector3f p_local,
                                  int& p_px,
                                  int& p_py) const
 {
@@ -233,7 +233,7 @@ void CanvasTexture::markDirty(std::uint32_t p_x0,
     m_dirty_y1 = std::max(m_dirty_y1, p_y1);
 }
 
-void CanvasTexture::paintLocal(compages::core::Vector3f p_local_point,
+void CanvasTexture::paintLocal(compages::Vector3f p_local_point,
                                Color p_color,
                                float p_brush_radius_local)
 {
@@ -249,33 +249,33 @@ void CanvasTexture::paintLocal(compages::core::Vector3f p_local_point,
     stampDisk(center_x, center_y, pixel_radius, p_color);
 }
 
-void CanvasTexture::paintWorld(compages::core::Vector3f p_world_point,
-                               compages::core::Matrix44f const& p_canvas_world,
+void CanvasTexture::paintWorld(compages::Vector3f p_world_point,
+                               compages::Matrix44f const& p_canvas_world,
                                Color p_color,
                                float p_brush_radius_world)
 {
-    const compages::core::Matrix44f local_matrix =
-        compages::core::inverse(p_canvas_world);
-    paintLocal(compages::core::transformPoint(local_matrix, p_world_point),
+    const compages::Matrix44f local_matrix =
+        compages::inverse(p_canvas_world);
+    paintLocal(compages::transformPoint(local_matrix, p_world_point),
                p_color,
                p_brush_radius_world);
 }
 
-void CanvasTexture::paintLineWorld(compages::core::Vector3f p_from,
-                                   compages::core::Vector3f p_to,
-                                   compages::core::Matrix44f const& p_canvas_world,
+void CanvasTexture::paintLineWorld(compages::Vector3f p_from,
+                                   compages::Vector3f p_to,
+                                   compages::Matrix44f const& p_canvas_world,
                                    Color p_color,
                                    float p_brush_radius_world)
 {
     const float spacing = std::max(0.001f, p_brush_radius_world * 0.5f);
-    const compages::core::Vector3f delta = p_to - p_from;
+    const compages::Vector3f delta = p_to - p_from;
     const float span = std::sqrt(delta.x * delta.x + delta.y * delta.y +
                                  delta.z * delta.z);
     const int steps = std::max(1, int(std::ceil(span / spacing)));
     for (int i = 0; i <= steps; ++i)
     {
         const float t = float(i) / float(steps);
-        const compages::core::Vector3f at{
+        const compages::Vector3f at{
             p_from.x + (p_to.x - p_from.x) * t,
             p_from.y + (p_to.y - p_from.y) * t,
             p_from.z + (p_to.z - p_from.z) * t,

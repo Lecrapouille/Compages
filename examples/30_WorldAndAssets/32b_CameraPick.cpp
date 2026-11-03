@@ -15,12 +15,14 @@ const compages::renderer::Look PLAIN =
 const compages::renderer::Look PICKED =
     compages::renderer::color(0.95f, 0.72f, 0.22f);
 
+// ----------------------------------------------------------------------------
 std::string CameraPick::description() const
 {
     return "1 orbits around the cubes, 2 flies (right drag looks, WASD and QE "
            "move). A left click selects the cube under the mouse.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status CameraPick::setUp()
 {
     // A ground the pick must ignore, and nine cubes it may select.
@@ -41,12 +43,12 @@ compages::Status CameraPick::setUp()
 
     // Orbit to start with. Key 2 in draw() swaps it for a fly control.
     m_camera = m_scene.camera().position(0.0f, 8.0f, 22.0f);
-    m_camera.add<compages::world::Orbit>(
-        compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+    m_camera.add<compages::world::Orbit>(compages::Vector3f(0.0f, 1.0f, 0.0f));
     m_camera.get<compages::world::Orbit>().spin = 0.35f;
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void CameraPick::select(compages::world::EntityId p_entity)
 {
     // Put the previous selection back, then paint the new one. An empty id
@@ -62,6 +64,7 @@ void CameraPick::select(compages::world::EntityId p_entity)
     }
 }
 
+// ----------------------------------------------------------------------------
 void CameraPick::draw(compages::world::ViewFrame const& p_frame)
 {
     // One control at a time: taking the other off is what stops both from
@@ -70,7 +73,7 @@ void CameraPick::draw(compages::world::ViewFrame const& p_frame)
         !m_camera.has<compages::world::Orbit>())
     {
         m_camera.remove<compages::world::Fly>().add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+            compages::Vector3f(0.0f, 1.0f, 0.0f));
     }
     else if (p_frame.input.down(compages::world::Key::D2) &&
              !m_camera.has<compages::world::Fly>())
@@ -85,12 +88,12 @@ void CameraPick::draw(compages::world::ViewFrame const& p_frame)
     const bool first = !m_auto_picked && (p_frame.total > 0.05f);
     if (p_frame.input.mouse_left_pressed || first)
     {
-        const compages::core::Vector2f where =
-            first ? compages::core::Vector2f(float(p_frame.width) * 0.5f,
-                                             float(p_frame.height) * 0.45f)
+        const compages::Vector2f where =
+            first ? compages::Vector2f(float(p_frame.width) * 0.5f,
+                                       float(p_frame.height) * 0.45f)
                   : p_frame.input.mouse;
         auto hit = m_scene.pick(where);
-        select(((hit) && (m_world.name(hit->entity) != "Ground"))
+        select((hit && (m_world.name(hit->entity) != "Ground"))
                    ? hit->entity
                    : compages::world::EntityId{});
         m_auto_picked = true;

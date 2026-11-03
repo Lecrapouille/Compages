@@ -7,10 +7,27 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief A table of values stored in the memory of the graphics card.
+//!
+//! The graphics card has its own memory, far from the processor. Everything it
+//! draws or computes must first be copied there: the corners of the triangles,
+//! the order to join them in, the numbers a compute pass works on. A Buffer is
+//! one such table, used much like a std::vector, that knows how to send itself
+//! to the card and, when asked, to bring its values back.
+//!
+//! What it holds:
+//! - Buffer<T, Kind>: the table itself, with the elements of type T, and its
+//!   three names VertexBuffer<T>, IndexBuffer<T> and StorageBuffer<T>.
+//! - liveBuffers(): how many buffers exist, to spot the ones never released.
+// ****************************************************************************
+
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/GPU/DirtyRange.hpp"
 #include "Compages/GPU/Enums.hpp"
-#include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "Compages/GPU/Handle.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,23 +39,11 @@
 #include <utility>
 #include <vector>
 
-#include "Compages/Core/Matrix.hpp"
-#include "Compages/Core/Vector.hpp"
-
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::gpu
 {
 
 //! \brief Names memory living on the device.
 using BufferHandle = Handle<struct BufferTag>;
-
-struct BufferOptions
-{
-    BufferKind kind = BufferKind::Vertex;
-    BufferUsage usage = BufferUsage::Dynamic;
-    bool cpu_mirror = true;
-};
 
 namespace detail
 {
@@ -91,46 +96,49 @@ void destroyBuffer(BufferHandle p_handle);
 } // namespace detail
 
 // ****************************************************************************
-//! \brief A block of memory on the device, holding a known number of a known
-//! type.
+//! \brief A list of values that lives on the graphics card, used like a
+//! std::vector.
 //!
-//! One class covers what the previous layer spread over separate types for
-//! vertex data, indices and uniforms: what changes between them is the kind
-//! given at creation, not the code. It also covers what the previous layer
-//! could not express at all, since it insisted on one buffer per vertex
-//! attribute: here a Buffer<Vertex> holds whole interleaved vertices.
+//! What the card uses it for is part of its type, so that a mistake such as
+//! drawing indices from a buffer of vertices does not compile. Use one of the
+//! three names: VertexBuffer<T> (corners of shapes), IndexBuffer<T> (the order
+//! to join them) and StorageBuffer<T> (data a compute pass reads and writes,
+//! which can also be drawn as vertices).
 //!
+//! How it lives is chosen at creation, with the OpenGL names (BufferUsage):
 //! \code
-//! struct Star { compages::core::Vector3f position; compages::core::Vector3f
-//! velocity; };
-//!
-//! auto buffer = compages::gpu::Buffer<Star>::create(1000000,
-//! compages::gpu::BufferKind::Storage,
-//!                                        compages::gpu::BufferUsage::Storage);
-//! if (!buffer) { std::cerr << buffer.error(); return; }
-//! buffer.value().write(stars);
+//! namespace gpu = compages::gpu;
+//! // Static: written once, never again by the CPU. A mesh from a file.
+//! auto mesh = gpu::VertexBuffer<Vertex>::from(corners, gpu::BufferUsage::Static);
+//! // Stream: on the card only, rewritten by write(). The CPU keeps its data.
+//! auto skin = gpu::VertexBuffer<Vertex>::create(count, gpu::BufferUsage::Stream);
+//! skin.write(posed);
+//! // Dynamic: a CPU copy too. Edit it like a vector; upload() sends only
+//! // what changed. A default constructed buffer is Dynamic and empty.
+//! gpu::VertexBuffer<Vertex> trail;
+//! trail.emplace_back(Vertex{ position, color });
+//! trail[0].color = red;
+//! COMPAGES_TRY(trail.upload());
 //! \endcode
 //!
-//! **A buffer that grows.** Default constructed, a Buffer keeps its elements on
-//! the CPU as a std::vector would, and sends what changed at the next draw
-//! (or upload()), growing the device memory as needed:
-//! \code
-//! compages::gpu::Buffer<Vertex> trail;
-//! trail.emplace_back(position, color);      // sent at the next draw
-//! trail[0].color = compages::core::Vector3f(1, 0, 0);       // only this
-//! element is sent compages::gpu::draw(pipeline, trail);
-//! \endcode
+//! The card memory is released when the Buffer is destroyed. A Buffer can be
+//! moved but not copied, since two owners would release the same memory twice.
 //!
-//! The memory is released when the Buffer is destroyed. A Buffer can be moved
-//! but not copied, since two owners of the same memory would release it twice.
-//!
-//! \tparam T what one element is. Must be trivially copyable: the bytes are
-//! sent to the device as they are, and a type owning memory elsewhere would
-//! send a pointer the device cannot follow.
+//! \tparam T one element, often a vertex struct. Must be trivially copyable:
+//! its bytes are sent as they are, so a member owning memory elsewhere (a
+//! pointer, a std::string) would send an address the card cannot follow.
+//! \tparam Kind what the card uses it for.
 // ****************************************************************************
-template <typename T>
-class Buffer
+template <typename T, BufferKind Kind>
+class Buffer: private compages::NotCopiable
 {
+private:
+
+    Buffer(BufferHandle p_handle, std::size_t p_count, BufferUsage p_usage)
+        : m_handle(p_handle), m_count(p_count), m_usage(p_usage)
+    {
+    }
+
 public:
 
     static_assert(std::is_trivially_copyable_v<T>,
@@ -139,137 +147,98 @@ public:
                   "std::string or a std::vector would send an address the "
                   "device cannot follow");
 
+    //! \brief What the card uses this buffer for.
+    static constexpr BufferKind kind = Kind;
+
     // ------------------------------------------------------------------------
-    //! \brief An empty buffer, owning nothing on the device yet, keeping its
-    //! elements on the CPU until the first upload().
+    //! \brief An empty Dynamic buffer, which grows as needed. No card memory
+    //! is reserved until the first upload() or draw, so valid() is false
+    //! until then.
+    // ------------------------------------------------------------------------
+    Buffer() = default;
+
+    // ------------------------------------------------------------------------
+    //! \brief Reserve card memory for p_count elements and fill it with
+    //! p_data, all in one go.
     //!
-    //! \param[in] p_kind what the device memory will be for.
-    // ------------------------------------------------------------------------
-    explicit Buffer(BufferKind p_kind = BufferKind::Vertex)
-        : m_kind(p_kind), m_mirrored(true)
-    {
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief A buffer holding these elements, sent at the first upload().
-    // ------------------------------------------------------------------------
-    Buffer(std::initializer_list<T> p_data,
-           BufferKind p_kind = BufferKind::Vertex)
-        : m_cpu(p_data), m_kind(p_kind), m_mirrored(true)
-    {
-        m_dirty.addAll(m_cpu.size());
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief Same, copying a span.
-    // ------------------------------------------------------------------------
-    explicit Buffer(std::span<const T> p_data,
-                    BufferKind p_kind = BufferKind::Vertex)
-        : m_cpu(p_data.begin(), p_data.end()), m_kind(p_kind), m_mirrored(true)
-    {
-        m_dirty.addAll(m_cpu.size());
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief Reserve room for a number of elements, without filling it.
+    //! \code
+    //! auto mesh = compages::gpu::VertexBuffer<Vertex>::from(
+    //!     corners, compages::gpu::BufferUsage::Static);
+    //! \endcode
     //!
-    //! \param[in] p_count how many elements. Not zero: a buffer of nothing is
-    //! almost always a count that was computed wrong.
-    //! \param[in] p_kind what the buffer is for.
-    //! \param[in] p_usage how often it will be written from the CPU. Immutable
-    //! is refused here, since an immutable buffer can never be filled.
+    //! \param[in] p_data the elements to send: any contiguous container of T.
+    //! \param[in] p_usage Static (never written again by the CPU), Stream
+    //! (rewritten by write(), no CPU copy) or Dynamic (a CPU copy is kept, to
+    //! edit and upload()).
+    //! \return the buffer, or why the card memory could not be reserved.
     // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Buffer>
-    create(std::size_t p_count, BufferKind p_kind, BufferUsage p_usage)
-    {
-        if (p_usage == BufferUsage::Immutable)
-        {
-            return failure(
-                "an immutable buffer can never be written, so it must be given "
-                "its contents when created. Use Buffer::from() with the data, "
-                "or ask for BufferUsage::Dynamic");
-        }
-        auto handle_result =
-            detail::createBuffer(p_count * sizeof(T), nullptr, p_kind, p_usage);
-        if (!handle_result)
-        {
-            return failure(handle_result.error());
-        }
-        auto handle = handle_result.take();
-        return Buffer(handle, p_count);
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief Reserve room and fill it in one go.
-    //!
-    //! The only way to make an immutable buffer, and the right one for geometry
-    //! read from a file: the driver may then place it in the memory the device
-    //! reads fastest, knowing it will never be written again.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Buffer>
-    from(std::span<const T> p_data, BufferKind p_kind, BufferUsage p_usage)
-    {
-        auto handle_result = detail::createBuffer(
-            p_data.size_bytes(), p_data.data(), p_kind, p_usage);
-        if (!handle_result)
-        {
-            return failure(handle_result.error());
-        }
-        auto handle = handle_result.take();
-        return Buffer(handle, p_data.size());
-    }
-
-    [[nodiscard]] static Result<Buffer> from(std::span<const T> p_data,
-                                             BufferOptions p_options = {})
-    {
-        auto buffer_result = from(p_data, p_options.kind, p_options.usage);
-        if (!buffer_result)
-        {
-            return failure(buffer_result.error());
-        }
-        auto buffer = buffer_result.take();
-        buffer.m_kind = p_options.kind;
-        if (p_options.cpu_mirror)
-        {
-            buffer.m_cpu.assign(p_data.begin(), p_data.end());
-            buffer.m_mirrored = true;
-        }
-        return buffer;
-    }
-
     template <std::ranges::contiguous_range Range>
         requires std::
             same_as<std::remove_cv_t<std::ranges::range_value_t<Range>>, T>
         [[nodiscard]] static Result<Buffer> from(Range const& p_data,
-                                                 BufferOptions p_options = {})
+                                                 BufferUsage p_usage)
     {
-        return from(std::span<const T>(std::ranges::data(p_data),
-                                       std::ranges::size(p_data)),
-                    p_options);
-    }
-
-    [[nodiscard]] static Result<Buffer> indices(std::span<const T> p_data)
-    {
-        return from(p_data, BufferKind::Index, BufferUsage::Immutable);
-    }
-
-    [[nodiscard]] static Result<Buffer>
-    storage(std::span<const T> p_data,
-            BufferUsage p_usage = BufferUsage::Storage)
-    {
-        return from(p_data, BufferKind::Storage, p_usage);
+        const std::span<const T> data(std::ranges::data(p_data),
+                                      std::ranges::size(p_data));
+        auto handle = detail::createBuffer(
+            data.size_bytes(), data.data(), Kind, p_usage);
+        if (!handle)
+        {
+            return failure(handle.error());
+        }
+        Buffer buffer(handle.take(), data.size(), p_usage);
+        if (p_usage == BufferUsage::Dynamic)
+        {
+            buffer.m_cpu.assign(data.begin(), data.end());
+        }
+        return buffer;
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Hand the memory over to another Buffer.
+    //! \brief Reserve card memory for p_count elements, without data to put
+    //! in it yet.
+    //!
+    //! \code
+    //! auto out = compages::gpu::StorageBuffer<float>::create(
+    //!     count, compages::gpu::BufferUsage::Static);   // a compute pass fills it
+    //! \endcode
+    //!
+    //! \param[in] p_count how many elements. Not zero: a buffer of nothing is
+    //! almost always a count that was computed wrong.
+    //! \param[in] p_usage Static for a StorageBuffer the card fills itself
+    //! (refused for the other kinds, which nothing could fill), Stream for
+    //! data the CPU will write(), Dynamic for a CPU copy of p_count
+    //! value-initialised elements.
+    //! \return the buffer, or why the card memory could not be reserved.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Buffer> create(std::size_t p_count,
+                                               BufferUsage p_usage)
+    {
+        if (p_usage == BufferUsage::Dynamic)
+        {
+            return from(std::vector<T>(p_count), p_usage);
+        }
+        auto handle =
+            detail::createBuffer(p_count * sizeof(T), nullptr, Kind, p_usage);
+        if (!handle)
+        {
+            return failure(handle.error());
+        }
+        return Buffer(handle.take(), p_count, p_usage);
+    }
+
+    // ------------------------------------------------------------------------
+    //! \brief Take over the card memory and the CPU copy of p_other, which
+    //! is left empty and no longer valid().
+    //!
+    //! \param[in,out] p_other the buffer to empty.
     // ------------------------------------------------------------------------
     Buffer(Buffer&& p_other) noexcept
         : m_handle(p_other.m_handle),
           m_count(p_other.m_count),
           m_cpu(std::move(p_other.m_cpu)),
           m_dirty(p_other.m_dirty),
-          m_kind(p_other.m_kind),
-          m_mirrored(p_other.m_mirrored),
+          m_usage(p_other.m_usage),
           m_reserved(p_other.m_reserved)
     {
         p_other.m_handle = BufferHandle{};
@@ -278,7 +247,10 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Take over another Buffer's memory, releasing our own first.
+    //! \brief Release this buffer's card memory, then take over p_other's.
+    //!
+    //! \param[in,out] p_other the buffer to empty.
+    //! \return this object, now owning what p_other owned.
     // ------------------------------------------------------------------------
     Buffer& operator=(Buffer&& p_other) noexcept
     {
@@ -289,8 +261,7 @@ public:
             m_count = p_other.m_count;
             m_cpu = std::move(p_other.m_cpu);
             m_dirty = p_other.m_dirty;
-            m_kind = p_other.m_kind;
-            m_mirrored = p_other.m_mirrored;
+            m_usage = p_other.m_usage;
             m_reserved = p_other.m_reserved;
             p_other.m_handle = BufferHandle{};
             p_other.m_count = 0u;
@@ -299,11 +270,8 @@ public:
         return *this;
     }
 
-    Buffer(Buffer const&) = delete;
-    Buffer& operator=(Buffer const&) = delete;
-
     // ------------------------------------------------------------------------
-    //! \brief Release the memory.
+    //! \brief Release the card memory. Safe after a move or a release().
     // ------------------------------------------------------------------------
     ~Buffer()
     {
@@ -311,7 +279,12 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Give the memory back now rather than at the end of the scope.
+    //! \brief Give the card memory back now rather than at the end of the
+    //! scope, and empty the CPU copy.
+    //!
+    //! The Buffer stays usable: a growable one reserves new memory at its next
+    //! upload(). Releasing before gpu::shutdown() is what keeps the leak
+    //! counters of --check at zero for a buffer owned by a long-lived object.
     // ------------------------------------------------------------------------
     void release()
     {
@@ -323,17 +296,22 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Overwrite the beginning of the buffer.
+    //! \brief Send elements to the card now, without waiting for the next
+    //! upload().
     //!
-    //! \param[in] p_data the elements to write. Must fit.
-    //! \param[in] p_first which element to start at.
+    //! The CPU copy, when there is one, is updated too. The buffer does not
+    //! grow: a growable buffer that has never been uploaded has no card memory
+    //! yet, and the write fails.
     //!
-    //! Too much data, or a buffer created immutable, is recorded as the frame
-    //! error (see Errors.hpp) and nothing is written.
+    //! \param[in] p_data the elements to write. Must fit in deviceCapacity().
+    //! \param[in] p_first index of the first element to overwrite.
+    //!
+    //! Too much data, or a Static buffer, is recorded as the frame error (see
+    //! takeFrameError()) and nothing is written.
     // ------------------------------------------------------------------------
     void write(std::span<const T> p_data, std::size_t p_first = 0u)
     {
-        if (m_mirrored && (p_first + p_data.size() <= m_cpu.size()))
+        if (mirrored() && (p_first + p_data.size() <= m_cpu.size()))
         {
             std::copy(p_data.begin(),
                       p_data.end(),
@@ -344,11 +322,15 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Overwrite one element.
+    //! \brief Send one element to the card now. Same rules as the span
+    //! overload.
+    //!
+    //! \param[in] p_value the new element.
+    //! \param[in] p_index which element to overwrite.
     // ------------------------------------------------------------------------
     void write(T const& p_value, std::size_t p_index)
     {
-        if (m_mirrored && (p_index < m_cpu.size()))
+        if (mirrored() && (p_index < m_cpu.size()))
         {
             m_cpu[p_index] = p_value;
         }
@@ -357,57 +339,68 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief One element, to be changed on the CPU. Sent at the next upload.
+    //! \brief One element of the CPU copy, marked as changed: it is sent at
+    //! the next upload() even if it is only read.
     //!
-    //! Only for a buffer keeping its elements on the CPU (see mirrored()).
+    //! Only for a Dynamic buffer, which keeps a CPU copy. An index past the
+    //! end stops a debug build; a release build does not check.
+    //!
+    //! \param[in] p_index which element.
+    //! \return the element, which may be changed in place.
     // ------------------------------------------------------------------------
     [[nodiscard]] T& operator[](std::size_t p_index)
     {
         assert(
-            m_mirrored && (p_index < m_cpu.size()) &&
+            mirrored() && (p_index < m_cpu.size()) &&
             "writing past the end of a Buffer, or into one without a CPU copy");
         m_dirty.add(p_index);
         return m_cpu[p_index];
     }
 
-    //! \brief One element, read from the CPU copy.
+    // ------------------------------------------------------------------------
+    //! \brief One element of the CPU copy, read only, so nothing is marked to
+    //! send. May differ from the card after a compute pass: see download().
+    //! \param[in] p_index which element.
+    //! \return the element as the CPU copy holds it.
+    // ------------------------------------------------------------------------
     [[nodiscard]] T const& operator[](std::size_t p_index) const
     {
-        assert(m_mirrored && (p_index < m_cpu.size()) &&
+        assert(mirrored() && (p_index < m_cpu.size()) &&
                "reading past the end of a Buffer, or one without a CPU copy");
         return m_cpu[p_index];
     }
 
-    //! \brief Change one element on the CPU. Sent at the next upload.
+    // ------------------------------------------------------------------------
+    //! \brief Change one element of the CPU copy; sent at the next upload().
+    //! Unlike write(), does not touch the card now.
+    //! \param[in] p_index which element.
+    //! \param[in] p_value the new element.
+    // ------------------------------------------------------------------------
     void set(std::size_t p_index, T const& p_value)
     {
         (*this)[p_index] = p_value;
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Does this buffer keep its elements on the CPU too?
-    //!
-    //! True for one default constructed, or made with
-    //! BufferOptions::cpu_mirror. Only such a buffer can grow, be changed
-    //! element by element, or be read back with download().
+    //! \brief True when count() is zero. A buffer can be empty and still hold
+    //! card memory, after clear() for instance.
+    //! \return true when there is no element.
     // ------------------------------------------------------------------------
-    [[nodiscard]] bool mirrored() const
-    {
-        return m_mirrored;
-    }
-
-    //! \brief Is there nothing in the buffer?
     [[nodiscard]] bool empty() const
     {
         return count() == 0u;
     }
 
-    //! \brief Add one element at the end, built from \c p_args. Sent at the
-    //! next upload.
+    // ------------------------------------------------------------------------
+    //! \brief Add one element at the end, as std::vector::emplace_back does.
+    //! Sent at the next upload(), which grows the card memory when needed.
+    //! \param[in] p_args the arguments of T's constructor, or its fields.
+    //! \return the new element, valid until the next growth of the CPU copy.
+    // ------------------------------------------------------------------------
     template <typename... Args>
     T& emplace_back(Args&&... p_args)
     {
-        assert(m_mirrored && "emplace_back() on a Buffer without a CPU copy");
+        assert(mirrored() && "emplace_back() on a Buffer without a CPU copy");
         T& added = m_cpu.emplace_back(std::forward<Args>(p_args)...);
         m_dirty.add(m_cpu.size() - 1u);
         return added;
@@ -415,11 +408,14 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Change the number of elements. New ones are value initialised
-    //! and sent at the next upload; removed ones are simply no longer drawn.
+    //! and sent at the next upload(); removed ones are no longer drawn, but
+    //! the card memory is not shrunk.
+    //!
+    //! \param[in] p_count the new number of elements.
     // ------------------------------------------------------------------------
     void resize(std::size_t p_count)
     {
-        assert(m_mirrored && "resize() on a Buffer without a CPU copy");
+        assert(mirrored() && "resize() on a Buffer without a CPU copy");
         const std::size_t before = m_cpu.size();
         m_cpu.resize(p_count);
         if (p_count > before)
@@ -433,8 +429,13 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Say how many elements to expect, so that the device memory is
+    //! \brief Say how many elements to expect, so that the card memory is
     //! reserved once rather than grown several times.
+    //!
+    //! Takes effect at the next growth, in upload(): nothing is reserved on the
+    //! card right now.
+    //!
+    //! \param[in] p_count the number of elements expected.
     // ------------------------------------------------------------------------
     void reserve(std::size_t p_count)
     {
@@ -442,30 +443,47 @@ public:
         m_reserved = std::max(m_reserved, p_count);
     }
 
-    //! \brief Remove every element, keeping the device memory for later.
+    // ------------------------------------------------------------------------
+    //! \brief Remove every element, keeping the card memory so that refilling
+    //! it, the next frame for instance, reserves nothing.
+    // ------------------------------------------------------------------------
     void clear()
     {
         m_cpu.clear();
         m_dirty.clear();
     }
 
-    //! \brief Replace every element. Sent at the next upload.
+    // ------------------------------------------------------------------------
+    //! \brief Replace every element; all are sent at the next upload().
+    //! \param[in] p_data the new elements, copied.
+    // ------------------------------------------------------------------------
     void assign(std::span<const T> p_data)
     {
-        assert(m_mirrored && "assign() on a Buffer without a CPU copy");
+        assert(mirrored() && "assign() on a Buffer without a CPU copy");
         m_cpu.assign(p_data.begin(), p_data.end());
         m_dirty.addAll(m_cpu.size());
     }
 
-    //! \brief Same, from braces.
+    // ------------------------------------------------------------------------
+    //! \brief Same as assign(std::span), from braces.
+    //! \param[in] p_data the new elements.
+    // ------------------------------------------------------------------------
     void assign(std::initializer_list<T> p_data)
     {
         assign(std::span<const T>(p_data.begin(), p_data.size()));
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Every element, to be changed on the CPU. All are sent at the
-    //! next upload.
+    //! \brief Every element of the CPU copy, to change in place. All are
+    //! sent at the next upload(), changed or not.
+    //!
+    //! \code
+    //! for (Particle& p : particles.modify())
+    //! {
+    //!     p.position += p.velocity * dt;
+    //! }
+    //! \endcode
+    //! \return every element of the CPU copy; empty when there is none.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::span<T> modify()
     {
@@ -473,7 +491,13 @@ public:
         return { m_cpu.data(), m_cpu.size() };
     }
 
-    //! \brief Some elements, to be changed on the CPU; only they are sent.
+    // ------------------------------------------------------------------------
+    //! \brief Some elements of the CPU copy, to change in place; only they
+    //! are sent at the next upload().
+    //! \param[in] p_first index of the first element.
+    //! \param[in] p_count how many elements, which must not run past the end.
+    //! \return the p_count elements from p_first, to change in place.
+    // ------------------------------------------------------------------------
     [[nodiscard]] std::span<T> modify(std::size_t p_first, std::size_t p_count)
     {
         assert(((p_first + p_count) <= m_cpu.size()) &&
@@ -482,39 +506,58 @@ public:
         return { m_cpu.data() + p_first, p_count };
     }
 
-    //! \brief The elements, as the CPU holds them.
+    // ------------------------------------------------------------------------
+    //! \brief The CPU copy, read only. Empty when the buffer has none.
+    //! \return the elements of the CPU copy, in order.
+    // ------------------------------------------------------------------------
     [[nodiscard]] std::span<const T> elements() const
     {
         return { m_cpu.data(), m_cpu.size() };
     }
 
-    //! \brief Has anything changed on the CPU since the last upload?
+    // ------------------------------------------------------------------------
+    //! \brief True when the CPU copy holds changes the card has not received.
+    //! \return true when the next upload() has something to send.
+    // ------------------------------------------------------------------------
     [[nodiscard]] bool dirty() const
     {
         return !m_dirty.empty();
     }
 
-    //! \brief Which elements the next upload will send.
+    // ------------------------------------------------------------------------
+    //! \brief Which elements the next upload() will send: one range from the
+    //! first edit to the last, the unchanged elements between them included.
+    //! \return what to send; empty when nothing changed.
+    // ------------------------------------------------------------------------
     [[nodiscard]] DirtyRange const& pending() const
     {
         return m_dirty;
     }
 
-    //! \brief How many elements the device memory has room for.
+    // ------------------------------------------------------------------------
+    //! \brief How many elements the card memory has room for. Can exceed
+    //! count(), since a growable buffer doubles its memory when it grows.
+    //! \return the room on the card, in elements; 0 before the first upload.
+    // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t deviceCapacity() const
     {
         return m_count;
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Send what changed on the CPU, growing the device memory first
+    //! \brief Send what changed on the CPU, growing the card memory first
     //! when it has become too small.
     //!
-    //! A draw calls it on a non const buffer, so it rarely needs calling.
+    //! A draw already calls it on a non const buffer, so call it yourself only
+    //! before a compute pass or a read by another program. Growing doubles the
+    //! capacity, which keeps a long run of emplace_back() cheap, and resends
+    //! everything. Does nothing on a buffer without a CPU copy.
+    //!
+    //! \return why the card memory could not be grown or written.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status upload()
     {
-        if (!m_mirrored || m_cpu.empty())
+        if (!mirrored() || m_cpu.empty())
         {
             m_dirty.clear();
             return success();
@@ -526,7 +569,7 @@ public:
             std::size_t capacity = std::max(m_cpu.size(), m_reserved);
             capacity = std::max(capacity, m_count * 2u);
             auto created = detail::createBuffer(
-                capacity * sizeof(T), nullptr, m_kind, BufferUsage::Dynamic);
+                capacity * sizeof(T), nullptr, Kind, BufferUsage::Dynamic);
             if (!created)
             {
                 return failure(created.error());
@@ -541,30 +584,31 @@ public:
         {
             return success();
         }
-        const std::size_t first = m_dirty.begin();
-        const std::size_t count = m_dirty.count();
         COMPAGES_TRY(detail::writeBuffer(m_handle,
-                                         first * sizeof(T),
-                                         count * sizeof(T),
-                                         m_cpu.data() + first));
+                                         m_dirty.begin() * sizeof(T),
+                                         m_dirty.count() * sizeof(T),
+                                         m_cpu.data() + m_dirty.begin()));
         m_dirty.clear();
         return success();
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Replace the existing CPU mirror with the device contents.
+    //! \brief Overwrite the CPU copy with what the card holds, to see the
+    //! results of a compute pass.
     //!
-    //! This is deliberately available only on mirrored buffers: silently
-    //! allocating a mirror here would make an accidental readback in a frame
-    //! loop hard to spot.
+    //! CPU changes not yet sent are lost. Waits for the card to finish, so keep
+    //! it out of the frame loop. Only on a buffer with a CPU copy: creating one
+    //! silently here would hide an accidental read back every frame.
+    //!
+    //! \return an error on a buffer without a CPU copy.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status download()
     {
-        if (!m_mirrored)
+        if (!mirrored())
         {
             return failure(
-                "Buffer::download() needs a CPU mirror. Create the buffer with "
-                "BufferOptions::cpu_mirror = true (the default)");
+                "Buffer::download() needs a CPU copy: create the buffer "
+                "Dynamic, or use read() to get the elements in a vector");
         }
         COMPAGES_TRY(detail::readBuffer(
             m_handle, 0u, m_cpu.size() * sizeof(T), m_cpu.data()));
@@ -573,12 +617,18 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Read elements back into CPU memory.
+    //! \brief Copy elements from the card into memory of your own. Works with
+    //! or without a CPU copy, which it leaves untouched.
     //!
     //! Waits for the device to finish with the memory, so it belongs in tests
     //! and in debugging rather than in a frame. A compute pass that needs its
     //! result on the CPU every frame wants a second buffer and one frame of
     //! delay instead.
+    //!
+    //! \param[out] p_into where to copy; its size says how many elements.
+    //! \param[in] p_first index of the first element to read.
+    //! \return an error when the range runs past the buffer or the buffer is
+    //! gone.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status read(std::span<T> p_into,
                               std::size_t p_first = 0u) const
@@ -588,7 +638,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Read the whole buffer back into a vector.
+    //! \brief Copy count() elements from the card into a new vector. Waits
+    //! for the card, like read(std::span, std::size_t).
+    //! \return the elements, or why they could not be read.
     // ------------------------------------------------------------------------
     [[nodiscard]] Result<std::vector<T>> read() const
     {
@@ -601,20 +653,26 @@ public:
     // ------------------------------------------------------------------------
     //! \brief How many elements the buffer holds: those on the CPU when it
     //! keeps them there, which is what a draw reads.
+    //! \return the number of elements.
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t count() const
     {
-        return m_mirrored ? m_cpu.size() : m_count;
+        return mirrored() ? m_cpu.size() : m_count;
     }
 
+    // ------------------------------------------------------------------------
     //! \brief Same as count(), for code written against std::vector.
+    //! \return the number of elements.
+    // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t size() const
     {
         return count();
     }
 
     // ------------------------------------------------------------------------
-    //! \brief How many bytes the buffer occupies on the device.
+    //! \brief How many bytes of card memory are reserved: deviceCapacity()
+    //! elements, not count().
+    //! \return the bytes reserved on the card; 0 when not valid().
     // ------------------------------------------------------------------------
     [[nodiscard]] std::size_t bytes() const
     {
@@ -622,7 +680,9 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Does this Buffer own anything?
+    //! \brief True when card memory is reserved. False after a move or a
+    //! release(), and for a growable buffer not yet uploaded.
+    //! \return true when the buffer can be drawn or bound.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool valid() const
     {
@@ -630,24 +690,19 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief What the buffer is for.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] BufferKind kind() const
-    {
-        return detail::bufferKind(m_handle);
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief How often the buffer may be written.
+    //! \brief How the buffer lives, as given at creation.
+    //! \return Static, Stream or Dynamic; Dynamic for a default constructed
+    //! buffer.
     // ------------------------------------------------------------------------
     [[nodiscard]] BufferUsage usage() const
     {
-        return detail::bufferUsage(m_handle);
+        return m_usage;
     }
 
     // ------------------------------------------------------------------------
     //! \brief The handle naming this memory, for the parts of the library that
     //! take one, such as a draw call.
+    //! \return the handle; empty before the first upload or after release().
     // ------------------------------------------------------------------------
     [[nodiscard]] BufferHandle handle() const
     {
@@ -656,26 +711,51 @@ public:
 
 private:
 
-    Buffer(BufferHandle p_handle, std::size_t p_count)
-        : m_handle(p_handle), m_count(p_count), m_mirrored(false)
+    //! \brief A Dynamic buffer keeps a CPU copy; the others do not.
+    [[nodiscard]] bool mirrored() const
     {
+        return m_usage == BufferUsage::Dynamic;
     }
 
+    //! \brief Names the card memory; empty before the first upload.
     BufferHandle m_handle;
-    //! \brief How many elements the device memory has room for.
+    //! \brief How many elements the card memory has room for.
     std::size_t m_count = 0u;
+    //! \brief Dynamic only: the CPU copy, edited by operator[] and the like.
     std::vector<T> m_cpu;
+    //! \brief Dynamic only: the elements the card has not received yet.
     DirtyRange m_dirty;
-    BufferKind m_kind = BufferKind::Vertex;
-    bool m_mirrored = true;
+    //! \brief How the buffer lives, given at creation.
+    BufferUsage m_usage = BufferUsage::Dynamic;
+    //! \brief Dynamic only: the capacity reserve() asked for, used at the
+    //! next growth.
     std::size_t m_reserved = 0u;
 };
 
+//! \brief The kinds of Buffer a draw can read vertices from: Vertex, and
+//! Storage (particles a compute pass moves, drawn where they are).
+template <BufferKind Kind>
+concept VertexSource = (Kind == BufferKind::Vertex) ||
+                       (Kind == BufferKind::Storage);
+
+//! \brief Corners of shapes, read by a vertex shader.
+template <typename T>
+using VertexBuffer = Buffer<T, BufferKind::Vertex>;
+//! \brief The order in which to join vertices: std::uint16_t or
+//! std::uint32_t.
+template <typename T>
+using IndexBuffer = Buffer<T, BufferKind::Index>;
+//! \brief Data a compute pass reads and writes. Can also be drawn as
+//! vertices, which is how particles moved on the card are drawn.
+template <typename T>
+using StorageBuffer = Buffer<T, BufferKind::Storage>;
+
 // ----------------------------------------------------------------------------
-//! \brief How many buffers are alive right now.
+//! \brief How many buffers hold card memory right now, all types together.
 //!
 //! What the examples gallery watches: a demo that has been closed and still
 //! leaves buffers behind is leaking them.
+//! \return the number of live buffers; 0 once every demo has released its own.
 // ----------------------------------------------------------------------------
 [[nodiscard]] inline std::size_t liveBuffers()
 {

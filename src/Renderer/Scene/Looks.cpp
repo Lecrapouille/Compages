@@ -51,12 +51,12 @@ Result<MeshAsset> standUp(Result<MeshAsset> p_mesh)
         return p_mesh;
     }
     MeshAsset mesh = p_mesh.take();
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     for (MeshVertex& vertex : mesh.source_vertices)
     {
-        vertex.position = compages::core::Vector3f(
+        vertex.position = compages::Vector3f(
             vertex.position.x, -vertex.position.z, vertex.position.y);
-        vertex.normal = compages::core::Vector3f(
+        vertex.normal = compages::Vector3f(
             vertex.normal.x, -vertex.normal.z, vertex.normal.y);
         bounds.expand(vertex.position);
     }
@@ -164,24 +164,26 @@ MaterialId Looks::familyMaterial(ShaderFamily p_family)
     return id.value();
 }
 
-TextureAssetId Looks::pictureTexture(std::string const& p_path)
+TextureAssetId Looks::pictureTexture(std::filesystem::path const& p_path)
 {
-    const TextureAssetId known = m_assets->findTexture(p_path);
+    // A picture is registered under its path, as written.
+    const std::string name = p_path.string();
+    const TextureAssetId known = m_assets->findTexture(name);
     if (known.valid())
     {
         return known;
     }
     TextureAsset picture;
-    picture.name = p_path;
+    picture.name = name;
     // A picture is a colour for the eye: stored in sRGB, the GPU turns it
     // back to linear light when the shader samples it.
     compages::gpu::LoadOptions options;
     options.srgb = true;
-    if (!compages::gpu::check(picture.texture.load(p_path, options)))
+    if (!compages::gpu::check(picture.texture.loadFile(p_path, options)))
     {
         return {};
     }
-    auto id = m_assets->addTexture(p_path, std::move(picture));
+    auto id = m_assets->addTexture(name, std::move(picture));
     if (!id)
     {
         compages::gpu::reportError(id.error());

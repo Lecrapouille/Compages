@@ -25,9 +25,9 @@ class World;
 struct RigInput
 {
     //! \brief Mouse in clip space (−1…1, y up): the point the pan grabs.
-    compages::core::Vector2f mouse{ 0.0f, 0.0f };
+    compages::Vector2f mouse{ 0.0f, 0.0f };
     //! \brief Mouse motion this frame, in pixels, y up (turns the rig).
-    compages::core::Vector2f look_delta{ 0.0f, 0.0f };
+    compages::Vector2f look_delta{ 0.0f, 0.0f };
     //! \brief Scroll wheel this frame; positive zooms in.
     float zoom_delta = 0.0f;
     //! \brief Grab the ground under the mouse and drag it (left button).
@@ -65,7 +65,7 @@ struct RigInput
 //! \param[in] p_frame The viewport size.
 //! \param[in] p_fov Vertical field of view of the camera, in radians.
 // ----------------------------------------------------------------------------
-[[nodiscard]] RigInput rigInput(Input const& p_input, compages::core::Frame const& p_frame, float p_fov);
+[[nodiscard]] RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, float p_fov);
 
 // ****************************************************************************
 //! \brief A strategy-game camera: it looks at a target on the ground, from a
@@ -91,7 +91,7 @@ class RigController
 public:
 
     //! \brief Wanted point looked at, on the ground.
-    compages::core::Vector3f target{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f target{ 0.0f, 0.0f, 0.0f };
     //! \brief Wanted angle around the vertical axis (rad).
     float yaw = 0.0f;
     //! \brief Wanted angle above the horizon (rad), negative looks down.
@@ -132,7 +132,7 @@ public:
     void snap(World& p_world, EntityId p_camera);
 
     //! \brief The point looked at now (gliding toward \c target).
-    [[nodiscard]] compages::core::Vector3f currentTarget() const
+    [[nodiscard]] compages::Vector3f currentTarget() const
     {
         return m_target;
     }
@@ -148,12 +148,12 @@ private:
     void writePose(World& p_world, EntityId p_camera) const;
 
     //! Pose now: it glides toward the wanted one.
-    compages::core::Vector3f m_target{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f m_target{ 0.0f, 0.0f, 0.0f };
     float m_yaw = 0.0f;
     float m_pitch = -0.6f;
     float m_distance = 5.0f;
     //! Point of the ground grabbed by the pan.
-    compages::core::Vector3f m_grab{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f m_grab{ 0.0f, 0.0f, 0.0f };
     bool m_grabbing = false;
 };
 

@@ -10,7 +10,7 @@
 #include "Compages/Core/Quaternion.hpp"
 #include "Compages/Core/Vector.hpp"
 
-namespace compages::core
+namespace compages
 {
 
 template <typename T>
@@ -30,9 +30,9 @@ Vector<T, 3u> rotate(Quat<T> const& p_rotation, Vector<T, 3u> const& p_point)
 //! point from the child frame to the parent frame.
 //!
 //! \code
-//! compages::core::Posed const camera{ { 0.05, 0.0, 0.0 }, Quatd() };
-//! compages::core::Posed const world_camera = world_link * camera;
-//! compages::core::Vector3g const p = world_camera * point_in_camera;
+//! compages::Posed const camera{ { 0.05, 0.0, 0.0 }, Quatd() };
+//! compages::Posed const world_camera = world_link * camera;
+//! compages::Vector3g const p = world_camera * point_in_camera;
 //! \endcode
 // ****************************************************************************
 template <typename T>
@@ -64,4 +64,4 @@ struct Pose
 using Posef = Pose<float>;
 using Posed = Pose<double>;
 
-} // namespace compages::core
+} // namespace compages

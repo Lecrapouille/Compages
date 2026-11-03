@@ -49,7 +49,7 @@ public:
     //! Same layout as the GLSL struct (std430: 16 bytes).
     struct Sample
     {
-        compages::core::Vector2f position;
+        compages::Vector2f position;
         float label;
         float pad;
     };
@@ -57,7 +57,7 @@ public:
     //! \brief A point where the network is asked for its answer.
     struct Point
     {
-        compages::core::Vector2f position;
+        compages::Vector2f position;
         float value;
         float pad;
     };
@@ -69,17 +69,17 @@ private:
     //! \brief The answers of the network at these points, computed on the GPU
     //! and read back.
     [[nodiscard]] std::vector<float>
-    ask(std::vector<compages::core::Vector2f> const& p_points);
+    ask(std::vector<compages::Vector2f> const& p_points);
     void printToConsole();
 
-    compages::gpu::Buffer<float> m_weights;
-    compages::gpu::Buffer<compages::core::Vector2f> m_moments;
-    compages::gpu::Buffer<Sample> m_samples;
-    compages::gpu::Buffer<float> m_gradients;
-    compages::gpu::Buffer<float> m_losses;
-    compages::gpu::Buffer<float> m_stats;
-    compages::gpu::Buffer<Point> m_field;
-    compages::gpu::Buffer<Point> m_questions;
+    compages::gpu::StorageBuffer<float> m_weights;
+    compages::gpu::StorageBuffer<compages::Vector2f> m_moments;
+    compages::gpu::StorageBuffer<Sample> m_samples;
+    compages::gpu::StorageBuffer<float> m_gradients;
+    compages::gpu::StorageBuffer<float> m_losses;
+    compages::gpu::StorageBuffer<float> m_stats;
+    compages::gpu::StorageBuffer<Point> m_field;
+    compages::gpu::StorageBuffer<Point> m_questions;
 
     compages::gpu::ComputeProgram m_gradient_pass;
     compages::gpu::ComputeProgram m_update_pass;
@@ -96,7 +96,7 @@ private:
     std::int32_t m_step = 0;
     float m_loss = 0.0f;
     int m_frames = 0;
-    compages::core::Vector2f m_question{ 0.3f, -0.2f };
+    compages::Vector2f m_question{ 0.3f, -0.2f };
     float m_answer = 0.5f;
 };
 

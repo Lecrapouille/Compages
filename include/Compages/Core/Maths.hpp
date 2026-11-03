@@ -19,7 +19,7 @@
 #include <vector>
 
 //! \file Maths.hpp Wrap some mathematic functions.
-namespace compages::core
+namespace compages
 {
 
 //! \brief Allow to redefine neutral and/or absorbing element in algebra.
@@ -98,7 +98,8 @@ template <std::integral T>
     {
         return T(1);
     }
-    assert(static_cast<U>(value) <= (U(1) << (std::numeric_limits<T>::digits - 1)) &&
+    assert(static_cast<U>(value) <=
+               (U(1) << (std::numeric_limits<T>::digits - 1)) &&
            "upperPowerOfTwo: result not representable");
     return static_cast<T>(std::bit_ceil(static_cast<U>(value)));
 }
@@ -235,7 +236,9 @@ ulpsDistance(T const a, T const b)
 //!   apart): use almostZero() for comparisons against zero.
 template <std::floating_point T>
 [[nodiscard]] constexpr bool
-almostEqual(T const a, T const b, std::uint32_t const maxUlps = DEFAULT_MAX_ULPS)
+almostEqual(T const a,
+            T const b,
+            std::uint32_t const maxUlps = DEFAULT_MAX_ULPS)
 {
     using R = typename detail::UlpsInteger<T>::type;
     return ulpsDistance(a, b) <= static_cast<R>(maxUlps);
@@ -377,7 +380,8 @@ lmap(T const x, T const start1, T const stop1, T const start2, T const stop2)
 //! \brief Linear interpolation between a and b for the parameter t with t
 //! inside the range [0,1].
 template <typename T>
-[[nodiscard]] constexpr T lerp(T const a, T const b, std::type_identity_t<T> const t)
+[[nodiscard]] constexpr T
+lerp(T const a, T const b, std::type_identity_t<T> const t)
 {
     assert((t >= zero<T>()) && (t <= one<T>()) && "param t shall be [0 1]");
     return (one<T>() - t) * a + t * b;
@@ -456,4 +460,4 @@ template <std::floating_point T>
     return t * t * t * (t * (t * T(6) - T(15)) + T(10));
 }
 
-} // namespace compages::core
+} // namespace compages

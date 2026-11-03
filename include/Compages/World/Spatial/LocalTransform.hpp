@@ -32,9 +32,9 @@ namespace compages::world
 // ****************************************************************************
 struct LocalTransform
 {
-    compages::core::Vector3f position{ 0.0f, 0.0f, 0.0f };
-    compages::core::Quatf rotation{};
-    compages::core::Vector3f scale{ 1.0f, 1.0f, 1.0f };
+    compages::Vector3f position{ 0.0f, 0.0f, 0.0f };
+    compages::Quatf rotation{};
+    compages::Vector3f scale{ 1.0f, 1.0f, 1.0f };
 };
 
 // ****************************************************************************
@@ -43,15 +43,15 @@ struct LocalTransform
 //! Shared by \c LocalTransform, \c LocalTransformView and \c TransformSystem
 //! so a hot update never packs SoA fields back into a struct first.
 // ****************************************************************************
-[[nodiscard]] inline compages::core::Matrix44f composeLocalMatrix(compages::core::Vector3f const& p_position,
-                                                  compages::core::Quatf const& p_rotation,
-                                                  compages::core::Vector3f const& p_scale)
+[[nodiscard]] inline compages::Matrix44f composeLocalMatrix(compages::Vector3f const& p_position,
+                                                  compages::Quatf const& p_rotation,
+                                                  compages::Vector3f const& p_scale)
 {
-    compages::core::Matrix44f matrix =
-        compages::core::translate(compages::core::Matrix44f(compages::core::matrix::Identity), p_position);
-    compages::core::Quatf turning = p_rotation;
-    matrix = compages::core::rotate(matrix, turning.angle(), turning.axis());
-    matrix = compages::core::scale(matrix, p_scale);
+    compages::Matrix44f matrix =
+        compages::translate(compages::Matrix44f(compages::matrix::Identity), p_position);
+    compages::Quatf turning = p_rotation;
+    matrix = compages::rotate(matrix, turning.angle(), turning.axis());
+    matrix = compages::scale(matrix, p_scale);
     return matrix;
 }
 
@@ -60,10 +60,10 @@ struct LocalTransform
 //!
 //! \code
 //! compages::world::LocalTransform pose{ .position = { 0, 1, 0 }, .scale = { 2, 2, 2 } };
-//! compages::core::Matrix44f M = compages::world::localMatrix(pose);
+//! compages::Matrix44f M = compages::world::localMatrix(pose);
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] inline compages::core::Matrix44f localMatrix(LocalTransform const& p_pose)
+[[nodiscard]] inline compages::Matrix44f localMatrix(LocalTransform const& p_pose)
 {
     return composeLocalMatrix(p_pose.position, p_pose.rotation, p_pose.scale);
 }
@@ -80,7 +80,7 @@ struct LocalTransform
 //! compages::world::LocalTransformView t = world.transform(entity);
 //! t.position = { 1, 0, 0 };
 //! t.rotateY(world.frame().elapsed);
-//! compages::core::Matrix44f M = compages::world::localMatrix(static_cast<compages::world::LocalTransform>(t));
+//! compages::Matrix44f M = compages::world::localMatrix(static_cast<compages::world::LocalTransform>(t));
 //! \endcode
 // ****************************************************************************
 class LocalTransformView
@@ -88,16 +88,16 @@ class LocalTransformView
 public:
 
     //! \brief Alias into the position SoA column.
-    compages::core::Vector3f& position;
+    compages::Vector3f& position;
     //! \brief Alias into the rotation SoA column.
-    compages::core::Quatf& rotation;
+    compages::Quatf& rotation;
     //! \brief Alias into the scale SoA column.
-    compages::core::Vector3f& scale;
+    compages::Vector3f& scale;
 
     //! \brief Bind three SoA references for one entity slot.
-    LocalTransformView(compages::core::Vector3f& p_position,
-                       compages::core::Quatf& p_rotation,
-                       compages::core::Vector3f& p_scale)
+    LocalTransformView(compages::Vector3f& p_position,
+                       compages::Quatf& p_rotation,
+                       compages::Vector3f& p_scale)
         : position(p_position), rotation(p_rotation), scale(p_scale)
     {
     }
@@ -129,11 +129,11 @@ public:
     }
 
     //! \brief Rotate around an axis in the entity's local frame (three.js style).
-    LocalTransformView& rotate(float p_radians, compages::core::Vector3f const& p_axis)
+    LocalTransformView& rotate(float p_radians, compages::Vector3f const& p_axis)
     {
         rotation =
-            rotation * compages::core::Quatf::fromAngleAxis(units::angle::radian_t(p_radians),
-                                            compages::core::vector::normalize(p_axis));
+            rotation * compages::Quatf::fromAngleAxis(units::angle::radian_t(p_radians),
+                                            compages::vector::normalize(p_axis));
         rotation.normalize();
         return *this;
     }
@@ -141,30 +141,30 @@ public:
     //! \brief Turn around the entity's own y axis (like a spinning top).
     LocalTransformView& rotateY(float p_radians)
     {
-        return rotate(p_radians, compages::core::Vector3f(0.0f, 1.0f, 0.0f));
+        return rotate(p_radians, compages::Vector3f(0.0f, 1.0f, 0.0f));
     }
 
     //! \brief Rotate around local +X.
     LocalTransformView& rotateX(float p_radians)
     {
-        return rotate(p_radians, compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+        return rotate(p_radians, compages::Vector3f(1.0f, 0.0f, 0.0f));
     }
 
     //! \brief Rotate around local +Z.
     LocalTransformView& rotateZ(float p_radians)
     {
-        return rotate(p_radians, compages::core::Vector3f(0.0f, 0.0f, 1.0f));
+        return rotate(p_radians, compages::Vector3f(0.0f, 0.0f, 1.0f));
     }
 
     //! \brief Move by an offset in the parent's axes.
-    LocalTransformView& translate(compages::core::Vector3f const& p_offset)
+    LocalTransformView& translate(compages::Vector3f const& p_offset)
     {
         position += p_offset;
         return *this;
     }
 };
 
-[[nodiscard]] inline compages::core::Matrix44f localMatrix(LocalTransformView const& p_view)
+[[nodiscard]] inline compages::Matrix44f localMatrix(LocalTransformView const& p_view)
 {
     return localMatrix(static_cast<LocalTransform>(p_view));
 }

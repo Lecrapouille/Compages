@@ -39,7 +39,7 @@ struct SkinInstance
     //! \brief ibm * jointWorld * inverse(meshWorld), filled by
     //! \c AnimationSystem::pose. The Extractor copies this into the
     //! snapshot; the vertex shader is what deforms the rest pose.
-    std::vector<compages::core::Matrix44f> pose;
+    std::vector<compages::Matrix44f> pose;
 };
 
 } // namespace compages::world

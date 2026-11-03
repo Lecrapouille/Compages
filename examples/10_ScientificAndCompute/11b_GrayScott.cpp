@@ -15,6 +15,7 @@ namespace examples
 constexpr std::uint32_t SIZE = 256u;
 constexpr int STEPS_PER_FRAME = 8;
 
+// ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
 out vec2 vUV;
 
@@ -27,6 +28,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* STEP_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D previous;
@@ -36,7 +38,7 @@ out vec4 oColor;
 void main()
 {
     // U in red, V in green. The laplacian is this cell against its four
-    // neighbours: diffusion, before the reaction.
+    // neighbors: diffusion, before the reaction.
     vec2 centre = texture(previous, vUV).rg;
     vec2 laplacian = -centre;
     laplacian += texture(previous, vUV + vec2(texel.x, 0.0)).rg;
@@ -58,6 +60,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* SHOW_FRAGMENT = R"(#version 450 core
 in vec2 vUV;
 uniform sampler2D image;
@@ -70,6 +73,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string GrayScott::description() const
 {
     return "The same ping-pong as Game of Life, holding two concentrations as "
@@ -79,6 +83,7 @@ std::string GrayScott::description() const
            "a colour.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status GrayScott::setUp()
 {
     // Two float textures, each wired to a framebuffer. Nearest, because a
@@ -97,28 +102,28 @@ compages::Status GrayScott::setUp()
     }
 
     // U everywhere, and a square of V in the middle to start the reaction.
-    std::vector<compages::core::Vector4f> cells(
-        std::size_t{ SIZE } * SIZE,
-        compages::core::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+    std::vector<compages::Vector4f> cells(
+        std::size_t{ SIZE } * SIZE, compages::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
     const std::uint32_t mid = SIZE / 2u;
     for (std::uint32_t y = mid - 12u; y < mid + 12u; ++y)
     {
         for (std::uint32_t x = mid - 12u; x < mid + 12u; ++x)
         {
             cells[(std::size_t{ y } * SIZE) + x] =
-                compages::core::Vector4f(0.5f, 0.25f, 0.0f, 1.0f);
+                compages::Vector4f(0.5f, 0.25f, 0.0f, 1.0f);
         }
     }
     COMPAGES_TRY(m_field[0].write(
-        std::as_bytes(std::span<const compages::core::Vector4f>(cells))));
+        std::as_bytes(std::span<const compages::Vector4f>(cells))));
 
-    COMPAGES_TRY(m_step.load(SCREEN_VERTEX, STEP_FRAGMENT));
+    COMPAGES_TRY(m_step.loadSources(SCREEN_VERTEX, STEP_FRAGMENT));
     m_step["texel"] =
-        compages::core::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
-    COMPAGES_TRY(m_show.load(SCREEN_VERTEX, SHOW_FRAGMENT));
+        compages::Vector2f(1.0f / float(SIZE), 1.0f / float(SIZE));
+    COMPAGES_TRY(m_show.loadSources(SCREEN_VERTEX, SHOW_FRAGMENT));
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void GrayScott::draw(compages::world::ViewFrame const&)
 {
     // Several steps per frame, so that a pattern shows within seconds.

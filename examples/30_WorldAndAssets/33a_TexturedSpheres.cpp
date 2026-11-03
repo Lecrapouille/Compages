@@ -11,12 +11,14 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string TexturedSpheres::description() const
 {
     return "Three spheres: a red one, one wearing a picture, a picture tinted "
            "blue. The camera turns slowly by itself; right drag turns it too.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status TexturedSpheres::setUp()
 {
     // The camera turns by itself; right drag adds to that.
@@ -24,20 +26,19 @@ compages::Status TexturedSpheres::setUp()
     m_scene.camera()
         .position(0.0f, 2.5f, 9.0f)
         .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 0.5f, 0.0f));
+            compages::Vector3f(0.0f, 0.5f, 0.0f));
     m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.35f;
     m_scene.sun();
 
     // A colour, a picture, and the same picture multiplied by a tint.
     const std::filesystem::path grass = dataPath("grassFlowers.png");
-    compages::renderer::Look tinted =
-        compages::renderer::texture(grass.string());
-    tinted.color = compages::core::Vector3f(0.45f, 0.6f, 1.0f);
+    compages::renderer::Look tinted = compages::renderer::texture(grass);
+    tinted.color = compages::Vector3f(0.45f, 0.6f, 1.0f);
 
     m_spheres.emplace_back(
         m_scene.sphere("Red", compages::renderer::color(0.85f, 0.25f, 0.20f)));
     m_spheres.emplace_back(
-        m_scene.sphere("Grass", compages::renderer::texture(grass.string())));
+        m_scene.sphere("Grass", compages::renderer::texture(grass)));
     m_spheres.emplace_back(m_scene.sphere("Tinted", tinted));
     for (std::size_t i = 0u; i < m_spheres.size(); ++i)
     {
@@ -46,6 +47,7 @@ compages::Status TexturedSpheres::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void TexturedSpheres::draw(compages::world::ViewFrame const& p_frame)
 {
     // Each sphere a little faster than the one before it.

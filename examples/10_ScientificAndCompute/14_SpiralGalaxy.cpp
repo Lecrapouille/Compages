@@ -51,6 +51,7 @@ constexpr std::uint32_t CLOUDS = 200u;
 constexpr std::uint32_t RAMP = 256u;
 constexpr std::uint32_t SPRITE = 64u;
 
+// ----------------------------------------------------------------------------
 constexpr char const* VERTEX = R"(#version 450 core
 in vec2 position;
 in float size;
@@ -93,6 +94,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
 in vec3 vColor;
 
@@ -108,9 +110,11 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 //! \brief CIE 1931 colour matching functions, 380 nm then every 5 nm. The last
 //! row is 780 nm and is not sampled: the Glumpy loop stops before it. Public
 //! domain, John Walker.
+// ----------------------------------------------------------------------------
 constexpr double CIE[][3] = {
     { 0.0014, 0.0000, 0.0065 }, { 0.0022, 0.0001, 0.0105 },
     { 0.0042, 0.0001, 0.0201 }, { 0.0076, 0.0002, 0.0362 },
@@ -162,6 +166,7 @@ struct Rgb
     double b = 0.0;
 };
 
+// ----------------------------------------------------------------------------
 double blackbody(double p_wavelength_nm, double p_temperature)
 {
     const double metres = p_wavelength_nm * 1.0e-9;
@@ -169,7 +174,9 @@ double blackbody(double p_wavelength_nm, double p_temperature)
            (std::exp(1.4388e-2 / (metres * p_temperature)) - 1.0);
 }
 
+// ----------------------------------------------------------------------------
 //! \brief SMPTE primaries. The weights are Walker's xyz_to_rgb.
+// ----------------------------------------------------------------------------
 Rgb xyzToRgb(double p_x, double p_y, double p_z)
 {
     constexpr double xr = 0.63;
@@ -213,6 +220,7 @@ Rgb xyzToRgb(double p_x, double p_y, double p_z)
              (bx * p_x) + (by * p_y) + (bz * p_z) };
 }
 
+// ----------------------------------------------------------------------------
 Rgb spectrum(double p_temperature)
 {
     double x = 0.0;
@@ -246,14 +254,17 @@ Rgb spectrum(double p_temperature)
     return linear;
 }
 
+// ----------------------------------------------------------------------------
 std::uint8_t channel(double p_value)
 {
     return static_cast<std::uint8_t>(std::round(p_value * 255.0));
 }
 
+// ----------------------------------------------------------------------------
 //! \brief Round at the core, then the eccentricity of the disk. Past the disk
 //! it eases back to a circle. A negative radius, which the spread can produce,
 //! is left circular: that is what the original falls through to.
+// ----------------------------------------------------------------------------
 float eccentricity(float p_radius)
 {
     if (p_radius < CORE_RADIUS)
@@ -279,6 +290,7 @@ float eccentricity(float p_radius)
 
 } // namespace
 
+// ----------------------------------------------------------------------------
 std::string SpiralGalaxy::description() const
 {
     return "The Glumpy spiral. Stars, dust and hydrogen clouds ride ellipses "
@@ -288,6 +300,7 @@ std::string SpiralGalaxy::description() const
            "size are written every frame; draw sends what changed.";
 }
 
+// ----------------------------------------------------------------------------
 void SpiralGalaxy::seed()
 {
     const std::size_t count = static_cast<std::size_t>(STARS) + DUST_COUNT +
@@ -373,6 +386,7 @@ void SpiralGalaxy::seed()
     }
 }
 
+// ----------------------------------------------------------------------------
 void SpiralGalaxy::step()
 {
     constexpr float to_radian = 0.017453292f;
@@ -409,18 +423,20 @@ void SpiralGalaxy::step()
     }
 }
 
+// ----------------------------------------------------------------------------
 void SpiralGalaxy::flush(float p_scale)
 {
     for (std::size_t i = 0u; i < m_bodies.size(); ++i)
     {
-        m_positions[i] = compages::core::Vector2f(
-            m_bodies[i].x / GALAXY_RADIUS, m_bodies[i].y / GALAXY_RADIUS);
+        m_positions[i] = compages::Vector2f(m_bodies[i].x / GALAXY_RADIUS,
+                                            m_bodies[i].y / GALAXY_RADIUS);
         m_sizes[i] = m_bodies[i].size * p_scale;
     }
     m_points["position"] = m_positions;
     m_points["size"] = m_sizes;
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SpiralGalaxy::makeColormap()
 {
     compages::gpu::TextureDesc desc;
@@ -452,6 +468,7 @@ compages::Status SpiralGalaxy::makeColormap()
         std::as_bytes(std::span<const std::uint8_t>(pixels)));
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SpiralGalaxy::makeSprite()
 {
     COMPAGES_TRY(
@@ -481,10 +498,11 @@ compages::Status SpiralGalaxy::makeSprite()
     return m_sprite.write(std::as_bytes(std::span<const std::uint8_t>(pixels)));
 }
 
+// ----------------------------------------------------------------------------
 compages::Status SpiralGalaxy::setUp()
 {
     seed();
-    COMPAGES_TRY(m_points.load(VERTEX, FRAGMENT));
+    COMPAGES_TRY(m_points.loadSources(VERTEX, FRAGMENT));
     COMPAGES_TRY(makeColormap());
     COMPAGES_TRY(makeSprite());
 
@@ -507,19 +525,18 @@ compages::Status SpiralGalaxy::setUp()
 
     m_points["colormap"] = m_colormap;
     m_points["sprite"] = m_sprite;
-    m_points["model"] =
-        compages::core::Matrix44f(compages::core::matrix::Identity);
+    m_points["model"] = compages::Matrix44f(compages::matrix::Identity);
     // Five units out on +Z: the Glumpy view, translated by (0, 0, -5). The
     // disk lies in z = 0, so the camera looks straight at it.
-    m_points["view"] =
-        compages::core::lookAt(compages::core::Vector3f(0.0f, 0.0f, 5.0f),
-                               compages::core::Vector3f(0.0f, 0.0f, 0.0f),
-                               compages::core::Vector3f(0.0f, 1.0f, 0.0f));
-    m_points.primitive(compages::gpu::Primitive::Points)
-        .blend(compages::gpu::Blend::additive());
+    m_points["view"] = compages::lookAt(compages::Vector3f(0.0f, 0.0f, 5.0f),
+                                        compages::Vector3f(0.0f, 0.0f, 0.0f),
+                                        compages::Vector3f(0.0f, 1.0f, 0.0f));
+    m_points.state().primitive = compages::gpu::Primitive::Points;
+    m_points.state().blend = compages::gpu::Blend::additive();
     return m_points.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void SpiralGalaxy::draw(compages::world::ViewFrame const& p_frame)
 {
     step();
@@ -530,7 +547,7 @@ void SpiralGalaxy::draw(compages::world::ViewFrame const& p_frame)
     flush(1.0f);
 
     m_points["projection"] =
-        compages::core::perspective(45.0_deg, aspect(p_frame), 1.0f, 1000.0f);
+        compages::perspective(45.0_deg, aspect(p_frame), 1.0f, 1000.0f);
 
     compages::gpu::clear({ 0.0f, 0.0f, 0.03f });
     m_points.draw();

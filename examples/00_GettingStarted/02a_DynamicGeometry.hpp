@@ -13,15 +13,17 @@ namespace examples
 {
 
 // ****************************************************************************
-//! \brief Vertices that move, sent as cheaply as they can be.
+//! \brief Corners that move, and only what moved travels.
 //!
-//! A compages::gpu::Drawable keeps its vertices on the CPU and notices which
-//! ones were written: those, and only those, travel to the device on the next
-//! draw. Here the apex of the triangle follows the mouse and the two feet never
-//! move, so one vertex out of three is sent per frame:
+//! The same struct as 01c_InterleavedTriangle. The drawable keeps the
+//! corners on the CPU and notices which ones were edited; those, and only
+//! those, travel to the graphics card at the next draw. Here the top corner
+//! follows the mouse and the two others never move, so one corner out of
+//! three is sent per frame:
 //! \code
-//! m_triangle.vertex<Vertex>(APEX).position = compages::world::mouseInClipSpace(p_frame);
-//! m_triangle.draw();   // sends that vertex, then draws
+//! m_triangle.setVertices<Vertex>({ ... });
+//! m_triangle.editVertex<Vertex>(APEX).position = mouse;   // marked
+//! m_triangle.draw();   // sends that corner, then draws
 //! \endcode
 //!
 //! That is the shape of every demo computing something on the CPU and showing
@@ -34,7 +36,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "02_DynamicGeometry";
+        return "02a_DynamicGeometry";
     }
 
     [[nodiscard]] std::string description() const override;
@@ -45,8 +47,8 @@ private:
 
     struct Vertex
     {
-        compages::core::Vector2f position;
-        compages::core::Vector3f color;
+        compages::Vector2f position;
+        compages::Vector3f color;
     };
 
     compages::gpu::Drawable m_triangle;

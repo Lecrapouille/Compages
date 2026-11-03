@@ -13,11 +13,13 @@
 namespace examples
 {
 
-//! \brief How many pixels across the checkerboard is, and how large one square
-//! of it is.
+// ----------------------------------------------------------------------------
+// How many pixels across the checkerboard is, and how large one square of it
+// is.
 constexpr std::uint32_t SIZE = 256u;
 constexpr std::uint32_t SQUARE = 32u;
 
+// ----------------------------------------------------------------------------
 constexpr const char* VERTEX_SHADER = R"(#version 450 core
 
 in vec2 position;
@@ -34,6 +36,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
 in vec2 vUV;
@@ -48,23 +51,22 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string TexturedQuad::description() const
 {
     return "A checkerboard computed in C++, sent once, and read by the shader. "
            "The texture is given to the sampler by name, like the uniform "
-           "scale: "
-           "quad[\"image\"] = texture. The corners are drawn as a triangle "
-           "strip, "
-           "part of the render state of the drawable. Nearest filtering and "
-           "repeating wrap, so the squares stay square and the image tiles as "
-           "it "
-           "zooms.";
+           "scale: quad[\"image\"] = texture. The corners are drawn as a "
+           "triangle strip, part of the render state of the drawable. Nearest "
+           "filtering and repeating wrap, so the squares stay square and the "
+           "image tiles as it zooms.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status TexturedQuad::makeTexture()
 {
     // A 2D image of four bytes a pixel. Nearest, because a checkerboard is data
-    // with edges rather than a photograph: mixing neighbours would invent grey
+    // with edges rather than a photograph: mixing neighbors would invent grey
     // where the design says black or white. Repeat, so that it tiles.
     COMPAGES_TRY(
         m_texture.allocate(compages::gpu::TextureDesc::image(SIZE, SIZE)
@@ -96,9 +98,10 @@ compages::Status TexturedQuad::makeTexture()
         std::as_bytes(std::span<const std::uint8_t>(pixels)));
 }
 
+// ----------------------------------------------------------------------------
 compages::Status TexturedQuad::setUp()
 {
-    COMPAGES_TRY(m_quad.load(VERTEX_SHADER, FRAGMENT_SHADER));
+    COMPAGES_TRY(m_quad.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
     COMPAGES_TRY(makeTexture());
 
     // The order a triangle strip reads: bottom left, bottom right, top left,
@@ -109,10 +112,11 @@ compages::Status TexturedQuad::setUp()
     };
     m_quad["uv"] = { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } };
     m_quad["image"] = m_texture;
-    m_quad.primitive(compages::gpu::Primitive::TriangleStrip);
+    m_quad.state().primitive = compages::gpu::Primitive::TriangleStrip;
     return m_quad.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void TexturedQuad::draw(compages::world::ViewFrame const& p_frame)
 {
     // Between one and three copies of the texture across the quad, which is

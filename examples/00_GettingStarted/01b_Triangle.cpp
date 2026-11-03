@@ -10,6 +10,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 //! \brief The shader is where everything starts: it declares two attributes,
 //! position and color, and those names are all the C++ side needs to know.
 constexpr const char* VERTEX_SHADER = R"(#version 450 core
@@ -26,6 +27,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
 in vec3 vColor;
@@ -37,21 +39,23 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string Triangle::description() const
 {
     return "A shader and its data, filled by name: drawable[\"position\"] and "
            "drawable[\"color\"] are the attributes the shader declares. The "
-           "values "
-           "are stored interleaved and sent to the GPU at the first draw:\n\n" +
+           "values are stored interleaved and sent to the GPU at the first "
+           "draw:\n\n" +
            m_triangle.describe();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status Triangle::setUp()
 {
     // The one step that can fail for a reason outside the program: a shader
     // that does not compile. COMPAGES_TRY hands the compiler log to the
     // gallery.
-    COMPAGES_TRY(m_triangle.load(VERTEX_SHADER, FRAGMENT_SHADER));
+    COMPAGES_TRY(m_triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));
 
     // One value per vertex, attribute by attribute. A misspelled name or a
     // vec2 given three numbers is a message on the screen, listing what the
@@ -65,6 +69,7 @@ compages::Status Triangle::setUp()
     return m_triangle.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void Triangle::draw(compages::world::ViewFrame const&)
 {
     compages::gpu::clear({ 0.1f, 0.1f, 0.15f });

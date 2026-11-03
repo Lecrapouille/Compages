@@ -7,6 +7,21 @@
 
 #pragma once
 
+// ****************************************************************************
+//! \file
+//! \brief Start the library on a graphics card, and ask what that card can do.
+//!
+//! Before anything can be drawn, the library must be connected to the graphics
+//! card. It does not open a window itself: the application creates one (with
+//! GLFW, SDL, Qt...) and then calls init(). From then on the library can tell
+//! the name of the card, its limits, and where its messages are written.
+//!
+//! What it holds:
+//! - init() and shutdown(): the start and the end of all GPU work.
+//! - DeviceInfo and device(): the name and the limits of the card.
+//! - logger(), log() and reportDriverHints(): where messages go.
+// ****************************************************************************
+
 #include "Compages/GPU/Handle.hpp"
 
 #include <array>
@@ -56,6 +71,12 @@ using LogCallback = void (*)(LogLevel, std::string_view);
 //! having to ask the graphics API directly. All the limits are those the
 //! library itself checks against, so a validation error can name both the value
 //! asked for and the maximum allowed.
+//!
+//! \code
+//! auto const& gpu = compages::gpu::device();
+//! std::cout << gpu.renderer << ", OpenGL " << gpu.version_major << '.'
+//!           << gpu.version_minor << '\n';
+//! \endcode
 // ****************************************************************************
 struct DeviceInfo
 {
@@ -109,7 +130,15 @@ struct DeviceInfo
 //! \brief Start the library on the graphics context that is current.
 //!
 //! A context must already exist and be current on the calling thread: create a
-//! window first, then call this.
+//! window first, then call this. Logs the name of the GPU, and a warning when
+//! the driver cannot report its own errors. Calling it a second time without
+//! shutdown() in between fails.
+//!
+//! \code
+//! glfwMakeContextCurrent(window);
+//! COMPAGES_TRY(compages::gpu::init(
+//!     reinterpret_cast<compages::gpu::LoadProc>(glfwGetProcAddress)));
+//! \endcode
 //!
 //! \param[in] p_load the symbol loader of the windowing library in use, for
 //! instance glfwGetProcAddress.
@@ -123,17 +152,26 @@ struct DeviceInfo
 //!
 //! Must be called while the context is still current, otherwise the driver has
 //! nothing left to free the resources on. Calling it twice is harmless.
+//!
+//! Buffers, textures and programs still alive in C++ are emptied, not
+//! destroyed: their valid() turns false and destroying them later does
+//! nothing. Each kind still alive is logged as a leak, so release them first.
 // ----------------------------------------------------------------------------
 void shutdown();
 
 // ----------------------------------------------------------------------------
 //! \brief Has init() succeeded and shutdown() not been called since?
+//!
+//! Useful in a destructor or in a test that may run without a GPU: most calls
+//! fail, or do nothing, while this is false.
+//! \return true between a successful init() and shutdown().
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool initialized();
 
 // ----------------------------------------------------------------------------
-//! \brief What the driver is and what it allows.
-//! \note Asserts when the library is not initialized.
+//! \brief What the driver is and what it allows, read once by init().
+//! \note Only between init() and shutdown(): a debug build stops otherwise.
+//! \return the description filled by init().
 // ----------------------------------------------------------------------------
 [[nodiscard]] DeviceInfo const& device();
 
@@ -144,7 +182,12 @@ void shutdown();
 void logger(LogCallback p_callback);
 
 // ----------------------------------------------------------------------------
-//! \brief Write a message through the current logger.
+//! \brief Write a message through the current logger, the one the library
+//! uses for driver messages, so that an application's own GPU messages land in
+//! the same place.
+//!
+//! \param[in] p_level how serious the message is.
+//! \param[in] p_message the text, without a trailing newline.
 // ----------------------------------------------------------------------------
 void log(LogLevel p_level, std::string_view p_message);
 
@@ -154,11 +197,15 @@ void log(LogLevel p_level, std::string_view p_message);
 //! buffer moved to host memory", "a partial clear fell back from CSAA to
 //! MSAA". Off by default: they repeat, they are not errors, and they are
 //! only worth reading while hunting a slowdown.
+//!
+//! \param[in] p_report true to log them as warnings, false to drop them.
 // ----------------------------------------------------------------------------
 void reportDriverHints(bool p_report);
 
 // ----------------------------------------------------------------------------
-//! \brief Is reportDriverHints() on?
+//! \brief Is reportDriverHints() on? Read by the backend each time the
+//! driver sends a performance message.
+//! \return true when driver hints are logged.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool driverHintsReported();
 

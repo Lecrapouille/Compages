@@ -39,7 +39,7 @@ protected:
     }
 
     //! \brief What the device really holds, for the first p_count elements.
-    static std::vector<int> onDevice(compages::gpu::Buffer<int> const& p_array,
+    static std::vector<int> onDevice(compages::gpu::VertexBuffer<int> const& p_array,
                                      std::size_t p_count)
     {
         std::vector<int> got(p_count);
@@ -53,7 +53,7 @@ protected:
 // update() may touch the device.
 TEST_F(GrowingBufferTest, ReservesNothingUntilAskedToSend)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(100u);
     array.set(0u, 42);
 
@@ -73,7 +73,7 @@ TEST_F(GrowingBufferTest, ReservesNothingUntilAskedToSend)
 // change, so the value landed on the wrong element.
 TEST_F(GrowingBufferTest, SendsOneChangedElementToTheRightPlace)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(8u);
     for (std::size_t i = 0u; i < 8u; ++i)
     {
@@ -95,7 +95,7 @@ TEST_F(GrowingBufferTest, SendsOneChangedElementToTheRightPlace)
 // The last element is where an off by one in the length shows up.
 TEST_F(GrowingBufferTest, SendsTheLastElement)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(4u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -108,7 +108,7 @@ TEST_F(GrowingBufferTest, SendsTheLastElement)
 
 TEST_F(GrowingBufferTest, SendsARunOfChangesInOneWrite)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(10u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -128,7 +128,7 @@ TEST_F(GrowingBufferTest, SendsARunOfChangesInOneWrite)
 // matters is that the unchanged ones arrive unchanged.
 TEST_F(GrowingBufferTest, KeepsTheUntouchedElementsWhenSendingASpan)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(6u);
     for (std::size_t i = 0u; i < 6u; ++i)
     {
@@ -149,7 +149,7 @@ TEST_F(GrowingBufferTest, KeepsTheUntouchedElementsWhenSendingASpan)
 // how it is meant to be used.
 TEST_F(GrowingBufferTest, HasNothingToSendTwiceInARow)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(4u);
     ASSERT_TRUE(bool(array.upload()));
     ASSERT_FALSE(array.dirty());
@@ -163,7 +163,7 @@ TEST_F(GrowingBufferTest, HasNothingToSendTwiceInARow)
 // bytes would be refused.
 TEST_F(GrowingBufferTest, SendsNothingWhenEmpty)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     ASSERT_TRUE(bool(array.upload()));
     ASSERT_EQ(compages::gpu::liveBuffers(), 0u);
 }
@@ -172,12 +172,12 @@ TEST_F(GrowingBufferTest, SendsNothingWhenEmpty)
 // sent.
 TEST_F(GrowingBufferTest, ReadingChangesNothing)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(4u);
     array.set(2u, 8);
     ASSERT_TRUE(bool(array.upload()));
 
-    compages::gpu::Buffer<int> const& reading = array;
+    compages::gpu::VertexBuffer<int> const& reading = array;
     ASSERT_EQ(reading[2], 8);
     ASSERT_EQ(reading.elements()[2], 8);
     ASSERT_EQ(reading.size(), 4u);
@@ -190,7 +190,7 @@ TEST_F(GrowingBufferTest, ReadingChangesNothing)
 // again for the new block to hold anything.
 TEST_F(GrowingBufferTest, GrowsTheDeviceMemoryKeepingWhatWasThere)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.emplace_back(1);
     array.emplace_back(2);
     ASSERT_TRUE(bool(array.upload()));
@@ -217,7 +217,7 @@ TEST_F(GrowingBufferTest, GrowsTheDeviceMemoryKeepingWhatWasThere)
 // Each new block is twice the last, so a thousand frames cost a handful of them.
 TEST_F(GrowingBufferTest, AsksForNewMemoryOnlyAHandfulOfTimesWhileGrowing)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     compages::gpu::BufferHandle previous;
     std::size_t reallocations = 0u;
 
@@ -245,7 +245,7 @@ TEST_F(GrowingBufferTest, AsksForNewMemoryOnlyAHandfulOfTimesWhileGrowing)
 // altogether: the device memory is then reserved once.
 TEST_F(GrowingBufferTest, ReservesWhatItWasToldToExpect)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.reserve(1000u);
     array.emplace_back(1);
     ASSERT_TRUE(bool(array.upload()));
@@ -265,7 +265,7 @@ TEST_F(GrowingBufferTest, ReservesWhatItWasToldToExpect)
 // send: what lies beyond the new end is never looked at.
 TEST_F(GrowingBufferTest, SendsNothingWhenItShrinks)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(8u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -280,7 +280,7 @@ TEST_F(GrowingBufferTest, SendsNothingWhenItShrinks)
 // past the end of the container on its way to the device.
 TEST_F(GrowingBufferTest, ForgetsAChangeThatTheShrinkRemoved)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(8u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -294,7 +294,7 @@ TEST_F(GrowingBufferTest, ForgetsAChangeThatTheShrinkRemoved)
 // A shrink followed by a change: only the part that still exists is sent.
 TEST_F(GrowingBufferTest, KeepsTheSurvivingPartOfAChange)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(8u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -316,7 +316,7 @@ TEST_F(GrowingBufferTest, KeepsTheSurvivingPartOfAChange)
 // The animated surface: everything moves every frame, so everything is sent.
 TEST_F(GrowingBufferTest, SendsEverythingWhenEverythingMoves)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(1000u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -335,7 +335,7 @@ TEST_F(GrowingBufferTest, SendsEverythingWhenEverythingMoves)
 
 TEST_F(GrowingBufferTest, ReplacesItsWholeContents)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(3u);
     ASSERT_TRUE(bool(array.upload()));
 
@@ -353,7 +353,8 @@ TEST_F(GrowingBufferTest, CanBeBuiltFromDataItAlreadyHas)
     std::vector<int> source(16u);
     std::iota(source.begin(), source.end(), 100);
 
-    compages::gpu::Buffer<int> array{ std::span<const int>(source) };
+    compages::gpu::VertexBuffer<int> array;
+    array.assign(source);
     ASSERT_EQ(array.size(), 16u);
     ASSERT_TRUE(array.dirty());
 
@@ -365,7 +366,7 @@ TEST_F(GrowingBufferTest, CanBeBuiltFromDataItAlreadyHas)
 // class rather than one per kind of buffer.
 TEST_F(GrowingBufferTest, HoldsIndicesJustAsWell)
 {
-    compages::gpu::Buffer<std::uint32_t> indices(compages::gpu::BufferKind::Index);
+    compages::gpu::IndexBuffer<std::uint32_t> indices;
     const std::vector<std::uint32_t> triangles{ 0u, 1u, 2u, 2u, 3u, 0u };
     indices.assign(triangles);
 
@@ -383,7 +384,7 @@ TEST_F(GrowingBufferTest, HoldsIndicesJustAsWell)
 TEST_F(GrowingBufferTest, ReleasesItsMemoryWhenItGoesOutOfScope)
 {
     {
-        compages::gpu::Buffer<int> array;
+        compages::gpu::VertexBuffer<int> array;
         array.resize(4u);
         ASSERT_TRUE(bool(array.upload()));
         ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
@@ -395,7 +396,7 @@ TEST_F(GrowingBufferTest, ReleasesItsMemoryWhenItGoesOutOfScope)
 // it is sent. Callers who only read say so, and pay nothing.
 TEST_F(GrowingBufferTest, AssumesAWritableReferenceIsWritten)
 {
-    compages::gpu::Buffer<int> array;
+    compages::gpu::VertexBuffer<int> array;
     array.resize(4u);
     ASSERT_TRUE(bool(array.upload()));
 

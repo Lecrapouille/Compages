@@ -15,12 +15,14 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string MiscLookAt::description() const
 {
     return "Three.js misc_lookat: a thousand cones look at a sphere moving on "
            "a Lissajous path, while the camera eases toward the mouse.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status MiscLookAt::setUp()
 {
     // White, so the cones read as the Three.js demo they come from.
@@ -57,11 +59,12 @@ compages::Status MiscLookAt::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void MiscLookAt::draw(compages::world::ViewFrame const& p_frame)
 {
     // A Lissajous path. Every cone is aimed at the same point.
     const float t = p_frame.total;
-    const compages::core::Vector3f target(std::sin(t * 0.7f) * 900.0f - 25.0f,
+    const compages::Vector3f target(std::sin(t * 0.7f) * 900.0f - 25.0f,
                                           std::cos(t * 0.5f) * 400.0f - 25.0f,
                                           std::cos(t * 0.3f) * 900.0f - 25.0f);
     m_sphere.position(target);
@@ -72,15 +75,15 @@ void MiscLookAt::draw(compages::world::ViewFrame const& p_frame)
 
     // The camera slides a little toward the mouse each frame, and keeps
     // looking at the middle.
-    const compages::core::Vector2f mouse =
+    const compages::Vector2f mouse =
         p_frame.input.mouse_over
             ? (p_frame.input.mouse -
-               compages::core::Vector2f(float(p_frame.width),
+               compages::Vector2f(float(p_frame.width),
                                         float(p_frame.height)) *
                    0.5f) *
                   0.25f
-            : compages::core::Vector2f(0.0f, 0.0f);
-    compages::core::Vector3f eye = m_camera.position();
+            : compages::Vector2f(0.0f, 0.0f);
+    compages::Vector3f eye = m_camera.position();
     eye.x += (mouse.x - eye.x) * 0.05f;
     eye.y += (mouse.y - eye.y) * 0.05f;
     m_camera.position(eye).lookAt(0.0f, 0.0f, 0.0f);

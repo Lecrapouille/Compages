@@ -58,20 +58,19 @@ private:
     //! \brief Where a ray meets the head, in world space and in UV space.
     struct Hit
     {
-        compages::core::Vector3f point;
-        compages::core::Vector3f normal;
-        compages::core::Vector2f uv;
+        compages::Vector3f point;
+        compages::Vector3f normal;
+        compages::Vector2f uv;
     };
 
     compages::Status makeSkinMaterial(compages::world::Entity p_mesh);
     compages::Status makeTargets();
-    [[nodiscard]] std::optional<Hit>
-    raycast(compages::core::Vector2f p_pixel) const;
+    [[nodiscard]] std::optional<Hit> raycast(compages::Vector2f p_pixel) const;
     void computeForces();
     void simulate(float p_dt);
     void wash(float p_dt);
     void stampDecal(Hit const& p_hit);
-    void clear(compages::gpu::Framebuffer const& p_target);
+    void clear(compages::gpu::Framebuffer const& p_target) const;
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
@@ -81,7 +80,10 @@ private:
     //! \brief A copy of the head mesh, for the UV passes and the raycast.
     std::vector<compages::renderer::MeshVertex> m_vertices;
     std::vector<std::uint32_t> m_indices;
-    compages::core::AABB m_bounds;
+    //! \brief The head on the card, Static, borrowed by both UV passes.
+    //! Declared before them, so that it is destroyed after them.
+    compages::gpu::VertexBuffer<compages::renderer::MeshVertex> m_head_vertices;
+    compages::AABB m_bounds;
 
     //! \brief The skin material, owned by the AssetManager.
     compages::renderer::MaterialId m_skin;
@@ -108,7 +110,7 @@ private:
     compages::gpu::Drawable m_wash_pass;
 
     std::mt19937 m_random{ 54u };
-    compages::core::Vector4f m_drop{ 0.0f, 0.0f, 0.0f, 0.0f };
+    compages::Vector4f m_drop{ 0.0f, 0.0f, 0.0f, 0.0f };
 
     // Try it panel.
     int m_click = 0; // 0 = decal, 1 = drop of water

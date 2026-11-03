@@ -17,7 +17,7 @@ namespace
 
 //! \brief What the driver is allowed to do with the memory afterwards.
 //!
-//! This is the whole difference between the three usages, and it is a promise
+//! This is the whole difference between the two usages, and it is a promise
 //! rather than a permission: telling the driver that memory will never be
 //! written again lets it put the memory where the device reads it fastest.
 //! Asking for GL_DYNAMIC_STORAGE_BIT when it is not needed gives that up for
@@ -26,10 +26,10 @@ GLbitfield storageFlags(BufferUsage p_usage)
 {
     switch (p_usage)
     {
-        case BufferUsage::Immutable:
+        case BufferUsage::Static:
             return 0;
+        case BufferUsage::Stream:
         case BufferUsage::Dynamic:
-        case BufferUsage::Storage:
             return GL_DYNAMIC_STORAGE_BIT;
     }
     return GL_DYNAMIC_STORAGE_BIT;

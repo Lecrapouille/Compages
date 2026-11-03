@@ -583,7 +583,7 @@ TEST_F(TextureTest, ReadsAnImageFile)
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto created = compages::gpu::Texture::fromFile(path.string());
+    auto created = compages::gpu::Texture::fromFile(path);
     ASSERT_TRUE(bool(created)) << created.error();
 
     auto texture = created.take();
@@ -606,7 +606,7 @@ TEST_F(TextureTest, ReadsAPhotographAsAdjustedForAScreen)
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto created = compages::gpu::Texture::fromFile(path.string(), { .srgb = true });
+    auto created = compages::gpu::Texture::fromFile(path, { .srgb = true });
     ASSERT_TRUE(bool(created)) << created.error();
     ASSERT_TRUE(compages::gpu::isSrgb(created.value().format()));
 }
@@ -623,10 +623,10 @@ TEST_F(TextureTest, TurnsTheRowsOfAnImageOverByDefault)
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    auto flipped = compages::gpu::Texture::fromFile(path.string(), { .mipmaps = false });
+    auto flipped = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
     ASSERT_TRUE(bool(flipped)) << flipped.error();
-    auto as_stored =
-        compages::gpu::Texture::fromFile(path.string(), { .flip_vertically = false, .mipmaps = false });
+    auto as_stored = compages::gpu::Texture::fromFile(
+        path, { .flip_vertically = false, .mipmaps = false });
     ASSERT_TRUE(bool(as_stored)) << as_stored.error();
 
     auto one = flipped.value().read();
@@ -640,13 +640,11 @@ TEST_F(TextureTest, TurnsTheRowsOfAnImageOverByDefault)
 // The six images of a sky box, read in one go.
 TEST_F(TextureTest, ReadsTheSixFacesOfASkyBox)
 {
-    std::array<std::string, 6u> paths{ dataPath("right.jpg").string(),
-                                       dataPath("left.jpg").string(),
-                                       dataPath("top.jpg").string(),
-                                       dataPath("bottom.jpg").string(),
-                                       dataPath("front.jpg").string(),
-                                       dataPath("back.jpg").string() };
-    for (std::string const& path : paths)
+    std::array<std::filesystem::path, 6u> paths{
+        dataPath("right.jpg"),  dataPath("left.jpg"),  dataPath("top.jpg"),
+        dataPath("bottom.jpg"), dataPath("front.jpg"), dataPath("back.jpg")
+    };
+    for (std::filesystem::path const& path : paths)
     {
         if (path.empty())
         {
@@ -675,9 +673,8 @@ TEST_F(TextureTest, RefusesFacesOfDifferentSizes)
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    std::array<std::string, 6u> paths{ square.string(), other.string(),
-                                       square.string(), square.string(),
-                                       square.string(), square.string() };
+    std::array<std::filesystem::path, 6u> paths{ square, other,  square,
+                                                 square, square, square };
     auto created = compages::gpu::Texture::cubeFromFiles(paths);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr(other.string()));
@@ -692,9 +689,9 @@ TEST_F(TextureTest, SaysSoWhenAFaceOfACubeMapIsMissing)
         GTEST_SKIP() << "the data repository is not checked out";
     }
 
-    std::array<std::string, 6u> paths{ square.string(), square.string(),
-                                       square.string(), square.string(),
-                                       square.string(), "there/is/no/such.jpg" };
+    std::array<std::filesystem::path, 6u> paths{
+        square, square, square, square, square, "there/is/no/such.jpg"
+    };
     auto created = compages::gpu::Texture::cubeFromFiles(paths);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("there/is/no/such.jpg"));

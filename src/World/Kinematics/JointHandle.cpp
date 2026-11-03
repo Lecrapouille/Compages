@@ -36,7 +36,7 @@ LocalTransform JointHandle::takeOrigin() const
     return origin;
 }
 
-JointHandle& JointHandle::revolute(compages::core::Vector3f const& p_axis,
+JointHandle& JointHandle::revolute(compages::Vector3f const& p_axis,
                                    units::angle::radian_t p_min,
                                    units::angle::radian_t p_max)
 {
@@ -47,7 +47,7 @@ JointHandle& JointHandle::revolute(compages::core::Vector3f const& p_axis,
     return *this;
 }
 
-JointHandle& JointHandle::prismatic(compages::core::Vector3f const& p_axis,
+JointHandle& JointHandle::prismatic(compages::Vector3f const& p_axis,
                                     units::length::meter_t p_min,
                                     units::length::meter_t p_max)
 {

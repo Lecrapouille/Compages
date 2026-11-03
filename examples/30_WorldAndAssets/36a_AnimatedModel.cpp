@@ -18,8 +18,10 @@ const compages::renderer::Look LIMB =
 const compages::renderer::Look SKIN =
     compages::renderer::color(0.92f, 0.74f, 0.58f);
 
+// ----------------------------------------------------------------------------
 //! \brief Walks its entity around a circle, swinging legs and arms in
 //! opposite phase.
+// ----------------------------------------------------------------------------
 struct AnimatedModel::Walk: compages::world::Routine
 {
     Walk(float p_radius, float p_phase) : radius(p_radius), phase(p_phase) {}
@@ -61,6 +63,7 @@ struct AnimatedModel::Walk: compages::world::Routine
     compages::world::Entity right_shoulder;
 };
 
+// ----------------------------------------------------------------------------
 std::string AnimatedModel::description() const
 {
     return "Two walkers going round: hips and shoulders are joints, the limbs "
@@ -68,6 +71,7 @@ std::string AnimatedModel::description() const
            "camera turns slowly by itself.";
 }
 
+// ----------------------------------------------------------------------------
 compages::world::Entity
 AnimatedModel::makeWalker(char const* p_name,
                           compages::renderer::Look const& p_shirt)
@@ -111,14 +115,14 @@ AnimatedModel::makeWalker(char const* p_name,
     return walker;
 }
 
+// ----------------------------------------------------------------------------
 compages::Status AnimatedModel::setUp()
 {
     // The camera turns by itself, around the walkers' height.
     m_scene.background(0.08f, 0.10f, 0.13f).ambient(0.20f, 0.20f, 0.22f);
     m_scene.camera()
         .position(0.0f, 3.6f, 8.5f)
-        .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 0.6f, 0.0f));
+        .add<compages::world::Orbit>(compages::Vector3f(0.0f, 0.6f, 0.0f));
     m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.22f;
     m_scene.sun();
 
@@ -133,6 +137,7 @@ compages::Status AnimatedModel::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void AnimatedModel::draw(compages::world::ViewFrame const& p_frame)
 {
     // The Walk routines run inside the draw.

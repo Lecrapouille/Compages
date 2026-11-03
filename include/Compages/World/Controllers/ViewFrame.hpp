@@ -22,7 +22,7 @@ namespace compages::world
 //! \brief One interactive frame: timing, viewport size and user input.
 //!
 //! Used by the gallery and \c compages::renderer::Scene. Headless simulation uses
-//! \c compages::core::Frame alone; routines that read the mouse or keys need a \c ViewFrame
+//! \c compages::Frame alone; routines that read the mouse or keys need a \c ViewFrame
 //! passed to \c World::update(ViewFrame).
 //!
 //! \code
@@ -36,7 +36,7 @@ namespace compages::world
 //! m_scene.draw(frame);
 //! \endcode
 // ****************************************************************************
-struct ViewFrame : compages::core::Frame
+struct ViewFrame : compages::Frame
 {
     //! \brief Mouse and keyboard for this frame (controllers and routines).
     Input input{};
@@ -46,16 +46,16 @@ struct ViewFrame : compages::core::Frame
 //! \brief Mouse position in clip space (−1…1, y up), for picking and shaders.
 //!
 //! \code
-//! compages::core::Vector2f clip = compages::world::mouseInClipSpace(frame);
+//! compages::Vector2f clip = compages::world::mouseInClipSpace(frame);
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] inline compages::core::Vector2f mouseInClipSpace(ViewFrame const& p_view)
+[[nodiscard]] inline compages::Vector2f mouseInClipSpace(ViewFrame const& p_view)
 {
     if ((p_view.width == 0u) || (p_view.height == 0u))
     {
-        return compages::core::Vector2f(0.0f, 0.0f);
+        return compages::Vector2f(0.0f, 0.0f);
     }
-    return compages::core::Vector2f(((p_view.input.mouse.x / float(p_view.width)) * 2.0f) - 1.0f,
+    return compages::Vector2f(((p_view.input.mouse.x / float(p_view.width)) * 2.0f) - 1.0f,
                     ((p_view.input.mouse.y / float(p_view.height)) * 2.0f) - 1.0f);
 }
 
@@ -63,9 +63,9 @@ struct ViewFrame : compages::core::Frame
 //! \brief Timing and viewport only (drops \c input), e.g. for a headless step
 //! after an interactive \c ViewFrame.
 // ****************************************************************************
-[[nodiscard]] inline compages::core::Frame frameStep(ViewFrame const& p_view)
+[[nodiscard]] inline compages::Frame frameStep(ViewFrame const& p_view)
 {
-    return static_cast<compages::core::Frame const&>(p_view);
+    return static_cast<compages::Frame const&>(p_view);
 }
 
 } // namespace compages::world

@@ -10,6 +10,7 @@
 namespace examples
 {
 
+// ----------------------------------------------------------------------------
 std::string ThreeJsLike::description() const
 {
     return "A shape, a camera and a light made by the Scene in one line each, "
@@ -17,6 +18,7 @@ std::string ThreeJsLike::description() const
            "zooms.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status ThreeJsLike::setUp()
 {
     // Background, camera, light, shape: the whole scene.
@@ -28,6 +30,7 @@ compages::Status ThreeJsLike::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void ThreeJsLike::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns; the orbit routine turns the camera from the mouse.

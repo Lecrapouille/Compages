@@ -18,7 +18,9 @@ namespace examples
 
 constexpr char const* SAVED = "/tmp/compages_prefab_scene.json";
 
+// ----------------------------------------------------------------------------
 //! \brief Swings the arms and turns the head of a placed robot.
+// ----------------------------------------------------------------------------
 struct Wave: compages::world::Routine
 {
     explicit Wave(float p_phase) : phase(p_phase) {}
@@ -47,6 +49,7 @@ struct Wave: compages::world::Routine
     compages::world::Entity right;
 };
 
+// ----------------------------------------------------------------------------
 std::string PrefabAndSave::description() const
 {
     return "A robot prefab placed three times, each waving on its own. After "
@@ -54,14 +57,14 @@ std::string PrefabAndSave::description() const
            "with asset names rather than GPU ids.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status PrefabAndSave::setUp()
 {
     m_scene.background(0.05f, 0.07f, 0.12f).ambient(0.14f, 0.15f, 0.18f);
     m_scene.camera()
         .position(0.0f, 35.0f, 120.0f)
         .lookAt(0.0f, 25.0f, 0.0f)
-        .add<compages::world::Orbit>(
-            compages::core::Vector3f(0.0f, 25.0f, 0.0f));
+        .add<compages::world::Orbit>(compages::Vector3f(0.0f, 25.0f, 0.0f));
     m_scene.sun();
 
     // What the prefab names, registered under those names.
@@ -85,6 +88,7 @@ compages::Status PrefabAndSave::setUp()
     return m_scene.prepare();
 }
 
+// ----------------------------------------------------------------------------
 void PrefabAndSave::draw(compages::world::ViewFrame const& p_frame)
 {
     m_scene.draw(p_frame);

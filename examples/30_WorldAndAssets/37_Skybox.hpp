@@ -22,9 +22,9 @@ namespace examples
 //! turns with the camera but never comes closer, which is what makes it look
 //! infinitely far:
 //! \code
-//! m_scene.skybox({ dataPath("right.jpg").string(), dataPath("left.jpg").string(),
-//!                  dataPath("top.jpg").string(), dataPath("bottom.jpg").string(),
-//!                  dataPath("front.jpg").string(), dataPath("back.jpg").string() });
+//! m_scene.skybox({ dataPath("right.jpg"), dataPath("left.jpg"),
+//!                  dataPath("top.jpg"), dataPath("bottom.jpg"),
+//!                  dataPath("front.jpg"), dataPath("back.jpg") });
 //! \endcode
 // ****************************************************************************
 class Skybox final: public Example

@@ -29,7 +29,7 @@ struct CameraFrame;
 //! \param[in] p_scene compages::world::World + AssetManager + (unused) camera. The ray is
 //! already in world space; use \c CameraFrame::screenRay to build it.
 // ****************************************************************************
-[[nodiscard]] std::optional<compages::renderer::RayHit> pick(Scene const& p_scene, compages::core::Ray const& p_ray);
+[[nodiscard]] std::optional<compages::renderer::RayHit> pick(Scene const& p_scene, compages::Ray const& p_ray);
 
 // ****************************************************************************
 //! \brief Unproject a pixel through the camera frame and pick.

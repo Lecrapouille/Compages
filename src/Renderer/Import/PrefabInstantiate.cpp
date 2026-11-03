@@ -58,7 +58,7 @@ spawnNode(compages::world::World& p_world,
         local.position = local.position + p_root_offset.position;
         local.rotation = p_root_offset.rotation * local.rotation;
         local.scale =
-            compages::core::Vector3f(local.scale.x * p_root_offset.scale.x,
+            compages::Vector3f(local.scale.x * p_root_offset.scale.x,
                                      local.scale.y * p_root_offset.scale.y,
                                      local.scale.z * p_root_offset.scale.z);
     }

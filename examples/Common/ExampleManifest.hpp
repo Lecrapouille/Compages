@@ -15,7 +15,9 @@
 #include "00_GettingStarted/01a_ClearScreen.hpp"
 #include "00_GettingStarted/01b_Triangle.hpp"
 #include "00_GettingStarted/01c_InterleavedTriangle.hpp"
-#include "00_GettingStarted/02_DynamicGeometry.hpp"
+#include "00_GettingStarted/01d_BorrowedTriangle.hpp"
+#include "00_GettingStarted/02a_DynamicGeometry.hpp"
+#include "00_GettingStarted/02b_VertexSyntax.hpp"
 #include "00_GettingStarted/03a_TexturedQuad.hpp"
 #include "00_GettingStarted/03b_MultiTextureBlend.hpp"
 #include "00_GettingStarted/04_DepthAndTransforms.hpp"
@@ -69,7 +71,9 @@
     X(ClearScreen, "01a_ClearScreen", "01_ClearAndTriangle", "00_GettingStarted/01a_ClearScreen.cpp", "01_ClearScreen", 0, "-") \
     X(Triangle, "01b_Triangle", "01_ClearAndTriangle", "00_GettingStarted/01b_Triangle.cpp", "02_Triangle", 30, "Triangle::setUp|Triangle::draw") \
     X(InterleavedTriangle, "01c_InterleavedTriangle", "01_ClearAndTriangle", "00_GettingStarted/01c_InterleavedTriangle.cpp", "-", 30, "InterleavedTriangle::setUp|InterleavedTriangle::draw") \
-    X(DynamicTriangle, "02_DynamicGeometry", "02_DynamicGeometry", "00_GettingStarted/02_DynamicGeometry.cpp", "03_DynamicTriangle", 0, "-") \
+    X(BorrowedTriangle, "01d_BorrowedTriangle", "01_ClearAndTriangle", "00_GettingStarted/01d_BorrowedTriangle.cpp", "-", 0, "-") \
+    X(DynamicTriangle, "02a_DynamicGeometry", "02_DynamicGeometry", "00_GettingStarted/02a_DynamicGeometry.cpp", "03_DynamicTriangle", 0, "-") \
+    X(VertexSyntax, "02b_VertexSyntax", "02_DynamicGeometry", "00_GettingStarted/02b_VertexSyntax.cpp", "-", 0, "-") \
     X(TexturedQuad, "03a_TexturedQuad", "03_TexturesAndSampling", "00_GettingStarted/03a_TexturedQuad.cpp", "04_TexturedQuad", 40, "TexturedQuad::makeTexture|TexturedQuad::setUp|TexturedQuad::draw") \
     X(MultiTextureBlend, "03b_MultiTextureBlend", "03_TexturesAndSampling", "00_GettingStarted/03b_MultiTextureBlend.cpp", "28_MultiTextureBlend", 0, "-") \
     X(IndexedCube, "04_DepthAndTransforms", "04_DepthAndTransforms", "00_GettingStarted/04_DepthAndTransforms.cpp", "05_IndexedCube", 0, "-") \

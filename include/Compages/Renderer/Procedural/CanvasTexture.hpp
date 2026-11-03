@@ -33,7 +33,7 @@ class Scene;
 //! \code
 //! compages::renderer::CanvasTexture canvas;
 //! COMPAGES_TRY(canvas.create(512u, 512u));
-//! canvas.setMapping(compages::core::AABB::fromCorners(
+//! canvas.setMapping(compages::AABB::fromCorners(
 //!     { -0.5f, -0.5f, 0.0f }, { 0.5f, 0.5f, 0.0f }));
 //! COMPAGES_TRY(canvas.bind(scene.assets(), "easel"));
 //! scene.look(easel_entity, canvas.texture());
@@ -91,7 +91,7 @@ public:
     //! Defaults match a unit \c scene.plane(): X and Y from -0.5 to 0.5 at
     //! \c z = 0. Use \c flip_v when the picture appears upside down on your mesh.
     // ------------------------------------------------------------------------
-    void setMapping(compages::core::AABB p_local_bounds,
+    void setMapping(compages::AABB p_local_bounds,
                     bool p_flip_u = false,
                     bool p_flip_v = false);
 
@@ -117,22 +117,22 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Stamp a filled disk in local surface coordinates (metres on the mesh).
     // ------------------------------------------------------------------------
-    void paintLocal(compages::core::Vector3f p_local_point,
+    void paintLocal(compages::Vector3f p_local_point,
                     Color p_color,
                     float p_brush_radius_local);
 
     // ------------------------------------------------------------------------
     //! \brief Stamp at a world-space point using the canvas entity's world matrix.
     // ------------------------------------------------------------------------
-    void paintWorld(compages::core::Vector3f p_world_point,
-                    compages::core::Matrix44f const& p_canvas_world,
+    void paintWorld(compages::Vector3f p_world_point,
+                    compages::Matrix44f const& p_canvas_world,
                     Color p_color,
                     float p_brush_radius_world);
 
     //! \brief Interpolate stamps so fast motion stays continuous.
-    void paintLineWorld(compages::core::Vector3f p_from,
-                        compages::core::Vector3f p_to,
-                        compages::core::Matrix44f const& p_canvas_world,
+    void paintLineWorld(compages::Vector3f p_from,
+                        compages::Vector3f p_to,
+                        compages::Matrix44f const& p_canvas_world,
                         Color p_color,
                         float p_brush_radius_world);
 
@@ -151,7 +151,7 @@ private:
                    std::uint32_t p_y0,
                    std::uint32_t p_x1,
                    std::uint32_t p_y1);
-    [[nodiscard]] bool localToPixel(compages::core::Vector3f p_local,
+    [[nodiscard]] bool localToPixel(compages::Vector3f p_local,
                                     int& p_px,
                                     int& p_py) const;
     [[nodiscard]] int
@@ -160,8 +160,8 @@ private:
     std::vector<std::uint8_t> m_pixels;
     std::uint32_t m_width = 0u;
     std::uint32_t m_height = 0u;
-    compages::core::AABB m_local_bounds =
-        compages::core::AABB::fromCorners({ -0.5f, -0.5f, 0.0f },
+    compages::AABB m_local_bounds =
+        compages::AABB::fromCorners({ -0.5f, -0.5f, 0.0f },
                                           { 0.5f, 0.5f, 0.0f });
     bool m_flip_u = false;
     bool m_flip_v = false;

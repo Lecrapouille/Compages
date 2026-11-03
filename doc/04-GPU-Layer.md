@@ -36,10 +36,10 @@ compages::gpu::shutdown();
 
 ```cpp
 compages::gpu::Drawable mesh;
-COMPAGES_TRY(mesh.load(vertex_src, fragment_src));
+COMPAGES_TRY(mesh.loadSources(vertex_src, fragment_src));
 
 mesh["position"] = positions;                                // attribute: one value per vertex
-mesh["tint"]     = compages::core::Vector3f{ 1, 0.5f, 0.2f }; // uniform
+mesh["tint"]     = compages::Vector3f{ 1, 0.5f, 0.2f }; // uniform
 mesh["image"]    = texture;                                  // sampler: the texture must outlive the drawable
 mesh["time"]     = elapsed;                                  // uniform
 
@@ -50,41 +50,72 @@ mesh.draw();
 `operator[]` does not guess: the shader already classified each name as an attribute, a uniform or a sampler. The same syntax works for the three.
 
 - Attributes given one by one are **stored interleaved** (position, color, position, color…): the layout the GPU reads best.
-- Assigning an attribute marks a **dirty range**; `draw()` sends only this range. In `02_DynamicGeometry`, moving the top vertex sends one vertex out of three. `00b_CpuGpuSync` shows the same on a raw `Buffer`, with orange bars for the bytes the GPU does not have yet (there you call `upload()` yourself).
+- Assigning an attribute marks a **dirty range**; `draw()` sends only what was marked. In `02a_DynamicGeometry`, moving the top corner sends one vertex out of three. `00b_CpuGpuSync` shows the same on a raw `Buffer`, with orange bars for the bytes the GPU does not have yet (there you call `upload()` yourself).
+- The dirty range is **one range**, from the first change to the last: changing element 1 and element 5000 sends everything between them, in one copy.
 - Uniforms are written at each draw. A texture gets a unit and is bound only for the draw.
 
 ---
 
 ## 🧬 3. Typed vertices
 
-When your data is already a struct, the field names must match the attribute names:
+When your data is already a struct, the field names must match the attribute names. The drawable keeps the vertices on the CPU and sends only what changed:
 
 ```cpp
 struct Vertex
 {
-    compages::core::Vector2f position;
-    compages::core::Vector3f color;
+    compages::Vector2f position;
+    compages::Vector3f color;
 };
 
-mesh.vertices<Vertex>({
+mesh.setVertices<Vertex>({
     { { -0.8f, -0.6f }, { 1, 0, 0 } },
     { {  0.8f, -0.6f }, { 0, 1, 0 } },
     { {  0.0f,  0.8f }, { 0, 0, 1 } },
 });
+mesh.setVertices(corners);                          // or any std::vector, std::array, span
 
-mesh.vertex<Vertex>(2u).position.y = 0.5f;   // marked dirty, sent at the next draw
+mesh.editVertex<Vertex>(2u).position.y = 0.5f;      // marked, sent at the next draw
 ```
 
-A buffer that never changes can be immutable, without CPU mirror (`01c_InterleavedTriangle`):
+`editVertex(i)` (one), `editVertices(first, count)` (a run), `editVertices()` (all) and `emplace_back(v)` mark what changed; the next draw sends only that (`02a_DynamicGeometry`). `02b_VertexSyntax` shows every way side by side.
+
+### One rule: who owns the vertices
+
+**The drawable owns its vertices. Borrow a `Buffer` when the vertices are made on the GPU (a compute pass), shared by several drawables, or large and never changed (a `Static` buffer keeps no CPU copy).**
+
+| The vertices... | Call | Who keeps them | Demo |
+|-----------------|------|----------------|------|
+| are given or edited from C++ | `d.setVertices(data)`, `d.editVertex<V>(i)`, `d.emplace_back(v)` | the drawable, on the CPU and the GPU | `01c`, `02a`, `02b`, `10a`, `15` |
+| are given one attribute at a time | `d["position"] = { ... }` | the drawable | `01b` |
+| are made on the GPU, shared, or large and fixed | `d.borrowVertices(buffer)` | your `Buffer`, which must outlive the drawable | `01d`, `05a`, `12`, `13`, `16` |
+
+### Buffers
+
+What the GPU uses a buffer for is part of its type, so a mistake such as drawing indices from a buffer of vertices does not compile:
+
+| Type | Holds |
+|------|-------|
+| `VertexBuffer<T>` | corners of shapes |
+| `IndexBuffer<T>` | the order to join them (`std::uint16_t` or `std::uint32_t`) |
+| `StorageBuffer<T>` | data a compute pass reads and writes; can also be drawn as vertices |
+
+How it lives is chosen at creation, with the OpenGL names, and never changes. There is no default:
+
+| `BufferUsage` | CPU copy | Written by | For |
+|---------------|----------|------------|-----|
+| `Static` | no | nobody after creation (a compute pass may write a `StorageBuffer`) | a mesh read from a file |
+| `Stream` | no | `write()`, often whole; the CPU keeps its own data | skinned vertices, debug lines |
+| `Dynamic` | yes | `buffer[i] = …`, `emplace_back()`, then `upload()` sends only what changed | a trail, numbers the CPU and the GPU share |
 
 ```cpp
-COMPAGES_TRY_ASSIGN(vertices,
-    compages::gpu::Buffer<Vertex>::from(corners,
-        { .usage = compages::gpu::BufferUsage::Immutable, .cpu_mirror = false }));
-mesh.vertices(vertices);
-```
+COMPAGES_TRY_ASSIGN(m_particles,
+    compages::gpu::StorageBuffer<Particle>::from(start, compages::gpu::BufferUsage::Static));
+m_points.borrowVertices(m_particles);   // read where it is: no copy
 
-The drawable reads this buffer where it is: no copy.
+compages::gpu::VertexBuffer<Vertex> trail;   // empty and Dynamic: grows as needed
+trail.emplace_back(Vertex{ p, red });
+COMPAGES_TRY(trail.upload());
+```
 
 ---
 
@@ -145,7 +176,7 @@ m_step.bind("Output", m_stars.output());   // writeonly buffer Output
 m_step.dispatchItems(COUNT);
 compages::gpu::barrier(compages::gpu::Barrier::Storage | compages::gpu::Barrier::VertexAttrib);
 m_stars.swap();                            // what was written is now input()
-m_points.vertices(m_stars.input());        // draw the latest state, no copy
+m_points.borrowVertices(m_stars.input());  // draw the latest state, no copy
 m_points.draw();
 ```
 
@@ -169,14 +200,16 @@ To see the numbers on the CPU, read the current copy back: `m_stars.input().read
 
 | Need | Types | Demo |
 |------|-------|------|
-| one mesh, several shaders | `Buffer<Vertex>`, `Pipeline`, `Program` | `05a_MultiPassMesh` |
+| one mesh, several shaders | one `VertexBuffer<Vertex>`, borrowed by several `Drawable` | `05a_MultiPassMesh` |
 | draw into an image | `Framebuffer`, `RenderPass`, `Texture` | `05b_RenderToTexture`, `05c_PostProcess` |
 | cellular automaton on an image | two `Texture`, swapped | `11a_GameOfLife`, `11b_GrayScott` |
 | compute writes the vertices | `ComputeProgram`, `Buffer`, `barrier` | `12_ComputeParticles`, `13_Galaxy` |
 | the CPU never counts the survivors | compute → indirect draw command | `21_IndirectDraw` |
 | height field computed on the CPU | dynamic vertices, fixed indices | `10a_HeightMap`, `10b_Terrain3D` |
 
-`05a_MultiPassMesh` is the milestone: one `Buffer<Vertex>`, three programs (lit, normals, wireframe). Each `Pipeline::create<Vertex>(program, state)` checks that the shader can read this struct. An attribute dropped by the linker is accepted; a type mismatch is not. So the layout is declared **on the C++ side**: the shader does not guess it, and you never write `glVertexAttribPointer`.
+`05a_MultiPassMesh` is the milestone: one `VertexBuffer<Vertex>`, three drawables (lit, normals, wireframe) that borrow it. Each shader reads only the fields it needs; a field it does not declare is skipped, a field of the wrong type is an error. So the layout is declared **on the C++ side**: the shader does not guess it, and you never write `glVertexAttribPointer`.
+
+Beneath the `Drawable`, the same is written with a `Program` and `Pipeline::create<Vertex>(program, state)`, which checks the struct against the shader, then `gpu::drawIndexed(pipeline, vertices, indices)` (`54_SweatAndDecals`).
 
 ---
 
@@ -193,7 +226,7 @@ Driver messages (`KHR_debug`) go to stderr as `[gpu] warning:` and `[gpu] error:
 
 ## 🎫 8. Handles
 
-Driver objects live in pools: an index plus a generation. Destroying twice does nothing. A `Buffer<T>` cannot be copied. The gallery `--check` verifies that closing a demo brings every counter back to zero: destroying your objects is enough, no `tearDown()` to write.
+Driver objects live in pools: an index plus a generation. Destroying twice does nothing. A `Buffer<T, Kind>` cannot be copied. The gallery `--check` verifies that closing a demo brings every counter back to zero: destroying your objects is enough, no `tearDown()` to write.
 
 ---
 
@@ -203,12 +236,14 @@ Read them in this order; each demo adds one idea:
 
 1. `00b_CpuGpuSync` — CPU copy, pending range.
 2. `00c_Compute` — one computation, one read-back.
-3. `01b_Triangle` then `01c_InterleavedTriangle` — by name, then by struct.
-4. `02_DynamicGeometry` — one dirty vertex.
-5. `04_DepthAndTransforms` — indices, depth, matrices.
-6. `05a_MultiPassMesh` — one buffer, three readers.
-7. `06a_Mandelbrot` — no vertex buffer, only `gl_VertexID`.
-8. `11a_GameOfLife` → `12_ComputeParticles` → `13_Galaxy` → `14_SpiralGalaxy` → `16_NeuralNetwork` (three compute passes in a row).
+3. `01b_Triangle` then `01c_InterleavedTriangle` — by name, then by struct (`Static`).
+4. `01d_BorrowedTriangle` — a `Buffer` we own, borrowed by two drawables.
+5. `02a_DynamicGeometry` — `Dynamic`: one edited vertex.
+6. `02b_VertexSyntax` — every way of writing and changing vertices, side by side.
+7. `04_DepthAndTransforms` — indices, depth, matrices.
+8. `05a_MultiPassMesh` — one buffer, three drawables.
+9. `06a_Mandelbrot` — no vertex buffer, only `gl_VertexID`.
+10. `11a_GameOfLife` → `12_ComputeParticles` → `13_Galaxy` → `14_SpiralGalaxy` → `16_NeuralNetwork` (three compute passes in a row).
 
 All demos: [chapter 9](09-Examples.md).
 

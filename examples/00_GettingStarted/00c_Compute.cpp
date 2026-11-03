@@ -14,13 +14,15 @@
 namespace examples
 {
 
-//! \brief How many numbers, and the value they wrap around at.
+// How many numbers, and the value they wrap around at.
 constexpr std::size_t COUNT = 12u;
 constexpr int TOP = 60;
 
+// ----------------------------------------------------------------------------
 //! \brief Run once per number, all at the same time. Each copy finds its
 //! number from its own index and moves it by that index plus one, so the bars
 //! on the right climb faster.
+// ----------------------------------------------------------------------------
 constexpr std::string_view STEP_SOURCE = R"(#version 450 core
 layout(local_size_x = 16) in;
 
@@ -37,33 +39,33 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string IntroCompute::description() const
 {
     return "A compute shader draws nothing: it is a function the GPU runs once "
            "per number, all at the same time. Each copy knows its index and "
-           "moves "
-           "its number up by that index plus one.\n\nThe bars show what the "
-           "GPU "
-           "holds. They are orange while the CPU copy is out of date: press "
-           "download() in the Try it panel to bring the results back.";
+           "moves its number up by that index plus one.\n\nThe bars show what "
+           "the GPU holds. They are orange while the CPU copy is out of date: "
+           "press download() in the Try it panel to bring the results back.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status IntroCompute::setUp()
 {
     COMPAGES_TRY(m_chart.setUp());
-    COMPAGES_TRY(m_step.load(STEP_SOURCE));
+    COMPAGES_TRY(m_step.loadSource(STEP_SOURCE));
 
     // Storage, so that a compute shader may write the numbers the CPU gave.
+    // Mirrored: a CPU copy is kept, and the bars show it.
     m_on_gpu = std::vector<int>(COUNT, 0);
     COMPAGES_TRY_ASSIGN(m_values,
-                        compages::gpu::Buffer<int>::from(
-                            m_on_gpu,
-                            { .kind = compages::gpu::BufferKind::Storage,
-                              .usage = compages::gpu::BufferUsage::Storage }));
+                        compages::gpu::StorageBuffer<int>::from(
+                            m_on_gpu, compages::gpu::BufferUsage::Dynamic));
     COMPAGES_TRY(m_values.upload());
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void IntroCompute::step()
 {
     // Sends what changed on the CPU, runs one copy of the shader per number,
@@ -83,6 +85,7 @@ void IntroCompute::step()
     }
 }
 
+// ----------------------------------------------------------------------------
 void IntroCompute::draw(compages::world::ViewFrame const& p_frame)
 {
     // Four steps a second when running, so that each one can be followed.
@@ -95,6 +98,7 @@ void IntroCompute::draw(compages::world::ViewFrame const& p_frame)
     m_chart.draw(m_on_gpu, TOP, 0u, m_stale ? m_on_gpu.size() : 0u);
 }
 
+// ----------------------------------------------------------------------------
 void IntroCompute::controls()
 {
     ImGui::Checkbox("Run the shader four times a second", &m_running);
@@ -103,6 +107,7 @@ void IntroCompute::controls()
         step();
     }
     ImGui::SameLine();
+
     // Replaces the CPU copy with what the GPU holds.
     if (ImGui::Button("download()") && m_values.download())
     {
@@ -133,7 +138,8 @@ void IntroCompute::controls()
     }
 }
 
-void IntroCompute::printToConsole()
+// ----------------------------------------------------------------------------
+void IntroCompute::printToConsole() const
 {
     // What the shader computed, read back from the GPU, next to the CPU copy
     // (out of date until download()).

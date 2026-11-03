@@ -233,7 +233,7 @@ compages::world::Entity Scene::camera(std::string p_name)
 }
 
 compages::world::Entity Scene::sun(std::string p_name,
-                                   compages::core::Vector3f p_color,
+                                   compages::Vector3f p_color,
                                    float p_intensity)
 {
     return m_world.entity(std::move(p_name))
@@ -243,7 +243,7 @@ compages::world::Entity Scene::sun(std::string p_name,
 }
 
 compages::world::Entity Scene::lamp(std::string p_name,
-                                    compages::core::Vector3f p_color,
+                                    compages::Vector3f p_color,
                                     float p_intensity,
                                     float p_range)
 {
@@ -251,10 +251,10 @@ compages::world::Entity Scene::lamp(std::string p_name,
         .set(compages::world::PointLight{ p_color, p_intensity, p_range });
 }
 
-compages::core::Vector3f Scene::frameAll()
+compages::Vector3f Scene::frameAll()
 {
     m_world.update();
-    compages::core::AABB bounds;
+    compages::AABB bounds;
     m_world.each<compages::renderer::MeshRenderer>(
         [&](compages::world::EntityId p_entity,
             compages::renderer::MeshRenderer const& p_renderer)
@@ -271,26 +271,26 @@ compages::core::Vector3f Scene::frameAll()
         compages::gpu::reportError(
             "frameAll() with nothing drawn to frame: load or "
             "make the shapes first");
-        return compages::core::Vector3f(0.0f, 0.0f, 0.0f);
+        return compages::Vector3f(0.0f, 0.0f, 0.0f);
     }
 
-    const compages::core::Vector3f center = bounds.center();
-    const compages::core::Vector3f extent = bounds.extent();
+    const compages::Vector3f center = bounds.center();
+    const compages::Vector3f extent = bounds.extent();
     const float radius = std::max({ extent.x, extent.y, extent.z, 0.05f });
 
     compages::world::Entity eye =
         m_world.alive(m_impl->active_camera) ? activeCamera() : camera();
-    eye.position(center + compages::core::Vector3f(0.0f, radius, radius * 4.0f))
+    eye.position(center + compages::Vector3f(0.0f, radius, radius * 4.0f))
         .lookAt(center);
     compages::world::Camera& lens = eye.get<compages::world::Camera>();
     lens.near_plane = std::max(radius * 0.01f, 0.01f);
     lens.far_plane = std::max(radius * 40.0f, 20.0f);
 
-    sun("Sun", compages::core::Vector3f(1.0f, 0.98f, 0.92f), 1.2f)
+    sun("Sun", compages::Vector3f(1.0f, 0.98f, 0.92f), 1.2f)
         .position(center +
-                  compages::core::Vector3f(radius, radius * 2.0f, radius))
+                  compages::Vector3f(radius, radius * 2.0f, radius))
         .lookAt(center);
-    m_impl->environment.ambient = compages::core::Vector3f(0.22f, 0.22f, 0.24f);
+    m_impl->environment.ambient = compages::Vector3f(0.22f, 0.22f, 0.24f);
     return center;
 }
 
@@ -308,10 +308,11 @@ Scene::instantiate(PrefabId p_prefab,
     return compages::world::Entity(m_world, root.value());
 }
 
-Result<compages::world::Entity> Scene::load(std::string const& p_path,
-                                            compages::world::EntityId p_parent)
+Result<compages::world::Entity>
+Scene::loadFile(std::filesystem::path const& p_path,
+                compages::world::EntityId p_parent)
 {
-    std::string extension = std::filesystem::path(p_path).extension().string();
+    std::string extension = p_path.extension().string();
     std::transform(extension.begin(),
                    extension.end(),
                    extension.begin(),
@@ -327,8 +328,8 @@ Result<compages::world::Entity> Scene::load(std::string const& p_path,
         {
             return failure(mesh.error());
         }
-        compages::world::Entity drawn = this->mesh(
-            mesh.take(), std::filesystem::path(p_path).stem().string());
+        compages::world::Entity drawn =
+            this->mesh(mesh.take(), p_path.stem().string());
         if (m_world.alive(p_parent))
         {
             drawn.parent(compages::world::Entity(m_world, p_parent));
@@ -336,7 +337,7 @@ Result<compages::world::Entity> Scene::load(std::string const& p_path,
         return drawn;
     }
 
-    auto prefab = m_assets->load(p_path);
+    auto prefab = m_assets->loadFile(p_path);
     if (!prefab)
     {
         return failure(prefab.error());
@@ -362,19 +363,19 @@ std::string Scene::playing(compages::world::EntityId p_model) const
 Scene& Scene::background(float p_red, float p_green, float p_blue)
 {
     m_impl->settings.clear_color =
-        compages::core::Vector4f(p_red, p_green, p_blue, 1.0f);
+        compages::Vector4f(p_red, p_green, p_blue, 1.0f);
     return *this;
 }
 
 Scene& Scene::ambient(float p_red, float p_green, float p_blue)
 {
-    m_impl->environment.ambient = compages::core::Vector3f(p_red, p_green, p_blue);
+    m_impl->environment.ambient = compages::Vector3f(p_red, p_green, p_blue);
     return *this;
 }
 
-Scene& Scene::skybox(std::array<std::string, 6u> const& p_faces)
+Scene& Scene::skybox(std::array<std::filesystem::path, 6u> const& p_faces)
 {
-    compages::gpu::check(m_impl->sky.load(p_faces));
+    compages::gpu::check(m_impl->sky.loadFiles(p_faces));
     return *this;
 }
 
@@ -499,7 +500,7 @@ void Scene::draw(compages::world::ViewFrame const& p_frame)
 }
 
 std::optional<compages::renderer::RayHit>
-Scene::pick(compages::core::Vector2f p_pixel) const
+Scene::pick(compages::Vector2f p_pixel) const
 {
     if ((m_impl->last_camera.viewport_width == 0u) ||
         (m_impl->last_camera.viewport_height == 0u))

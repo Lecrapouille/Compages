@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Renderer/Render/RenderSnapshot.hpp"
 
 #include <cstddef>
@@ -44,13 +45,11 @@ struct QueueEntry
 // ****************************************************************************
 //! \brief The list of items the Renderer draws in order.
 // ****************************************************************************
-class RenderQueue
+class RenderQueue: private compages::NotCopiable
 {
 public:
 
     RenderQueue() = default;
-    RenderQueue(RenderQueue const&) = delete;
-    RenderQueue& operator=(RenderQueue const&) = delete;
     RenderQueue(RenderQueue&&) = default;
     RenderQueue& operator=(RenderQueue&&) = default;
 

@@ -85,7 +85,7 @@ struct ViewFrame;
 //! is drawn, and how, is the business of a compages::renderer::Scene looking at
 //! the World.
 // ****************************************************************************
-class World: private compages::core::NotCopiable
+class World: private compages::NotCopiable
 {
 public:
 
@@ -142,7 +142,7 @@ public:
     }
 
     //! \brief A whole headless step: step(), update(), endStep().
-    void update(compages::core::Frame const& p_frame);
+    void update(compages::Frame const& p_frame);
 
     //! \brief A whole interactive step, with the keyboard and the mouse:
     //! step(), update(), endStep().
@@ -166,7 +166,7 @@ public:
     void step(ViewFrame const& p_view);
 
     //! \brief Same, headless: no keyboard and no mouse.
-    void step(compages::core::Frame const& p_frame);
+    void step(compages::Frame const& p_frame);
 
     //! \brief Last part of a step: lateUpdate() of the routines, then the
     //! world matrices of what they moved (nothing to do if they moved
@@ -176,13 +176,13 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Only compute the places in the world of the entities that moved,
     //! parents before children. Joints are turned into local places first.
-    //! Run by update(compages::core::Frame).
+    //! Run by update(compages::Frame).
     // ------------------------------------------------------------------------
     void update();
 
-    //! \brief Timing from the last update(compages::core::Frame) or
+    //! \brief Timing from the last update(compages::Frame) or
     //! update(ViewFrame).
-    [[nodiscard]] compages::core::Frame const& frame() const
+    [[nodiscard]] compages::Frame const& frame() const
     {
         return m_frame;
     }
@@ -277,7 +277,7 @@ public:
     [[nodiscard]] LocalTransform transform(EntityId p_entity) const;
 
     //! \brief The place of an entity in the world, as of the last update().
-    [[nodiscard]] compages::core::Matrix44f const&
+    [[nodiscard]] compages::Matrix44f const&
     worldMatrix(EntityId p_entity) const;
 
     //! \brief The EnTT view of the entities having all the components T.
@@ -377,7 +377,7 @@ private:
     TransformStore m_transforms;
     KinematicSystem m_kinematic_system;
     TransformSystem m_transform_system;
-    compages::core::Frame m_frame{};
+    compages::Frame m_frame{};
     Input m_input{};
     RoutineSystem m_routines{ *this };
 

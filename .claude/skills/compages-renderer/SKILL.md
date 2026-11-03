@@ -24,8 +24,8 @@ scene.draw(frame);                       // = update(frame) + render()
 
 - Primitives: `box sphere plane cylinder cone pyramid (name, look)`; looks:
   `color(r,g,b)`, `texture("f.jpg")`, `normals()`, `depth(near, far)`.
-- Files: `scene.load(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF
-  with joints); `assets().load(path)` → `PrefabId`, `instantiate(id)`;
+- Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF
+  with joints); `assets().loadFile(path)` → `PrefabId`, `instantiate(id)`;
   `frameAll()`; `play(model, "Walk")`, `clips(model)`; `copy(entity)` shares
   mesh and look. Assets from `external/Compages-data/` or `COMPAGES_DATA_PATH`.
 - Environment: `ambient`, `skybox({6 faces})`, `lamp(name, color, intensity, range)`,

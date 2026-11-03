@@ -21,6 +21,7 @@ static std::string glfwReason()
     return (why == nullptr) ? "no reason given" : why;
 }
 
+// ----------------------------------------------------------------------------
 compages::Status
 Window::open(std::string const& p_title, int p_width, int p_height)
 {
@@ -72,6 +73,7 @@ Window::open(std::string const& p_title, int p_width, int p_height)
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 Window::~Window()
 {
     // In this order, and it matters: the resources have to be given back while
@@ -90,12 +92,14 @@ Window::~Window()
     }
 }
 
+// ----------------------------------------------------------------------------
 bool Window::closing() const
 {
     return (m_window == nullptr) ||
            (glfwWindowShouldClose(m_window) != GLFW_FALSE);
 }
 
+// ----------------------------------------------------------------------------
 void Window::close()
 {
     if (m_window != nullptr)
@@ -104,6 +108,7 @@ void Window::close()
     }
 }
 
+// ----------------------------------------------------------------------------
 void Window::beginFrame()
 {
     m_scroll = 0.0f;
@@ -133,14 +138,14 @@ void Window::beginFrame()
 
     compages::gpu::resetFrameStatistics();
 
-    const compages::core::Vector2f now_mouse = mouse();
+    const compages::Vector2f now_mouse = mouse();
     if (m_mouse_seen)
     {
         m_mouse_delta = now_mouse - m_mouse;
     }
     else
     {
-        m_mouse_delta = compages::core::Vector2f(0.0f, 0.0f);
+        m_mouse_delta = compages::Vector2f(0.0f, 0.0f);
         m_mouse_seen = true;
     }
     m_mouse = now_mouse;
@@ -153,16 +158,18 @@ void Window::beginFrame()
     m_mouse_left_was = m_mouse_left;
 }
 
+// ----------------------------------------------------------------------------
 void Window::endFrame()
 {
     glfwSwapBuffers(m_window);
 }
 
-compages::core::Vector2f Window::mouse() const
+// ----------------------------------------------------------------------------
+compages::Vector2f Window::mouse() const
 {
     if (m_window == nullptr)
     {
-        return compages::core::Vector2f(0.0f, 0.0f);
+        return compages::Vector2f(0.0f, 0.0f);
     }
     double x = 0.0;
     double y = 0.0;
@@ -171,17 +178,19 @@ compages::core::Vector2f Window::mouse() const
     // GLFW counts from the top of the window and the graphics API from the
     // bottom, so the one place the two disagree is turned over here rather than
     // in every example.
-    return compages::core::Vector2f(static_cast<float>(x),
+    return compages::Vector2f(static_cast<float>(x),
                                     static_cast<float>(m_height) -
                                         static_cast<float>(y));
 }
 
+// ----------------------------------------------------------------------------
 bool Window::keyDown(int p_glfw_key) const
 {
     return (m_window != nullptr) &&
            (glfwGetKey(m_window, p_glfw_key) == GLFW_PRESS);
 }
 
+// ----------------------------------------------------------------------------
 void Window::captureMouse(bool p_captured)
 {
     if ((m_window == nullptr) || (p_captured == m_mouse_captured))
@@ -206,6 +215,7 @@ void Window::captureMouse(bool p_captured)
     m_mouse_seen = false;
 }
 
+// ----------------------------------------------------------------------------
 void Window::vsync(bool p_enabled)
 {
     m_vsync = p_enabled;
@@ -215,6 +225,7 @@ void Window::vsync(bool p_enabled)
     }
 }
 
+// ----------------------------------------------------------------------------
 void Window::onScroll(GLFWwindow* p_window, double /*p_x*/, double p_y)
 {
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(p_window));

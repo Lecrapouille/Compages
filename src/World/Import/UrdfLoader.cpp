@@ -33,9 +33,9 @@ std::vector<float> numbers(char const* p_text)
     return values;
 }
 
-Result<compages::core::Vector3f> triple(pugi::xml_node p_node,
+Result<compages::Vector3f> triple(pugi::xml_node p_node,
                                         char const* p_attribute,
-                                        compages::core::Vector3f p_default)
+                                        compages::Vector3f p_default)
 {
     pugi::xml_attribute attribute = p_node.attribute(p_attribute);
     if (!attribute)
@@ -49,21 +49,21 @@ Result<compages::core::Vector3f> triple(pugi::xml_node p_node,
                        "> needs three numbers, not '" + attribute.value() +
                        "'");
     }
-    return compages::core::Vector3f(values[0], values[1], values[2]);
+    return compages::Vector3f(values[0], values[1], values[2]);
 }
 
 //! \brief URDF roll, pitch, yaw are turns around the fixed X, Y then Z axes:
 //! R = Rz(yaw) * Ry(pitch) * Rx(roll).
-compages::core::Quatf fromRpy(compages::core::Vector3f const& p_rpy)
+compages::Quatf fromRpy(compages::Vector3f const& p_rpy)
 {
     using units::angle::radian_t;
-    const compages::core::Quatf roll = compages::core::Quatf::fromAngleAxis(
-        radian_t(p_rpy.x), compages::core::Vector3f(1.0f, 0.0f, 0.0f));
-    const compages::core::Quatf pitch = compages::core::Quatf::fromAngleAxis(
-        radian_t(p_rpy.y), compages::core::Vector3f(0.0f, 1.0f, 0.0f));
-    const compages::core::Quatf yaw = compages::core::Quatf::fromAngleAxis(
-        radian_t(p_rpy.z), compages::core::Vector3f(0.0f, 0.0f, 1.0f));
-    compages::core::Quatf rotation = yaw * pitch * roll;
+    const compages::Quatf roll = compages::Quatf::fromAngleAxis(
+        radian_t(p_rpy.x), compages::Vector3f(1.0f, 0.0f, 0.0f));
+    const compages::Quatf pitch = compages::Quatf::fromAngleAxis(
+        radian_t(p_rpy.y), compages::Vector3f(0.0f, 1.0f, 0.0f));
+    const compages::Quatf yaw = compages::Quatf::fromAngleAxis(
+        radian_t(p_rpy.z), compages::Vector3f(0.0f, 0.0f, 1.0f));
+    compages::Quatf rotation = yaw * pitch * roll;
     rotation.normalize();
     return rotation;
 }
@@ -78,15 +78,15 @@ Result<LocalTransform> parseOrigin(pugi::xml_node p_parent)
     }
     COMPAGES_TRY_ASSIGN(
         origin.position,
-        triple(node, "xyz", compages::core::Vector3f(0.0f, 0.0f, 0.0f)));
-    compages::core::Vector3f rpy;
+        triple(node, "xyz", compages::Vector3f(0.0f, 0.0f, 0.0f)));
+    compages::Vector3f rpy;
     COMPAGES_TRY_ASSIGN(
-        rpy, triple(node, "rpy", compages::core::Vector3f(0.0f, 0.0f, 0.0f)));
+        rpy, triple(node, "rpy", compages::Vector3f(0.0f, 0.0f, 0.0f)));
     origin.rotation = fromRpy(rpy);
     return origin;
 }
 
-std::optional<compages::core::Vector4f> parseColor(pugi::xml_node p_material)
+std::optional<compages::Vector4f> parseColor(pugi::xml_node p_material)
 {
     pugi::xml_node color = p_material.child("color");
     if (!color)
@@ -98,19 +98,19 @@ std::optional<compages::core::Vector4f> parseColor(pugi::xml_node p_material)
     {
         return std::nullopt;
     }
-    return compages::core::Vector4f(values[0], values[1], values[2], values[3]);
+    return compages::Vector4f(values[0], values[1], values[2], values[3]);
 }
 
 //! \brief Materials are defined once, at the top of the file or inside the
 //! first visual using them, then referred to by name.
-std::unordered_map<std::string, compages::core::Vector4f>
+std::unordered_map<std::string, compages::Vector4f>
 namedColors(pugi::xml_node p_robot)
 {
-    std::unordered_map<std::string, compages::core::Vector4f> colors;
+    std::unordered_map<std::string, compages::Vector4f> colors;
     for (pugi::xpath_node found : p_robot.select_nodes("//material[@name]"))
     {
         pugi::xml_node material = found.node();
-        if (std::optional<compages::core::Vector4f> rgba = parseColor(material))
+        if (std::optional<compages::Vector4f> rgba = parseColor(material))
         {
             colors.try_emplace(material.attribute("name").value(), *rgba);
         }
@@ -120,7 +120,7 @@ namedColors(pugi::xml_node p_robot)
 
 Result<UrdfVisual> parseVisual(
     pugi::xml_node p_visual,
-    std::unordered_map<std::string, compages::core::Vector4f> const& p_colors)
+    std::unordered_map<std::string, compages::Vector4f> const& p_colors)
 {
     UrdfVisual visual;
     COMPAGES_TRY_ASSIGN(visual.origin, parseOrigin(p_visual));
@@ -132,14 +132,14 @@ Result<UrdfVisual> parseVisual(
         visual.filename = mesh.attribute("filename").value();
         COMPAGES_TRY_ASSIGN(
             visual.origin.scale,
-            triple(mesh, "scale", compages::core::Vector3f(1.0f, 1.0f, 1.0f)));
+            triple(mesh, "scale", compages::Vector3f(1.0f, 1.0f, 1.0f)));
     }
     else if (pugi::xml_node box = geometry.child("box"))
     {
         visual.kind = UrdfGeometry::Box;
         COMPAGES_TRY_ASSIGN(
             visual.size,
-            triple(box, "size", compages::core::Vector3f(1.0f, 1.0f, 1.0f)));
+            triple(box, "size", compages::Vector3f(1.0f, 1.0f, 1.0f)));
     }
     else if (pugi::xml_node cylinder = geometry.child("cylinder"))
     {
@@ -213,8 +213,8 @@ Result<UrdfJoint> parseJoint(pugi::xml_node p_joint)
     COMPAGES_TRY_ASSIGN(joint.axis,
                         triple(p_joint.child("axis"),
                                "xyz",
-                               compages::core::Vector3f(1.0f, 0.0f, 0.0f)));
-    if (compages::core::vector::squaredNorm(joint.axis) <= 0.0f)
+                               compages::Vector3f(1.0f, 0.0f, 0.0f)));
+    if (compages::vector::squaredNorm(joint.axis) <= 0.0f)
     {
         return failure("joint '" + joint.name + "' has a null axis");
     }
@@ -295,7 +295,7 @@ public:
             robot.parent(Entity(m_world, p_parent));
         }
         robot.rotation(-0.5f * std::numbers::pi_v<float>,
-                       compages::core::Vector3f(1.0f, 0.0f, 0.0f));
+                       compages::Vector3f(1.0f, 0.0f, 0.0f));
         Status built = addLink(*root_link, robot.child(root_link->name));
         if (!built)
         {
@@ -384,19 +384,20 @@ private:
 
 } // namespace
 
-Result<UrdfRobot> parseUrdf(std::string const& p_path)
+Result<UrdfRobot> parseUrdf(std::filesystem::path const& p_path)
 {
     pugi::xml_document document;
-    const pugi::xml_parse_result parsed = document.load_file(p_path.c_str());
+    const pugi::xml_parse_result parsed =
+        document.load_file(p_path.string().c_str());
     if (!parsed)
     {
-        return failure("cannot read the URDF file '" + p_path +
+        return failure("cannot read the URDF file '" + p_path.string() +
                        "': " + parsed.description());
     }
     pugi::xml_node root = document.child("robot");
     if (!root)
     {
-        return failure("'" + p_path + "' has no <robot> element");
+        return failure("'" + p_path.string() + "' has no <robot> element");
     }
 
     UrdfRobot robot;
@@ -438,9 +439,8 @@ Result<Entity> buildUrdf(World& p_world,
     return builder.build(p_robot, p_parent);
 }
 
-Result<Entity> loadUrdf(World& p_world,
-                        std::string const& p_path,
-                        EntityId p_parent)
+Result<Entity>
+loadUrdf(World& p_world, std::filesystem::path const& p_path, EntityId p_parent)
 {
     auto robot = parseUrdf(p_path);
     if (!robot)
@@ -450,7 +450,7 @@ Result<Entity> loadUrdf(World& p_world,
     auto root = buildUrdf(p_world, robot.value(), p_parent);
     if (!root)
     {
-        return failure("'" + p_path + "': " + root.error());
+        return failure("'" + p_path.string() + "': " + root.error());
     }
     return root;
 }

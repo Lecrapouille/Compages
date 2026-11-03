@@ -11,6 +11,7 @@
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <span>
 #include <string>
 
@@ -30,7 +31,7 @@ namespace compages::renderer
 //! if (mesh) { scene.mesh(mesh.take(), "Link1"); }
 //! \endcode
 // ****************************************************************************
-[[nodiscard]] Result<MeshAsset> loadStl(std::string const& p_path);
+[[nodiscard]] Result<MeshAsset> loadStl(std::filesystem::path const& p_path);
 
 //! \brief Same, from the bytes of a file already in memory.
 [[nodiscard]] Result<MeshAsset> parseStl(std::span<const std::byte> p_bytes);

@@ -7,13 +7,30 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-
 // ****************************************************************************
 //! \file
-//! \brief What a pixel is made of, and how a texture is read.
+//! \brief What a pixel of a texture is made of, and how a texture is read.
+//!
+//! A texture is an image stored on the graphics card: a photograph, a depth
+//! map, or a grid of numbers a simulation works on. Before creating one, the
+//! library needs to know its shape (one image, six for a sky, a volume...),
+//! what each pixel holds (colour, depth, a number) and how to read between
+//! pixels.
+//!
+//! \code
+//! auto desc = compages::gpu::TextureDesc::image(
+//!                 256, 256, compages::gpu::PixelFormat::RGBA16F) // above 1
+//!                 .filter(compages::gpu::Filter::Nearest)  // no blending
+//!                 .wrap(compages::gpu::Wrap::Repeat);      // tiles
+//! \endcode
+//!
+//! What it holds:
+//! - TextureKind, PixelFormat, Filter, Wrap, ImageAccess: the choices.
+//! - bytesPerPixel(), isDepth(), isSrgb()...: questions about a format.
 // ****************************************************************************
+
+#include <cstddef>
+#include <cstdint>
 
 namespace compages::gpu
 {
@@ -31,15 +48,15 @@ enum class TextureKind
     Texture1D,
     //! \brief One image, addressed by two coordinates. The common case.
     Texture2D,
-    //! \brief A volume, addressed by three coordinates. Used by volume rendering
-    //! and by simulations that live in three dimensions.
+    //! \brief A volume, addressed by three coordinates. Used by volume
+    //! rendering and by simulations that live in three dimensions.
     Texture3D,
-    //! \brief Six square images, addressed by a direction. Used for skyboxes and
-    //! for reflections.
+    //! \brief Six square images, addressed by a direction. Used for skyboxes
+    //! and for reflections.
     TextureCube,
-    //! \brief Several images of the same size, addressed by two coordinates and a
-    //! layer number. Unlike a 3D texture, filtering never mixes two layers, which
-    //! is what makes it right for a set of unrelated images.
+    //! \brief Several images of the same size, addressed by two coordinates and
+    //! a layer number. Unlike a 3D texture, filtering never mixes two layers,
+    //! which is what makes it right for a set of unrelated images.
     Texture2DArray,
 };
 
@@ -54,7 +71,8 @@ enum class TextureKind
 // ----------------------------------------------------------------------------
 enum class PixelFormat
 {
-    //! \brief One byte, as a fraction. A mask, a height field, an occlusion map.
+    //! \brief One byte, as a fraction. A mask, a height field, an occlusion
+    //! map.
     R8,
     //! \brief Two bytes, as fractions.
     RG8,
@@ -64,8 +82,8 @@ enum class PixelFormat
     //! \brief Four bytes, as fractions. What a photograph loads as.
     RGBA8,
 
-    //! \brief Four bytes, as fractions, with the colour channels stored with a
-    //! gamma curve and converted on read. What a texture painted by an artist
+    //! \brief Three bytes, as fractions, with the colour channels stored with
+    //! a gamma curve and converted on read. What a texture painted by an artist
     //! should use, so that filtering happens on linear values.
     SRGB8,
     //! \brief The same with an alpha channel, which stays linear.
@@ -92,8 +110,9 @@ enum class PixelFormat
     R32F,
     //! \brief Two single precision floats.
     RG32F,
-    //! \brief Four single precision floats. What a reaction diffusion simulation
-    //! keeps its state in, where precision decides whether the pattern survives.
+    //! \brief Four single precision floats. What a reaction diffusion
+    //! simulation keeps its state in, where precision decides whether the
+    //! pattern survives.
     RGBA32F,
 
     //! \brief Sixteen bits of depth.
@@ -135,8 +154,8 @@ enum class Wrap
 //! \brief What a shader may do with a texture bound as an image.
 //!
 //! An image is how a compute shader writes to a texture. Saying which way the
-//! data flows lets the driver place the memory accordingly, and lets the library
-//! ask for the right barrier afterwards.
+//! data flows lets the driver place the memory accordingly, and lets the
+//! library ask for the right barrier afterwards.
 // ----------------------------------------------------------------------------
 enum class ImageAccess
 {
@@ -149,12 +168,17 @@ enum class ImageAccess
 };
 
 // ----------------------------------------------------------------------------
-//! \brief Name of the format, for error messages.
+//! \brief Name of the format as written in this enum ("RGBA8"), for error
+//! messages.
+//! \param[in] p_format the format to name.
+//! \return a static string, never null.
 // ----------------------------------------------------------------------------
 [[nodiscard]] const char* toString(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
-//! \brief Name of the shape, for error messages.
+//! \brief Name of the shape as written in this enum, for error messages.
+//! \param[in] p_kind the shape to name.
+//! \return a static string, never null.
 // ----------------------------------------------------------------------------
 [[nodiscard]] const char* toString(TextureKind p_kind);
 
@@ -162,22 +186,34 @@ enum class ImageAccess
 //! \brief How many bytes one pixel occupies.
 //!
 //! What a write has to be checked against: the size of the pixels handed over
-//! must match the area being written, and saying so needs this.
+//! must match the area being written, and saying so needs this. Depth24Stencil8
+//! counts as four.
+//!
+//! \param[in] p_format the format to measure.
+//! \return the bytes per pixel, 1 to 16.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t bytesPerPixel(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
-//! \brief How many channels one pixel has, depth counting as one.
+//! \brief How many channels one pixel has, depth counting as one: 3 for RGB8,
+//! 4 for SRGB8A8.
+//! \param[in] p_format the format to inspect.
+//! \return 1 to 4.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::size_t channelsOf(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
-//! \brief Does this format hold depth rather than colour?
+//! \brief Does this format hold depth rather than colour? A depth texture
+//! can be attached as the depth of a framebuffer, not as one of its colours.
+//! \param[in] p_format the format to inspect.
+//! \return true for Depth16, Depth32F and Depth24Stencil8.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isDepth(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
-//! \brief Does this format hold a stencil as well?
+//! \brief Does this format hold a stencil as well? Only Depth24Stencil8 does.
+//! \param[in] p_format the format to inspect.
+//! \return true for Depth24Stencil8.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool hasStencil(PixelFormat p_format);
 
@@ -186,23 +222,34 @@ enum class ImageAccess
 //!
 //! A shader samples one of these with an isampler or a usampler, never with a
 //! plain sampler.
+//!
+//! \param[in] p_format the format to inspect.
+//! \return true for R8UI, R32I and R32UI.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isIntegerFormat(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
-//! \brief Are the colour channels stored with a gamma curve?
+//! \brief Are the colour channels stored with a gamma curve? Such a format
+//! is converted to linear when sampled and back when written, so the shader
+//! always works in linear values.
+//! \param[in] p_format the format to inspect.
+//! \return true for SRGB8 and SRGB8A8.
 // ----------------------------------------------------------------------------
 [[nodiscard]] bool isSrgb(PixelFormat p_format);
 
 // ----------------------------------------------------------------------------
 //! \brief How many images a texture of this shape holds beyond its width and
 //! height: six for a cube map, one otherwise.
+//! \param[in] p_kind the shape to inspect.
+//! \return 6 for TextureCube, 1 otherwise.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::uint32_t facesOf(TextureKind p_kind);
 
 // ----------------------------------------------------------------------------
 //! \brief How many coordinates address a texture of this shape: one, two or
 //! three. A cube map and an array are addressed as three.
+//! \param[in] p_kind the shape to inspect.
+//! \return 1, 2 or 3.
 // ----------------------------------------------------------------------------
 [[nodiscard]] std::uint8_t dimensionsOf(TextureKind p_kind);
 

@@ -248,6 +248,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* PLANE_VERTEX = R"(#version 450 core
 in vec2 position;
 in float value;
@@ -264,6 +265,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* PLANE_FRAGMENT = R"(#version 450 core
 in float vValue;
 out vec4 oColor;
@@ -278,6 +280,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* DOT_VERTEX = R"(#version 450 core
 in vec2 position;
 in float label;
@@ -293,6 +296,7 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 constexpr char const* DOT_FRAGMENT = R"(#version 450 core
 in float vLabel;
 out vec4 oColor;
@@ -309,12 +313,15 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
 std::string source(char const* p_pass)
 {
     return std::string(COMMON) + p_pass;
 }
 
+// ----------------------------------------------------------------------------
 //! \brief The examples of one dataset, made on the CPU.
+// ----------------------------------------------------------------------------
 std::vector<NeuralNetwork::Sample> makeSamples(int p_dataset,
                                                std::mt19937& p_random)
 {
@@ -332,15 +339,14 @@ std::vector<NeuralNetwork::Sample> makeSamples(int p_dataset,
             const float angle = (t * 3.0f * std::numbers::pi_v<float>)+(
                 (i % 2u == 0u) ? 0.0f : std::numbers::pi_v<float>);
             const float radius = 0.1f + (0.85f * t);
-            sample.position = compages::core::Vector2f(
+            sample.position = compages::Vector2f(
                 (radius * std::cos(angle)) + noise(p_random),
                 (radius * std::sin(angle)) + noise(p_random));
             sample.label = float(i % 2u);
             continue;
         }
-        sample.position =
-            compages::core::Vector2f(plane(p_random), plane(p_random));
-        const compages::core::Vector2f& p = sample.position;
+        sample.position = compages::Vector2f(plane(p_random), plane(p_random));
+        const compages::Vector2f& p = sample.position;
         sample.label = (p_dataset == 0)
                            ? (((p.x * p.x) + (p.y * p.y) < 0.36f) ? 1.0f : 0.0f)
                            : (((p.x * p.y) > 0.0f) ? 1.0f : 0.0f);
@@ -350,6 +356,7 @@ std::vector<NeuralNetwork::Sample> makeSamples(int p_dataset,
 
 } // namespace
 
+// ----------------------------------------------------------------------------
 std::string NeuralNetwork::description() const
 {
     return "A neural network (2 -> 16 -> 16 -> 1) learns to separate two "
@@ -359,24 +366,24 @@ std::string NeuralNetwork::description() const
            "answer of the network at each point of the plane.";
 }
 
+// ----------------------------------------------------------------------------
 compages::Status NeuralNetwork::setUp()
 {
-    COMPAGES_TRY(m_gradient_pass.load(source(GRADIENT)));
-    COMPAGES_TRY(m_update_pass.load(source(UPDATE)));
-    COMPAGES_TRY(m_evaluate_pass.load(source(EVALUATE)));
+    COMPAGES_TRY(m_gradient_pass.loadSource(source(GRADIENT)));
+    COMPAGES_TRY(m_update_pass.loadSource(source(UPDATE)));
+    COMPAGES_TRY(m_evaluate_pass.loadSource(source(EVALUATE)));
 
     // Storage buffers the GPU fills itself: no data from the CPU.
-    constexpr auto storage = compages::gpu::BufferKind::Storage;
-    constexpr auto usage = compages::gpu::BufferUsage::Storage;
-    COMPAGES_TRY_ASSIGN(
-        m_gradients,
-        compages::gpu::Buffer<float>::create(
-            std::size_t{ SAMPLES } * PARAMETERS, storage, usage));
-    COMPAGES_TRY_ASSIGN(
-        m_losses,
-        compages::gpu::Buffer<float>::create(SAMPLES, storage, usage));
-    COMPAGES_TRY_ASSIGN(
-        m_stats, compages::gpu::Buffer<float>::create(1u, storage, usage));
+    COMPAGES_TRY_ASSIGN(m_gradients,
+                        compages::gpu::StorageBuffer<float>::create(
+                            std::size_t{ SAMPLES } * PARAMETERS,
+                            compages::gpu::BufferUsage::Stream));
+    COMPAGES_TRY_ASSIGN(m_losses,
+                        compages::gpu::StorageBuffer<float>::create(
+                            SAMPLES, compages::gpu::BufferUsage::Stream));
+    COMPAGES_TRY_ASSIGN(m_stats,
+                        compages::gpu::StorageBuffer<float>::create(
+                            1u, compages::gpu::BufferUsage::Stream));
 
     // The plane: one point per cell, the network writes its value.
     std::vector<Point> grid;
@@ -388,36 +395,35 @@ compages::Status NeuralNetwork::setUp()
             const float u = ((float(x) + 0.5f) / float(GRID) * 2.0f) - 1.0f;
             const float v = ((float(y) + 0.5f) / float(GRID) * 2.0f) - 1.0f;
             grid.push_back(Point{
-                compages::core::Vector2f(u * EXTENT, v * EXTENT), 0.5f, 0.0f });
+                compages::Vector2f(u * EXTENT, v * EXTENT), 0.5f, 0.0f });
         }
     }
     COMPAGES_TRY_ASSIGN(m_field,
-                        compages::gpu::Buffer<Point>::from(
-                            grid, { .kind = storage, .usage = usage }));
+                        compages::gpu::StorageBuffer<Point>::from(
+                            grid, compages::gpu::BufferUsage::Dynamic));
     COMPAGES_TRY(m_field.upload());
 
-    COMPAGES_TRY(m_plane.load(PLANE_VERTEX, PLANE_FRAGMENT));
-    m_plane.vertices(m_field);
-    m_plane.primitive(compages::gpu::Primitive::Points);
-    COMPAGES_TRY(m_dots.load(DOT_VERTEX, DOT_FRAGMENT));
-    m_dots.primitive(compages::gpu::Primitive::Points);
+    COMPAGES_TRY(m_plane.loadSources(PLANE_VERTEX, PLANE_FRAGMENT));
+    // The network writes the field on the graphics card: borrowed.
+    m_plane.borrowVertices(m_field);
+    m_plane.state().primitive = compages::gpu::Primitive::Points;
+    COMPAGES_TRY(m_dots.loadSources(DOT_VERTEX, DOT_FRAGMENT));
+    m_dots.state().primitive = compages::gpu::Primitive::Points;
 
     COMPAGES_TRY(reset());
     return m_plane.prepare();
 }
 
+// ----------------------------------------------------------------------------
 compages::Status NeuralNetwork::reset()
 {
-    constexpr auto storage = compages::gpu::BufferKind::Storage;
-    constexpr auto usage = compages::gpu::BufferUsage::Storage;
-
     // The inputs, from the CPU.
     COMPAGES_TRY_ASSIGN(m_samples,
-                        compages::gpu::Buffer<Sample>::from(
+                        compages::gpu::StorageBuffer<Sample>::from(
                             makeSamples(m_dataset, m_random),
-                            { .kind = storage, .usage = usage }));
+                            compages::gpu::BufferUsage::Dynamic));
     COMPAGES_TRY(m_samples.upload());
-    m_dots.vertices(m_samples);
+    m_dots.borrowVertices(m_samples);
 
     // Small random weights (Xavier): each neuron starts a little different.
     std::vector<float> weights(PARAMETERS, 0.0f);
@@ -437,14 +443,14 @@ compages::Status NeuralNetwork::reset()
             gauss(m_random) * std::sqrt(1.0f / float(HIDDEN));
     }
     COMPAGES_TRY_ASSIGN(m_weights,
-                        compages::gpu::Buffer<float>::from(
-                            weights, { .kind = storage, .usage = usage }));
+                        compages::gpu::StorageBuffer<float>::from(
+                            weights, compages::gpu::BufferUsage::Dynamic));
     COMPAGES_TRY(m_weights.upload());
-    const std::vector<compages::core::Vector2f> zero(
-        PARAMETERS, compages::core::Vector2f(0.0f, 0.0f));
+    const std::vector<compages::Vector2f> zero(PARAMETERS,
+                                               compages::Vector2f(0.0f, 0.0f));
     COMPAGES_TRY_ASSIGN(m_moments,
-                        compages::gpu::Buffer<compages::core::Vector2f>::from(
-                            zero, { .kind = storage, .usage = usage }));
+                        compages::gpu::StorageBuffer<compages::Vector2f>::from(
+                            zero, compages::gpu::BufferUsage::Dynamic));
     COMPAGES_TRY(m_moments.upload());
 
     m_step = 0;
@@ -452,6 +458,7 @@ compages::Status NeuralNetwork::reset()
     return compages::success();
 }
 
+// ----------------------------------------------------------------------------
 void NeuralNetwork::train(int p_iterations)
 {
     m_gradient_pass.set("count", SAMPLES);
@@ -487,21 +494,20 @@ void NeuralNetwork::train(int p_iterations)
     }
 }
 
+// ----------------------------------------------------------------------------
 std::vector<float>
-NeuralNetwork::ask(std::vector<compages::core::Vector2f> const& p_points)
+NeuralNetwork::ask(std::vector<compages::Vector2f> const& p_points)
 {
     // CPU -> GPU: the questions; GPU: the forward pass; GPU -> CPU: the
     // answers.
     std::vector<Point> questions;
     questions.reserve(p_points.size());
-    for (compages::core::Vector2f const& point : p_points)
+    for (compages::Vector2f const& point : p_points)
     {
         questions.push_back(Point{ point, 0.0f, 0.0f });
     }
-    auto created = compages::gpu::Buffer<Point>::from(
-        questions,
-        { .kind = compages::gpu::BufferKind::Storage,
-          .usage = compages::gpu::BufferUsage::Storage });
+    auto created = compages::gpu::StorageBuffer<Point>::from(
+        questions, compages::gpu::BufferUsage::Dynamic);
     if (!created)
     {
         compages::gpu::reportError(created.error());
@@ -533,6 +539,7 @@ NeuralNetwork::ask(std::vector<compages::core::Vector2f> const& p_points)
     return values;
 }
 
+// ----------------------------------------------------------------------------
 void NeuralNetwork::draw(compages::world::ViewFrame const& p_frame)
 {
     if (m_dirty)
@@ -574,7 +581,7 @@ void NeuralNetwork::draw(compages::world::ViewFrame const& p_frame)
     }
     compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
 
-    const float aspect = compages::core::aspect(p_frame);
+    const float aspect = compages::aspect(p_frame);
     const float scale = 0.95f / EXTENT / std::max(1.0f, 1.0f / aspect);
     const float side =
         float(std::min(p_frame.width, p_frame.height)) * std::min(1.0f, aspect);
@@ -585,14 +592,15 @@ void NeuralNetwork::draw(compages::world::ViewFrame const& p_frame)
     m_plane.draw();
     m_dots["aspect"] = aspect;
     m_dots["scale"] = scale;
-    m_dots.vertices(m_samples);
+    m_dots.borrowVertices(m_samples);
     m_dots.draw();
 }
 
+// ----------------------------------------------------------------------------
 void NeuralNetwork::printToConsole()
 {
     // Every example, and what the network says about it.
-    std::vector<compages::core::Vector2f> inputs;
+    std::vector<compages::Vector2f> inputs;
     compages::Result<std::vector<Sample>> samples = m_samples.read();
     if (!samples)
     {
@@ -617,6 +625,7 @@ void NeuralNetwork::printToConsole()
               << std::endl;
 }
 
+// ----------------------------------------------------------------------------
 void NeuralNetwork::controls()
 {
     static char const* const datasets[] = { "Circle", "XOR", "Two spirals" };

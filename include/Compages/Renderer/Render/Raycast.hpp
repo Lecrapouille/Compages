@@ -27,7 +27,7 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief One compages::renderer::MeshRenderer the geometric raycast hit.
 //!
-//! Distance is along the ray, in world units, because the compages::core::Ray direction is
+//! Distance is along the ray, in world units, because the compages::Ray direction is
 //! unit length. The point is \c ray.pointAt(distance).
 //!
 //! \code
@@ -41,11 +41,11 @@ struct RayHit
     //! \brief Distance along the ray from its origin.
     float distance = 0.0f;
     //! \brief compages::world::World-space intersection point.
-    compages::core::Vector3f point{ 0.0f, 0.0f, 0.0f };
+    compages::Vector3f point{ 0.0f, 0.0f, 0.0f };
 };
 
 // ****************************************************************************
-//! \brief Closest compages::renderer::MeshRenderer whose supplied world compages::core::AABB the ray enters.
+//! \brief Closest compages::renderer::MeshRenderer whose supplied world compages::AABB the ray enters.
 //!
 //! The compages::world::World does not own mesh bounds: those live on the asset. The caller
 //! provides them, typically by transforming \c MeshAsset::local_bounds with
@@ -55,7 +55,7 @@ struct RayHit
 //! Disabled entities and entities that are not alive are skipped. An empty
 //! box is a miss.
 //!
-//! \tparam BoundsFn callable \c compages::core::AABB(compages::world::EntityId, compages::renderer::MeshRenderer const&).
+//! \tparam BoundsFn callable \c compages::AABB(compages::world::EntityId, compages::renderer::MeshRenderer const&).
 //!
 //! \code
 //! auto hit = compages::renderer::raycast(world, ray, [&](compages::world::EntityId e, auto const&) {
@@ -65,7 +65,7 @@ struct RayHit
 // ****************************************************************************
 template <typename BoundsFn>
 [[nodiscard]] std::optional<compages::renderer::RayHit> raycast(compages::world::World const& p_world,
-                                            compages::core::Ray const& p_ray,
+                                            compages::Ray const& p_ray,
                                             BoundsFn&& p_world_bounds)
 {
     std::optional<compages::renderer::RayHit> best;
@@ -75,7 +75,7 @@ template <typename BoundsFn>
         {
             return;
         }
-        const compages::core::AABB box = p_world_bounds(entity, p_renderer);
+        const compages::AABB box = p_world_bounds(entity, p_renderer);
         const std::optional<float> t = intersect(p_ray, box);
         if (!t.has_value())
         {

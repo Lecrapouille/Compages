@@ -304,7 +304,7 @@ Result<PrefabId> AssetManager::addPrefab(std::string p_name, Prefab p_prefab)
                             "prefab");
 }
 
-Result<PrefabId> AssetManager::load(std::string const& p_path)
+Result<PrefabId> AssetManager::loadFile(std::filesystem::path const& p_path)
 {
     return loadGltf(p_path, *this);
 }

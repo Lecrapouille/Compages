@@ -39,13 +39,13 @@ The two mechanisms help each other:
 ```cpp
 #include <Compages/World/Entity.hpp>
 
-struct Velocity { compages::core::Vector3f value; };
+struct Velocity { compages::Vector3f value; };
 
 compages::world::World world;
 compages::world::Entity ship = world.entity("Ship").set(Velocity{ { 1, 0, 0 } });
 ship.child("Gun").position(0.0f, 0.5f, 0.0f);
 
-compages::core::Frame step;
+compages::Frame step;
 step.elapsed = 1.0f / 60.0f;
 
 world.each<Velocity>([&](compages::world::Entity e, Velocity& v) {
@@ -318,7 +318,7 @@ Animation clips belong to the **renderer**, because they live in the asset catal
 
 | Type | Holds |
 |------|-------|
-| `compages::core::Frame` | `elapsed`, `total`, `width`, `height` — enough for a headless step |
+| `compages::Frame` | `elapsed`, `total`, `width`, `height` — enough for a headless step |
 | `compages::world::ViewFrame` | a `Frame` plus keyboard and mouse, for routines and `Scene::draw` |
 
 You fill `elapsed` (and `total`) yourself in a headless loop.

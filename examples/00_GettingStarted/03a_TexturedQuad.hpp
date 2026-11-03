@@ -53,6 +53,7 @@ private:
     //! \brief Read by m_quad, which keeps a pointer to it: declared first so
     //! that it is destroyed last.
     compages::gpu::Texture m_texture;
+    //! \brief The quad, with its shader, its vertices and its render state.
     compages::gpu::Drawable m_quad;
 };
 

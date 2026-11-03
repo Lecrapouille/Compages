@@ -10,7 +10,7 @@
 #include "Common/BarChart.hpp"
 #include "Common/Example.hpp"
 
-#include "Compages/GPU/Compute.hpp"
+#include "Compages/GPU/ComputeProgram.hpp"
 
 #include <vector>
 
@@ -24,10 +24,9 @@ namespace examples
 //! at once, each copy knowing its own index, gl_GlobalInvocationID.x. Here each
 //! copy moves one number of a buffer up by its index plus one:
 //! \code
-//! COMPAGES_TRY(m_step.load(STEP_SOURCE));
-//! COMPAGES_TRY(compages::gpu::dispatch(m_step, m_values));   // one copy per
-//! number COMPAGES_TRY(m_values.download());               // the results, on
-//! the CPU
+//! COMPAGES_TRY(m_step.loadSource(STEP_SOURCE));
+//! COMPAGES_TRY(compages::gpu::dispatch(m_step, m_values)); // one per number
+//! COMPAGES_TRY(m_values.download());              // the results, on the CPU
 //! \endcode
 //! The bars are what the GPU holds. The CPU copy of the buffer does not follow
 //! on its own: it is out of date, the bars orange, until download() is called.
@@ -50,10 +49,14 @@ private:
     //! \brief Run the shader once over every number, and read the bars back.
     void step();
     //! \brief Write the GPU results and the CPU copy to the standard output.
-    void printToConsole();
+    void printToConsole() const;
 
+private:
+
+    //! \brief The shader that moves each number up by its index plus one.
     compages::gpu::ComputeProgram m_step;
-    compages::gpu::Buffer<int> m_values;
+    //! \brief The numbers, on the CPU transferred to the GPU.
+    compages::gpu::StorageBuffer<int> m_values;
     //! \brief What the GPU held after the last step, for the bars.
     std::vector<int> m_on_gpu;
     //! \brief The CPU copy is older than what the GPU holds.
