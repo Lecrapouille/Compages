@@ -128,10 +128,11 @@ public:
     //!
     //! \code
     //! compages::gpu::Texture color, depth;
-    //! COMPAGES_TRY(color.allocate({ .width = 512u, .height = 512u }));
-    //! COMPAGES_TRY(depth.allocate({ .format =
-    //! compages::gpu::PixelFormat::Depth32F,
-    //!                               .width = 512u, .height = 512u }));
+    //! COMPAGES_TRY_ASSIGN(color, compages::gpu::Texture::create(
+    //!     { .width = 512u, .height = 512u }));
+    //! COMPAGES_TRY_ASSIGN(depth, compages::gpu::Texture::create(
+    //!     { .format = compages::gpu::PixelFormat::Depth32F,
+    //!       .width = 512u, .height = 512u }));
     //! COMPAGES_TRY(m_target.attach(color, depth));
     //! \endcode
     //!

@@ -203,7 +203,7 @@ float floatAt(std::vector<std::byte> const& p_bytes, std::size_t p_offset)
 
 compages::gpu::Program linked(char const* p_fragment)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, p_fragment);
+    auto program = tests::programFromSources(VERTEX, p_fragment);
     EXPECT_TRUE(bool(program)) << program.error();
     return program ? program.take() : compages::gpu::Program{};
 }
@@ -530,8 +530,8 @@ TEST_F(UniformBlockTest, TheShaderReadsWhatWasWritten)
     const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Corner>();
     auto pipeline = compages::gpu::Pipeline::create<Corner>(program, layout).take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));
 
     auto picture = compages::gpu::readPixels();
@@ -567,31 +567,31 @@ TEST_F(UniformBlockTest, OneBlockFeedsTwoPrograms)
     auto right = compages::gpu::Pipeline::create<Corner>(second, layout).take();
 
     {
-        auto pass = compages::gpu::RenderPass::begin(
+        compages::gpu::RenderPass pass(
             { .width = WIDTH / 2u,
               .height = HEIGHT,
               .color = { 0.0f, 0.0f, 0.0f, 1.0f },
               .target = {} });
-        ASSERT_TRUE(bool(pass)) << pass.error();
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(left, vertices); })));
     }
     {
-        auto pass = compages::gpu::RenderPass::begin(
+        compages::gpu::RenderPass pass(
             { .x = WIDTH / 2u,
               .width = WIDTH / 2u,
               .height = HEIGHT,
               .color = { 0.0f, 0.0f, 0.0f, 1.0f },
               .target = {} });
-        ASSERT_TRUE(bool(pass)) << pass.error();
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(right, vertices); })));
     }
 
-    auto whole = compages::gpu::RenderPass::begin({ .width = WIDTH,
+    compages::gpu::RenderPass whole({ .width = WIDTH,
                                           .height = HEIGHT,
                                           .clear_color = false,
                                           .clear_depth = false,
                                           .target = {} });
-    ASSERT_TRUE(bool(whole)) << whole.error();
+    ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
     auto picture = compages::gpu::readPixels();
     ASSERT_TRUE(bool(picture)) << picture.error();
 
@@ -623,8 +623,8 @@ TEST_F(UniformBlockTest, BindSendsWhatWasWritten)
     const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Corner>();
     auto pipeline = compages::gpu::Pipeline::create<Corner>(program, layout).take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));
 
     auto picture = compages::gpu::readPixels();

@@ -486,18 +486,6 @@ TEST_F(TextureTest, BindsToATextureUnit)
     ASSERT_THAT(too_far.error(), HasSubstr("does not exist"));
 }
 
-TEST_F(TextureTest, ChangesHowItIsSampled)
-{
-    auto texture = compages::gpu::Texture::create({ .width = 4u, .height = 4u }).take();
-
-    ASSERT_TRUE(bool(texture.setFilter(compages::gpu::Filter::Nearest, compages::gpu::Filter::Nearest)));
-    ASSERT_EQ(texture.description().magnify, compages::gpu::Filter::Nearest);
-
-    ASSERT_TRUE(bool(texture.setWrap(compages::gpu::Wrap::Repeat, compages::gpu::Wrap::MirroredRepeat)));
-    ASSERT_EQ(texture.description().wrap_x, compages::gpu::Wrap::Repeat);
-    ASSERT_EQ(texture.description().wrap_y, compages::gpu::Wrap::MirroredRepeat);
-}
-
 // What an overlay watches to say how much memory a scene is using, and what a
 // leak shows up in.
 TEST_F(TextureTest, AddsUpTheMemoryItUses)

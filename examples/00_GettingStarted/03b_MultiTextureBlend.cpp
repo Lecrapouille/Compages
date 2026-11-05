@@ -103,7 +103,8 @@ compages::Status MultiTextureBlend::setUp()
         const compages::gpu::LoadOptions options =
             (i == 0u) ? compages::gpu::LoadOptions::data()
                       : compages::gpu::LoadOptions::picture();
-        COMPAGES_TRY(m_textures[i].loadFile(path, options));
+        COMPAGES_TRY_ASSIGN(m_textures[i],
+                            compages::gpu::Texture::fromFile(path, options));
         m_plane[MAPS[i].first] = m_textures[i];
     }
 

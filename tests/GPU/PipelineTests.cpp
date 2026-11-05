@@ -184,7 +184,7 @@ compages::gpu::VertexLayout spriteLayoutInteger()
 //! \brief Link a pair of sources, failing the test loudly when they will not.
 compages::gpu::Program linked(const char* p_vertex, const char* p_fragment)
 {
-    auto program = compages::gpu::Program::fromSources(p_vertex, p_fragment);
+    auto program = tests::programFromSources(p_vertex, p_fragment);
     EXPECT_TRUE(bool(program)) << program.error();
     return program ? program.take() : compages::gpu::Program{};
 }
@@ -456,7 +456,7 @@ TEST_F(PipelineTest, RefusesALayoutThatIsWrongOnItsOwn)
 // layout is a mistake about what kind of program it is.
 TEST_F(PipelineTest, RefusesAComputeProgram)
 {
-    auto program = compages::gpu::Program::fromComputeSource(COMPUTE);
+    auto program = tests::programFromCompute(COMPUTE);
     ASSERT_TRUE(bool(program)) << program.error();
 
     auto created =

@@ -248,8 +248,8 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
     desc.height = height;
     desc.color = compages::Vector4f(0.12f, 0.14f, 0.18f, 1.0f);
     desc.clear_depth = true;
-    auto pass = compages::gpu::RenderPass::begin(desc);
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(desc);
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     compages::renderer::Renderer renderer;
     auto drawn = renderer.render(snapshot.value(), assets);

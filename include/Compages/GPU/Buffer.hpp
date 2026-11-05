@@ -371,17 +371,6 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Change one element of the CPU copy; sent at the next upload().
-    //! Unlike write(), does not touch the card now.
-    //! \param[in] p_index which element.
-    //! \param[in] p_value the new element.
-    // ------------------------------------------------------------------------
-    void set(std::size_t p_index, T const& p_value)
-    {
-        (*this)[p_index] = p_value;
-    }
-
-    // ------------------------------------------------------------------------
     //! \brief True when count() is zero. A buffer can be empty and still hold
     //! card memory, after clear() for instance.
     //! \return true when there is no element.
@@ -658,15 +647,6 @@ public:
     [[nodiscard]] std::size_t count() const
     {
         return mirrored() ? m_cpu.size() : m_count;
-    }
-
-    // ------------------------------------------------------------------------
-    //! \brief Same as count(), for code written against std::vector.
-    //! \return the number of elements.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] std::size_t size() const
-    {
-        return count();
     }
 
     // ------------------------------------------------------------------------

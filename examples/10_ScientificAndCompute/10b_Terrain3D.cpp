@@ -172,11 +172,12 @@ compages::Status Terrain3D::setUp()
                 "external/Compages-data/");
         }
     }
-    COMPAGES_TRY(
-        m_layers.loadVolumeFiles(pictures,
-                                 { .mipmaps = false,
-                                   .srgb = true,
-                                   .wrap = compages::gpu::Wrap::ClampToEdge }));
+    COMPAGES_TRY_ASSIGN(m_layers,
+                        compages::gpu::Texture::volumeFromFiles(
+                            pictures,
+                            { .mipmaps = false,
+                              .srgb = true,
+                              .wrap = compages::gpu::Wrap::ClampToEdge }));
 
     COMPAGES_TRY(m_terrain.loadSources(VERTEX, FRAGMENT));
     makeTerrain(SIDE);

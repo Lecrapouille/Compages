@@ -90,7 +90,8 @@ Status CanvasTexture::bind(AssetManager& p_assets, std::string p_name)
         }
         if (!slot->texture.valid())
         {
-            COMPAGES_TRY(slot->texture.allocate(picture.description));
+            COMPAGES_TRY_ASSIGN(slot->texture,
+                        compages::gpu::Texture::create(picture.description));
         }
         COMPAGES_TRY(slot->texture.write(
             std::span<const std::byte>(reinterpret_cast<std::byte const*>(
@@ -302,7 +303,8 @@ Status CanvasTexture::sync()
     }
     if (!asset->texture.valid())
     {
-        COMPAGES_TRY(asset->texture.allocate(asset->description));
+        COMPAGES_TRY_ASSIGN(asset->texture,
+                        compages::gpu::Texture::create(asset->description));
     }
 
     if (m_dirty_all)

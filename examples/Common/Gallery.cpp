@@ -403,18 +403,29 @@ void Gallery::resizeView(std::uint32_t p_width, std::uint32_t p_height)
         compages::gpu::resourceStatistics();
     m_view_width = 0u;
     m_view_height = 0u;
-    compages::Status made =
-        m_view_color.allocate({ .format = compages::gpu::PixelFormat::RGB8,
-                                .width = p_width,
-                                .height = p_height });
-    if (made)
+    compages::Status made = compages::success();
+    auto color = compages::gpu::Texture::create(
+        { .format = compages::gpu::PixelFormat::RGB8,
+          .width = p_width,
+          .height = p_height });
+    auto depth = compages::gpu::Texture::create(
+        { .format = compages::gpu::PixelFormat::Depth32F,
+          .width = p_width,
+          .height = p_height,
+          .magnify = compages::gpu::Filter::Nearest,
+          .minify = compages::gpu::Filter::Nearest });
+    if (!color)
     {
-        made = m_view_depth.allocate(
-            { .format = compages::gpu::PixelFormat::Depth32F,
-              .width = p_width,
-              .height = p_height,
-              .magnify = compages::gpu::Filter::Nearest,
-              .minify = compages::gpu::Filter::Nearest });
+        made = compages::failure(color.error());
+    }
+    else if (!depth)
+    {
+        made = compages::failure(depth.error());
+    }
+    else
+    {
+        m_view_color = color.take();
+        m_view_depth = depth.take();
     }
     if (made)
     {

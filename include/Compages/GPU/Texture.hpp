@@ -94,7 +94,7 @@ struct TextureDesc
     //! \brief A 2D image of this size: the common case, in one call. The
     //! other fields keep their defaults and can be chained:
     //! \code
-    //! COMPAGES_TRY(m_texture.allocate(
+    //! COMPAGES_TRY_ASSIGN(m_texture, compages::gpu::Texture::create(
     //!     compages::gpu::TextureDesc::image(256u, 256u)
     //!         .filter(compages::gpu::Filter::Nearest)
     //!         .wrap(compages::gpu::Wrap::Repeat)));
@@ -146,7 +146,7 @@ struct TextureDesc
 //! data() for what holds numbers.
 //!
 //! \code
-//! COMPAGES_TRY(m_tiles.loadFile(
+//! COMPAGES_TRY_ASSIGN(m_tiles, compages::gpu::Texture::fromFile(
 //!     "tiles.png", compages::gpu::LoadOptions::picture().nearest()));
 //! \endcode
 // ****************************************************************************
@@ -178,8 +178,8 @@ struct LoadOptions
     //! \brief For a picture meant to be looked at, a photograph or a painted
     //! material: its colours are gamma corrected.
     //! \code
-    //! COMPAGES_TRY(m_grass.loadFile(dataPath("grass.png"),
-    //!                               compages::gpu::LoadOptions::picture()));
+    //! COMPAGES_TRY_ASSIGN(m_grass, compages::gpu::Texture::fromFile(
+    //!     dataPath("grass.png"), compages::gpu::LoadOptions::picture()));
     //! \endcode
     //! \return options for a picture: sRGB on.
     // ------------------------------------------------------------------------
@@ -228,20 +228,20 @@ struct LoadOptions
 //! \code
 //! // Loaded from a file, with its mipmaps built.
 //! compages::gpu::Texture wood;
-//! COMPAGES_TRY(wood.loadFile("textures/wood.png"));
+//! COMPAGES_TRY_ASSIGN(wood,
+//! compages::gpu::Texture::fromFile("textures/wood.png"));
 //!
 //! // Or made empty, to be written into or rendered to.
 //! compages::gpu::Texture state;
-//! COMPAGES_TRY(state.allocate(
+//! COMPAGES_TRY_ASSIGN(state, compages::gpu::Texture::create(
 //!     compages::gpu::TextureDesc::image(512u, 512u,
 //!                                       compages::gpu::PixelFormat::RGBA32F)
 //!         .filter(compages::gpu::Filter::Nearest)));
 //! \endcode
 //!
-//! The in place loadFile(), loadCubeFiles(), loadVolumeFiles() and allocate()
-//! suit a member. The static
-//! fromFile(), cubeFromFiles() and create() return the texture as a Result,
-//! which suits code filling a container.
+//! A texture is made by create(), fromFile(), cubeFromFiles() or
+//! volumeFromFiles(), as a Buffer is by from() or create(): what it is never
+//! changes afterwards.
 //!
 //! The memory is set aside once, when the texture is created, and its size and
 //! format never change afterwards. That is deliberate: a texture whose format
@@ -254,8 +254,8 @@ class Texture: private compages::NotCopiable
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief An empty texture: valid() is false until allocate() or a load
-    //! succeeds.
+    //! \brief An empty texture: valid() is false until one made by create(),
+    //! fromFile(), cubeFromFiles() or volumeFromFiles() is moved in.
     // ------------------------------------------------------------------------
     Texture() = default;
 
@@ -303,48 +303,14 @@ public:
                                                    .wrap = Wrap::ClampToEdge });
 
     // ------------------------------------------------------------------------
-    //! \brief Same as create(), into this object.
-    //!
-    //! \param[in] p_desc what the texture is to be.
-    //! \return why not, in which case this object is left as it was.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status allocate(TextureDesc const& p_desc);
-
-    // ------------------------------------------------------------------------
-    //! \brief Same as fromFile(), into this object.
-    //!
-    //! \code
-    //! COMPAGES_TRY(m_texture.loadFile(dataPath("textures/wooden-crate.jpg")));
-    //! \endcode
-    //!
-    //! \param[in] p_path the file to read.
-    //! \param[in] p_options what to do to it on the way in.
-    //! \return why not, in which case this object is left as it was.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadFile(std::filesystem::path const& p_path,
-                                  LoadOptions const& p_options = {});
-
-    // ------------------------------------------------------------------------
-    //! \brief Same as cubeFromFiles(), into this object.
-    //!
-    //! \param[in] p_paths the six faces: +x, -x, +y, -y, +z, -z.
-    //! \param[in] p_options what to do to them on the way in.
-    //! \return why not, in which case this object is left as it was.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status
-    loadCubeFiles(std::array<std::filesystem::path, 6u> const& p_paths,
-                  LoadOptions const& p_options = { .flip_vertically = false,
-                                                   .wrap = Wrap::ClampToEdge });
-
-    // ------------------------------------------------------------------------
     //! \brief Read image files of the same size into the layers of a 3D
     //! texture, the first file at depth zero.
     //!
     //! A shader samples it with three coordinates; the third blends between
     //! the images, which is how a terrain goes from sand to snow:
     //! \code
-    //! COMPAGES_TRY(m_layers.loadVolumeFiles({ dataPath("sand.png"),
-    //!                                         dataPath("snow.png") }));
+    //! COMPAGES_TRY_ASSIGN(m_layers, compages::gpu::Texture::volumeFromFiles(
+    //!     { dataPath("sand.png"), dataPath("snow.png") }));
     //! \endcode
     //!
     //! No mipmaps by default: the smaller levels of a 3D texture also halve
@@ -355,15 +321,6 @@ public:
     //! \return the texture, or why not: a missing file or a size that differs.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Texture> volumeFromFiles(
-        std::vector<std::filesystem::path> const& p_paths,
-        LoadOptions const& p_options = { .mipmaps = false,
-                                         .wrap = Wrap::ClampToEdge });
-
-    //! \brief Same as volumeFromFiles(), into this object.
-    //! \param[in] p_paths the layers, in depth order, all the same size.
-    //! \param[in] p_options what to do to them on the way in.
-    //! \return why not, in which case this object is left as it was.
-    [[nodiscard]] Status loadVolumeFiles(
         std::vector<std::filesystem::path> const& p_paths,
         LoadOptions const& p_options = { .mipmaps = false,
                                          .wrap = Wrap::ClampToEdge });
@@ -381,7 +338,7 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Give the memory back now rather than at the end of the scope.
-    //! The object can be filled again with allocate() or a load.
+    //! A new texture can then be moved in, from create() or a load.
     // ------------------------------------------------------------------------
     void release();
 
@@ -449,31 +406,10 @@ public:
     //! \brief Build the smaller levels of detail from the largest one.
     //!
     //! Needed after writing to a texture created with more than one level;
-    //! loadFile() does it when LoadOptions::mipmaps is on.
+    //! fromFile() does it when LoadOptions::mipmaps is on.
     //! \return an error when the texture has a single level.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status generateMipmaps();
-
-    // ------------------------------------------------------------------------
-    //! \brief Change how the texture is read between its pixels, after it was
-    //! made: the only settings of a texture that can change.
-    //!
-    //! \param[in] p_magnify how it is read when seen up close.
-    //! \param[in] p_minify how it is read when seen from afar.
-    //! \return an error when the texture is gone.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status setFilter(Filter p_magnify, Filter p_minify);
-
-    // ------------------------------------------------------------------------
-    //! \brief Change what happens outside the texture.
-    //!
-    //! \param[in] p_x beyond the left and right edges.
-    //! \param[in] p_y beyond the top and bottom edges.
-    //! \param[in] p_z beyond the front and back, for a 3D texture.
-    //! \return an error when the texture is gone.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status
-    setWrap(Wrap p_x, Wrap p_y, Wrap p_z = Wrap::ClampToEdge);
 
     // ------------------------------------------------------------------------
     //! \brief Make the texture readable by a shader on the given texture unit.
@@ -509,9 +445,8 @@ public:
                                      std::uint32_t p_level = 0u) const;
 
     // ------------------------------------------------------------------------
-    //! \brief The description it was made with. Filter and wrap follow later
-    //! calls to setFilter() and setWrap().
-    //! \return the description, kept up to date.
+    //! \brief The description it was made with, which never changes.
+    //! \return the description.
     // ------------------------------------------------------------------------
     [[nodiscard]] TextureDesc const& description() const;
 

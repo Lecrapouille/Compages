@@ -63,8 +63,7 @@ Result<Ready> readyToDraw(Pipeline const& p_pipeline)
         return failure(
             "nothing is being drawn because no pass is open, so there is no "
             "target and no viewport. Open one with "
-            "compages::gpu::RenderPass::begin() at "
-            "the top of the frame");
+            "a compages::gpu::RenderPass at the top of the frame");
     }
 
     return Ready{ record, program->native };

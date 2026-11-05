@@ -68,10 +68,11 @@ compages::Status TexturedQuad::makeTexture()
     // A 2D image of four bytes a pixel. Nearest, because a checkerboard is data
     // with edges rather than a photograph: mixing neighbors would invent grey
     // where the design says black or white. Repeat, so that it tiles.
-    COMPAGES_TRY(
-        m_texture.allocate(compages::gpu::TextureDesc::image(SIZE, SIZE)
-                               .filter(compages::gpu::Filter::Nearest)
-                               .wrap(compages::gpu::Wrap::Repeat)));
+    COMPAGES_TRY_ASSIGN(m_texture,
+                        compages::gpu::Texture::create(
+                            compages::gpu::TextureDesc::image(SIZE, SIZE)
+                                .filter(compages::gpu::Filter::Nearest)
+                                .wrap(compages::gpu::Wrap::Repeat)));
 
     std::vector<std::uint8_t> pixels(static_cast<std::size_t>(SIZE) * SIZE * 4u,
                                      0u);

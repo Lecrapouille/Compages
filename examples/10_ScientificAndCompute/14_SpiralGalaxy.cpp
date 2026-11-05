@@ -445,7 +445,7 @@ compages::Status SpiralGalaxy::makeColormap()
     desc.width = RAMP;
     desc.filter(compages::gpu::Filter::Linear)
         .wrap(compages::gpu::Wrap::ClampToEdge);
-    COMPAGES_TRY(m_colormap.allocate(desc));
+    COMPAGES_TRY_ASSIGN(m_colormap, compages::gpu::Texture::create(desc));
 
     // 256 texels from 1000 K up to, but not including, 10000 K: the same
     // samples as the Glumpy loop. Clamp on the texture covers the dust, which
@@ -471,11 +471,12 @@ compages::Status SpiralGalaxy::makeColormap()
 // ----------------------------------------------------------------------------
 compages::Status SpiralGalaxy::makeSprite()
 {
-    COMPAGES_TRY(
-        m_sprite.allocate(compages::gpu::TextureDesc::image(
-                              SPRITE, SPRITE, compages::gpu::PixelFormat::R8)
-                              .filter(compages::gpu::Filter::Linear)
-                              .wrap(compages::gpu::Wrap::ClampToEdge)));
+    COMPAGES_TRY_ASSIGN(m_sprite,
+                        compages::gpu::Texture::create(
+                            compages::gpu::TextureDesc::image(
+                                SPRITE, SPRITE, compages::gpu::PixelFormat::R8)
+                                .filter(compages::gpu::Filter::Linear)
+                                .wrap(compages::gpu::Wrap::ClampToEdge)));
 
     // A stand-in for Glumpy's particle.png: bright in the middle, gone at the
     // edge, so an additive point reads as a glow rather than a square.

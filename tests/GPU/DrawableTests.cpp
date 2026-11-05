@@ -132,9 +132,9 @@ protected:
     template <typename F>
     std::array<int, 3> drawn(F&& p_draw)
     {
-        auto pass = compages::gpu::RenderPass::begin(
+        compages::gpu::RenderPass pass(
             compages::gpu::PassDesc{ .width = WIDTH, .height = HEIGHT, .target = {} });
-        EXPECT_TRUE(bool(pass)) << pass.error();
+        EXPECT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         auto status = compages::gpu::attempt(std::forward<F>(p_draw));
         EXPECT_TRUE(bool(status)) << status.error();
         return middle();
@@ -244,8 +244,9 @@ TEST_F(DrawableTest, DrawsWithoutVerticesAndSamplesATexture)
     desc.width = 1u;
     desc.height = 1u;
     desc.format = compages::gpu::PixelFormat::RGBA8;
-    compages::gpu::Texture texture;
-    ASSERT_TRUE(bool(texture.allocate(desc)));
+    auto made = compages::gpu::Texture::create(desc);
+    ASSERT_TRUE(bool(made)) << made.error();
+    compages::gpu::Texture texture = made.take();
     const std::array<std::uint8_t, 4> green{ 0u, 255u, 0u, 255u };
     ASSERT_TRUE(bool(texture.write(std::as_bytes(std::span(green)))));
 
@@ -324,8 +325,9 @@ TEST_F(DrawableTest, DrawsIntoATextureFromInsideAnotherPass)
     compages::gpu::TextureDesc desc;
     desc.width = WIDTH;
     desc.height = HEIGHT;
-    compages::gpu::Texture color;
-    ASSERT_TRUE(bool(color.allocate(desc)));
+    auto made = compages::gpu::Texture::create(desc);
+    ASSERT_TRUE(bool(made)) << made.error();
+    compages::gpu::Texture color = made.take();
     compages::gpu::Framebuffer framebuffer;
     ASSERT_TRUE(bool(framebuffer.attach(color)));
 
@@ -350,8 +352,9 @@ TEST_F(DrawableTest, APassWithoutTargetDrawsIntoThePassAroundIt)
     compages::gpu::TextureDesc desc;
     desc.width = WIDTH;
     desc.height = HEIGHT;
-    compages::gpu::Texture color;
-    ASSERT_TRUE(bool(color.allocate(desc)));
+    auto made = compages::gpu::Texture::create(desc);
+    ASSERT_TRUE(bool(made)) << made.error();
+    compages::gpu::Texture color = made.take();
     compages::gpu::Framebuffer framebuffer;
     ASSERT_TRUE(bool(framebuffer.attach(color)));
 

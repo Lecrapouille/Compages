@@ -134,15 +134,18 @@ compages::Status RenderToTexture::makeCube()
 compages::Status RenderToTexture::makeTarget()
 {
     // A size of its own, whatever the window does.
-    COMPAGES_TRY(m_color.allocate({ .format = compages::gpu::PixelFormat::RGBA8,
-                                    .width = TARGET,
-                                    .height = TARGET }));
-    COMPAGES_TRY(
-        m_depth.allocate({ .format = compages::gpu::PixelFormat::Depth32F,
-                           .width = TARGET,
-                           .height = TARGET,
-                           .magnify = compages::gpu::Filter::Nearest,
-                           .minify = compages::gpu::Filter::Nearest }));
+    COMPAGES_TRY_ASSIGN(m_color,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::RGBA8,
+                              .width = TARGET,
+                              .height = TARGET }));
+    COMPAGES_TRY_ASSIGN(m_depth,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::Depth32F,
+                              .width = TARGET,
+                              .height = TARGET,
+                              .magnify = compages::gpu::Filter::Nearest,
+                              .minify = compages::gpu::Filter::Nearest }));
     return m_target.attach(m_color, m_depth);
 }
 

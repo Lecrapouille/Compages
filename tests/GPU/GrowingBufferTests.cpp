@@ -55,7 +55,7 @@ TEST_F(GrowingBufferTest, ReservesNothingUntilAskedToSend)
 {
     compages::gpu::VertexBuffer<int> array;
     array.resize(100u);
-    array.set(0u, 42);
+    array[0u] = 42;
 
     ASSERT_EQ(compages::gpu::liveBuffers(), 0u);
     ASSERT_FALSE(array.valid());
@@ -77,12 +77,12 @@ TEST_F(GrowingBufferTest, SendsOneChangedElementToTheRightPlace)
     array.resize(8u);
     for (std::size_t i = 0u; i < 8u; ++i)
     {
-        array.set(i, static_cast<int>(i));
+        array[i] = static_cast<int>(i);
     }
     ASSERT_TRUE(bool(array.upload()));
     ASSERT_FALSE(array.dirty());
 
-    array.set(3u, 99);
+    array[3u] = 99;
     ASSERT_EQ(array.pending().count(), 1u);
     ASSERT_EQ(array.pending().begin(), 3u);
 
@@ -99,7 +99,7 @@ TEST_F(GrowingBufferTest, SendsTheLastElement)
     array.resize(4u);
     ASSERT_TRUE(bool(array.upload()));
 
-    array.set(3u, 7);
+    array[3u] = 7;
     ASSERT_TRUE(bool(array.upload()));
 
     const std::vector<int> expected{ 0, 0, 0, 7 };
@@ -132,12 +132,12 @@ TEST_F(GrowingBufferTest, KeepsTheUntouchedElementsWhenSendingASpan)
     array.resize(6u);
     for (std::size_t i = 0u; i < 6u; ++i)
     {
-        array.set(i, static_cast<int>(i) + 1);
+        array[i] = static_cast<int>(i) + 1;
     }
     ASSERT_TRUE(bool(array.upload()));
 
-    array.set(1u, 100);
-    array.set(4u, 400);
+    array[1u] = 100;
+    array[4u] = 400;
     ASSERT_EQ(array.pending().count(), 4u);
 
     ASSERT_TRUE(bool(array.upload()));
@@ -174,13 +174,13 @@ TEST_F(GrowingBufferTest, ReadingChangesNothing)
 {
     compages::gpu::VertexBuffer<int> array;
     array.resize(4u);
-    array.set(2u, 8);
+    array[2u] = 8;
     ASSERT_TRUE(bool(array.upload()));
 
     compages::gpu::VertexBuffer<int> const& reading = array;
     ASSERT_EQ(reading[2], 8);
     ASSERT_EQ(reading.elements()[2], 8);
-    ASSERT_EQ(reading.size(), 4u);
+    ASSERT_EQ(reading.count(), 4u);
 
     ASSERT_FALSE(array.dirty());
 }
@@ -202,7 +202,7 @@ TEST_F(GrowingBufferTest, GrowsTheDeviceMemoryKeepingWhatWasThere)
     }
     ASSERT_TRUE(bool(array.upload()));
 
-    ASSERT_EQ(array.size(), 9u);
+    ASSERT_EQ(array.count(), 9u);
     ASSERT_GE(array.deviceCapacity(), 9u);
     // One block at a time: the old one is released as the new one takes over.
     ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
@@ -232,7 +232,7 @@ TEST_F(GrowingBufferTest, AsksForNewMemoryOnlyAHandfulOfTimesWhileGrowing)
         }
     }
 
-    ASSERT_EQ(array.size(), 1000u);
+    ASSERT_EQ(array.count(), 1000u);
     ASSERT_LT(reallocations, 16u);
     ASSERT_EQ(compages::gpu::liveBuffers(), 1u);
 
@@ -271,7 +271,7 @@ TEST_F(GrowingBufferTest, SendsNothingWhenItShrinks)
 
     array.resize(3u);
     ASSERT_FALSE(array.dirty());
-    ASSERT_EQ(array.size(), 3u);
+    ASSERT_EQ(array.count(), 3u);
     // The memory is kept, ready for the array to grow back into it.
     ASSERT_EQ(array.deviceCapacity(), 8u);
 }
@@ -284,7 +284,7 @@ TEST_F(GrowingBufferTest, ForgetsAChangeThatTheShrinkRemoved)
     array.resize(8u);
     ASSERT_TRUE(bool(array.upload()));
 
-    array.set(7u, 123);
+    array[7u] = 123;
     array.resize(4u);
 
     ASSERT_FALSE(array.dirty());
@@ -341,7 +341,7 @@ TEST_F(GrowingBufferTest, ReplacesItsWholeContents)
 
     const std::vector<int> fresh{ 7, 8, 9, 10 };
     array.assign(fresh);
-    ASSERT_EQ(array.size(), 4u);
+    ASSERT_EQ(array.count(), 4u);
     ASSERT_TRUE(bool(array.upload()));
 
     ASSERT_EQ(onDevice(array, 4u), fresh);
@@ -355,15 +355,15 @@ TEST_F(GrowingBufferTest, CanBeBuiltFromDataItAlreadyHas)
 
     compages::gpu::VertexBuffer<int> array;
     array.assign(source);
-    ASSERT_EQ(array.size(), 16u);
+    ASSERT_EQ(array.count(), 16u);
     ASSERT_TRUE(array.dirty());
 
     ASSERT_TRUE(bool(array.upload()));
     ASSERT_EQ(onDevice(array, 16u), source);
 }
 
-// Indices are the same mechanism with another use, which is the point of one
-// class rather than one per kind of buffer.
+// Indices are the same mechanism with another use: one class template, the
+// kind being part of the type.
 TEST_F(GrowingBufferTest, HoldsIndicesJustAsWell)
 {
     compages::gpu::IndexBuffer<std::uint32_t> indices;
@@ -371,8 +371,8 @@ TEST_F(GrowingBufferTest, HoldsIndicesJustAsWell)
     indices.assign(triangles);
 
     ASSERT_TRUE(bool(indices.upload()));
-    ASSERT_EQ(indices.kind(), compages::gpu::BufferKind::Index);
-    ASSERT_EQ(indices.kind(), compages::gpu::BufferKind::Index);
+    static_assert(compages::gpu::IndexBuffer<std::uint32_t>::kind ==
+                  compages::gpu::BufferKind::Index);
 
     auto read = indices.read();
     ASSERT_TRUE(bool(read)) << read.error();

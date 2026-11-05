@@ -57,7 +57,7 @@ namespace compages::gpu
 //! in the same buffer.
 //!
 //! \code
-//! compages::gpu::draw(pass, pipeline, shapes, { .first = 36u, .count = 36u });
+//! compages::gpu::draw(pipeline, shapes, { .first = 36u, .count = 36u });
 //! \endcode
 // ****************************************************************************
 struct DrawOptions
@@ -84,105 +84,38 @@ void draw(Pipeline const& p_pipeline,
           std::size_t p_first = 0u);
 
 // ----------------------------------------------------------------------------
-//! \brief Same as draw(Pipeline const&, BufferHandle, std::size_t,
-//! std::size_t), checking first that p_pass is still open.
+//! \brief Draw a buffer, or a slice of it.
 //!
-//! \param[in] p_pass the pass the draw goes into. A closed pass is refused,
-//! which catches a draw left after the pass was ended.
-//! \param[in] p_pipeline how to draw, and what one vertex looks like.
-//! \param[in] p_vertices the memory holding the vertices.
-//! \param[in] p_count how many vertices to read.
-//! \param[in] p_first which vertex to start at.
-// ----------------------------------------------------------------------------
-inline void draw(RenderPass const& p_pass,
-                 Pipeline const& p_pipeline,
-                 BufferHandle p_vertices,
-                 std::size_t p_count,
-                 std::size_t p_first = 0u)
-{
-    if (!p_pass.open())
-    {
-        return reportError("cannot draw through a closed render pass");
-    }
-    return draw(p_pipeline, p_vertices, p_count, p_first);
-}
-
-// ----------------------------------------------------------------------------
-//! \brief Draw the whole of a buffer.
-//!
-//! The overload almost every caller wants: the count comes from the buffer, so
-//! there is no number to keep in step with it.
+//! The count comes from the buffer, so there is no number to keep in step
+//! with it:
+//! \code
+//! compages::gpu::draw(pipeline, shapes);                                // all
+//! compages::gpu::draw(pipeline, shapes, { .first = 36u, .count = 36u }); // a
+//! slice
+//! \endcode
 //!
 //! \tparam Vertex what one element of the buffer is. Checked against the vertex
 //! the pipeline was built for, since drawing a buffer of one struct with the
 //! layout of another reads the right number of bytes from the wrong places.
 //! \param[in] p_pipeline how to draw.
-//! \param[in] p_vertices every vertex is drawn. Const, so changes waiting on
-//! the CPU are not sent: use the non const overload for that.
+//! \param[in] p_vertices the vertices. Const, so changes waiting on the CPU
+//! are not sent: use the non const overload for that.
+//! \param[in] p_options which slice; all of it by default.
 // ----------------------------------------------------------------------------
 template <typename Vertex, BufferKind VertexKind>
     requires VertexSource<VertexKind>
 void draw(Pipeline const& p_pipeline,
-          Buffer<Vertex, VertexKind> const& p_vertices)
+          Buffer<Vertex, VertexKind> const& p_vertices,
+          DrawOptions p_options = {})
 {
     if (p_pipeline.stride() != sizeof(Vertex))
     {
         return reportError(
             "this pipeline reads a vertex of " +
             std::to_string(p_pipeline.stride()) +
-            " bytes, but the buffer holds "
-            "elements of " +
+            " bytes, but the buffer holds elements of " +
             std::to_string(sizeof(Vertex)) +
             " bytes. The pipeline was built for another vertex struct");
-    }
-    return draw(p_pipeline, p_vertices.handle(), p_vertices.count());
-}
-
-// ----------------------------------------------------------------------------
-//! \brief Draw the whole of a buffer, sending its CPU changes first.
-//!
-//! \code
-//! trail.emplace_back(position, color);
-//! compages::gpu::draw(pipeline, trail);   // uploads, then draws
-//! \endcode
-//!
-//! \param[in] p_pipeline how to draw.
-//! \param[in,out] p_vertices uploaded (see Buffer::upload()), then drawn.
-// ----------------------------------------------------------------------------
-template <typename Vertex, BufferKind VertexKind>
-    requires VertexSource<VertexKind>
-void draw(Pipeline const& p_pipeline, Buffer<Vertex, VertexKind>& p_vertices)
-{
-    if (!check(p_vertices.upload()))
-    {
-        return;
-    }
-    return draw(p_pipeline,
-                static_cast<Buffer<Vertex, VertexKind> const&>(p_vertices));
-}
-
-// ----------------------------------------------------------------------------
-//! \brief Draw a buffer, or a slice of it, into a given pass.
-//!
-//! The form multi-pass code uses: naming the pass makes it visible which
-//! target each draw goes to.
-//!
-//! \param[in] p_pass the pass the draw goes into. A closed pass is refused,
-//! which catches a draw left after the pass was ended.
-//! \param[in] p_pipeline how to draw.
-//! \param[in] p_vertices the vertices. Const: CPU changes are not sent.
-//! \param[in] p_options which slice; all of it by default.
-// ----------------------------------------------------------------------------
-template <typename Vertex, BufferKind VertexKind>
-    requires VertexSource<VertexKind>
-void draw(RenderPass const& p_pass,
-          Pipeline const& p_pipeline,
-          Buffer<Vertex, VertexKind> const& p_vertices,
-          DrawOptions p_options = {})
-{
-    if (!p_pass.open())
-    {
-        return reportError("cannot draw through a closed render pass");
     }
     if (p_options.first > p_vertices.count())
     {
@@ -195,27 +128,24 @@ void draw(RenderPass const& p_pass,
     {
         return reportError("the requested vertex range exceeds the buffer");
     }
-    if (p_pipeline.stride() != sizeof(Vertex))
-    {
-        return reportError("this pipeline was built for another vertex struct");
-    }
     return draw(p_pipeline, p_vertices.handle(), count, p_options.first);
 }
 
 // ----------------------------------------------------------------------------
-//! \brief Same as the const overload, sending the CPU changes of p_vertices
-//! first.
+//! \brief Same, sending the CPU changes of a Dynamic buffer first.
 //!
-//! \param[in] p_pass the pass the draw goes into. A closed pass is refused,
-//! which catches a draw left after the pass was ended.
+//! \code
+//! trail.emplace_back(Vertex{ position, color });
+//! compages::gpu::draw(pipeline, trail);   // uploads, then draws
+//! \endcode
+//!
 //! \param[in] p_pipeline how to draw.
-//! \param[in,out] p_vertices uploaded, then drawn.
+//! \param[in,out] p_vertices uploaded (see Buffer::upload()), then drawn.
 //! \param[in] p_options which slice; all of it by default.
 // ----------------------------------------------------------------------------
 template <typename Vertex, BufferKind VertexKind>
     requires VertexSource<VertexKind>
-void draw(RenderPass const& p_pass,
-          Pipeline const& p_pipeline,
+void draw(Pipeline const& p_pipeline,
           Buffer<Vertex, VertexKind>& p_vertices,
           DrawOptions p_options = {})
 {
@@ -223,8 +153,7 @@ void draw(RenderPass const& p_pass,
     {
         return;
     }
-    return draw(p_pass,
-                p_pipeline,
+    return draw(p_pipeline,
                 static_cast<Buffer<Vertex, VertexKind> const&>(p_vertices),
                 p_options);
 }
@@ -252,48 +181,22 @@ void drawIndexed(Pipeline const& p_pipeline,
                  std::size_t p_first = 0u);
 
 // ----------------------------------------------------------------------------
-//! \brief Same as drawIndexed() on handles, checking first that p_pass is
-//! still open.
-//!
-//! \param[in] p_pass the pass the draw goes into. A closed pass is refused,
-//! which catches a draw left after the pass was ended.
-//! \param[in] p_pipeline how to draw.
-//! \param[in] p_vertices the memory holding the vertices.
-//! \param[in] p_indices the memory holding which vertices, in which order.
-//! \param[in] p_type the size of one index.
-//! \param[in] p_count how many indices to read.
-//! \param[in] p_first which index to start at.
-// ----------------------------------------------------------------------------
-inline void drawIndexed(RenderPass const& p_pass,
-                        Pipeline const& p_pipeline,
-                        BufferHandle p_vertices,
-                        BufferHandle p_indices,
-                        IndexType p_type,
-                        std::size_t p_count,
-                        std::size_t p_first = 0u)
-{
-    if (!p_pass.open())
-    {
-        return reportError("cannot draw through a closed render pass");
-    }
-    return drawIndexed(
-        p_pipeline, p_vertices, p_indices, p_type, p_count, p_first);
-}
-
-// ----------------------------------------------------------------------------
-//! \brief Draw a whole indexed mesh, taking the index size from the type.
+//! \brief Draw an indexed mesh, or a slice of its indices, taking the index
+//! size from the type.
 //!
 //! \tparam Index std::uint16_t or std::uint32_t. Sixteen bits is enough below
 //! 65536 vertices and halves what the device has to read.
 //! \param[in] p_pipeline how to draw.
 //! \param[in] p_vertices the vertices. Const: CPU changes are not sent.
-//! \param[in] p_indices every index is drawn.
+//! \param[in] p_indices which vertices, in which order.
+//! \param[in] p_options which slice of the indices; all of them by default.
 // ----------------------------------------------------------------------------
 template <typename Vertex, BufferKind VertexKind, typename Index>
     requires VertexSource<VertexKind>
 void drawIndexed(Pipeline const& p_pipeline,
                  Buffer<Vertex, VertexKind> const& p_vertices,
-                 IndexBuffer<Index> const& p_indices)
+                 IndexBuffer<Index> const& p_indices,
+                 DrawOptions p_options = {})
 {
     static_assert(
         std::is_same_v<Index, std::uint16_t> ||
@@ -301,53 +204,14 @@ void drawIndexed(Pipeline const& p_pipeline,
         "an index is a std::uint16_t or a std::uint32_t. A signed "
         "index has no meaning, and anything wider is not something the "
         "hardware reads");
-
     if (p_pipeline.stride() != sizeof(Vertex))
     {
         return reportError(
             "this pipeline reads a vertex of " +
             std::to_string(p_pipeline.stride()) +
-            " bytes, but the buffer holds "
-            "elements of " +
+            " bytes, but the buffer holds elements of " +
             std::to_string(sizeof(Vertex)) +
             " bytes. The pipeline was built for another vertex struct");
-    }
-
-    constexpr IndexType type = std::is_same_v<Index, std::uint16_t>
-                                   ? IndexType::UInt16
-                                   : IndexType::UInt32;
-    return drawIndexed(p_pipeline,
-                       p_vertices.handle(),
-                       p_indices.handle(),
-                       type,
-                       p_indices.count());
-}
-
-// ----------------------------------------------------------------------------
-//! \brief Draw an indexed mesh, or a slice of its indices, into a given
-//! pass.
-//!
-//! \param[in] p_pass the pass the draw goes into. A closed pass is refused,
-//! which catches a draw left after the pass was ended.
-//! \param[in] p_pipeline how to draw.
-//! \param[in] p_vertices the vertices. Const: CPU changes are not sent.
-//! \param[in] p_indices the indices, std::uint16_t or std::uint32_t.
-//! \param[in] p_options which slice of the indices; all of them by default.
-// ----------------------------------------------------------------------------
-template <typename Vertex, BufferKind VertexKind, typename Index>
-    requires VertexSource<VertexKind>
-void drawIndexed(RenderPass const& p_pass,
-                 Pipeline const& p_pipeline,
-                 Buffer<Vertex, VertexKind> const& p_vertices,
-                 IndexBuffer<Index> const& p_indices,
-                 DrawOptions p_options = {})
-{
-    static_assert(std::is_same_v<Index, std::uint16_t> ||
-                      std::is_same_v<Index, std::uint32_t>,
-                  "an index must be std::uint16_t or std::uint32_t");
-    if (!p_pass.open())
-    {
-        return reportError("cannot draw through a closed render pass");
     }
     if (p_options.first > p_indices.count())
     {
@@ -359,10 +223,6 @@ void drawIndexed(RenderPass const& p_pass,
     if (count > available)
     {
         return reportError("the requested index range exceeds the buffer");
-    }
-    if (p_pipeline.stride() != sizeof(Vertex))
-    {
-        return reportError("this pipeline was built for another vertex struct");
     }
     constexpr IndexType type = std::is_same_v<Index, std::uint16_t>
                                    ? IndexType::UInt16
@@ -376,52 +236,31 @@ void drawIndexed(RenderPass const& p_pass,
 }
 
 // ----------------------------------------------------------------------------
-//! \brief Draw an indexed mesh whose vertices are kept on the CPU.
-//!
-//! Sends whatever changed, then draws. The indices are a Buffer because they
-//! do not move: a surface that waves still names the same triangles.
+//! \brief Same, sending the CPU changes of a Dynamic vertex buffer first.
+//! The indices do not move: a surface that waves still names the same
+//! triangles.
 //!
 //! \param[in] p_pipeline how to draw.
 //! \param[in,out] p_vertices uploaded, then drawn.
-//! \param[in] p_indices every index is drawn.
+//! \param[in] p_indices which vertices, in which order.
+//! \param[in] p_options which slice of the indices; all of them by default.
 // ----------------------------------------------------------------------------
 template <typename Vertex, BufferKind VertexKind, typename Index>
     requires VertexSource<VertexKind>
 void drawIndexed(Pipeline const& p_pipeline,
                  Buffer<Vertex, VertexKind>& p_vertices,
-                 IndexBuffer<Index> const& p_indices)
+                 IndexBuffer<Index> const& p_indices,
+                 DrawOptions p_options = {})
 {
-    static_assert(
-        std::is_same_v<Index, std::uint16_t> ||
-            std::is_same_v<Index, std::uint32_t>,
-        "an index is a std::uint16_t or a std::uint32_t. A signed "
-        "index has no meaning, and anything wider is not something the "
-        "hardware reads");
-
-    if (p_pipeline.stride() != sizeof(Vertex))
-    {
-        return reportError(
-            "this pipeline reads a vertex of " +
-            std::to_string(p_pipeline.stride()) +
-            " bytes, but the buffer holds "
-            "elements of " +
-            std::to_string(sizeof(Vertex)) +
-            " bytes. The pipeline was built for another vertex struct");
-    }
-
     if (!check(p_vertices.upload()))
     {
         return;
     }
-
-    constexpr IndexType type = std::is_same_v<Index, std::uint16_t>
-                                   ? IndexType::UInt16
-                                   : IndexType::UInt32;
-    return drawIndexed(p_pipeline,
-                       p_vertices.handle(),
-                       p_indices.handle(),
-                       type,
-                       p_indices.count());
+    return drawIndexed(
+        p_pipeline,
+        static_cast<Buffer<Vertex, VertexKind> const&>(p_vertices),
+        p_indices,
+        p_options);
 }
 
 // ----------------------------------------------------------------------------

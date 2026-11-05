@@ -89,7 +89,8 @@ static compages::Status loadTexture(char const* p_file,
     // sRGB so the sampled colour is linear before the wavy pass.
     compages::gpu::LoadOptions options;
     options.srgb = true;
-    return p_out.loadFile(path, options);
+    COMPAGES_TRY_ASSIGN(p_out, compages::gpu::Texture::fromFile(path, options));
+    return compages::success();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,14 +120,16 @@ compages::Status PostProcess::ensureTarget(std::uint32_t p_width,
     }
 
     // Allocated again in place: whatever samples these textures still does.
-    COMPAGES_TRY(
-        m_color_target.allocate({ .format = compages::gpu::PixelFormat::RGBA8,
-                                  .width = p_width,
-                                  .height = p_height }));
-    COMPAGES_TRY(m_depth_target.allocate(
-        { .format = compages::gpu::PixelFormat::Depth32F,
-          .width = p_width,
-          .height = p_height }));
+    COMPAGES_TRY_ASSIGN(m_color_target,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::RGBA8,
+                              .width = p_width,
+                              .height = p_height }));
+    COMPAGES_TRY_ASSIGN(m_depth_target,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::Depth32F,
+                              .width = p_width,
+                              .height = p_height }));
     COMPAGES_TRY(m_fbo.attach(m_color_target, m_depth_target));
     m_target_width = p_width;
     m_target_height = p_height;

@@ -152,7 +152,7 @@ TEST_F(ComputeTest, DoublesWhatIsInTheBuffer)
                       compages::gpu::BufferUsage::Stream)
                       .take();
 
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE);
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE);
     ASSERT_TRUE(bool(compute)) << compute.error();
     ASSERT_EQ(compute.value().workGroupSize()[0], 64);
 
@@ -177,7 +177,7 @@ TEST_F(ComputeTest, ErgonomicDispatchSynchronizesOneMirroredBuffer)
                       .take();
     buffer[0u] = 4.0f;
 
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE).take();
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE).take();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compute.set("count", 64u); })));
     auto ran = compages::gpu::dispatch(compute, buffer);
     ASSERT_TRUE(bool(ran)) << ran.error();
@@ -195,7 +195,7 @@ TEST_F(ComputeTest, ErgonomicDispatchRequiresExactlyOneStorageBlock)
     auto buffer = compages::gpu::StorageBuffer<float>::from(
                       start, compages::gpu::BufferUsage::Dynamic)
                       .take();
-    auto compute = compages::gpu::ComputeProgram::fromSource(PING_SOURCE).take();
+    auto compute = tests::computeFromSource(PING_SOURCE).take();
 
     auto ran = compages::gpu::dispatch(compute, buffer);
     ASSERT_FALSE(bool(ran));
@@ -213,7 +213,7 @@ TEST_F(ComputeTest, DownloadRefusesABufferWithoutCpuMirror)
 
     auto downloaded = buffer.download();
     ASSERT_FALSE(bool(downloaded));
-    ASSERT_THAT(downloaded.error(), HasSubstr("CPU mirror"));
+    ASSERT_THAT(downloaded.error(), HasSubstr("CPU copy"));
 }
 
 TEST_F(ComputeTest, PingPongWritesTheOtherBuffer)
@@ -223,7 +223,7 @@ TEST_F(ComputeTest, PingPongWritesTheOtherBuffer)
     ASSERT_TRUE(bool(pair)) << pair.error();
     auto& stars = pair.value();
 
-    auto compute = compages::gpu::ComputeProgram::fromSource(PING_SOURCE).take();
+    auto compute = tests::computeFromSource(PING_SOURCE).take();
     ASSERT_TRUE(bool(compute.bind("Input", stars.input())));
     ASSERT_TRUE(bool(compute.bind("Output", stars.output())));
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compute.set("count", 64u); })));
@@ -243,12 +243,12 @@ TEST_F(ComputeTest, AStorageBufferCanThenBeDrawnAsVertices)
                          1u, compages::gpu::BufferUsage::Stream)
                          .take();
 
-    auto compute = compages::gpu::ComputeProgram::fromSource(WRITE_POINTS).take();
+    auto compute = tests::computeFromSource(WRITE_POINTS).take();
     ASSERT_TRUE(bool(compute.bind("Particles", particles)));
     ASSERT_TRUE(bool(compute.dispatch(1u)));
     compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
 
-    auto program = compages::gpu::Program::fromSources(POINT_VERTEX, RED_FRAGMENT).take();
+    auto program = tests::programFromSources(POINT_VERTEX, RED_FRAGMENT).take();
     const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Particle>();
     compages::gpu::RenderState state;
     state.primitive = compages::gpu::Primitive::Points;
@@ -259,8 +259,8 @@ TEST_F(ComputeTest, AStorageBufferCanThenBeDrawnAsVertices)
     desc.height = HEIGHT;
     desc.color = compages::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
     desc.target = {};
-    auto pass = compages::gpu::RenderPass::begin(desc);
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(desc);
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, particles); })));
 
     auto picture = compages::gpu::readPixels();
@@ -274,7 +274,7 @@ TEST_F(ComputeTest, AStorageBufferCanThenBeDrawnAsVertices)
 
 TEST_F(ComputeTest, RefusesADispatchOfNothing)
 {
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE).take();
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE).take();
     auto ran = compute.dispatch(0u);
     ASSERT_FALSE(bool(ran));
     ASSERT_THAT(ran.error(), HasSubstr("zero"));
@@ -282,21 +282,23 @@ TEST_F(ComputeTest, RefusesADispatchOfNothing)
 
 TEST_F(ComputeTest, RefusesABufferThatIsNotStorage)
 {
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE).take();
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE).take();
     const std::vector<float> start(4u, 1.0f);
     auto vertices = compages::gpu::VertexBuffer<float>::from(
                         std::span<const float>(start),
                         compages::gpu::BufferUsage::Stream)
                         .take();
 
-    auto bound = compute.bind("Values", vertices);
+    // The typed bind() takes only a StorageBuffer, so this mistake does not
+    // compile; the handle overload still checks it at run time.
+    auto bound = compute.bind("Values", vertices.handle());
     ASSERT_FALSE(bool(bound));
     ASSERT_THAT(bound.error(), HasSubstr("vertex"));
 }
 
 TEST_F(ComputeTest, RefusesABlockTheShaderDoesNotDeclare)
 {
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE).take();
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE).take();
     auto buffer = compages::gpu::StorageBuffer<float>::create(
                       4u, compages::gpu::BufferUsage::Stream)
                       .take();
@@ -308,7 +310,7 @@ TEST_F(ComputeTest, RefusesABlockTheShaderDoesNotDeclare)
 TEST_F(ComputeTest, CountsADispatch)
 {
     compages::gpu::resetFrameStatistics();
-    auto compute = compages::gpu::ComputeProgram::fromSource(DOUBLE_SOURCE).take();
+    auto compute = tests::computeFromSource(DOUBLE_SOURCE).take();
     auto buffer = compages::gpu::StorageBuffer<float>::create(
                       64u, compages::gpu::BufferUsage::Stream)
                       .take();

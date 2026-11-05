@@ -131,8 +131,7 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
     }
     if (!m_sun_pipeline.valid())
     {
-        COMPAGES_TRY_ASSIGN(m_sun_program,
-                            compages::gpu::Program::fromSources(shaders::shadowVertex(), shaders::shadowFragment()));
+        COMPAGES_TRY(m_sun_program.loadSources(shaders::shadowVertex(), shaders::shadowFragment()));
         compages::gpu::RenderState state;
         state.depth_test = true;
         state.cull = compages::gpu::CullMode::None;
@@ -207,8 +206,7 @@ Status ShadowPass::renderLamps(RenderSnapshot const& p_snapshot,
     }
     if (!m_lamp_pipeline.valid())
     {
-        COMPAGES_TRY_ASSIGN(m_lamp_program,
-                            compages::gpu::Program::fromSources(shaders::lampShadowVertex(),
+        COMPAGES_TRY(m_lamp_program.loadSources(shaders::lampShadowVertex(),
                                                                 shaders::lampShadowFragment()));
         compages::gpu::RenderState state;
         state.depth_test = true;

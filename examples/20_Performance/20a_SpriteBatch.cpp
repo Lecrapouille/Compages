@@ -81,11 +81,12 @@ std::string SpriteBatch::description() const
 // ----------------------------------------------------------------------------
 compages::Status SpriteBatch::makeAtlas()
 {
-    COMPAGES_TRY(
-        m_atlas.allocate({ .width = ATLAS,
-                           .height = ATLAS,
-                           .magnify = compages::gpu::Filter::Nearest,
-                           .minify = compages::gpu::Filter::Nearest }));
+    COMPAGES_TRY_ASSIGN(m_atlas,
+                        compages::gpu::Texture::create(
+                            { .width = ATLAS,
+                              .height = ATLAS,
+                              .magnify = compages::gpu::Filter::Nearest,
+                              .minify = compages::gpu::Filter::Nearest }));
 
     // Sixteen tiles, each a colour of its own.
     std::vector<std::uint8_t> pixels(std::size_t{ ATLAS } * ATLAS * 4u);

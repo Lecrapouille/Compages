@@ -70,7 +70,7 @@ using ProgramHandle = Handle<struct ProgramTag>;
 //! if (!vertex) { std::cerr << vertex.error(); return; }
 //! \endcode
 //!
-//! Most callers never need this type: Program::fromFiles() does both steps.
+//! Most callers never need this type: Program::loadFiles() does both steps.
 // ****************************************************************************
 class Shader: private compages::NotCopiable
 {
@@ -192,10 +192,9 @@ private:
 //! program.set("uColor", compages::Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 //! \endcode
 //!
-//! The static fromSources(), fromFiles() and link() return the program as a
-//! Result, which suits code filling a container. loadSources(), loadFiles()
-//! and their compute forms fill this object in place, which suits a member:
-//! one COMPAGES_TRY, no temporary.
+//! loadSources() and loadFiles() fill this object in place, as Drawable and
+//! ComputeProgram do: one COMPAGES_TRY, no temporary. link() joins stages
+//! compiled beforehand. A compute program is a ComputeProgram.
 //!
 //! Linking is where the driver decides everything the library then relies on:
 //! which slot each attribute got, where each member of a uniform block really
@@ -220,55 +219,6 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Program>
     link(std::initializer_list<Shader const*> p_stages);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a vertex and a fragment stage from source, for
-    //! shaders kept as strings in the C++ file.
-    //!
-    //! \param[in] p_vertex the GLSL of the vertex stage, from its \#version
-    //! line.
-    //! \param[in] p_fragment the GLSL of the fragment stage.
-    //! \return the program, or the log of the stage that failed.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program>
-    fromSources(std::string_view p_vertex, std::string_view p_fragment);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a vertex and a fragment stage from files.
-    //!
-    //! What almost every caller wants. On failure the error names the file that
-    //! would not compile, followed by the log of the driver.
-    //!
-    //! \param[in] p_vertex path of the vertex stage, usually a .vert file.
-    //! \param[in] p_fragment path of the fragment stage, usually a .frag file.
-    //! \return the program, or the name of the file that failed and the driver
-    //! log.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program>
-    fromFiles(std::filesystem::path const& p_vertex,
-              std::filesystem::path const& p_fragment);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a compute program from source.
-    //!
-    //! A compute program has one stage and no drawing: it runs on a grid of
-    //! work groups whose size the shader itself declares, which reflection()
-    //! reports as work_group_size. ComputeProgram wraps this with dispatch().
-    //!
-    //! \param[in] p_source the GLSL of the compute stage.
-    //! \return the program, or the compiler log.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program>
-    fromComputeSource(std::string_view p_source);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a compute program from a file.
-    //!
-    //! \param[in] p_path the file to read, any extension.
-    //! \return the program, or why the file could not be read or compiled.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<Program>
-    fromComputeFile(std::filesystem::path const& p_path);
 
     // ------------------------------------------------------------------------
     //! \brief Compile and link a vertex and a fragment stage from source, into
@@ -297,24 +247,6 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] Status loadFiles(std::filesystem::path const& p_vertex,
                                    std::filesystem::path const& p_fragment);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a compute stage from source, into this object.
-    //! A failure keeps the previous program.
-    //!
-    //! \param[in] p_source the GLSL of the compute stage.
-    //! \return the compiler or linker log when it failed.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadComputeSource(std::string_view p_source);
-
-    // ------------------------------------------------------------------------
-    //! \brief Compile and link a compute stage from a file, into this object.
-    //! A failure keeps the previous program.
-    //!
-    //! \param[in] p_path the file to read.
-    //! \return why the file could not be read or built.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] Status loadComputeFile(std::filesystem::path const& p_path);
 
     //! \brief Take over the program of p_other, which is left not valid().
     //! \param[in,out] p_other the program to empty.
@@ -460,7 +392,61 @@ public:
 
 private:
 
+    //! \brief ComputeProgram builds its program with fromComputeSource() and
+    //! fromComputeFile().
+    friend class ComputeProgram;
+
     explicit Program(ProgramHandle p_handle) : m_handle(p_handle) {}
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile and link a vertex and a fragment stage from source, for
+    //! shaders kept as strings in the C++ file.
+    //!
+    //! \param[in] p_vertex the GLSL of the vertex stage, from its \#version
+    //! line.
+    //! \param[in] p_fragment the GLSL of the fragment stage.
+    //! \return the program, or the log of the stage that failed.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Program>
+    fromSources(std::string_view p_vertex, std::string_view p_fragment);
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile and link a vertex and a fragment stage from files.
+    //!
+    //! What almost every caller wants. On failure the error names the file that
+    //! would not compile, followed by the log of the driver.
+    //!
+    //! \param[in] p_vertex path of the vertex stage, usually a .vert file.
+    //! \param[in] p_fragment path of the fragment stage, usually a .frag file.
+    //! \return the program, or the name of the file that failed and the driver
+    //! log.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Program>
+    fromFiles(std::filesystem::path const& p_vertex,
+              std::filesystem::path const& p_fragment);
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile and link a compute program from source.
+    //!
+    //! A compute program has one stage and no drawing: it runs on a grid of
+    //! work groups whose size the shader itself declares, which reflection()
+    //! reports as work_group_size. ComputeProgram wraps this with dispatch().
+    //!
+    //! \param[in] p_source the GLSL of the compute stage.
+    //! \return the program, or the compiler log.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Program>
+    fromComputeSource(std::string_view p_source);
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile and link a compute program from a file.
+    //!
+    //! \param[in] p_path the file to read, any extension.
+    //! \return the program, or why the file could not be read or compiled.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Program>
+    fromComputeFile(std::filesystem::path const& p_path);
+
 
     //! \brief Find a uniform and check its declared type before writing to it.
     [[nodiscard]] Result<int> locationOf(std::string_view p_name,

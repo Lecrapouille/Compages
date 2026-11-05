@@ -391,18 +391,6 @@ Status Program::loadFiles(std::filesystem::path const& p_vertex,
     return success();
 }
 
-Status Program::loadComputeSource(std::string_view p_source)
-{
-    COMPAGES_TRY_ASSIGN(*this, fromComputeSource(p_source));
-    return success();
-}
-
-Status Program::loadComputeFile(std::filesystem::path const& p_path)
-{
-    COMPAGES_TRY_ASSIGN(*this, fromComputeFile(p_path));
-    return success();
-}
-
 Program::Program(Program&& p_other) noexcept : m_handle(p_other.m_handle)
 {
     p_other.m_handle = ProgramHandle{};

@@ -22,8 +22,8 @@ namespace examples
 //! coordinate, so the shore fades into fields and the rocks into snow without
 //! any test in the shader:
 //! \code
-//! COMPAGES_TRY(
-//!     m_layers.loadVolumeFiles({ "deep_water.png", ..., "snow.png" }));
+//! COMPAGES_TRY_ASSIGN(m_layers, compages::gpu::Texture::volumeFromFiles(
+//!     { "deep_water.png", ..., "snow.png" }));
 //! m_terrain["layers"] = m_layers;         // a sampler3D in the shader
 //! \endcode
 // ****************************************************************************

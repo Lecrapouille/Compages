@@ -93,8 +93,9 @@ compages::Status GameOfLife::setUp()
     // Repeat: reading past an edge reads the other side.
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(
-            m_field[i].allocate({ .format = compages::gpu::PixelFormat::R8,
+        COMPAGES_TRY_ASSIGN(m_field[i],
+                            compages::gpu::Texture::create(
+                                { .format = compages::gpu::PixelFormat::R8,
                                   .width = SIZE,
                                   .height = SIZE,
                                   .magnify = compages::gpu::Filter::Nearest,

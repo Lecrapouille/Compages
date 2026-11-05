@@ -195,7 +195,7 @@ TEST_F(FramebufferTest, APassDrawsIntoTheTexture)
     ASSERT_TRUE(bool(made)) << made.error();
     auto framebuffer = made.take();
 
-    auto program = compages::gpu::Program::fromSources(VERTEX, RED_FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, RED_FRAGMENT).take();
     const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Corner>();
     auto pipeline = compages::gpu::Pipeline::create<Corner>(program, layout).take();
     auto vertices = compages::gpu::VertexBuffer<Corner>::from(
@@ -208,8 +208,8 @@ TEST_F(FramebufferTest, APassDrawsIntoTheTexture)
     desc.height = HEIGHT;
     desc.target = framebuffer.handle();
     desc.color = compages::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
-    auto pass = compages::gpu::RenderPass::begin(desc);
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(desc);
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));
 
     auto picture = compages::gpu::readPixels();
@@ -222,7 +222,7 @@ TEST_F(FramebufferTest, APassDrawsIntoTheTexture)
 
     // The pass has to close before the texture is read as an image: the picture
     // is in the texture, and that is what the next pass will sample.
-    pass.value().end();
+    pass.end();
     auto stored = color.read();
     ASSERT_TRUE(bool(stored)) << stored.error();
     ASSERT_EQ(static_cast<int>(stored.value()[at]), 255);
@@ -237,12 +237,13 @@ TEST_F(FramebufferTest, RefusesAPassThatDoesNotFitTheTarget)
     ASSERT_TRUE(bool(made)) << made.error();
     auto framebuffer = made.take();
 
-    auto pass = compages::gpu::RenderPass::begin({ .width = 16u,
+    compages::gpu::RenderPass pass({ .width = 16u,
                                          .height = 8u,
                                          .target = framebuffer.handle() });
-    ASSERT_FALSE(bool(pass));
-    ASSERT_THAT(pass.error(), HasSubstr("16 by 8"));
-    ASSERT_THAT(pass.error(), HasSubstr("8 by 8"));
+    ASSERT_FALSE(pass.open());
+    const std::string why = compages::gpu::takeFrameError();
+    ASSERT_THAT(why, HasSubstr("16 by 8"));
+    ASSERT_THAT(why, HasSubstr("8 by 8"));
 }
 
 TEST_F(FramebufferTest, RefusesAPassToAReleasedFramebuffer)
@@ -254,10 +255,11 @@ TEST_F(FramebufferTest, RefusesAPassToAReleasedFramebuffer)
     const compages::gpu::FramebufferHandle stale = framebuffer.handle();
     framebuffer.release();
 
-    auto pass = compages::gpu::RenderPass::begin(
+    compages::gpu::RenderPass pass(
         { .width = 16u, .height = 16u, .target = stale });
-    ASSERT_FALSE(bool(pass));
-    ASSERT_THAT(pass.error(), HasSubstr("released"));
+    ASSERT_FALSE(pass.open());
+    const std::string why = compages::gpu::takeFrameError();
+    ASSERT_THAT(why, HasSubstr("released"));
 }
 
 TEST_F(FramebufferTest, ReleasingItDoesNotReleaseTheTextures)

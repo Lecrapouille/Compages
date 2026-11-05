@@ -173,7 +173,7 @@ TEST_F(ShaderTest, RefusesAnEmptySource)
 
 TEST_F(ShaderTest, LinksAProgram)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT);
+    auto program = tests::programFromSources(VERTEX, FRAGMENT);
     ASSERT_TRUE(bool(program)) << program.error();
 
     auto linked = program.take();
@@ -193,7 +193,7 @@ out vec4 oColor;
 void main() { oColor = vec4(vMissing, 1.0); }
 )";
 
-    auto program = compages::gpu::Program::fromSources(VERTEX, WANTS_SOMETHING_ELSE);
+    auto program = tests::programFromSources(VERTEX, WANTS_SOMETHING_ELSE);
     ASSERT_FALSE(bool(program));
     ASSERT_THAT(program.error(), HasSubstr("did not link"));
     ASSERT_EQ(compages::gpu::livePrograms(), 0u);
@@ -253,7 +253,7 @@ TEST_F(ShaderTest, LinksOneStageIntoSeveralPrograms)
 // all of them the driver's answer rather than a guess.
 TEST_F(ShaderTest, ReportsTheAttributesTheShaderDeclares)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
     compages::gpu::ProgramReflection const& what = program.reflection();
 
     ASSERT_EQ(what.attributes.size(), 3u);
@@ -285,7 +285,7 @@ TEST_F(ShaderTest, ReportsTheAttributesTheShaderDeclares)
 
 TEST_F(ShaderTest, ReportsTheUniformsAndTheirTypes)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
     compages::gpu::ProgramReflection const& what = program.reflection();
 
     compages::gpu::UniformInfo const* model = what.uniform("uModel");
@@ -302,7 +302,7 @@ TEST_F(ShaderTest, ReportsTheUniformsAndTheirTypes)
 // remembered by hand.
 TEST_F(ShaderTest, SinglesOutTheSamplers)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
 
     auto samplers = program.reflection().samplers();
     ASSERT_EQ(samplers.size(), 1u);
@@ -316,7 +316,7 @@ TEST_F(ShaderTest, SinglesOutTheSamplers)
 // asking is that we would find out if they ever did not.
 TEST_F(ShaderTest, ReportsWhereTheDriverPutEachBlockMember)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
 
     compages::gpu::BlockInfo const* frame = program.reflection().uniformBlock("Frame");
     ASSERT_NE(frame, nullptr) << program.reflection().toString();
@@ -357,7 +357,7 @@ TEST_F(ShaderTest, ReportsWhereTheDriverPutEachBlockMember)
 // block instance, which is how the driver reports it.
 TEST_F(ShaderTest, NamesBlockMembersWithoutTheirBlock)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
     compages::gpu::BlockInfo const* frame = program.reflection().uniformBlock("Frame");
     ASSERT_NE(frame, nullptr);
 
@@ -372,7 +372,7 @@ TEST_F(ShaderTest, NamesBlockMembersWithoutTheirBlock)
 // block it lives in is more useful than saying it does not exist.
 TEST_F(ShaderTest, SaysWhenAUniformLivesInABlock)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
 
     auto written = compages::gpu::attempt([&] { program.set("exposure", 1.0f); });
     ASSERT_FALSE(bool(written));
@@ -383,7 +383,7 @@ TEST_F(ShaderTest, SaysWhenAUniformLivesInABlock)
 // describe at all.
 TEST_F(ShaderTest, ReportsAComputeProgramAndItsStorageBlock)
 {
-    auto program = compages::gpu::Program::fromComputeSource(COMPUTE);
+    auto program = tests::programFromCompute(COMPUTE);
     ASSERT_TRUE(bool(program)) << program.error();
     compages::gpu::ProgramReflection const& what = program.value().reflection();
 
@@ -412,7 +412,7 @@ TEST_F(ShaderTest, ReportsAComputeProgramAndItsStorageBlock)
 // expected to supply it, so what is reported is only what the caller owes.
 TEST_F(ShaderTest, LeavesOutTheVariablesTheDriverProvidesItself)
 {
-    auto program = compages::gpu::Program::fromComputeSource(COMPUTE).take();
+    auto program = tests::programFromCompute(COMPUTE).take();
 
     for (compages::gpu::AttributeInfo const& one : program.reflection().attributes)
     {
@@ -426,13 +426,13 @@ TEST_F(ShaderTest, LeavesOutTheVariablesTheDriverProvidesItself)
 // error, so the answer is zero rather than a message from the driver.
 TEST_F(ShaderTest, ReportsNoWorkGroupSizeForAGraphicsProgram)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, PLAIN_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, PLAIN_FRAGMENT).take();
     ASSERT_EQ(program.reflection().work_group_size[0], 0);
 }
 
 TEST_F(ShaderTest, SetsAUniform)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
 
     const compages::Matrix44f model(compages::matrix::Identity);
     auto written = compages::gpu::attempt([&] { program.set("uModel", model); });
@@ -449,7 +449,7 @@ TEST_F(ShaderTest, SetsAUniform)
 // does declare, since the answer is usually right there.
 TEST_F(ShaderTest, RefusesAUniformTheShaderDoesNotDeclare)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
 
     auto written = compages::gpu::attempt([&] { program.set("uModelMatrix", 1.0f); });
     ASSERT_FALSE(bool(written));
@@ -463,7 +463,7 @@ TEST_F(ShaderTest, RefusesAUniformTheShaderDoesNotDeclare)
 // be named against each other.
 TEST_F(ShaderTest, RefusesAUniformSetWithTheWrongType)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
 
     auto written = compages::gpu::attempt([&] { program.set("uModel", compages::Vector4f(0.0f, 0.0f, 0.0f, 1.0f)); });
     ASSERT_FALSE(bool(written));
@@ -480,7 +480,7 @@ out vec4 oColor;
 uniform vec4 uNeverRead;
 void main() { oColor = vec4(1.0); }
 )";
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, UNUSED).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, UNUSED).take();
 
     ASSERT_EQ(program.reflection().uniform("uNeverRead"), nullptr);
 
@@ -491,7 +491,7 @@ void main() { oColor = vec4(1.0); }
 
 TEST_F(ShaderTest, MovesAProgramWithoutCopyingIt)
 {
-    auto first = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto first = tests::programFromSources(VERTEX, FRAGMENT).take();
     const compages::gpu::ProgramHandle handle = first.handle();
 
     compages::gpu::Program second = std::move(first);
@@ -509,7 +509,7 @@ TEST_F(ShaderTest, ReleasesEverythingWhenItGoesOutOfScope)
         auto vertex =
             compages::gpu::Shader::fromSource(compages::gpu::ShaderStage::Vertex, PLAIN_VERTEX)
                 .take();
-        auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+        auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
         ASSERT_EQ(compages::gpu::liveShaders(), 1u);
         ASSERT_EQ(compages::gpu::livePrograms(), 1u);
     }
@@ -520,7 +520,7 @@ TEST_F(ShaderTest, ReleasesEverythingWhenItGoesOutOfScope)
 // Asking a program that no longer exists must be a message, not a crash.
 TEST_F(ShaderTest, RefusesToUseAProgramThatIsGone)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, FRAGMENT).take();
     program.release();
 
     ASSERT_FALSE(program.valid());
@@ -561,7 +561,7 @@ TEST_F(ShaderTest, SaysSoWhenAShaderFileIsMissing)
 // from here, and what is reported must then agree with what the driver was told.
 TEST_F(ShaderTest, MovesAUniformBlockToAnotherBinding)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
     ASSERT_EQ(program.reflection().uniformBlock("Frame")->binding, 2);
 
     auto bound = program.bindUniformBlock("Frame", 5);
@@ -571,7 +571,7 @@ TEST_F(ShaderTest, MovesAUniformBlockToAnotherBinding)
 
 TEST_F(ShaderTest, RefusesToBindABlockTheShaderDoesNotDeclare)
 {
-    auto program = compages::gpu::Program::fromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(PLAIN_VERTEX, BLOCK_FRAGMENT).take();
 
     auto bound = program.bindUniformBlock("Camera", 1);
     ASSERT_FALSE(bool(bound));
@@ -582,7 +582,7 @@ TEST_F(ShaderTest, RefusesToBindABlockTheShaderDoesNotDeclare)
 // expected, so it has to mention everything.
 TEST_F(ShaderTest, DescribesItselfInWords)
 {
-    auto program = compages::gpu::Program::fromSources(VERTEX, BLOCK_FRAGMENT).take();
+    auto program = tests::programFromSources(VERTEX, BLOCK_FRAGMENT).take();
     const std::string text = program.reflection().toString();
 
     ASSERT_THAT(text, HasSubstr("aPosition"));

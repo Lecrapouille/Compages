@@ -54,9 +54,7 @@ Status DebugDraw::ensureInitialized()
         return success();
     }
 
-    COMPAGES_TRY_ASSIGN(
-        m_program,
-        compages::gpu::Program::fromSources(DEBUG_VERTEX, DEBUG_FRAGMENT));
+    COMPAGES_TRY(m_program.loadSources(DEBUG_VERTEX, DEBUG_FRAGMENT));
 
     const compages::gpu::VertexLayout layout =
         compages::gpu::VertexLayout::of<DebugVertex>();

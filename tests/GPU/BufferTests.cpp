@@ -67,8 +67,8 @@ TEST_F(BufferTest, ReservesMemoryOfTheRightSize)
     ASSERT_TRUE(buffer.valid());
     ASSERT_EQ(buffer.count(), 1000u);
     ASSERT_EQ(buffer.bytes(), 1000u * sizeof(Vertex));
-    ASSERT_EQ(buffer.kind(), compages::gpu::BufferKind::Vertex);
-    ASSERT_EQ(buffer.usage(), compages::gpu::BufferUsage::Dynamic);
+    ASSERT_EQ(buffer.kind, compages::gpu::BufferKind::Vertex);
+    ASSERT_EQ(buffer.usage(), compages::gpu::BufferUsage::Stream);
 }
 
 // A count of zero is a count computed wrong, most often an empty vector nobody
@@ -205,7 +205,7 @@ TEST_F(BufferTest, RefusesToWriteAnImmutableBuffer)
 
     auto written = compages::gpu::attempt([&] { buffer.write(0, 0u); });
     ASSERT_FALSE(bool(written));
-    ASSERT_THAT(written.error(), HasSubstr("immutable"));
+    ASSERT_THAT(written.error(), HasSubstr("Static"));
 }
 
 // What a leak test watches. The count must come back to zero on its own, with
@@ -333,7 +333,7 @@ TEST_F(BufferTest, RefusesAUniformBufferLargerThanTheDriverAllows)
     const std::size_t too_big =
         static_cast<std::size_t>(compages::gpu::device().max_uniform_block_size) + 16u;
 
-    auto created = compages::gpu::UniformBuffer<char>::create(
+    auto created = compages::gpu::Buffer<char, compages::gpu::BufferKind::Uniform>::create(
         too_big, compages::gpu::BufferUsage::Stream);
     ASSERT_FALSE(bool(created));
     ASSERT_THAT(created.error(), HasSubstr("storage buffer instead"));

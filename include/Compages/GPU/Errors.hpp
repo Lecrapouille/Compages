@@ -72,7 +72,7 @@ void reportError(std::string p_message);
 //! error.
 //!
 //! \code
-//! if (!compages::gpu::check(m_texture.loadFile("missing.png")))
+//! if (!compages::gpu::check(m_step.loadFile("missing.comp")))
 //! {
 //!     return;   // the reason is waiting in compages::gpu::takeFrameError()
 //! }

@@ -113,8 +113,8 @@ TEST_F(WorldDrawTest, RendersACubeThroughTheWholePipeline)
     desc.height = HEIGHT;
     desc.color = compages::Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
     desc.clear_depth = true;
-    auto pass = compages::gpu::RenderPass::begin(desc);
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(desc);
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     compages::renderer::Renderer renderer;
     auto drawn = renderer.render(snapshot.value(), assets);

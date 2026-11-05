@@ -179,10 +179,13 @@ TextureAssetId Looks::pictureTexture(std::filesystem::path const& p_path)
     // back to linear light when the shader samples it.
     compages::gpu::LoadOptions options;
     options.srgb = true;
-    if (!compages::gpu::check(picture.texture.loadFile(p_path, options)))
+    auto loaded = compages::gpu::Texture::fromFile(p_path, options);
+    if (!loaded)
     {
+        compages::gpu::reportError(loaded.error());
         return {};
     }
+    picture.texture = loaded.take();
     auto id = m_assets->addTexture(name, std::move(picture));
     if (!id)
     {

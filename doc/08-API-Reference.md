@@ -46,7 +46,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | clear | `clear({ r, g, b })` |
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
-| compute | `ComputeProgram::fromSource` or `load`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
+| compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
 | read back | `buffer.download()` after the right barrier |
 | after ImGui | `forgetRenderState()` |
 

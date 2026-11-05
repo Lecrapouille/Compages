@@ -90,8 +90,9 @@ compages::Status GrayScott::setUp()
     // cell must not blend with its neighbour before the laplacian does.
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(
-            m_field[i].allocate({ .format = compages::gpu::PixelFormat::RGBA32F,
+        COMPAGES_TRY_ASSIGN(m_field[i],
+                            compages::gpu::Texture::create(
+                                { .format = compages::gpu::PixelFormat::RGBA32F,
                                   .width = SIZE,
                                   .height = SIZE,
                                   .magnify = compages::gpu::Filter::Nearest,

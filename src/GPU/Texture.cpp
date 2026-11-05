@@ -550,35 +550,6 @@ Texture::volumeFromFiles(std::vector<std::filesystem::path> const& p_paths,
     return texture;
 }
 
-Status
-Texture::loadVolumeFiles(std::vector<std::filesystem::path> const& p_paths,
-                         LoadOptions const& p_options)
-{
-    COMPAGES_TRY_ASSIGN(*this, volumeFromFiles(p_paths, p_options));
-    return success();
-}
-
-Status Texture::allocate(TextureDesc const& p_desc)
-{
-    COMPAGES_TRY_ASSIGN(*this, create(p_desc));
-    return success();
-}
-
-Status Texture::loadFile(std::filesystem::path const& p_path,
-                         LoadOptions const& p_options)
-{
-    COMPAGES_TRY_ASSIGN(*this, fromFile(p_path, p_options));
-    return success();
-}
-
-Status
-Texture::loadCubeFiles(std::array<std::filesystem::path, 6u> const& p_paths,
-                       LoadOptions const& p_options)
-{
-    COMPAGES_TRY_ASSIGN(*this, cubeFromFiles(p_paths, p_options));
-    return success();
-}
-
 Texture::Texture(Texture&& p_other) noexcept : m_handle(p_other.m_handle)
 {
     p_other.m_handle = TextureHandle{};
@@ -772,36 +743,6 @@ Status Texture::generateMipmaps()
     }
 
     backend::generateMipmaps(record->native);
-    return success();
-}
-
-Status Texture::setFilter(Filter p_magnify, Filter p_minify)
-{
-    detail::TextureRecord* record = detail::pools().textures.get(m_handle);
-    if (record == nullptr)
-    {
-        return failure(staleTextureMessage());
-    }
-
-    backend::setTextureFilter(
-        record->native, p_magnify, p_minify, record->desc.levels > 1u);
-    record->desc.magnify = p_magnify;
-    record->desc.minify = p_minify;
-    return success();
-}
-
-Status Texture::setWrap(Wrap p_x, Wrap p_y, Wrap p_z)
-{
-    detail::TextureRecord* record = detail::pools().textures.get(m_handle);
-    if (record == nullptr)
-    {
-        return failure(staleTextureMessage());
-    }
-
-    backend::setTextureWrap(record->native, p_x, p_y, p_z);
-    record->desc.wrap_x = p_x;
-    record->desc.wrap_y = p_y;
-    record->desc.wrap_z = p_z;
     return success();
 }
 

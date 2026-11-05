@@ -530,9 +530,8 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
     compages::renderer::Material material;
     material.name = "SweatySkin";
     material.family = compages::renderer::ShaderFamily::PbrMinimal;
-    COMPAGES_TRY_ASSIGN(material.program,
-                        compages::gpu::Program::fromSources(
-                            compages::renderer::shaders::pbrVertex(), source));
+    COMPAGES_TRY(material.program.loadSources(
+        compages::renderer::shaders::pbrVertex(), source));
     COMPAGES_TRY_ASSIGN(
         material.pipeline,
         compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
@@ -557,12 +556,17 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
     instance->material = m_skin;
 
     // A normal map holds directions, not colours: no sRGB.
-    COMPAGES_TRY(m_normal_map.loadFile(
-        dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")));
+    COMPAGES_TRY_ASSIGN(
+        m_normal_map,
+        compages::gpu::Texture::fromFile(
+            dataPath("LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg")));
     compages::gpu::LoadOptions picture;
     picture.srgb = true;
     picture.wrap = compages::gpu::Wrap::ClampToEdge;
-    return m_decal_image.loadFile(dataPath("decal/decal-diffuse.png"), picture);
+    COMPAGES_TRY_ASSIGN(m_decal_image,
+                        compages::gpu::Texture::fromFile(
+                            dataPath("decal/decal-diffuse.png"), picture));
+    return compages::success();
 }
 
 // ----------------------------------------------------------------------------
@@ -575,14 +579,14 @@ compages::Status SweatAndDecals::makeTargets()
                                       .magnify = compages::gpu::Filter::Nearest,
                                       .minify =
                                           compages::gpu::Filter::Nearest };
-    COMPAGES_TRY(m_forces.allocate(field));
+    COMPAGES_TRY_ASSIGN(m_forces, compages::gpu::Texture::create(field));
     COMPAGES_TRY(m_forces_target.attach(m_forces));
     // The skin reads the water between texels: linear.
     field.magnify = compages::gpu::Filter::Linear;
     field.minify = compages::gpu::Filter::Linear;
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(m_fluid[i].allocate(field));
+        COMPAGES_TRY_ASSIGN(m_fluid[i], compages::gpu::Texture::create(field));
         COMPAGES_TRY(m_fluid_target[i].attach(m_fluid[i]));
         clear(m_fluid_target[i]);
     }
@@ -591,7 +595,7 @@ compages::Status SweatAndDecals::makeTargets()
     field.height = DECAL_SIZE;
     for (int i = 0; i < 2; ++i)
     {
-        COMPAGES_TRY(m_decals[i].allocate(field));
+        COMPAGES_TRY_ASSIGN(m_decals[i], compages::gpu::Texture::create(field));
         COMPAGES_TRY(m_decals_target[i].attach(m_decals[i]));
         clear(m_decals_target[i]);
     }

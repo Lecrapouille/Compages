@@ -75,12 +75,6 @@ private:
     {
     }
 
-public:
-
-    //! \brief An empty program: valid() is false until loadSource() or
-    //! loadFile() succeeds.
-    ComputeProgram() = default;
-
     // ------------------------------------------------------------------------
     //! \brief Compile and link a program whose only stage is a compute shader.
     //!
@@ -105,11 +99,21 @@ public:
     [[nodiscard]] static Result<ComputeProgram>
     fromFile(std::filesystem::path const& p_path);
 
+public:
+
+    //! \brief An empty program: valid() is false until loadSource() or
+    //! loadFile() succeeds.
+    ComputeProgram() = default;
+
     // ------------------------------------------------------------------------
-    //! \brief Build in place, for a program kept as a member.
+    //! \brief Compile and link a program whose only stage is a compute
+    //! shader.
     //!
-    //! On failure this object is left as it was, so a working program is not
-    //! lost because a reloaded source has a typo.
+    //! Fails, with the driver's message, when the source does not compile,
+    //! and also when it compiles but declares no layout(local_size_x = ...):
+    //! without a work group size there is no way to know how many copies one
+    //! group runs. On failure this object is left as it was, so a working
+    //! program is not lost because a reloaded source has a typo.
     //!
     //! \code
     //! COMPAGES_TRY(m_simulation.loadSource(COMPUTE_SHADER));

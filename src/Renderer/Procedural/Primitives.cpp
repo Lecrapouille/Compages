@@ -185,13 +185,8 @@ Result<Material> makeMaterial(std::string_view p_name,
                               std::string_view p_fragment,
                               bool p_with_uv)
 {
-    auto program_result =
-        compages::gpu::Program::fromSources(p_vertex, p_fragment);
-    if (!program_result)
-    {
-        return failure(program_result.error());
-    }
-    auto program = program_result.take();
+    compages::gpu::Program program;
+    COMPAGES_TRY(program.loadSources(p_vertex, p_fragment));
     // A shader that reads no uv is fine: a field the shader does not read is
     // simply not sent.
     (void)p_with_uv;

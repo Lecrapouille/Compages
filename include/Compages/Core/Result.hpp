@@ -55,13 +55,13 @@ struct Failure
 //! must be fixed rather than handled.
 //!
 //! \code
-//! auto program = compages::gpu::Program::fromFiles("a.vert", "a.frag");
-//! if (!program)
+//! auto texture = compages::gpu::Texture::fromFile("crate.jpg");
+//! if (!texture)
 //! {
-//!     std::cerr << program.error() << std::endl;
+//!     std::cerr << texture.error() << std::endl;
 //!     return;
 //! }
-//! program.value().use();
+//! texture.value().bind(0u);
 //! \endcode
 //!
 //! \tparam T type of the value on success. Use Result<void> when there is
@@ -161,7 +161,7 @@ using Status = Result<void>;
 //! forwarding the error to our own caller.
 //!
 //! \code
-//! COMPAGES_TRY(m_texture.loadFile("wood.png"));
+//! COMPAGES_TRY(m_program.loadFiles("mesh.vert", "mesh.frag"));
 //! \endcode
 // ****************************************************************************
 #define COMPAGES_TRY(expr)                                          \

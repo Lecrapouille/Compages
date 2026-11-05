@@ -9,6 +9,9 @@
 
 #include "main.hpp"
 
+#include "Compages/GPU/ComputeProgram.hpp"
+#include "Compages/GPU/Shader.hpp"
+
 #include <GLFW/glfw3.h>
 #include <cstdlib>
 #include <string>
@@ -184,5 +187,45 @@ protected:
     //! \brief The live context, valid for the whole duration of the test.
     std::unique_ptr<GPUContext> m_context;
 };
+
+// ----------------------------------------------------------------------------
+//! \brief The public API builds programs in place (loadSources()); tests often
+//! want the Result instead, to check the error or to make several in a row.
+// ----------------------------------------------------------------------------
+inline compages::Result<compages::gpu::Program>
+programFromSources(std::string_view p_vertex, std::string_view p_fragment)
+{
+    compages::gpu::Program program;
+    COMPAGES_TRY(program.loadSources(p_vertex, p_fragment));
+    return program;
+}
+
+//! \brief Same as programFromSources(), from files.
+inline compages::Result<compages::gpu::Program>
+programFromFiles(std::filesystem::path const& p_vertex,
+                 std::filesystem::path const& p_fragment)
+{
+    compages::gpu::Program program;
+    COMPAGES_TRY(program.loadFiles(p_vertex, p_fragment));
+    return program;
+}
+
+//! \brief A ComputeProgram as a Result, for the same reason.
+inline compages::Result<compages::gpu::ComputeProgram>
+computeFromSource(std::string_view p_source)
+{
+    compages::gpu::ComputeProgram compute;
+    COMPAGES_TRY(compute.loadSource(p_source));
+    return compute;
+}
+
+//! \brief The Program inside a compute program built from p_source.
+inline compages::Result<compages::gpu::Program>
+programFromCompute(std::string_view p_source)
+{
+    compages::gpu::ComputeProgram compute;
+    COMPAGES_TRY(compute.loadSource(p_source));
+    return std::move(compute.program());
+}
 
 } // namespace tests

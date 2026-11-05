@@ -135,7 +135,7 @@ protected:
         auto ready = compages::gpu::init(GPUContext::procAddress());
         ASSERT_TRUE(bool(ready)) << ready.error();
 
-        m_program = compages::gpu::Program::fromSources(VERTEX, RED_FRAGMENT).take();
+        m_program = tests::programFromSources(VERTEX, RED_FRAGMENT).take();
         ASSERT_TRUE(m_program.valid());
 
         m_layout = compages::gpu::VertexLayout::of<Corner>();
@@ -183,13 +183,12 @@ protected:
 // is the smallest thing that runs and the whole of 01_ClearScreen.
 TEST_F(DrawTest, StartsTheTargetFromAColour)
 {
-    auto pass = compages::gpu::RenderPass::begin(
+    compages::gpu::RenderPass pass(
         { .width = WIDTH,
           .height = HEIGHT,
           .color = { 0.0f, 1.0f, 0.0f, 1.0f },
           .target = {} });
-    ASSERT_TRUE(bool(pass)) << pass.error();
-    ASSERT_TRUE(pass.value().open());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto picture = compages::gpu::readPixels();
     ASSERT_TRUE(bool(picture)) << picture.error();
@@ -205,8 +204,8 @@ TEST_F(DrawTest, ClosesThePassWhenItGoesOutOfScope)
 {
     ASSERT_FALSE(compages::gpu::inRenderPass());
     {
-        auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-        ASSERT_TRUE(bool(pass)) << pass.error();
+        compages::gpu::RenderPass pass(wholeTarget());
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(compages::gpu::inRenderPass());
         ASSERT_EQ(compages::gpu::currentPass().width, WIDTH);
     }
@@ -218,18 +217,18 @@ TEST_F(DrawTest, ClosesThePassWhenItGoesOutOfScope)
 // which is how the window hosts a pass drawing into a texture.
 TEST_F(DrawTest, NestsPassesAndResumesTheOneBelow)
 {
-    auto outer = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(outer)) << outer.error();
+    compages::gpu::RenderPass outer(wholeTarget());
+    ASSERT_TRUE(outer.open()) << compages::gpu::takeFrameError();
     {
         compages::gpu::PassDesc half = wholeTarget();
         half.width = WIDTH / 2u;
-        auto inner = compages::gpu::RenderPass::begin(half);
-        ASSERT_TRUE(bool(inner)) << inner.error();
+        compages::gpu::RenderPass inner(half);
+        ASSERT_TRUE(inner.open()) << compages::gpu::takeFrameError();
         ASSERT_EQ(compages::gpu::currentPass().width, WIDTH / 2u);
     }
     ASSERT_TRUE(compages::gpu::inRenderPass());
     ASSERT_EQ(compages::gpu::currentPass().width, WIDTH);
-    outer.value().end();
+    outer.end();
     ASSERT_FALSE(compages::gpu::inRenderPass());
 }
 
@@ -237,10 +236,11 @@ TEST_F(DrawTest, NestsPassesAndResumesTheOneBelow)
 // nothing is worth refusing rather than drawing into a void.
 TEST_F(DrawTest, RefusesAPassOverNothing)
 {
-    auto pass = compages::gpu::RenderPass::begin(
+    compages::gpu::RenderPass pass(
         { .width = 0u, .height = HEIGHT, .target = {} });
-    ASSERT_FALSE(bool(pass));
-    ASSERT_THAT(pass.error(), HasSubstr("minimised"));
+    ASSERT_FALSE(pass.open());
+    const std::string why = compages::gpu::takeFrameError();
+    ASSERT_THAT(why, HasSubstr("minimised"));
     ASSERT_FALSE(compages::gpu::inRenderPass());
 }
 
@@ -253,8 +253,8 @@ TEST_F(DrawTest, DrawsATriangleThatReallyLandsOnTheTarget)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -270,11 +270,11 @@ TEST_F(DrawTest, AcceptsTheExplicitPassContract)
                         BIG_TRIANGLE,
                         compages::gpu::BufferUsage::Static)
                         .take();
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(
-        pass.value(), pipeline(), vertices, compages::gpu::DrawOptions{}); });
+        pipeline(), vertices, compages::gpu::DrawOptions{}); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
 }
 
@@ -292,8 +292,8 @@ TEST_F(DrawTest, LeavesAloneWhatItDoesNotCover)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
 
     auto picture = compages::gpu::readPixels();
@@ -316,8 +316,8 @@ TEST_F(DrawTest, DrawsFromIndicesNamingTheCorners)
                        compages::gpu::BufferUsage::Static)
                        .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawIndexed(pipeline(), vertices, indices); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -334,12 +334,12 @@ TEST_F(DrawTest, DrawsFromIndicesNamingTheCorners)
 TEST_F(DrawTest, DrawsWithNoVertexDataAtAll)
 {
     auto program =
-        compages::gpu::Program::fromSources(GENERATED_VERTEX, GREEN_FRAGMENT).take();
+        tests::programFromSources(GENERATED_VERTEX, GREEN_FRAGMENT).take();
     auto created = compages::gpu::Pipeline::create(program, compages::gpu::VertexLayout{});
     ASSERT_TRUE(bool(created)) << created.error();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawWithoutVertices(created.value(), 3u); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -353,8 +353,8 @@ TEST_F(DrawTest, DrawsWithNoVertexDataAtAll)
 // is given, which used to draw nothing and say nothing.
 TEST_F(DrawTest, RefusesToDrawWithoutVerticesWhenTheShaderWantsThem)
 {
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawWithoutVertices(pipeline(), 3u); });
     ASSERT_FALSE(bool(drawn));
@@ -385,8 +385,8 @@ TEST_F(DrawTest, RefusesACountThatDoesNotMakeWholeTriangles)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); });
     ASSERT_FALSE(bool(drawn));
@@ -402,8 +402,8 @@ TEST_F(DrawTest, AcceptsFourVerticesAsAStrip)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(
         pipeline({ .primitive = compages::gpu::Primitive::TriangleStrip }), vertices); });
@@ -417,8 +417,8 @@ TEST_F(DrawTest, RefusesToReadPastTheEndOfABuffer)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices.handle(), 6u); });
     ASSERT_FALSE(bool(drawn));
@@ -435,8 +435,8 @@ TEST_F(DrawTest, RefusesABufferOfTheWrongKind)
                        compages::gpu::BufferUsage::Static)
                        .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), indices.handle(), 3u); });
     ASSERT_FALSE(bool(drawn));
@@ -450,8 +450,8 @@ TEST_F(DrawTest, RefusesVerticesGivenAsIndices)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawIndexed(pipeline(),
                                   vertices.handle(),
@@ -469,8 +469,8 @@ TEST_F(DrawTest, RefusesADrawOfNothing)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices.handle(), 0u); });
     ASSERT_FALSE(bool(drawn));
@@ -485,8 +485,8 @@ TEST_F(DrawTest, SendsWhatChangedBeforeDrawingAGrowingBuffer)
     corners.assign(BIG_TRIANGLE);
     ASSERT_TRUE(corners.dirty());
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), corners); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -519,9 +519,9 @@ void main() { gl_Position = vec4(position, 0.5, 1.0); }
 )";
 
     auto near_program =
-        compages::gpu::Program::fromSources(NEAR_VERTEX, GREEN_FRAGMENT).take();
+        tests::programFromSources(NEAR_VERTEX, GREEN_FRAGMENT).take();
     auto far_program =
-        compages::gpu::Program::fromSources(FAR_VERTEX, RED_FRAGMENT).take();
+        tests::programFromSources(FAR_VERTEX, RED_FRAGMENT).take();
 
     const compages::gpu::RenderState tested{ .depth_test = true };
     auto nearer =
@@ -529,8 +529,8 @@ void main() { gl_Position = vec4(position, 0.5, 1.0); }
     auto farther =
         compages::gpu::Pipeline::create<Corner>(far_program, m_layout, tested).take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(nearer, vertices); })));
     // The far one comes second and must lose, which is only true if the distance
@@ -557,8 +557,8 @@ TEST_F(DrawTest, DropsTheTrianglesFacingAway)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline({ .cull = compages::gpu::CullMode::Back }),
                                vertices); })));
@@ -579,17 +579,17 @@ TEST_F(DrawTest, DrawsIntoOnlyPartOfTheTarget)
 
     // Start the whole target from black.
     {
-        auto whole = compages::gpu::RenderPass::begin(wholeTarget());
-        ASSERT_TRUE(bool(whole)) << whole.error();
+        compages::gpu::RenderPass whole(wholeTarget());
+        ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
     }
     // Then draw into its left half only, keeping what the first pass left.
     {
-        auto half = compages::gpu::RenderPass::begin({ .width = WIDTH / 2u,
+        compages::gpu::RenderPass half({ .width = WIDTH / 2u,
                                              .height = HEIGHT,
                                              .clear_color = false,
                                              .clear_depth = false,
                                              .target = {} });
-        ASSERT_TRUE(bool(half)) << half.error();
+        ASSERT_TRUE(half.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
 
         // Reading beyond the pass is refused, since the pass is what says where
@@ -601,12 +601,12 @@ TEST_F(DrawTest, DrawsIntoOnlyPartOfTheTarget)
     // Reading the whole target needs a pass over the whole target, which must not
     // start it from a colour again.
     {
-        auto whole = compages::gpu::RenderPass::begin({ .width = WIDTH,
+        compages::gpu::RenderPass whole({ .width = WIDTH,
                                               .height = HEIGHT,
                                               .clear_color = false,
                                               .clear_depth = false,
                                              .target = {} });
-        ASSERT_TRUE(bool(whole)) << whole.error();
+        ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
 
         auto picture = compages::gpu::readPixels();
         ASSERT_TRUE(bool(picture)) << picture.error();
@@ -629,15 +629,15 @@ TEST_F(DrawTest, DrawsTheSameAfterForgettingWhatTheDeviceWasTold)
 
     // Once to fill the cache of the backend.
     {
-        auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-        ASSERT_TRUE(bool(pass)) << pass.error();
+        compages::gpu::RenderPass pass(wholeTarget());
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
     }
 
     compages::gpu::forgetRenderState();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
 
     auto picture = compages::gpu::readPixels();
@@ -661,28 +661,28 @@ TEST_F(DrawTest, ClearsOnlyItsOwnPartOfTheTarget)
 {
     // The left half from red.
     {
-        auto left = compages::gpu::RenderPass::begin({ .width = WIDTH / 2u,
+        compages::gpu::RenderPass left({ .width = WIDTH / 2u,
                                              .height = HEIGHT,
                                              .color = { 1.0f, 0.0f, 0.0f, 1.0f },
                                              .target = {} });
-        ASSERT_TRUE(bool(left)) << left.error();
+        ASSERT_TRUE(left.open()) << compages::gpu::takeFrameError();
     }
     // The right half from green, which must leave the left half alone.
     {
-        auto right = compages::gpu::RenderPass::begin({ .x = WIDTH / 2u,
+        compages::gpu::RenderPass right({ .x = WIDTH / 2u,
                                               .width = WIDTH / 2u,
                                               .height = HEIGHT,
                                               .color = { 0.0f, 1.0f, 0.0f, 1.0f },
                                               .target = {} });
-        ASSERT_TRUE(bool(right)) << right.error();
+        ASSERT_TRUE(right.open()) << compages::gpu::takeFrameError();
     }
 
-    auto whole = compages::gpu::RenderPass::begin({ .width = WIDTH,
+    compages::gpu::RenderPass whole({ .width = WIDTH,
                                           .height = HEIGHT,
                                           .clear_color = false,
                                           .clear_depth = false,
                                           .target = {} });
-    ASSERT_TRUE(bool(whole)) << whole.error();
+    ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
 
     auto picture = compages::gpu::readPixels();
     ASSERT_TRUE(bool(picture)) << picture.error();
@@ -702,26 +702,26 @@ TEST_F(DrawTest, KeepsWhatIsDrawnInsideItsOwnPart)
                         .take();
 
     {
-        auto whole = compages::gpu::RenderPass::begin(wholeTarget());
-        ASSERT_TRUE(bool(whole)) << whole.error();
+        compages::gpu::RenderPass whole(wholeTarget());
+        ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
     }
     {
         // A triangle covering everything, drawn during a pass over the left half.
-        auto left = compages::gpu::RenderPass::begin({ .width = WIDTH / 2u,
+        compages::gpu::RenderPass left({ .width = WIDTH / 2u,
                                              .height = HEIGHT,
                                              .clear_color = false,
                                              .clear_depth = false,
                                              .target = {} });
-        ASSERT_TRUE(bool(left)) << left.error();
+        ASSERT_TRUE(left.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
     }
 
-    auto whole = compages::gpu::RenderPass::begin({ .width = WIDTH,
+    compages::gpu::RenderPass whole({ .width = WIDTH,
                                           .height = HEIGHT,
                                           .clear_color = false,
                                           .clear_depth = false,
                                           .target = {} });
-    ASSERT_TRUE(bool(whole)) << whole.error();
+    ASSERT_TRUE(whole.open()) << compages::gpu::takeFrameError();
 
     auto picture = compages::gpu::readPixels();
     ASSERT_TRUE(bool(picture)) << picture.error();
@@ -742,8 +742,8 @@ TEST_F(DrawTest, CountsTheWorkOfAFrame)
     ASSERT_EQ(compages::gpu::frameStatistics().draw_calls, 0u);
 
     {
-        auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-        ASSERT_TRUE(bool(pass)) << pass.error();
+        compages::gpu::RenderPass pass(wholeTarget());
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
         ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(m_pipeline, vertices); })));
     }
@@ -810,8 +810,8 @@ TEST_F(DrawTest, RefusesABufferOfTheWrongVertex)
     auto wrong = compages::gpu::VertexBuffer<Fat>::create(3u, compages::gpu::BufferUsage::Stream)
                      .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), wrong); });
     ASSERT_FALSE(bool(drawn));
@@ -851,7 +851,7 @@ out vec4 oColor;
 void main() { oColor = vColor; }
 )";
 
-    auto compiled = compages::gpu::Program::fromSources(vertex, fragment);
+    auto compiled = tests::programFromSources(vertex, fragment);
     ASSERT_TRUE(bool(compiled)) << compiled.error();
     auto program = compiled.take();
     const compages::gpu::VertexLayout layout = compages::gpu::describe<Sprite>(
@@ -874,8 +874,8 @@ void main() { oColor = vColor; }
                          .take();
 
     compages::gpu::resetFrameStatistics();
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawInstanced(drawing, instances, 4u, sprites.size()); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -897,8 +897,8 @@ TEST_F(DrawTest, RefusesADrawOfZeroInstances)
                         compages::gpu::BufferUsage::Static)
                         .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawInstanced(pipeline(), vertices, 3u, 0u); });
     ASSERT_FALSE(bool(drawn));
@@ -921,7 +921,7 @@ void main()
 }
 )";
 
-    auto compiled = compages::gpu::Program::fromSources(vertex, RED_FRAGMENT);
+    auto compiled = tests::programFromSources(vertex, RED_FRAGMENT);
     ASSERT_TRUE(bool(compiled)) << compiled.error();
     auto program = compiled.take();
     const compages::gpu::VertexLayout layout = compages::gpu::describe<Sprite>(
@@ -934,8 +934,8 @@ void main()
                          compages::gpu::BufferUsage::Static)
                          .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawInstanced(drawing, instances, 3u, 2u); });
     ASSERT_FALSE(bool(drawn));
@@ -957,8 +957,8 @@ TEST_F(DrawTest, DrawsWhatTheCommandBufferAsks)
             compages::gpu::BufferUsage::Static)
             .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawIndirect(pipeline(), vertices, commands); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();
@@ -978,8 +978,8 @@ TEST_F(DrawTest, RefusesACommandBufferThatIsTooSmall)
                          2u, compages::gpu::BufferUsage::Stream)
                          .take();
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn =
         compages::gpu::attempt([&] { compages::gpu::drawIndirect(pipeline(), vertices.handle(), too_small.handle()); });
@@ -1020,13 +1020,13 @@ void main()
                         1u, compages::gpu::BufferUsage::Stream)
                         .take();
 
-    auto compute = compages::gpu::ComputeProgram::fromSource(fill).take();
+    auto compute = tests::computeFromSource(fill).take();
     ASSERT_TRUE(bool(compute.bind("Command", commands)));
     ASSERT_TRUE(bool(compute.dispatch(1u)));
     compages::gpu::barrier(compages::gpu::Barrier::Command);
 
-    auto pass = compages::gpu::RenderPass::begin(wholeTarget());
-    ASSERT_TRUE(bool(pass)) << pass.error();
+    compages::gpu::RenderPass pass(wholeTarget());
+    ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
 
     auto drawn = compages::gpu::attempt([&] { compages::gpu::drawIndirect(pipeline(), vertices, commands); });
     ASSERT_TRUE(bool(drawn)) << drawn.error();

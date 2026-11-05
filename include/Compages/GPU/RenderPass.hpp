@@ -134,17 +134,10 @@ class RenderPass: private compages::NotCopiable
 public:
 
     // ------------------------------------------------------------------------
-    //! \brief Start drawing into the target p_desc names.
-    //!
-    //! \param[in] p_desc where, and what to start from.
-    //! \return the open pass, or why it could not be started: a size of zero,
-    //! or a framebuffer released or too small.
-    // ------------------------------------------------------------------------
-    [[nodiscard]] static Result<RenderPass> begin(PassDesc const& p_desc);
-
-    // ------------------------------------------------------------------------
-    //! \brief Start drawing, as begin() does, recording why not as the frame
-    //! error (see Errors.hpp). open() then says false and draws are refused.
+    //! \brief Start drawing into the target p_desc names. Why it could not
+    //! start (a size of zero, a framebuffer released or too small) is
+    //! recorded as the frame error (see Errors.hpp); open() then says false
+    //! and draws are refused.
     //!
     //! \param[in] p_desc where, and what to start from.
     // ------------------------------------------------------------------------
@@ -210,6 +203,9 @@ public:
     }
 
 private:
+
+    //! \brief Open the pass, or say why not. What the constructors call.
+    [[nodiscard]] static Result<RenderPass> begin(PassDesc const& p_desc);
 
     RenderPass(PassDesc const& p_desc, std::size_t p_depth)
         : m_desc(p_desc), m_depth(p_depth), m_open(true)

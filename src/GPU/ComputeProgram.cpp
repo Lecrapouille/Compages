@@ -31,8 +31,8 @@ Status ensureCompute(Program const& p_program)
     {
         return failure(
             "this is a graphics program, which is drawn, not dispatched. A "
-            "compute program is made with ComputeProgram::fromSource() or "
-            "fromFile()");
+            "compute program is made with ComputeProgram::loadSource() or "
+            "loadFile()");
     }
     return success();
 }

@@ -49,7 +49,8 @@ Status Skybox::loadFiles(std::array<std::filesystem::path, 6u> const& p_faces)
     options.flip_vertically = false;
     options.srgb = true;
     options.wrap = compages::gpu::Wrap::ClampToEdge;
-    COMPAGES_TRY(m_texture.loadCubeFiles(p_faces, options));
+    COMPAGES_TRY_ASSIGN(
+        m_texture, compages::gpu::Texture::cubeFromFiles(p_faces, options));
     COMPAGES_TRY(m_cube.loadSources(SKY_VERTEX, SKY_FRAGMENT));
     // A cube around the camera, seen from the inside. Drawn first and
     // without the depth test, it is behind whatever comes after.

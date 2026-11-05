@@ -42,7 +42,7 @@ mesh.draw();
   layout; a dropped attribute is fine, a type mismatch fails), `54_SweatAndDecals`.
 - All the vertex syntaxes side by side: `02b_VertexSyntax`.
 - Off-screen: `Framebuffer`, `RenderPass` (viewport, clear, target), `Texture` (`05b`, `05c`).
-- Compute: `ComputeProgram::fromSource(src)` / `load`, `dispatchItems(n)`, then
+- Compute: `ComputeProgram` `loadSource(src)` / `loadFile(path)`, `dispatchItems(n)`, then
   **`gpu::barrier(Barrier::VertexAttrib | ...)` yourself** (missing barrier =
   race, not compile error); `buffer.download()` needs a CPU mirror and the
   right barrier. Demos `00c_Compute`, `12_ComputeParticles`, `13_Galaxy`, `21_IndirectDraw`.
