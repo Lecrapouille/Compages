@@ -100,6 +100,27 @@ CameraFrame buildCameraFrame(compages::world::Camera const& p_camera,
                                                  p_camera.near_plane,
                                                  p_camera.far_plane);
     }
+    // The same lens, writing 1 at the near plane and 0 at the far one, in a
+    // clip depth of [0, 1]. Computed directly, not from the matrix above: a
+    // difference of two large numbers would lose the precision it is for.
+    const float n = p_camera.near_plane;
+    const float f = p_camera.far_plane;
+    frame.reversed_projection = frame.projection;
+    frame.reversed_projection(2, 0) = 0.0f;
+    frame.reversed_projection(2, 1) = 0.0f;
+    if (p_camera.projection == compages::world::Camera::Projection::Perspective)
+    {
+        // z_clip = n (f - d) / (f - n) with w_clip = d, the distance.
+        frame.reversed_projection(2, 2) = n / (f - n);
+        frame.reversed_projection(2, 3) = (n * f) / (f - n);
+    }
+    else
+    {
+        // z = (f - d) / (f - n), with w = 1.
+        frame.reversed_projection(2, 2) = 1.0f / (f - n);
+        frame.reversed_projection(2, 3) = f / (f - n);
+    }
+
     // Column vectors: clip = projection * view * world, so VP = P * V.
     frame.view_projection = frame.projection * frame.view;
     frame.inverse_view = p_world_matrix;

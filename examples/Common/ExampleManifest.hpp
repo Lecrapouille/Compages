@@ -63,6 +63,7 @@
 #include "10_Complete/10a_MvpDemo.hpp"
 #include "10_Complete/10b_DoomLike.hpp"
 #include "10_Complete/10c_SweatAndDecals.hpp"
+#include "10_Complete/10d_EarthMoon.hpp"
 
 // One record per active source, in gallery order:
 // type, runtime name, chapter folder, source, former demos covered,
@@ -121,7 +122,8 @@
     X(IndirectDraw, "09c_IndirectDraw", "09_Performance", "09_Performance/09c_IndirectDraw.cpp", "16_IndirectDraw", 0, "-") \
     X(MvpDemo, "10a_MvpDemo", "10_Complete", "10_Complete/10a_MvpDemo.cpp", "24_MvpDemo", 20, "MvpDemo::draw") \
     X(DoomLike, "10b_DoomLike", "10_Complete", "10_Complete/10b_DoomLike.cpp", "-", 0, "-") \
-    X(SweatAndDecals, "10c_SweatAndDecals", "10_Complete", "10_Complete/10c_SweatAndDecals.cpp", "-", 0, "-")
+    X(SweatAndDecals, "10c_SweatAndDecals", "10_Complete", "10_Complete/10c_SweatAndDecals.cpp", "-", 0, "-") \
+    X(EarthMoon, "10d_EarthMoon", "10_Complete", "10_Complete/10d_EarthMoon.cpp", "-", 0, "-")
 
 namespace examples
 {

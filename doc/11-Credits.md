@@ -26,6 +26,8 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 
 - `05e_SpiralGalaxy` is a port of the [galaxy example of Glumpy](https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py), by Nicolas P. Rougier (BSD license). The model, its constants, the four kinds of bodies (stars, dust, hydrogen clouds and their cores) and the look come from it. Glumpy took the model from the [Galaxy Renderer](https://github.com/beltoforion/Galaxy-Renderer) of Ingo Berg, a simulation of the density wave theory of spiral arms. The colours of the stars are the black-body spectrum of John Walker (public domain), as Glumpy uses them. Compages only changes how it is drawn: the vertex shader computes the orbits from the time, where Glumpy moved them with numpy on the CPU.
 
+- `10d_EarthMoon` wears NASA pictures (public domain): the Blue Marble of the Earth (Scientific Visualization Studio, [svs.gsfc.nasa.gov/2915](https://svs.gsfc.nasa.gov/2915)) and the colour map of the Moon from the Lunar Reconnaissance Orbiter Camera (CGI Moon Kit, [svs.gsfc.nasa.gov/4720](https://svs.gsfc.nasa.gov/4720)). The reversed depth follows the article "Depth Precision Visualized" (Nathan Reed) and the logarithmic depth example of three.js.
+
 ---
 
 ## 📦 3. Third-party libraries

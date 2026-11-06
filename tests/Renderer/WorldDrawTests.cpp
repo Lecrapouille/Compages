@@ -296,3 +296,68 @@ TEST_F(WorldDrawTest, TwoHalvesFitAnOddWidth)
         });
     EXPECT_TRUE(bool(drawn)) << drawn.error();
 }
+
+// The Scene draws with the depth reversed: the near plane is stored as 1 and
+// the far one as 0, and a near face still hides a far one.
+TEST_F(WorldDrawTest, DrawsWithTheDepthReversed)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f);
+    compages::world::Entity eye = scene.camera().position(0.0f, 0.0f, 10.0f);
+    compages::world::Camera& lens = eye.get<compages::world::Camera>();
+    lens.near_plane = 1.0f;
+    lens.far_plane = 1.0e9f;   // from a metre to past the Moon
+    scene.box("Near", compages::renderer::unlit(1.0f, 0.0f, 0.0f)).position(0.0f, 0.0f, 0.0f);
+    scene.box("Far", compages::renderer::unlit(0.0f, 0.0f, 1.0f))
+        .position(0.0f, 0.0f, -1.0e6f)
+        .scale(1.0e6f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_reversed_test.png";
+    ASSERT_TRUE(bool(scene.renderToFile(path, 32u, 32u)));
+
+    // The reversed projection puts the near plane at 1 and the far one at 0.
+    compages::Matrix44f const& p = scene.lastCamera().reversed_projection;
+    auto depthAt = [&](float p_distance)
+    {
+        const float z = (p(2, 2) * -p_distance) + p(2, 3);
+        const float w = (p(3, 2) * -p_distance) + p(3, 3);
+        return z / w;
+    };
+    EXPECT_NEAR(depthAt(1.0f), 1.0f, 1e-5f);
+    EXPECT_NEAR(depthAt(1.0e9f), 0.0f, 1e-5f);
+
+    // The near red box hides the huge blue one behind it.
+    auto picture = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
+    ASSERT_TRUE(bool(picture)) << picture.error();
+    auto pixels = picture.value().read().take();
+    const std::size_t at = ((16u * 32u) + 16u) * 4u;
+    EXPECT_EQ(static_cast<int>(pixels[at]), 255);
+    EXPECT_EQ(static_cast<int>(pixels[at + 2u]), 0);
+    std::filesystem::remove(path);
+}
+
+// The picture keeps the proportions of its target: a 64 x 32 picture has a
+// projection twice as strong vertically. (The size was once read through a
+// reference into the stack of passes, after a new pass had been pushed.)
+TEST_F(WorldDrawTest, KeepsTheProportionsOfTheTarget)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.camera().position(0.0f, 0.0f, 3.0f);
+    scene.box("Cube");
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+    for (int i = 0; i < 8; ++i)   // a few passes deep, so that the stack grows
+    {
+        const std::filesystem::path path =
+            std::filesystem::temp_directory_path() / "compages_ratio_test.png";
+        ASSERT_TRUE(bool(scene.renderToFile(path, 64u, 32u)));
+        compages::Matrix44f const& p = scene.lastCamera().projection;
+        EXPECT_NEAR(p(1, 1) / p(0, 0), 2.0f, 1e-4f);
+        std::filesystem::remove(path);
+    }
+}

@@ -140,6 +140,37 @@ bool g_state_known = false;
 //! \brief Are filled polygons drawn as their edges, whatever the pipelines say?
 bool g_wireframe = false;
 
+//! \brief Is the depth stored reversed (1 near, 0 far)? The comparisons are
+//! then mirrored when a pipeline is bound.
+bool g_reversed_depth = false;
+
+//! \brief Has glClipControl been set by us in this context? Not after a new
+//! context or foreign code: the next pass then sets it whatever it was.
+bool g_clip_known = false;
+
+//! \brief The comparison that keeps the same meaning when the depth is
+//! stored reversed: nearer is then greater.
+CompareFunc mirrored(CompareFunc p_func)
+{
+    switch (p_func)
+    {
+        case CompareFunc::Less:
+            return CompareFunc::Greater;
+        case CompareFunc::LessEqual:
+            return CompareFunc::GreaterEqual;
+        case CompareFunc::Greater:
+            return CompareFunc::Less;
+        case CompareFunc::GreaterEqual:
+            return CompareFunc::LessEqual;
+        case CompareFunc::Never:
+        case CompareFunc::Equal:
+        case CompareFunc::NotEqual:
+        case CompareFunc::Always:
+            return p_func;
+    }
+    return p_func;
+}
+
 //! \brief The kind of number, as OpenGL names it.
 GLenum toGL(ScalarType p_type)
 {
@@ -326,6 +357,7 @@ void clearVertexArrayCache()
     g_bound_vao = 0u;
     g_used_program = 0u;
     g_state_known = false;
+    g_clip_known = false;
 }
 
 } // namespace detail
@@ -401,6 +433,20 @@ std::size_t vertexReadersHeld()
     return readers().size();
 }
 
+void useReversedDepth(bool p_reversed)
+{
+    if (g_clip_known && (p_reversed == g_reversed_depth))
+    {
+        return;
+    }
+    g_clip_known = true;
+    g_reversed_depth = p_reversed;
+    glClipControl(GL_LOWER_LEFT,
+                  p_reversed ? GL_ZERO_TO_ONE : GL_NEGATIVE_ONE_TO_ONE);
+    // The comparison of the next pipeline must be sent again, mirrored or not.
+    g_state_known = false;
+}
+
 void forgetRenderState()
 {
     // Not restoring anything, and not reading the device to find out what it
@@ -410,6 +456,7 @@ void forgetRenderState()
     g_state_known = false;
     g_used_program = 0u;
     g_bound_vao = 0u;
+    g_clip_known = false;
 }
 
 void showWireframe(bool p_enabled)
@@ -469,7 +516,8 @@ void bindPipeline(NativeId p_program,
     }
     if (everything || (state.depth_func != g_applied.depth_func))
     {
-        glDepthFunc(toGL(state.depth_func));
+        glDepthFunc(toGL(g_reversed_depth ? mirrored(state.depth_func)
+                                          : state.depth_func));
     }
 
     if (everything || !(state.blend == g_applied.blend))

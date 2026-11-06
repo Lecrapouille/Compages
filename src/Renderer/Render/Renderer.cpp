@@ -47,7 +47,8 @@ Status bindCamera(compages::renderer::Material& p_material,
                   RenderSnapshot const& p_snapshot)
 {
     p_material.program.set("view", p_snapshot.camera.view);
-    p_material.program.set("projection", p_snapshot.camera.projection);
+    p_material.program.set("projection",
+                           p_snapshot.camera.reversed_projection);
     return success();
 }
 

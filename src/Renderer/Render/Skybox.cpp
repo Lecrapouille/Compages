@@ -75,7 +75,7 @@ void Skybox::draw(CameraFrame const& p_camera)
         return;
     }
     m_cube["view"] = p_camera.view;
-    m_cube["projection"] = p_camera.projection;
+    m_cube["projection"] = p_camera.reversed_projection;
     m_cube.draw();
 }
 

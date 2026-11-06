@@ -534,7 +534,9 @@ void Scene::render(compages::world::EntityId p_camera)
             "Scene::render() with no render pass open: the pass says where "
             "the picture goes");
     }
-    compages::gpu::PassDesc const& where = compages::gpu::currentPass();
+    // A copy: opening the pass of the camera below adds to the stack of
+    // passes, and a reference into it would then point at freed memory.
+    const compages::gpu::PassDesc where = compages::gpu::currentPass();
     compages::world::Camera const* lens =
         m_world.tryGet<compages::world::Camera>(p_camera);
 
@@ -545,6 +547,9 @@ void Scene::render(compages::world::EntityId p_camera)
     part.clear_color = true;
     part.clear_depth = true;
     part.target = {};
+    // Reversed depth: precise from a metre to the Moon (with a Depth32F
+    // target, as the gallery and renderToFile have).
+    part.reversed_depth = true;
     if (lens != nullptr)
     {
         compages::world::Camera::Viewport const& v = lens->viewport;

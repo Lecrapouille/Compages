@@ -228,9 +228,53 @@ Beneath the `Drawable`, the same is written with a `Program` and `Pipeline::crea
 - `gpu::clear(color)` clears the current target.
 - A `RenderPass` sets the viewport, clears, and chooses the target (framebuffer or window). `01b_ClearScreen` opens two passes, one per half of the window, without shader.
 - `drawable.state().depth_test = true` (also blending, culling, primitive) belongs to the drawable. The pipeline is rebuilt only when the state changes. `03c_DepthAndTransforms` uses depth test and back-face culling.
+- `PassDesc::reversed_depth` stores the depth reversed (1 near, 0 far): see [Reversed depth](#reversed-depth) below.
 - `gpu::forgetRenderState()`: call it after another library (ImGui in the gallery) touched the context, so that the backend stops trusting its cached state.
 
 Driver messages (`KHR_debug`) go to stderr as `[gpu] warning:` and `[gpu] error:`.
+
+### Reversed depth
+
+**What the depth buffer does.** Two faces can fall on the same pixel. To know which one hides the other, the GPU keeps a second picture beside the colours, the **depth buffer**: for each pixel, a number between 0 and 1 that says how far the nearest face drawn so far is. A new face is kept only if it is nearer (`depth_func = Less`); then its colour and its depth replace the old ones.
+
+**The problem.** The projection does not write the distance `d` itself. With the usual OpenGL convention (0 near, 1 far), it writes about `1 - near / d`. This number grows fast near the camera and almost stops growing far away: with `near = 1 m`, all the values from 0 to 0.5 are used between 1 m and 2 m, and everything after 1 km shares the last thousandth. The buffer has a fixed number of steps (2²⁴ for 24 bits), so far away one step covers a large distance:
+
+| distance          | usual depth: two faces must be at least … apart |
+|-------------------|-------------------------------------------------|
+| 10 m              | 6 µm                                            |
+| 10 km             | 6 m                                             |
+| Moon (384 000 km) | 9 million km                                    |
+
+Two faces closer than that get the same depth: the GPU cannot choose, and from one frame to the next it shows one, then the other. They flicker. This is called **z-fighting**. Moving the near plane away helps a little, but then the objects close to the camera are cut.
+
+**The trick.** Store the depth the other way round: 1 at the near plane, 0 at the far one. The value is then about `near / d`, so the far objects get the values near 0. With a **floating-point** depth buffer (`Depth32F`), this is exactly where the numbers are dense: a `float` has as many values between 0.001 and 0.002 as between 0.5 and 1. The two effects cancel each other. The result: the precision stays the same *in proportion* at every distance, about one ten-millionth of the distance. Two faces at 10 km can be 1 mm apart, two faces at the Moon about 40 m apart, and a near plane of half a metre works with a far plane of two million kilometres.
+
+Three conditions, all needed:
+
+1. A **`Depth32F`** target. An integer buffer (24 bits) has evenly spaced steps: reversing it gains nothing. The gallery window and `Scene::renderToFile` use `Depth32F`.
+2. A clip depth in **[0, 1]**. By default OpenGL maps the depth from [-1, 1] to [0, 1] with `(z + 1) / 2`: adding 1 to a tiny number erases its small digits, the very ones the trick needs. The backend calls `glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE)`, so the value reaches the buffer as it is.
+3. A **reversed projection**, which writes 1 at the near plane and 0 at the far one. Compages computes it for you in the renderer (`CameraFrame::reversed_projection`).
+
+**What `PassDesc::reversed_depth = true` does for you.** For this pass, the backend:
+
+- sets the clip depth to [0, 1] (`glClipControl`), and back to the OpenGL default for a pass without it;
+- mirrors the comparison of each pipeline: `Less` becomes `Greater`, `LessEqual` becomes `GreaterEqual`. Your drawables keep `Less`, "nearer wins" keeps its meaning;
+- clears the depth with `1 - depth`: `PassDesc::depth = 1` still means "far", stored as 0.
+
+The only thing it cannot do is the projection, because the shader computes it: give the shader a matrix that maps near to 1 and far to 0. The `Scene` draws every pass this way. A pass of your own keeps the usual depth (`reversed_depth` is `false` by default), and nothing changes for it.
+
+**When you must care.** When you draw over a picture of a `Scene` *and* test against the depth it left (particles hidden by the walls, in `10b_DoomLike`). Open a pass that keeps the picture and reverses the depth, and use the reversed projection:
+
+```cpp
+compages::gpu::PassDesc over = compages::gpu::currentPass();
+over.clear_color = false;          // keep the picture of the Scene
+over.clear_depth = false;          // and its depth
+over.reversed_depth = true;        // the same convention as the Scene
+compages::gpu::RenderPass const pass(over);
+drawable["projection"] = scene.lastCamera().reversed_projection;
+```
+
+With the usual `projection` in this pass, the comparisons are mirrored but the depth is not: far faces win over near ones, and the near ones are cut. `CameraFrame::projection` stays the usual OpenGL one, for the code that works on the CPU (culling, picking). The idea comes from "Depth Precision Visualized" by Nathan Reed.
 
 ---
 

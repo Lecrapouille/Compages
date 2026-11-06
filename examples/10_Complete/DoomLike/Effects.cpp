@@ -605,7 +605,7 @@ void Effects::draw(compages::renderer::CameraFrame const& p_camera,
             continue;
         }
         (*drawable)["view"] = p_camera.view;
-        (*drawable)["projection"] = p_camera.projection;
+        (*drawable)["projection"] = p_camera.reversed_projection;
         (*drawable)["pixels"] = pixels;
         drawable->draw();
     }

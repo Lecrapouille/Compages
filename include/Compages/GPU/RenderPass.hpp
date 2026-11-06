@@ -106,6 +106,19 @@ struct PassDesc
     //! is what a depth test using Less needs in order to let anything through.
     float depth = 1.0f;
 
+    //! \brief Store the depth the other way round: 1 near, 0 far, in [0, 1]
+    //! (OpenGL's glClipControl), what is called "reversed-Z".
+    //!
+    //! With a Depth32F target, the depth keeps the same relative precision
+    //! from a metre to the Moon, where the usual depth runs out of it a few
+    //! kilometres away and far faces flicker (z-fighting). The comparisons
+    //! of the pipelines are mirrored for you (Less becomes Greater) and
+    //! \c depth keeps its meaning (1 is far): only the projection changes,
+    //! it must map the near plane to 1 and the far one to 0. The Scene draws
+    //! this way (CameraFrame::reversed_projection); a pass drawing over its
+    //! picture with its depth must too.
+    bool reversed_depth = false;
+
     //! \brief Which target to draw into. Empty means the target of the pass
     //! this one is opened in, or the window when no pass is open: a viewer
     //! can draw an example into a texture without the example knowing. A

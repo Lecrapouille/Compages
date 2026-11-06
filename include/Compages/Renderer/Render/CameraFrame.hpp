@@ -35,8 +35,15 @@ struct CameraFrame
 {
     //! \brief compages::world::World-to-camera matrix.
     compages::Matrix44f view{ compages::matrix::Identity };
-    //! \brief compages::world::Camera-to-clip matrix.
+    //! \brief compages::world::Camera-to-clip matrix, OpenGL's usual depth
+    //! (-1 near, +1 far): culling and picking use it.
     compages::Matrix44f projection{ compages::matrix::Identity };
+    //! \brief The same projection with the depth reversed: 1 at the near
+    //! plane, 0 at the far one. What the Scene draws with, in a pass with
+    //! PassDesc::reversed_depth: the depth keeps its precision from a metre to
+    //! the Moon. A drawable drawn over the picture of a Scene, with its depth,
+    //! uses this one in such a pass.
+    compages::Matrix44f reversed_projection{ compages::matrix::Identity };
     //! \brief \c projection * \c view; clip = \c view_projection * \c p_world.
     compages::Matrix44f view_projection{ compages::matrix::Identity };
     //! \brief Inverse of \c view, equal to the camera compages::world::EntityId's world matrix.

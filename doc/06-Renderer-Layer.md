@@ -216,6 +216,23 @@ The library still never makes the context: the program does, then calls
 as the last `update` left it. It waits for the GPU: use it for a report, a
 thumbnail, or a test that compares pictures, not for every frame.
 
+### Very large scenes: from a rocket to the Moon
+
+Three things let a metre and 384 000 km live in one picture (`10d_EarthMoon`):
+
+- **Logarithmic zoom.** Each notch of the wheel moves the `Orbit` camera the same *part* of the way (`zoom_step`, about 11 %), and the move glides. Shift makes a notch six (`boost`). Set `controller.min_distance` and `controller.max_distance` for the span of your scene.
+- **Reversed depth.** The depth buffer gives each pixel a distance, to know which face hides the other. Stored the usual way, nearly all its precision sits near the camera: with a near plane of 1 m, two faces 10 km away must be 6 m apart, two faces at the Moon 9 million km apart, or they flicker (z-fighting). The `Scene` stores it **reversed** (1 near, 0 far): with a `Depth32F` target, as the gallery and `renderToFile` have, the precision stays the same in proportion at every distance (about 1 mm at 10 km, 40 m at the Moon). A near plane of half a metre and a far plane of two million kilometres work together. Nothing changes in the materials: the renderer gives them `CameraFrame::reversed_projection` as `projection`. Only a drawable drawn over the picture of a `Scene`, testing its depth, must follow: it opens a pass with `reversed_depth = true` and uses `lastCamera().reversed_projection` (the particles of `10b_DoomLike`). Why it works and what the backend does: [chapter 4, Reversed depth](04-GPU-Layer.md#reversed-depth).
+- **Floating origin.** A `float` has 24 bits: near the Moon, 3.8 × 10⁸ m from the origin, two neighbouring floats are 32 m apart, and the rocket would shake by 32 m. Changing the unit does not help (in km, the step is still 32 m). Keep the simulation in `double`, outside Compages (as in `07e_ExternalPhysics`), and each frame write into the `World` the positions **relative to the rocket**, which stay small. Far things get the large numbers, where 32 m is less than a pixel.
+
+```cpp
+const Point origin = rocket;                 // double, from the simulation
+m_earth.position(toFloat(EARTH - origin));
+m_moon.position(toFloat(MOON - origin));
+m_rocket.position(0.0f, 0.0f, 0.0f);
+```
+
+A sphere wears an **equirectangular** picture (a planet, a 360° sky) the way a globe does: the top row on the north pole (+Y), east to the right seen from outside.
+
 ---
 
 ## 🎨 5. Paint on a texture: `CanvasTexture`

@@ -310,9 +310,12 @@ makeSphere(float p_radius, std::uint32_t p_stacks, std::uint32_t p_slices)
             const float theta = u * compages::TWO_PI<float>;
             const compages::Vector3f normal(
                 cos_phi * std::cos(theta), sin_phi, cos_phi * std::sin(theta));
+            // An equirectangular picture (a planet, a 360 degree sky): its top
+            // row on the north pole (+Y), and east to the right when seen
+            // from outside, as on a globe.
             corners.emplace_back(normal * p_radius,
                                  normal,
-                                 compages::Vector2f(u, 1.0f - v));
+                                 compages::Vector2f(1.0f - u, v));
         }
     }
 

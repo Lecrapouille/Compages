@@ -94,6 +94,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | looks | `color(r, g, b)` `texture("a.jpg")` `unlit(r, g, b)` `normals()` `depth(near, far)` `seeThrough(look, opacity)` |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
+| large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |
 | picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |
 | prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |

@@ -41,7 +41,8 @@ mesh.draw();
   lower: `Pipeline::create<Vertex>(program, state)` per shader (checks the
   layout; a dropped attribute is fine, a type mismatch fails), `10c_SweatAndDecals`.
 - All the vertex syntaxes side by side: `01f_VertexSyntax`.
-- Off-screen: `Framebuffer`, `RenderPass` (viewport, clear, target), `Texture` (`05b`, `05c`).
+- Off-screen: `Framebuffer`, `RenderPass` (viewport, clear, target), `Texture` (`04d`, `04e`);
+  `PassDesc::reversed_depth` (1 near, 0 far; compares mirrored for you; needs a reversed projection).
 - Compute: `ComputeProgram` `loadSource(src)` / `loadFile(path)`, `dispatchItems(n)`, then
   **`gpu::barrier(Barrier::VertexAttrib | ...)` yourself** (missing barrier =
   race, not compile error); `buffer.download()` needs a CPU mirror and the

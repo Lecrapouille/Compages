@@ -153,7 +153,7 @@ Status DebugDraw::flush(CameraFrame const& p_camera)
 
     m_vertices.write(std::span<DebugVertex const>(m_pending));
     m_program.set("view", p_camera.view);
-    m_program.set("projection", p_camera.projection);
+    m_program.set("projection", p_camera.reversed_projection);
     compages::gpu::draw(m_pipeline, m_vertices.handle(), m_pending.size());
     return success();
 }

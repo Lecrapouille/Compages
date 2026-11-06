@@ -443,6 +443,13 @@ void bindIndexBuffer(NativeId p_reader, NativeId p_buffer);
 void beginPass(PassDesc const& p_desc, NativeId p_target);
 
 // ----------------------------------------------------------------------------
+//! \brief Store the depth the usual way, or reversed (1 near, 0 far, clip
+//! depth in [0, 1]). The depth comparisons of the pipelines are mirrored while
+//! it is reversed. Called by beginPass().
+// ----------------------------------------------------------------------------
+void useReversedDepth(bool p_reversed);
+
+// ----------------------------------------------------------------------------
 //! \brief Make an empty framebuffer, with nothing attached yet.
 // ----------------------------------------------------------------------------
 [[nodiscard]] Result<NativeId> createFramebuffer();

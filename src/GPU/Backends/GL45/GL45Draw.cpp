@@ -63,6 +63,8 @@ void bindIndexBuffer(NativeId p_reader, NativeId p_buffer)
 
 void beginPass(PassDesc const& p_desc, NativeId p_target)
 {
+    useReversedDepth(p_desc.reversed_depth);
+
     // Zero is what the driver calls the window. Anything else is a framebuffer
     // of ours, already checked complete when it was made.
     glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(p_target));
@@ -111,7 +113,10 @@ void beginPass(PassDesc const& p_desc, NativeId p_target)
     }
     if (p_desc.clear_depth)
     {
-        glClearDepth(static_cast<GLdouble>(p_desc.depth));
+        // 1 means far in both conventions: reversed, far is stored as 0.
+        const float depth =
+            p_desc.reversed_depth ? (1.0f - p_desc.depth) : p_desc.depth;
+        glClearDepth(static_cast<GLdouble>(depth));
         what |= GL_DEPTH_BUFFER_BIT;
     }
     if (what != 0u)

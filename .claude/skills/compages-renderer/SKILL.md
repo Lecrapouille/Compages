@@ -31,6 +31,10 @@ scene.draw(frame);                       // = update(frame) + render()
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),
   `scene.showBounds(id, bool)`; components in `Renderer/Components/Helpers.hpp`, drawn as
   DebugDraw lines at each render.
+- The Scene pass uses reversed depth (`PassDesc::reversed_depth`, `CameraFrame::reversed_projection`,
+  glClipControl 0..1, compares mirrored in the backend). Drawing over a Scene picture with its depth:
+  open a pass with `reversed_depth = true`, use `lastCamera().reversed_projection` (10b_DoomLike particles).
+  Planet scales: floating origin (double sim outside, write offsets from the rocket), `10d_EarthMoon`.
 - `scene.renderToFile("out.png", w, h)` (after update); `Compages-headless` makes an EGL
   context with no surface; `gpu::Texture::saveFile(path)` writes a 2D R8/RGB8/RGBA8 PNG.
 - Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF

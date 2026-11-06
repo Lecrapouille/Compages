@@ -645,10 +645,19 @@ void DoomLike::draw(compages::world::ViewFrame const& p_frame)
     }
     m_content.effects.lines(m_level_scene.scene->debug());
     m_level_scene.scene->render();
-    m_content.effects.draw(
-        m_level_scene.scene->lastCamera(),
-        m_rig.camera.get<compages::world::Camera>().fov.template to<float>(),
-        float(p_frame.height));
+    {
+        // The particles are hidden by the walls the Scene drew: they test the
+        // depth it left, so they use the same reversed depth.
+        compages::gpu::PassDesc over = compages::gpu::currentPass();
+        over.clear_color = false;
+        over.clear_depth = false;
+        over.reversed_depth = true;
+        compages::gpu::RenderPass const pass(over);
+        m_content.effects.draw(
+            m_level_scene.scene->lastCamera(),
+            m_rig.camera.get<compages::world::Camera>().fov.template to<float>(),
+            float(p_frame.height));
+    }
     m_ui.previous = p_frame.input;
 }
 

@@ -204,6 +204,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10a_MvpDemo.png" alt="10a_MvpDemo" width="200"> |
 | `10b_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png" alt="10b_DoomLike" width="200"> |
 | `10c_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10c_SweatAndDecals.png" alt="10c_SweatAndDecals" width="200"> |
+| `10d_EarthMoon` | a rocket from Kourou to the Moon at the real scale: logarithmic zoom (Shift: faster), reversed depth, floating origin (untick it in Try it to see the 32 m steps); NASA textures | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10d_EarthMoon.png" alt="10d_EarthMoon" width="200"> |
 
 `10b_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the torch, L for the lantern. The green light leaves the level.
 
