@@ -202,12 +202,23 @@ Result<Material> makeMaterial(std::string_view p_name,
         return failure(pipeline_result.error());
     }
     auto pipeline = pipeline_result.take();
+    // See-through: blended over what is behind, and drawn without writing
+    // the depth, so that a second glass behind the first still shows.
+    state.blend = compages::gpu::Blend::alpha();
+    state.depth_write = false;
+    auto see_through_result =
+        compages::gpu::Pipeline::create<MeshVertex>(program, layout, state);
+    if (!see_through_result)
+    {
+        return failure(see_through_result.error());
+    }
 
     Material material;
     material.name = std::string(p_name);
     material.family = p_family;
     material.program = std::move(program);
     material.pipeline = std::move(pipeline);
+    material.see_through = see_through_result.take();
     return material;
 }
 
@@ -534,6 +545,15 @@ Result<Material> makeDepthMaterial()
                         ShaderFamily::Depth,
                         shaders::depthVertex(),
                         shaders::depthFragment(),
+                        false);
+}
+
+Result<Material> makeUnlitMaterial()
+{
+    return makeMaterial("Unlit",
+                        ShaderFamily::Unlit,
+                        shaders::unlitVertex(),
+                        shaders::unlitFragment(),
                         false);
 }
 

@@ -439,7 +439,7 @@ void main()
         shaded = mix(shaded, vec3(0.1, 0.45, 1.0), max(bead, 0.5 * wet));
     }
     shaded = applyFog(shaded, vWorldPos);
-    oColor = vec4(pow(shaded, vec3(1.0 / 2.2)), 1.0);
+    oColor = vec4(present(shaded), opacity);
 }
 )";
 

@@ -84,5 +84,7 @@ makeCylinder(float p_radius, float p_height, std::uint32_t p_slices = 16u);
 
 //! \brief Legacy NormalsMaterial: encoded surface normal as RGB.
 [[nodiscard]] Result<Material> makeNormalsMaterial();
+//! \brief A flat colour that no light changes.
+[[nodiscard]] Result<Material> makeUnlitMaterial();
 
 } // namespace compages::renderer

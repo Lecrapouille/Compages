@@ -8,6 +8,7 @@
 #include "Compages/Renderer/Render/RenderQueue.hpp"
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
+#include "Compages/Core/Transformation.hpp"
 
 #include <algorithm>
 
@@ -50,11 +51,32 @@ void RenderQueue::build(RenderSnapshot const& p_snapshot,
         QueueEntry entry;
         entry.key = (material_bits << 32u) | mesh_bits;
         entry.item_index = static_cast<std::uint32_t>(i);
+        entry.see_through = instance->opacity < 1.0f;
+        if (entry.see_through)
+        {
+            const compages::Vector3f centre =
+                item.world_bounds.empty()
+                    ? compages::translation(item.world_matrix)
+                    : item.world_bounds.center();
+            const compages::Vector3f gap = centre - p_snapshot.camera.position;
+            entry.distance2 = compages::vector::dot(gap, gap);
+        }
         m_entries.emplace_back(entry);
     }
 
+    // Solid first, grouped by material then mesh; then see-through, farthest
+    // first.
     std::sort(m_entries.begin(), m_entries.end(),
-              [](QueueEntry const& p_a, QueueEntry const& p_b) {
+              [](QueueEntry const& p_a, QueueEntry const& p_b)
+              {
+                  if (p_a.see_through != p_b.see_through)
+                  {
+                      return !p_a.see_through;
+                  }
+                  if (p_a.see_through)
+                  {
+                      return p_a.distance2 > p_b.distance2;
+                  }
                   return p_a.key < p_b.key;
               });
 }

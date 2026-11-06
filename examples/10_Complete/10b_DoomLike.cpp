@@ -632,7 +632,8 @@ void DoomLike::draw(compages::world::ViewFrame const& p_frame)
     m_rig.lantern.get<compages::world::PointLight>().intensity =
         (m_player.flash > 0.0f) ? 6.0f : 1.6f;
     m_rig.lantern.enable(m_player.lantern_on || (m_player.flash > 0.0f));
-    m_level_scene.scene->ambient(0.05f + (1.2f * m_player.hurt), 0.05f, 0.06f);
+    // Colours are sRGB, like a colour picker: 0.22 is a dim grey.
+    m_level_scene.scene->ambient(0.22f + (1.2f * m_player.hurt), 0.22f, 0.24f);
 
     m_content.effects.update(dt);
     m_level_scene.scene->update(p_frame);

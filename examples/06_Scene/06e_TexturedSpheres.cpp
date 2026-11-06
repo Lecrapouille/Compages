@@ -15,7 +15,9 @@ namespace examples
 std::string TexturedSpheres::description() const
 {
     return "Three spheres: a red one, one wearing a picture, a picture tinted "
-           "blue. The camera turns slowly by itself; right drag turns it too.";
+           "blue; and a glass ball in front, seeThrough(look, 0.35): drawn "
+           "after the solid ones, blended over them. The camera turns slowly "
+           "by itself; right drag turns it too.";
 }
 
 // ----------------------------------------------------------------------------
@@ -44,6 +46,14 @@ compages::Status TexturedSpheres::setUp()
     {
         m_spheres[i].position((float(i) - 1.0f) * 2.5f, 0.5f, 0.0f).scale(1.8f);
     }
+
+    // See-through: what is behind shows through it.
+    m_scene
+        .sphere("Glass",
+                compages::renderer::seeThrough(
+                    compages::renderer::color(0.6f, 0.85f, 1.0f), 0.35f))
+        .position(-1.2f, 0.6f, 2.2f)
+        .scale(1.6f);
     return m_scene.prepare();
 }
 

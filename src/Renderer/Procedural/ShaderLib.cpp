@@ -176,8 +176,8 @@ constexpr char const* LIT_FRAGMENT_TAIL = R"(
 //   shape instead of one flat colour;
 // - a small highlight (Blinn-Phong) that shows the curvature;
 // - the shadow of the sun (sunVisibility), on the sun light only;
-// - two-sided normals (open meshes, inverted STL faces) and a soft tone
-//   curve, so bright colours do not burn to flat white.
+// - two-sided normals (open meshes, inverted STL faces).
+// Everything is linear light; present() turns it into screen colours.
 
 // Shadow of the sun: the depth seen from the sun (shadow map), read with a
 // 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
@@ -229,10 +229,32 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     vec3 halfway = normalize(toLight + toEye);
     float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
     vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
-    vec3 shaded = base * light + lightColor * specular;
-    // Soft shoulder above 0.8: keeps the hue of bright surfaces.
-    vec3 over = max(shaded - 0.8, 0.0);
-    return min(shaded, 0.8) + over / (1.0 + over * 2.5);
+    return base * light + lightColor * specular;
+}
+
+// From the light computed in linear units to the colour of the screen:
+// exposure, then a tone curve that brings any brightness under 1 without
+// burning the hue (Environment::tone_mapping), then the sRGB encoding the
+// screen expects. A custom main() calls it too.
+uniform float exposure;
+uniform int toneMapping;   // 0 none (clamp), 1 Reinhard, 2 ACES
+uniform float opacity;
+
+vec3 present(vec3 linear)
+{
+    vec3 c = max(linear * exposure, 0.0);
+    if (toneMapping == 1)
+    {
+        c = c / (1.0 + c);
+    }
+    else if (toneMapping == 2)
+    {
+        // ACES filmic, Narkowicz's fit.
+        c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+    }
+    c = clamp(c, 0.0, 1.0);
+    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
+               step(0.0031308, c));
 }
 
 out vec4 oColor;
@@ -240,7 +262,7 @@ out vec4 oColor;
 void main()
 {
     vec3 shaded = applyFog(shade(color, normalize(vNormal), vWorldPos), vWorldPos);
-    oColor = vec4(pow(shaded, vec3(1.0 / 2.2)), 1.0);
+    oColor = vec4(present(shaded), opacity);
 }
 )";
 
@@ -312,8 +334,8 @@ constexpr char const* PBR_FRAGMENT_TAIL = R"(
 //   shape instead of one flat colour;
 // - a small highlight (Blinn-Phong) that shows the curvature;
 // - the shadow of the sun (sunVisibility), on the sun light only;
-// - two-sided normals (open meshes, inverted STL faces) and a soft tone
-//   curve, so bright colours do not burn to flat white.
+// - two-sided normals (open meshes, inverted STL faces).
+// Everything is linear light; present() turns it into screen colours.
 
 // Shadow of the sun: the depth seen from the sun (shadow map), read with a
 // 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
@@ -365,10 +387,32 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     vec3 halfway = normalize(toLight + toEye);
     float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
     vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
-    vec3 shaded = base * light + lightColor * specular;
-    // Soft shoulder above 0.8: keeps the hue of bright surfaces.
-    vec3 over = max(shaded - 0.8, 0.0);
-    return min(shaded, 0.8) + over / (1.0 + over * 2.5);
+    return base * light + lightColor * specular;
+}
+
+// From the light computed in linear units to the colour of the screen:
+// exposure, then a tone curve that brings any brightness under 1 without
+// burning the hue (Environment::tone_mapping), then the sRGB encoding the
+// screen expects. A custom main() calls it too.
+uniform float exposure;
+uniform int toneMapping;   // 0 none (clamp), 1 Reinhard, 2 ACES
+uniform float opacity;
+
+vec3 present(vec3 linear)
+{
+    vec3 c = max(linear * exposure, 0.0);
+    if (toneMapping == 1)
+    {
+        c = c / (1.0 + c);
+    }
+    else if (toneMapping == 2)
+    {
+        // ACES filmic, Narkowicz's fit.
+        c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+    }
+    c = clamp(c, 0.0, 1.0);
+    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
+               step(0.0031308, c));
 }
 
 out vec4 oColor;
@@ -381,7 +425,7 @@ void main()
         albedo *= texture(baseColorMap, vUv).rgb;
     }
     vec3 shaded = applyFog(shade(albedo, normalize(vNormal), vWorldPos), vWorldPos);
-    oColor = vec4(pow(shaded, vec3(1.0 / 2.2)), 1.0);
+    oColor = vec4(present(shaded), opacity);
 }
 )";
 
@@ -558,6 +602,42 @@ void main()
 }
 )";
 
+constexpr char const* UNLIT_VERTEX = R"(#version 450 core
+in vec3 position;
+in ivec4 joints;
+in vec4 weights;
+uniform int uJointCount;
+uniform mat4 uJoints[64];
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+mat4 skinMatrix()
+{
+    if (uJointCount <= 0) { return mat4(1.0); }
+    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
+           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
+}
+void main()
+{
+    gl_Position = projection * view * model * (skinMatrix() * vec4(position, 1.0));
+}
+)";
+
+// The colour as it was given: no light, no tone curve, only the sRGB encoding
+// of a colour kept linear by the renderer.
+constexpr char const* UNLIT_FRAGMENT = R"(#version 450 core
+uniform vec3 color;
+uniform float opacity;
+out vec4 oColor;
+void main()
+{
+    vec3 c = clamp(color, 0.0, 1.0);
+    vec3 srgb = mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
+                    step(0.0031308, c));
+    oColor = vec4(srgb, opacity);
+}
+)";
+
 char const* depthVertex() { return DEPTH_VERTEX; }
 
 char const* depthFragment() { return DEPTH_FRAGMENT; }
@@ -565,5 +645,9 @@ char const* depthFragment() { return DEPTH_FRAGMENT; }
 char const* normalsVertex() { return NORMALS_VERTEX; }
 
 char const* normalsFragment() { return NORMALS_FRAGMENT; }
+
+char const* unlitVertex() { return UNLIT_VERTEX; }
+
+char const* unlitFragment() { return UNLIT_FRAGMENT; }
 
 } // namespace compages::renderer::shaders

@@ -12,6 +12,7 @@
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include <cmath>
 #include <filesystem>
 #include <string>
 
@@ -76,6 +77,46 @@ struct Look
     Look look;
     look.family = ShaderFamily::Normals;
     return look;
+}
+
+//! \brief A plain colour that no light changes: a lamp bulb, a marker, a
+//! label. Drawn exactly as given.
+[[nodiscard]] inline Look unlit(float p_red, float p_green, float p_blue)
+{
+    Look look;
+    look.family = ShaderFamily::Unlit;
+    look.color = compages::Vector3f(p_red, p_green, p_blue);
+    return look;
+}
+
+//! \brief See-through: \c p_opacity 1 is solid, 0 invisible. Drawn after the
+//! solid shapes, the farthest first.
+[[nodiscard]] inline Look seeThrough(Look p_look, float p_opacity)
+{
+    p_look.opacity = p_opacity;
+    return p_look;
+}
+
+// ----------------------------------------------------------------------------
+//! \brief From the colour a person picks (sRGB, as in a paint program or a
+//! web page) to the linear light the shaders add and multiply. Every colour
+//! given to a Scene (looks, lights, ambient, fog) is sRGB; the background is
+//! written to the screen as it is.
+// ----------------------------------------------------------------------------
+[[nodiscard]] inline float srgbToLinear(float p_value)
+{
+    return (p_value <= 0.04045f)
+               ? (p_value / 12.92f)
+               : std::pow((p_value + 0.055f) / 1.055f, 2.4f);
+}
+
+//! \brief Same, for the three channels of a colour.
+[[nodiscard]] inline compages::Vector3f
+srgbToLinear(compages::Vector3f const& p_color)
+{
+    return { srgbToLinear(p_color.x),
+             srgbToLinear(p_color.y),
+             srgbToLinear(p_color.z) };
 }
 
 //! \brief The distance to the camera, black at \c p_near, white at \c p_far.

@@ -32,14 +32,19 @@ class AssetManager;
 //! renderer bind the pipeline once per material and the buffers once per
 //! mesh.
 //!
-//! Depth is not part of the key at this stage: the demos have very few
-//! objects and no transparency. The layout of the bits leaves room for a
-//! depth bucket later without changing the callers.
+//! See-through items (opacity below one) come after all the solid ones,
+//! sorted from the farthest to the nearest: each one is blended over what is
+//! already behind it, which only works when what is behind was drawn first.
 // ****************************************************************************
 struct QueueEntry
 {
     std::uint64_t key = 0u;
     std::uint32_t item_index = 0u;
+    //! \brief Drawn blended, after the solid items.
+    bool see_through = false;
+    //! \brief Squared distance from the camera to the centre of the item:
+    //! the order of the see-through items.
+    float distance2 = 0.0f;
 };
 
 // ****************************************************************************

@@ -98,6 +98,8 @@ char const* familyName(ShaderFamily p_family)
             return "depth";
         case ShaderFamily::Normals:
             return "normals";
+        case ShaderFamily::Unlit:
+            return "unlit";
     }
     return "material";
 }
@@ -114,6 +116,8 @@ Result<Material> buildFamily(ShaderFamily p_family)
             return makeDepthMaterial();
         case ShaderFamily::Normals:
             return makeNormalsMaterial();
+        case ShaderFamily::Unlit:
+            return makeUnlitMaterial();
     }
     return failure("unknown material family");
 }
@@ -199,8 +203,10 @@ MaterialInstance Looks::instanceOf(Look const& p_look)
 {
     MaterialInstance instance;
     instance.material = familyMaterial(p_look.family);
-    instance.color = p_look.color;
-    instance.base_color_factor = p_look.color;
+    // A look is written in sRGB, like a colour picker; the shaders light in
+    // linear units.
+    instance.color = srgbToLinear(p_look.color);
+    instance.base_color_factor = instance.color;
     instance.depth_near = p_look.depth_near;
     instance.depth_far = p_look.depth_far;
     instance.opacity = p_look.opacity;

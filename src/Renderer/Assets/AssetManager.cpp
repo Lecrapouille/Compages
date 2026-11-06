@@ -438,6 +438,9 @@ Status AssetManager::prepare(MaterialId p_id)
         case ShaderFamily::Normals:
             prepared = makeNormalsMaterial();
             break;
+        case ShaderFamily::Unlit:
+            prepared = makeUnlitMaterial();
+            break;
     }
     if (!prepared)
     {

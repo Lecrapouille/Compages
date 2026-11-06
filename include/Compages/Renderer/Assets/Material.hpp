@@ -35,6 +35,8 @@ enum class ShaderFamily
     Depth,
     //! \brief Legacy NormalsMaterial: world-space normal as RGB.
     Normals,
+    //! \brief A flat colour that no light changes: a bulb, a marker.
+    Unlit,
 };
 
 // ****************************************************************************
@@ -56,6 +58,10 @@ struct Material
     //! \brief The pipeline: program + vertex layout + render state, checked
     //! against each other once at load time.
     compages::gpu::Pipeline pipeline;
+    //! \brief The same program for see-through instances (opacity below
+    //! one): blended over what is behind, without writing the depth. Empty
+    //! for a material made by hand, whose instances are then drawn solid.
+    compages::gpu::Pipeline see_through;
 };
 
 // ****************************************************************************
@@ -74,7 +80,7 @@ struct MaterialInstance
     //! \brief Which shader/pipeline family this instance draws with.
     MaterialId material;
     //! \brief The base colour uploaded to the shader's \c color uniform, when
-    //! the shader declares one.
+    //! the shader declares one. Linear: a Look gives sRGB, the Scene converts.
     compages::Vector3f color{ 1.0f, 1.0f, 1.0f };
     //! \brief PBR base colour factor (\c baseColorFactor in glTF).
     compages::Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
@@ -83,7 +89,8 @@ struct MaterialInstance
     //! \brief DepthMaterial near/far smoothstep range, in eye-space metres.
     float depth_near = 1.0f;
     float depth_far = 100.0f;
-    //! \brief Alpha for depth and normals debug materials.
+    //! \brief One is solid. Below one, the object is drawn after the solid
+    //! ones, farthest first, blended over what is behind it.
     float opacity = 1.0f;
 };
 

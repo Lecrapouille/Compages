@@ -64,6 +64,9 @@ Status bindLighting(compages::renderer::Material& p_material,
     p_material.program.set("cameraPos", p_snapshot.camera.position);
     p_material.program.set("fogColor", p_snapshot.environment.fog_color);
     p_material.program.set("fogDensity", p_snapshot.environment.fog_density);
+    p_material.program.set("exposure", p_snapshot.environment.exposure);
+    p_material.program.set(
+        "toneMapping", static_cast<int>(p_snapshot.environment.tone_mapping));
 
     const int count = static_cast<int>(
         std::min(p_snapshot.point_lights.size(),
@@ -111,6 +114,7 @@ Status bindMaterialFrame(compages::renderer::Material& p_material,
             return bindLighting(p_material, p_snapshot);
         case compages::renderer::ShaderFamily::Depth:
         case compages::renderer::ShaderFamily::Normals:
+        case compages::renderer::ShaderFamily::Unlit:
         default:
             return bindCamera(p_material, p_snapshot);
     }
@@ -226,6 +230,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                 }
                 picture->bind(0u);
                 material->program.set("baseColorMap", 0);
+                material->program.set("opacity", instance->opacity);
                 break;
             }
             case compages::renderer::ShaderFamily::Depth:
@@ -236,12 +241,18 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
             case compages::renderer::ShaderFamily::Normals:
                 material->program.set("opacity", instance->opacity);
                 break;
+            case compages::renderer::ShaderFamily::Unlit:
             case compages::renderer::ShaderFamily::Lit:
             default:
                 material->program.set("color", instance->color);
+                material->program.set("opacity", instance->opacity);
                 break;
         }
-        compages::gpu::drawIndexed(material->pipeline,
+        // A see-through instance blends over what is behind it; a material
+        // made by hand without that pipeline is drawn solid.
+        const bool blended = entry.see_through && material->see_through.valid();
+        compages::gpu::drawIndexed(blended ? material->see_through
+                                           : material->pipeline,
                                    mesh->vertices.handle(),
                                    mesh->indexBuffer(),
                                    mesh->index_type,

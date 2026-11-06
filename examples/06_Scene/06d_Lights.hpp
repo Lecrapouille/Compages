@@ -38,6 +38,7 @@ public:
     [[nodiscard]] std::string description() const override;
     [[nodiscard]] compages::Status setUp() override;
     void draw(compages::world::ViewFrame const& p_frame) override;
+    void controls() override;
 
 private:
 

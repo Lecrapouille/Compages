@@ -191,3 +191,28 @@ TEST_F(WorldDrawTest, RendersTheSceneIntoAFile)
     EXPECT_GT(static_cast<int>(pixels.value()[at]), 0);
     std::filesystem::remove(path);
 }
+
+// An unlit shape keeps its colour whatever the light: white stays white with
+// no sun and no ambient.
+TEST_F(WorldDrawTest, AnUnlitShapeIsDrawnAsItsColour)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f).ambient(0.0f, 0.0f, 0.0f);
+    scene.environment().default_light_color = compages::Vector3f(0.0f, 0.0f, 0.0f);
+    scene.camera().position(0.0f, 0.0f, 3.0f).lookAt(0.0f, 0.0f, 0.0f);
+    scene.box("Marker", compages::renderer::unlit(1.0f, 1.0f, 1.0f));
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_unlit_test.png";
+    ASSERT_TRUE(bool(scene.renderToFile(path, 32u, 32u)));
+    auto picture = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
+    ASSERT_TRUE(bool(picture)) << picture.error();
+    auto pixels = picture.value().read().take();
+    const std::size_t at = ((16u * 32u) + 16u) * 4u;
+    EXPECT_EQ(static_cast<int>(pixels[at]), 255);
+    EXPECT_EQ(static_cast<int>(pixels[at + 1u]), 255);
+    std::filesystem::remove(path);
+}

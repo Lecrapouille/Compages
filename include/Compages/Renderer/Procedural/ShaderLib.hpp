@@ -41,5 +41,8 @@ inline constexpr int MAX_JOINTS = 64;
 
 [[nodiscard]] char const* normalsVertex();
 [[nodiscard]] char const* normalsFragment();
+//! \brief A flat colour, no light: helpers, bulbs, labels.
+[[nodiscard]] char const* unlitVertex();
+[[nodiscard]] char const* unlitFragment();
 
 } // namespace compages::renderer::shaders

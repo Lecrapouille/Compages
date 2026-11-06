@@ -12,6 +12,7 @@
 #include "Compages/Core/Units.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/Renderer/Scene/Looks.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/Components/Light.hpp"
@@ -142,7 +143,13 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
         aspectOf(camera->viewport, p_aspect, p_width, p_height);
 
     RenderSnapshot snapshot;
+    // The colours of the scene are sRGB; the snapshot holds linear light.
     snapshot.environment = p_scene.environment();
+    snapshot.environment.ambient = srgbToLinear(snapshot.environment.ambient);
+    snapshot.environment.fog_color =
+        srgbToLinear(snapshot.environment.fog_color);
+    snapshot.environment.default_light_color =
+        srgbToLinear(snapshot.environment.default_light_color);
     snapshot.camera = buildCameraFrame(
         *camera, world.worldMatrix(camera_entity), aspect, p_width, p_height);
 
@@ -221,7 +228,7 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
             {
                 frame.direction = p_scene.environment().default_light_direction;
             }
-            frame.color = light.color;
+            frame.color = srgbToLinear(light.color);
             frame.intensity = light.intensity;
             snapshot.directional_lights.emplace_back(frame);
         });
@@ -239,7 +246,7 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
             const compages::Matrix44f& world_matrix =
                 world.worldMatrix(entity);
             frame.position = compages::translation(world_matrix);
-            frame.color = light.color;
+            frame.color = srgbToLinear(light.color);
             frame.intensity = light.intensity;
             frame.range = light.range;
             frame.shadows = light.shadows;

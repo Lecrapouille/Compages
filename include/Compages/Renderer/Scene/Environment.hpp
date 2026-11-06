@@ -16,6 +16,21 @@
 namespace compages::renderer
 {
 
+// ****************************************************************************
+//! \brief The curve that turns the light computed by the shaders into
+//! colours a screen can show.
+// ****************************************************************************
+enum class ToneMapping
+{
+    //! \brief Clamp at one: what is too bright turns flat white.
+    None,
+    //! \brief x / (1 + x): soft, a bit grey.
+    Reinhard,
+    //! \brief The filmic curve of the film industry (ACES): contrast, and
+    //! bright colours that stay coloured.
+    Aces,
+};
+
 
 
 // ****************************************************************************
@@ -54,6 +69,13 @@ struct Environment
     //! \brief Pixels across each of the six faces of the shadow cube of a
     //! lamp (PointLight::shadows). Zero turns the shadows of lamps off.
     std::uint32_t lamp_shadow_resolution = 512u;
+    //! \brief How the light, which has no upper limit, becomes a screen
+    //! colour between 0 and 1. ACES keeps the hue of bright surfaces and
+    //! gives contrast, like a film; Reinhard is softer; None clamps.
+    ToneMapping tone_mapping = ToneMapping::Aces;
+    //! \brief Multiplies the light before the tone curve: above one is
+    //! brighter, like opening the lens of a camera.
+    float exposure = 1.0f;
 };
 
 } // namespace compages::renderer
