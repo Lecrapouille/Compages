@@ -686,3 +686,51 @@ TEST_F(TextureTest, SaysSoWhenAFaceOfACubeMapIsMissing)
     // Nothing was set aside on the device before the files were all read.
     ASSERT_EQ(compages::gpu::liveTextures(), 0u);
 }
+
+TEST_F(TextureTest, SavesAPictureThatReadsBackTheSame)
+{
+    // Two rows of two pixels: the bottom row first, as read() gives them.
+    const std::array<std::uint8_t, 16u> pixels{ 255, 0,   0, 255, 0,   255, 0,   255,
+                                                0,   0, 255, 255, 255, 255, 255, 255 };
+    auto texture = compages::gpu::Texture::create(
+                       { .format = compages::gpu::PixelFormat::RGBA8,
+                         .width = 2u,
+                         .height = 2u })
+                       .take();
+    ASSERT_TRUE(bool(texture.write(std::as_bytes(std::span(pixels)))));
+
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_save_test.png";
+    auto saved = texture.saveFile(path);
+    ASSERT_TRUE(bool(saved)) << saved.error();
+
+    // fromFile() turns the file over again: the same bytes come back.
+    auto loaded = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
+    ASSERT_TRUE(bool(loaded)) << loaded.error();
+    auto back = loaded.value().read();
+    ASSERT_TRUE(bool(back)) << back.error();
+    ASSERT_EQ(back.value().size(), pixels.size());
+    EXPECT_EQ(std::memcmp(back.value().data(), pixels.data(), pixels.size()), 0);
+    std::filesystem::remove(path);
+}
+
+TEST_F(TextureTest, RefusesToSaveFloatsOrAnotherFileType)
+{
+    auto floats = compages::gpu::Texture::create(
+                      { .format = compages::gpu::PixelFormat::RGBA32F,
+                        .width = 2u,
+                        .height = 2u })
+                      .take();
+    auto refused = floats.saveFile("floats.png");
+    ASSERT_FALSE(bool(refused));
+    EXPECT_THAT(refused.error(), HasSubstr("RGBA8"));
+
+    auto bytes = compages::gpu::Texture::create(
+                     { .format = compages::gpu::PixelFormat::RGBA8,
+                       .width = 2u,
+                       .height = 2u })
+                     .take();
+    auto jpeg = bytes.saveFile("picture.jpg");
+    ASSERT_FALSE(bool(jpeg));
+    EXPECT_THAT(jpeg.error(), HasSubstr(".png"));
+}

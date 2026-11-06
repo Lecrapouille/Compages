@@ -42,7 +42,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
             build-essential cmake git pkg-config ccache \
-            libgl1-mesa-dev libgl1-mesa-dri libglfw3-dev \
+            libgl1-mesa-dev libgl1-mesa-dri libglfw3-dev libegl-dev \
             libdw-dev lcov \
             mesa-utils xvfb xauth
 
@@ -76,6 +76,13 @@ jobs:
             MESA_GL_VERSION_OVERRIDE=4.5 \
             MESA_GLSL_VERSION_OVERRIDE=450 \
             ${{ steps.info.outputs.build }}/bin/Compages-examples --check
+
+      - name: Draw a scene into a PNG with no screen (EGL, llvmpipe)
+        run: |
+          env LIBGL_ALWAYS_SOFTWARE=1 \
+            MESA_GL_VERSION_OVERRIDE=4.5 \
+            MESA_GLSL_VERSION_OVERRIDE=450 \
+            ${{ steps.info.outputs.build }}/bin/Compages-headless headless.png 640 360
 
       # Before the installation: sudo writes in the build folder.
       - name: Gather the build artifacts

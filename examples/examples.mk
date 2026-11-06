@@ -7,7 +7,7 @@
 
 TARGETS += Compages-examples
 Compages-examples.DESCRIPTION := Examples for Compages
-Compages-examples.SOURCES := **/*.cpp
+Compages-examples.SOURCES := main.cpp Common/*.cpp [0-9]*/*.cpp [0-9]*/*/*.cpp
 Compages-examples.INCLUDES := .
 Compages-examples.DEPENDS := Compages imgui
 Compages-examples.PKG_CONFIG := glfw3
@@ -15,6 +15,17 @@ Compages-examples.PKG_CONFIG := glfw3
 Compages-examples.DEFINES = COMPAGES_DATA_DIR="$(Compages-data.DIR)"
 ifeq ($(TARGET_OS),Linux)
     Compages-examples.LIBS := -ldl
+endif
+
+# A scene drawn into a PNG with no window: an EGL context without surface.
+# Linux only: macOS has no EGL.
+ifeq ($(TARGET_OS),Linux)
+TARGETS += Compages-headless
+Compages-headless.DESCRIPTION := Draw a scene into a PNG file without a screen
+Compages-headless.SOURCES := Headless/main.cpp
+Compages-headless.DEPENDS := Compages
+Compages-headless.PKG_CONFIG := egl
+Compages-headless.LIBS := -ldl
 endif
 
 # Third parties of the gallery.

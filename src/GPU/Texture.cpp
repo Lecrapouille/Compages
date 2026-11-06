@@ -9,6 +9,7 @@
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "GPU/Internal/Pools.hpp"
+#include "GPU/Internal/StbImageWrite.hpp"
 
 #include <stb_image.h>
 
@@ -724,6 +725,53 @@ Result<std::vector<std::byte>> Texture::read(std::uint32_t p_level) const
     backend::readTexture(
         record->native, record->desc, p_level, pixels.size(), pixels.data());
     return pixels;
+}
+
+Status Texture::saveFile(std::filesystem::path const& p_path) const
+{
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
+    if (record == nullptr)
+    {
+        return failure(staleTextureMessage());
+    }
+    if (record->desc.kind != TextureKind::Texture2D)
+    {
+        return failure("saveFile() writes a 2D texture into a picture; a "
+                       "cube map, a volume or an array has no single picture "
+                       "to write");
+    }
+    const PixelFormat format = record->desc.format;
+    const std::uint32_t channels =
+        (format == PixelFormat::R8)                                     ? 1u
+        : ((format == PixelFormat::RGB8) || (format == PixelFormat::SRGB8)) ? 3u
+        : ((format == PixelFormat::RGBA8) || (format == PixelFormat::SRGB8A8))
+            ? 4u
+            : 0u;
+    if (channels == 0u)
+    {
+        return failure("saveFile() writes bytes per channel into a PNG: "
+                       "make the texture R8, RGB8 or RGBA8 (or sRGB). "
+                       "Floats or depth must be converted by a pass first");
+    }
+    if (p_path.extension() != ".png")
+    {
+        return failure("saveFile() writes PNG files only, and " +
+                       p_path.string() + " does not end in .png");
+    }
+
+    std::vector<std::byte> pixels;
+    COMPAGES_TRY_ASSIGN(pixels, read(0u));
+    if (!detail::writePngBottomUp(p_path,
+                                  record->desc.width,
+                                  record->desc.height,
+                                  channels,
+                                  pixels))
+    {
+        return failure("could not write " + p_path.string() +
+                       ". Does the directory exist and is it writable?");
+    }
+    return success();
 }
 
 Status Texture::generateMipmaps()

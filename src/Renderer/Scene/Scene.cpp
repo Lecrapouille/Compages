@@ -12,7 +12,9 @@
 
 #include "Compages/Core/AABB.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "Compages/GPU/Framebuffer.hpp"
 #include "Compages/GPU/RenderPass.hpp"
+#include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/Renderer/Animation/Animator.hpp"
@@ -491,6 +493,35 @@ void Scene::render(compages::world::EntityId p_camera)
 void Scene::render()
 {
     render(m_impl->active_camera);
+}
+
+Status Scene::renderToFile(std::filesystem::path const& p_path,
+                           std::uint32_t p_width,
+                           std::uint32_t p_height)
+{
+    // A colour picture and the distances that let near faces hide far ones.
+    compages::gpu::Texture color;
+    COMPAGES_TRY_ASSIGN(color,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::RGBA8,
+                              .width = p_width,
+                              .height = p_height }));
+    compages::gpu::Texture depth;
+    COMPAGES_TRY_ASSIGN(depth,
+                        compages::gpu::Texture::create(
+                            { .format = compages::gpu::PixelFormat::Depth32F,
+                              .width = p_width,
+                              .height = p_height }));
+    compages::gpu::Framebuffer target;
+    COMPAGES_TRY_ASSIGN(target, compages::gpu::Framebuffer::create(color, depth));
+
+    COMPAGES_TRY(compages::gpu::attempt(
+        [&]
+        {
+            compages::gpu::RenderPass pass(target);
+            render();
+        }));
+    return color.saveFile(p_path);
 }
 
 void Scene::draw(compages::world::ViewFrame const& p_frame)

@@ -28,7 +28,9 @@ include/Compages/   public, installed: Core/ GPU/ World/ Renderer/ + Compages.hp
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
-                    Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp
+                    01_FirstSteps/ … 10_Complete/ = chapters, read in order;
+                    Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
+                    Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
 tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
 external/           external.mk declares the third parties, versions.lock their commits;
                     external/Compages-data/ = demo assets

@@ -288,6 +288,29 @@ public:
     //! \brief update() then render(): the usual frame.
     void draw(compages::world::ViewFrame const& p_frame);
 
+    // ------------------------------------------------------------------------
+    //! \brief Draw what the active camera sees into a PNG file, without a
+    //! window: an off-screen picture of p_width by p_height pixels.
+    //!
+    //! For a report, a thumbnail, a test that compares pictures, or a server
+    //! with no screen (only an OpenGL context is needed, see the
+    //! Compages-headless program). Like render(), it draws the world as the
+    //! last update() left it, and it waits for the GPU: not for every frame.
+    //!
+    //! \code
+    //! scene.update(frame);
+    //! COMPAGES_TRY(scene.renderToFile("scene.png", 1280u, 720u));
+    //! \endcode
+    //!
+    //! \param[in] p_path the PNG file to write.
+    //! \param[in] p_width width of the picture, in pixels.
+    //! \param[in] p_height height of the picture, in pixels.
+    //! \return the first mistake met while drawing or writing.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status renderToFile(std::filesystem::path const& p_path,
+                                      std::uint32_t p_width,
+                                      std::uint32_t p_height);
+
     // --- After a render ------------------------------------------------------
 
     //! \brief The camera as the last render() saw it: its matrices, its

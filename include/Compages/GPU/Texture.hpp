@@ -403,6 +403,25 @@ public:
     read(std::uint32_t p_level = 0u) const;
 
     // ------------------------------------------------------------------------
+    //! \brief Write the largest level of a 2D texture into a PNG file: the
+    //! other way of fromFile().
+    //!
+    //! Reads the pixels back first, so it waits for the device: for a
+    //! picture rendered off-screen, a test or a tool, never in a frame. The
+    //! file has the top row first, as image viewers expect.
+    //!
+    //! \code
+    //! COMPAGES_TRY(color.saveFile("frame.png"));
+    //! \endcode
+    //!
+    //! \param[in] p_path the file to write, ending in .png.
+    //! \return why it could not be written: not a 2D texture, a format a PNG
+    //! cannot hold (R8, RGB8, RGBA8 and their sRGB variants can), or a
+    //! directory that is missing or read-only.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status saveFile(std::filesystem::path const& p_path) const;
+
+    // ------------------------------------------------------------------------
     //! \brief Build the smaller levels of detail from the largest one.
     //!
     //! Needed after writing to a texture created with more than one level;

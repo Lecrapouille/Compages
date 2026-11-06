@@ -17,6 +17,9 @@
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/World.hpp"
+#include "Compages/World/Controllers/ViewFrame.hpp"
+
+#include <filesystem>
 
 
 
@@ -159,4 +162,32 @@ TEST_F(WorldDrawTest, PicksTheCubeUnderTheCentrePixel)
                                       static_cast<std::uint32_t>(HEIGHT));
     ASSERT_TRUE(hit.has_value());
     ASSERT_TRUE(hit->entity == box);
+}
+
+TEST_F(WorldDrawTest, RendersTheSceneIntoAFile)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f);
+    scene.camera().position(0.0f, 0.0f, 3.0f).lookAt(0.0f, 0.0f, 0.0f);
+    scene.sun();
+    scene.box("Cube", compages::renderer::color(1.0f, 1.0f, 1.0f));
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_scene_test.png";
+    auto written = scene.renderToFile(path, 64u, 48u);
+    ASSERT_TRUE(bool(written)) << written.error();
+
+    auto picture = compages::gpu::Texture::fromFile(path, { .mipmaps = false });
+    ASSERT_TRUE(bool(picture)) << picture.error();
+    EXPECT_EQ(picture.value().width(), 64u);
+    EXPECT_EQ(picture.value().height(), 48u);
+    auto pixels = picture.value().read();
+    ASSERT_TRUE(bool(pixels)) << pixels.error();
+    // The centre is the cube, not the black background.
+    const std::size_t at = ((24u * 64u) + 32u) * 4u;
+    EXPECT_GT(static_cast<int>(pixels.value()[at]), 0);
+    std::filesystem::remove(path);
 }

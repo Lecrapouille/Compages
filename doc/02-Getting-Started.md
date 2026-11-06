@@ -15,6 +15,7 @@ Compages builds in **C++20**, mainly on Linux, with `make` (the build system is 
 | Git | sources, the `.makefile` submodule, the third-party clones |
 | pkg-config | `Compages.pc` after `make install` |
 | GLFW and an OpenGL 4.5 driver | **the gallery and the GPU tests only** |
+| EGL (Linux) | `Compages-headless`: a picture drawn with no screen |
 
 ### Ubuntu / Debian
 
@@ -22,7 +23,7 @@ Compages builds in **C++20**, mainly on Linux, with `make` (the build system is 
 sudo apt-get update
 sudo apt-get install --no-install-recommends \
     build-essential cmake git pkg-config \
-    libglfw3-dev libgl1-mesa-dev
+    libglfw3-dev libgl1-mesa-dev libegl-dev
 sudo apt-get install libgtest-dev libgmock-dev          # unit tests
 sudo apt-get install xvfb mesa-utils libgl1-mesa-dri    # machine without screen (CI)
 ```
@@ -31,7 +32,7 @@ sudo apt-get install xvfb mesa-utils libgl1-mesa-dri    # machine without screen
 
 ```sh
 sudo dnf install gcc-c++ make cmake git pkgconf-pkg-config \
-    glfw-devel mesa-libGL-devel
+    glfw-devel mesa-libGL-devel mesa-libEGL-devel
 sudo dnf install gtest-devel gmock-devel                # unit tests
 sudo dnf install xorg-x11-server-Xvfb mesa-dri-drivers  # machine without screen (CI)
 ```
