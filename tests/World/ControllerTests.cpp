@@ -42,11 +42,39 @@ TEST(OrbitController, ZoomPullsTheCameraIn)
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
     orbit.distance = 20.0f;
+    orbit.pitch = 0.0f;
     compages::world::CameraInput input;
     input.zoom_delta = 2.0f;
-    orbit.apply(world, camera, input);
-    ASSERT_NEAR(orbit.distance, 20.0f - (2.0f * orbit.zoom_sensitivity),
-                1.0e-4f);
+    orbit.apply(world, camera, input, 10.0f);
+    // Two notches take the same part of the way, near or far.
+    const float asked = 20.0f * std::exp(-2.0f * orbit.zoom_step);
+    ASSERT_NEAR(orbit.distance, asked, 1.0e-4f);
+    // A long frame has reached it; the camera is there.
+    ASSERT_NEAR(world.transform(camera).position.z, asked, 1.0e-3f);
+}
+
+TEST(OrbitController, ANotchOfTheWheelGlidesInsteadOfJumping)
+{
+    compages::world::World world;
+    const compages::world::EntityId camera = world.create("cam");
+    compages::world::OrbitController orbit;
+    orbit.distance = 3.0f;
+    orbit.pitch = 0.0f;
+    compages::world::CameraInput notch;
+    notch.zoom_delta = 1.0f;
+    orbit.apply(world, camera, notch, 1.0f / 60.0f);
+
+    // After one frame, the camera has started to move but is far from the
+    // end: no jump. Then it keeps gliding without any more input.
+    const float asked = orbit.distance;
+    const float first = world.transform(camera).position.z;
+    EXPECT_LT(first, 3.0f);
+    EXPECT_GT(first - asked, 0.5f * (3.0f - asked));
+    for (int i = 0; i < 120; ++i)
+    {
+        orbit.apply(world, camera, compages::world::CameraInput{}, 1.0f / 60.0f);
+    }
+    EXPECT_NEAR(world.transform(camera).position.z, asked, 1.0e-3f);
 }
 
 TEST(FlyController, ForwardMovesAlongLook)

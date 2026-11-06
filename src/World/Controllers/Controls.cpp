@@ -46,10 +46,9 @@ void Orbit::start()
         std::min(controller.min_distance, distance * 0.1f);
     controller.max_distance =
         std::max(controller.max_distance, distance * 4.0f);
-    controller.zoom_sensitivity =
-        std::max(controller.zoom_sensitivity, distance * 0.05f);
     controller.distance =
         std::clamp(distance, controller.min_distance, controller.max_distance);
+    controller.snap();
     yawPitchOf(-offset, controller.yaw, controller.pitch);
     controller.pitch = std::clamp(
         controller.pitch, controller.min_pitch, controller.max_pitch);
@@ -62,7 +61,7 @@ void Orbit::update(float p_dt)
     {
         controller.yaw += spin * p_dt;
     }
-    controller.apply(world(), entity(), camera);
+    controller.apply(world(), entity(), camera, p_dt);
 }
 
 void Rig::start()

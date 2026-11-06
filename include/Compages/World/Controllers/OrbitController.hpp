@@ -31,7 +31,7 @@ class World;
 //! \code
 //! compages::world::OrbitController orbit;
 //! orbit.target = { 0, 1, 0 };
-//! orbit.apply(world, cam, compages::world::cameraInput(input));
+//! orbit.apply(world, cam, compages::world::cameraInput(input), frame.elapsed);
 //! \endcode
 // ****************************************************************************
 class OrbitController
@@ -41,10 +41,22 @@ public:
     compages::Vector3f target{ 0.0f, 0.0f, 0.0f };
     float yaw = 0.0f;
     float pitch = -0.35f;
+    //! \brief The distance the wheel asks for. The camera glides to it.
     float distance = 40.0f;
 
     float look_sensitivity = 0.005f;
-    float zoom_sensitivity = 2.5f;
+    //! \brief Log of the distance change per notch of the wheel: each notch
+    //! brings the camera the same part of the way closer (about 11 %),
+    //! whether the scene is a room or a galaxy.
+    float zoom_step = 0.12f;
+    //! \brief How fast the shown distance follows the asked one. Each frame
+    //! covers 1 - exp(-sharpness * dt) of the way: the same glide at any
+    //! frame rate, never past the end.
+    float sharpness = 12.0f;
+    //! \brief How many notches one notch is while Shift is held: crossing
+    //! from a rocket to the Moon takes a few turns of the wheel, not a
+    //! hundred.
+    float boost = 6.0f;
     float min_distance = 2.0f;
     float max_distance = 200.0f;
     float min_pitch = -1.45f;
@@ -52,16 +64,28 @@ public:
 
     // ------------------------------------------------------------------------
     //! \brief Consume one frame of input and write the camera pose.
+    //! \param[in] p_dt seconds since the last frame, for the zoom glide.
     // ------------------------------------------------------------------------
     void apply(World& p_world,
                EntityId p_camera,
-               CameraInput const& p_input);
+               CameraInput const& p_input,
+               float p_dt);
 
     // ------------------------------------------------------------------------
     //! \brief Write the pose from the current yaw/pitch/distance, ignoring
     //! input. What a demo uses to drive the camera from \c compages::Frame::total.
     // ------------------------------------------------------------------------
     void writePose(World& p_world, EntityId p_camera) const;
+
+    //! \brief Jump to the asked distance, without gliding: after placing
+    //! the camera by hand.
+    void snap() { m_distance = distance; }
+
+private:
+
+    //! \brief The distance shown, gliding to \c distance. Zero until the
+    //! first apply(): the asked distance is shown as it is.
+    float m_distance = 0.0f;
 };
 
 } // namespace compages::world

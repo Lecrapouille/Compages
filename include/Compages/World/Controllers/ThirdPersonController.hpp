@@ -31,7 +31,7 @@ class World;
 //! \code
 //! compages::world::ThirdPersonController follow;
 //! follow.target = hero.id();
-//! follow.apply(world, cam, compages::world::cameraInput(input));
+//! follow.apply(world, cam, compages::world::cameraInput(input), frame.elapsed);
 //! \endcode
 // ****************************************************************************
 class ThirdPersonController
@@ -42,22 +42,41 @@ public:
     compages::Vector3f look_offset{ 0.0f, 1.6f, 0.0f };
     float yaw = 0.0f;
     float pitch = -0.25f;
+    //! \brief The distance the wheel asks for. The camera glides to it.
     float distance = 8.0f;
 
     float look_sensitivity = 0.005f;
-    float zoom_sensitivity = 1.5f;
+    //! \brief Log of the distance change per notch of the wheel: each notch
+    //! brings the camera the same part of the way closer (about 11 %),
+    //! whether the scene is a room or a galaxy.
+    float zoom_step = 0.12f;
+    //! \brief How fast the shown distance follows the asked one. Each frame
+    //! covers 1 - exp(-sharpness * dt) of the way: the same glide at any
+    //! frame rate, never past the end.
+    float sharpness = 12.0f;
     float min_distance = 1.5f;
     float max_distance = 40.0f;
     float min_pitch = -1.2f;
     float max_pitch = 0.6f;
 
     //! \brief Orbit \c target using mouse look and wheel zoom.
+    //! \param[in] p_dt seconds since the last frame, for the zoom glide.
     void apply(World& p_world,
                EntityId p_camera,
-               CameraInput const& p_input);
+               CameraInput const& p_input,
+               float p_dt);
 
     //! \brief Place the camera from yaw/pitch/distance without reading input.
     void writePose(World& p_world, EntityId p_camera) const;
+
+    //! \brief Jump to the asked distance, without gliding.
+    void snap() { m_distance = distance; }
+
+private:
+
+    //! \brief The distance shown, gliding to \c distance; zero before the
+    //! first apply().
+    float m_distance = 0.0f;
 };
 
 } // namespace compages::world
