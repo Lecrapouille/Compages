@@ -29,9 +29,16 @@ namespace examples
 //! m_points.draw();
 //! \endcode
 //!
-//! The model is Ingo Berg's density wave, in the form Nicolas Rougier
-//! published with Glumpy:
+//! Credits. This demo is a port of the galaxy example of Glumpy, by Nicolas
+//! P. Rougier (BSD license): the model, its constants, the kinds of bodies
+//! (stars, dust, hydrogen clouds and their cores) and the look come from it.
 //! https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py
+//! Glumpy took the model from Ingo Berg's Galaxy Renderer, which simulates
+//! the density wave theory of spiral arms:
+//! https://github.com/beltoforion/Galaxy-Renderer
+//! The colours of the stars are John Walker's black-body spectrum (public
+//! domain), as Glumpy uses them. What Compages adds is the way it is drawn:
+//! the orbits computed by the vertex shader instead of numpy on the CPU.
 // ****************************************************************************
 class SpiralGalaxy: public Example
 {

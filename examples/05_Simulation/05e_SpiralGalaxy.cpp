@@ -178,7 +178,9 @@ std::string SpiralGalaxy::description() const
            "with the radius: a density wave, not gravity. The position is a "
            "formula of the time, so the vertex shader computes it: the "
            "vertices are sent once, and each frame writes one number, the "
-           "year. No CPU loop, no compute shader.";
+           "year. No CPU loop, no compute shader. Ported from the galaxy "
+           "example of Glumpy (Nicolas P. Rougier), after the Galaxy "
+           "Renderer of Ingo Berg.";
 }
 
 // ----------------------------------------------------------------------------

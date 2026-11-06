@@ -148,7 +148,7 @@ points.draw();
 
 - `05a_Compute` is the smallest one: an array of numbers, then `download()` brings the result back to the CPU (orange bars while the CPU copy is late).
 - `05f_Galaxy`: two ping-pong buffers, eight thousand stars, tiles in work group memory (see below).
-- `05e_SpiralGalaxy`, inspired by Glumpy, needs **no compute shader**: each body rides a fixed ellipse, so its position is a formula of the time. The vertex shader computes it; the vertices are sent once and each frame writes one uniform, `years`. When the next state depends on the previous one (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong below.
+- `05e_SpiralGalaxy`, a port of the [galaxy example of Glumpy](https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py) by Nicolas P. Rougier (itself after the [Galaxy Renderer](https://github.com/beltoforion/Galaxy-Renderer) of Ingo Berg), needs **no compute shader**: each body rides a fixed ellipse, so its position is a formula of the time. The vertex shader computes it; the vertices are sent once and each frame writes one uniform, `years`. When the next state depends on the previous one (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong below.
 
 ### 🏓 Ping-pong: read one copy, write the other
 
