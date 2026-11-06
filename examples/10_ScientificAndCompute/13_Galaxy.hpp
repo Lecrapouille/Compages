@@ -23,12 +23,13 @@ namespace examples
 //! shared memory: each work group reads a slice once and reuses it, the
 //! way GPU Gems 3 taught.
 //!
-//! A PingPong is two storage buffers: this frame's output is next frame's
-//! input. The drawable is told each frame which of the two to read, which
+//! A PingPong is two storage buffers: this frame's next() is next frame's
+//! current(). The drawable is told each frame which of the two to read, which
 //! costs nothing:
 //! \code
-//! m_stars.swap();
-//! m_points.borrowVertices(m_stars.input());
+//! COMPAGES_TRY(compages::gpu::dispatch(m_step, m_stars,
+//!                                      { .read = "Input", .write = "Output" }));
+//! m_points.borrowVertices(m_stars.current());
 //! m_points.draw();
 //! \endcode
 // ****************************************************************************

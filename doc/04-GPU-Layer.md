@@ -148,51 +148,60 @@ points.draw();
 
 - `00c_Compute` is the smallest one: an array of numbers, then `download()` brings the result back to the CPU (orange bars while the CPU copy is late).
 - `13_Galaxy`: two ping-pong buffers, eight thousand stars, tiles in work group memory (see below).
-- `14_SpiralGalaxy`, inspired by Glumpy: no gravity, ellipses whose tilt depends on the radius; the temperature is a coordinate in a 1D texture (the black-body ramp); additive point sprites. Each frame only the position and the size are written; `draw()` sends what is dirty.
+- `14_SpiralGalaxy`, inspired by Glumpy, needs **no compute shader**: each body rides a fixed ellipse, so its position is a formula of the time. The vertex shader computes it; the vertices are sent once and each frame writes one uniform, `years`. When the next state depends on the previous one (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong below.
 
 ### 🏓 Ping-pong: read one copy, write the other
 
-A simulation step computes the new state from the old one. Each cell (a star, a pixel) reads its neighbours. The GPU runs thousands of cells at the same time, in no order you know. If the step read and wrote **the same** buffer, a cell could read a neighbour that is already new, or half written: the result would change from one run to the next. This is a race, and the GPU gives no error for it.
+A parallel simulation must not read and write the same state at the same time: one cell (a star, a pixel) could read a neighbour that another cell has already changed. The GPU gives no error for this race; the result just changes from one run to the next.
 
-So the state is kept twice, A and B. One step reads A and writes B; the next one reads B and writes A:
+So a ping-pong keeps two copies of the state:
+
+- `current()`: the state to read. It is also the latest state, the one to draw.
+- `next()`: where the step writes the new state.
+
+After the step, `swap()` exchanges the two roles. Nothing is copied: only the roles change.
 
 ```text
-step 1:   A (old) --read--> shader --write--> B (new)
-step 2:   B (old) --read--> shader --write--> A (new)
-step 3:   A (old) --read--> shader --write--> B (new)
+step 1:   A -> B
+step 2:   B -> A
+step 3:   A -> B
 ```
 
-Nothing is copied: only the roles change. Between two steps, a `barrier` makes the writes of one step visible to the reads of the next (and to the draw).
-
-For buffers, `gpu::PingPong<T>` holds the two copies. `input()` is the one to read, `output()` the one to write, and `swap()` exchanges them. After `swap()`, `input()` is what was just written: the latest state, which the drawable shows and the next step reads. This is the loop of `13_Galaxy`:
+**Buffers** (a compute shader). `gpu::PingPong<T>` holds two storage buffers, and `gpu::dispatch` runs one step in one call. The names of the two storage blocks are given with their role, so they cannot be swapped by mistake. This is the loop of `13_Galaxy`:
 
 ```cpp
 // setUp: the first state, in both buffers.
 COMPAGES_TRY_ASSIGN(m_stars, compages::gpu::PingPong<Star>::from(std::span<const Star>(stars)));
 
-// Each frame:
-m_step.bind("Input", m_stars.input());     // readonly buffer Input in the shader
-m_step.bind("Output", m_stars.output());   // writeonly buffer Output
-m_step.dispatchItems(COUNT);
-compages::gpu::barrier(compages::gpu::Barrier::Storage | compages::gpu::Barrier::VertexAttrib);
-m_stars.swap();                            // what was written is now input()
-m_points.borrowVertices(m_stars.input());  // draw the latest state, no copy
+// Each frame: bind current() to Input and next() to Output, dispatch one
+// thread per star, barrier, swap.
+COMPAGES_TRY(compages::gpu::dispatch(m_step, m_stars, { .read = "Input", .write = "Output" }));
+m_points.borrowVertices(m_stars.current());  // draw the latest state, no copy
 m_points.draw();
 ```
 
-For pictures, the idea is the same with two `Texture`, each wired to a `Framebuffer`, and an index that says which one is current (`11a_GameOfLife`, `11b_GrayScott`, `54_SweatAndDecals`). A fragment shader must not sample the texture it draws into, for the same reason:
+`dispatch` ends with `barrier(Storage | VertexAttrib)`, so the next step and a draw both see the new state; when it fails, it does not swap. For a step that needs something else (two dispatches, other blocks), do it by hand: `bind("Input", current())`, `bind("Output", next())`, `dispatchItems(count())`, `barrier(...)`, `swap()`.
+
+**Textures** (a fragment shader). `gpu::TexturePingPong` holds two textures and the framebuffer that draws into each one. A fragment shader must not sample the texture it draws into, for the same reason. The render pass stays in your code: it says where the draw goes. This is `11a_GameOfLife` (also `11b_GrayScott`, `54_SweatAndDecals`):
 
 ```cpp
-const int next = 1 - m_current;
-m_step["previous"] = m_field[m_current];                 // read the current one
-compages::gpu::RenderPass into(m_target[next], { .clear_color = false });
-m_step.draw(3u);                                         // write the other one
-m_current = next;                                        // it becomes current
+// setUp
+COMPAGES_TRY_ASSIGN(m_field, compages::gpu::TexturePingPong::create(desc));
+COMPAGES_TRY(m_field.current().write(std::as_bytes(std::span(cells))));  // generation 0
+
+// Each frame
+m_step["previous"] = m_field.current();                  // read the current one
+{
+    compages::gpu::RenderPass into(m_field.next(), { .clear_color = false });
+    m_step.draw(3u);                                     // write the other one
+}
+m_field.swap();                                          // it becomes current
+m_show["image"] = m_field.current();
 ```
 
-A render pass makes its writes visible to the next pass by itself; a compute dispatch needs the `barrier`.
+`currentTarget()` draws over the current state in place, without a step: `54_SweatAndDecals` paints a decal there. A render pass makes its writes visible to the next pass by itself; a compute dispatch needs the `barrier`.
 
-To see the numbers on the CPU, read the current copy back: `m_stars.input().read()` returns a `std::vector<T>` (`13_Galaxy` writes it to `galaxy.csv`); `buffer.download()` refreshes the CPU copy of a buffer that keeps one (`00c_Compute`). Both make the CPU wait for the GPU: do it once, not every frame. The helper script `examples/10_ScientificAndCompute/13_Galaxy_plot_xy.py` displays the star positions from that CSV with matplotlib.
+To see the numbers on the CPU, read the current copy back: `m_stars.current().read()` returns a `std::vector<T>` (`13_Galaxy` writes it to `galaxy.csv`); `buffer.download()` refreshes the CPU copy of a buffer that keeps one (`00c_Compute`). Both make the CPU wait for the GPU: do it once, not every frame. The helper script `examples/10_ScientificAndCompute/13_Galaxy_plot_xy.py` displays the star positions from that CSV with matplotlib.
 
 ---
 

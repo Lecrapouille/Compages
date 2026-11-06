@@ -197,7 +197,7 @@ A routine can **host** a behavior tree (BlackThorn, BehaviorTree.CPP…): it own
 
 ### Routines or systems?
 
-Routines are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`, [section 1](#-1-two-mechanisms-one-container)).
+Routines are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`, [section 1](#-1-two-mechanisms-one-container)). For millions, keep the data on the GPU: see the table [Where does my data live?](01-Introduction.md#where-does-my-data-live).
 
 `51_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controllers `Orbit` and `Fly` are routines too.
 

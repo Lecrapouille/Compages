@@ -70,7 +70,7 @@ private:
     void simulate(float p_dt);
     void wash(float p_dt);
     void stampDecal(Hit const& p_hit);
-    void clear(compages::gpu::Framebuffer const& p_target) const;
+    void clear(compages::gpu::TexturePingPong const& p_field) const;
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
@@ -95,14 +95,10 @@ private:
     compages::gpu::Texture m_forces;
     compages::gpu::Framebuffer m_forces_target;
     //! \brief Water: r = amount, g = wetness, b = running.
-    compages::gpu::Texture m_fluid[2];
-    compages::gpu::Framebuffer m_fluid_target[2];
-    int m_current = 0;
+    compages::gpu::TexturePingPong m_fluid;
     //! \brief Painted decals, rgb premultiplied by the coverage a. Two, since
     //! the sweat washes them (ping-pong).
-    compages::gpu::Texture m_decals[2];
-    compages::gpu::Framebuffer m_decals_target[2];
-    int m_paint = 0;
+    compages::gpu::TexturePingPong m_decals;
 
     compages::gpu::Drawable m_force_pass;
     compages::gpu::Drawable m_fluid_pass;

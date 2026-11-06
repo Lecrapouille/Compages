@@ -47,6 +47,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
 | compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
+| ping-pong | `PingPong<T>::from(data)`: `current()`, `next()`, `swap()`; `dispatch(program, state, { .read = "In", .write = "Out" })`; `TexturePingPong::create(desc)`: `current()` (texture), `next()` / `currentTarget()` (framebuffers), `swap()` |
 | read back | `buffer.download()` after the right barrier |
 | after ImGui | `forgetRenderState()` |
 

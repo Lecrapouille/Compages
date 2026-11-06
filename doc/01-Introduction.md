@@ -131,6 +131,20 @@ Routines, joints, camera, lights and skeleton poses are simulation data. The vie
 
 Several `Scene` objects can share one `World` and one catalog: split screen, minimap.
 
+### Where does my data live?
+
+A simple API must not force one memory layout. Pick the place by the number of things and by who computes them:
+
+| Your data | Put it in | Why | Example |
+|-----------|-----------|-----|---------|
+| A few objects with their own logic (a door, an enemy, a camera) | a **`Routine`** on the entity | start, update, timers, messages; one object, virtual calls: fine for tens or hundreds | `51_Routines` |
+| Many things with the same data (robots, agents, bullets) | **components** + `world.each<A, B>(...)` | your structs packed together in memory, one loop over all of them | `30_HeadlessWorld` |
+| Vertices the CPU changes from time to time | a **`Drawable`** (`setVertices`, `editVertex`) or a `Dynamic` buffer | a CPU copy, `draw()` sends only what changed | `02a_DynamicGeometry` |
+| A movement that is a formula of the time (orbits, waves) | the **vertex shader**, with a time uniform | sent once, nothing written per frame but the time | `14_SpiralGalaxy` |
+| Millions of things whose next state depends on the previous one (particles, cells, stars) | a **`StorageBuffer`** or a `PingPong` + a compute shader | stays on the GPU; the `Drawable` reads it without a copy | `13_Galaxy`, `11a_GameOfLife` |
+
+A million particles do not need to become a million entities: keep them on the GPU.
+
 ---
 
 ## 🚨 4. Two moments for errors

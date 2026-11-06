@@ -181,6 +181,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 |------|------|------|
 | triangle | `GPU/Drawable.hpp` | `01b_Triangle` |
 | compute | `GPU/ComputeProgram.hpp` | `12_ComputeParticles` |
+| ping-pong | `GPU/PingPong.hpp` | `13_Galaxy`, `11a_GameOfLife` |
 | headless world | `World/World.hpp` | `30_HeadlessWorld` |
 | joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
 | scene | `Renderer/Scene/Scene.hpp` | `50_ThreeJsLike` |

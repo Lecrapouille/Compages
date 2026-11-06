@@ -9,29 +9,28 @@
 
 #include "Common/Example.hpp"
 
-#include <cstddef>
 #include <vector>
 
 namespace examples
 {
 
 // ****************************************************************************
-//! \brief The Glumpy spiral: ellipses on the CPU, colour from a 1D ramp.
+//! \brief An animation that has a formula needs neither the CPU nor a compute
+//! shader: the vertex shader computes it from the time.
 //!
-//! 13_Galaxy integrates gravity. This one does not. Each body sits on an
-//! ellipse whose tilt depends on its radius, which is a density wave, and the
-//! CPU advances that angle. The shader never sees a temperature in kelvin. It
-//! is a coordinate into a blackbody ramp, and the point itself is a sprite:
+//! 13_Galaxy integrates gravity: each step depends on the one before, so the
+//! state must be stored and updated (a compute shader and a PingPong). Here
+//! each body rides a fixed ellipse, and its angle is theta + spin * years. Its
+//! position is a function of the time only. The vertices are sent once and
+//! never change; each frame only one number is written:
 //! \code
-//! m_points["temperature"] = coordinate;   // 0 at 1000 K, 1 at 10000 K
-//! m_points["colormap"] = m_colormap;      // one row of texels
-//! m_points["sprite"] = m_sprite;
-//! m_points["position"] = positions;       // rewritten each frame
-//! m_points.draw();                        // flushes what was written
+//! m_points.setVertices(bodies);       // once: the ellipse of each body
+//! m_points["years"] = m_years;        // each frame: the time
+//! m_points.draw();
 //! \endcode
 //!
-//! The model is Ingo Berg's, in the form Nicolas Rougier published with
-//! Glumpy. The ramp is John Walker's spectrum rendering (public domain).
+//! The model is Ingo Berg's density wave, in the form Nicolas Rougier
+//! published with Glumpy:
 //! https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py
 // ****************************************************************************
 class SpiralGalaxy: public Example
@@ -49,36 +48,32 @@ public:
 
 private:
 
-    //! \brief One body of the density wave. Positions stay in parsecs; the
-    //! shader receives them divided by the galaxy radius.
+    //! \brief One body, as the vertex shader reads it: its ellipse, not its
+    //! position. Lengths are in parsecs, angles in degrees.
     struct Body
     {
-        float theta = 0.0f;
-        float velocity = 0.0f;
-        float angle = 0.0f;
-        float semi_major = 0.0f;
-        float semi_minor = 0.0f;
-        float size = 0.0f;
-        float kind = 0.0f;
-        float temperature = 0.0f;
-        float brightness = 0.0f;
-        float x = 0.0f;
-        float y = 0.0f;
+        float semi_major;
+        float semi_minor;
+        //! \brief Tilt of the ellipse. Grows with the radius: the arms.
+        float tilt;
+        //! \brief Angle on the ellipse at year zero.
+        float theta;
+        float size;
+        float kind;
+        //! \brief 0 at 1000 K, 1 at 10000 K: a coordinate in the colour ramp.
+        float temperature;
+        float brightness;
+        //! \brief For a hydrogen cloud or its core: how much larger the
+        //! ellipse of the other one of the pair is. Zero for the others.
+        float partner;
     };
 
-    void seed();
-    void step();
-    void flush(float p_scale);
-
+    static std::vector<Body> seed();
     [[nodiscard]] compages::Status makeColormap();
     [[nodiscard]] compages::Status makeSprite();
 
-    std::vector<Body> m_bodies;
-    std::vector<compages::Vector2f> m_positions;
-    std::vector<float> m_sizes;
-    //! \brief Index of the first hydrogen cloud. The cores follow, one each.
-    std::size_t m_clouds = 0u;
-    std::size_t m_cloud_count = 0u;
+    //! \brief Time of the galaxy, wrapped on one turn to keep float precise.
+    float m_years = 0.0f;
 
     compages::gpu::Texture m_colormap;
     compages::gpu::Texture m_sprite;

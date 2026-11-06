@@ -224,17 +224,28 @@ TEST_F(ComputeTest, PingPongWritesTheOtherBuffer)
     auto& stars = pair.value();
 
     auto compute = tests::computeFromSource(PING_SOURCE).take();
-    ASSERT_TRUE(bool(compute.bind("Input", stars.input())));
-    ASSERT_TRUE(bool(compute.bind("Output", stars.output())));
     ASSERT_TRUE(bool(compages::gpu::attempt([&] { compute.set("count", 64u); })));
-    ASSERT_TRUE(bool(compute.dispatchItems(64u)));
+    auto stepped = compages::gpu::dispatch(compute, stars,
+                                           { .read = "Input", .write = "Output" });
+    ASSERT_TRUE(bool(stepped)) << stepped.error();
 
-    compages::gpu::barrier(compages::gpu::Barrier::Storage);
-    stars.swap();
-
-    auto out = stars.input().read();
+    auto out = stars.current().read();
     ASSERT_TRUE(bool(out)) << out.error();
     ASSERT_FLOAT_EQ(out.value()[0], 2.0f);
+}
+
+TEST_F(ComputeTest, APingPongStepThatFailsDoesNotSwap)
+{
+    const std::vector<float> start(64u, 1.0f);
+    auto stars = compages::gpu::PingPong<float>::from(std::span<const float>(start)).take();
+    const compages::gpu::BufferHandle before = stars.current().handle();
+
+    auto compute = tests::computeFromSource(PING_SOURCE).take();
+    auto stepped = compages::gpu::dispatch(compute, stars,
+                                           { .read = "Input", .write = "Missing" });
+    ASSERT_FALSE(bool(stepped));
+    ASSERT_THAT(stepped.error(), HasSubstr("Missing"));
+    ASSERT_EQ(stars.current().handle(), before);
 }
 
 TEST_F(ComputeTest, AStorageBufferCanThenBeDrawnAsVertices)

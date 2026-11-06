@@ -18,14 +18,15 @@ namespace examples
 //! Each cell is a pixel. A shader covering the texture reads the current
 //! generation and writes the next into a second texture. The two then swap,
 //! which is why this is called ping-pong: a shader cannot read the picture it
-//! is writing, so the next generation has to live somewhere else.
+//! is writing, so the next generation has to live somewhere else. A
+//! TexturePingPong holds both textures and their framebuffers:
 //! \code
-//! m_step["previous"] = m_field[m_current];
+//! m_step["previous"] = m_field.current();
 //! {
-//!     compages::gpu::RenderPass into(m_target[next], { .clear_color = false
-//!     }); m_step.draw(3u);
+//!     compages::gpu::RenderPass into(m_field.next(), { .clear_color = false });
+//!     m_step.draw(3u);
 //! }
-//! m_current = next;
+//! m_field.swap();
 //! \endcode
 //!
 //! This is how glumpy computed on the GPU, and it works with nothing but a
@@ -48,9 +49,7 @@ public:
 private:
 
     //! \brief Declared before the drawables sampling them, so destroyed after.
-    compages::gpu::Texture m_field[2];
-    compages::gpu::Framebuffer m_target[2];
-    int m_current = 0;
+    compages::gpu::TexturePingPong m_field;
 
     //! \brief Computes the next generation, one pixel per cell.
     compages::gpu::Drawable m_step;

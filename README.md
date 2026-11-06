@@ -86,7 +86,7 @@ Here is a hello-world example drawing a single triangle. The shader declares `po
 compages::gpu::Drawable triangle;
 
 // At setup
-triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER);   // GLSL: in vec2 position; in vec3 color;
+COMPAGES_TRY(triangle.loadSources(VERTEX_SHADER, FRAGMENT_SHADER));   // GLSL: in vec2 position; in vec3 color;
 triangle["position"] = { { -0.8f, -0.6f }, { 0.8f, -0.6f }, { 0.0f, 0.8f } };
 triangle["color"]    = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
 

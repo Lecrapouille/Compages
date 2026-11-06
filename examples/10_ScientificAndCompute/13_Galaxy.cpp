@@ -216,7 +216,7 @@ compages::Status Galaxy::setUp()
 
     COMPAGES_TRY(m_points.loadSources(VERTEX, FRAGMENT));
     // The stars live on the graphics card: borrowed, never copied.
-    m_points.borrowVertices(m_stars.input());
+    m_points.borrowVertices(m_stars.current());
     m_points["aspect"] = 1.0f;
     m_points.state().primitive = compages::gpu::Primitive::Points;
     m_points.state().blend = compages::gpu::Blend::additive();
@@ -245,26 +245,22 @@ void Galaxy::draw(compages::world::ViewFrame const& p_frame)
 
     if (m_running)
     {
-        // Ping-pong: read input(), write output(), wait until the writes are
-        // visible, then swap. What was just written becomes input(): the
-        // buffer the draw reads, and the next step reads.
+        // Ping-pong: read current(), write next(), then swap. What was just
+        // written becomes current(): the buffer the draw reads, and the next
+        // step reads.
         const float dt = std::min(p_frame.elapsed, 1.0f / 30.0f);
         m_step.set("dt", dt);
-        if (!compages::gpu::check(m_step.bind("Input", m_stars.input())) ||
-            !compages::gpu::check(m_step.bind("Output", m_stars.output())) ||
-            !compages::gpu::check(m_step.dispatchItems(COUNT)))
+        if (!compages::gpu::check(compages::gpu::dispatch(
+                m_step, m_stars, { .read = "Input", .write = "Output" })))
         {
             return;
         }
-        compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib |
-                               compages::gpu::Barrier::Storage);
-        m_stars.swap();
         m_time += dt;
     }
 
     compages::gpu::clear({ 0.01f, 0.01f, 0.03f });
     m_points["aspect"] = compages::aspect(p_frame);
-    m_points.borrowVertices(m_stars.input());
+    m_points.borrowVertices(m_stars.current());
     m_points.draw();
 }
 
@@ -273,7 +269,7 @@ void Galaxy::save(std::string const& p_path)
 {
     // The stars live on the GPU: read the buffer last written back to the CPU
     // (this waits for the GPU, fine once, not every frame).
-    compages::Result<std::vector<Star>> stars = m_stars.input().read();
+    compages::Result<std::vector<Star>> stars = m_stars.current().read();
     if (!stars)
     {
         m_said = "Cannot read the stars: " + stars.error();

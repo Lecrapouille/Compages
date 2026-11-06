@@ -88,19 +88,15 @@ compages::Status GrayScott::setUp()
 {
     // Two float textures, each wired to a framebuffer. Nearest, because a
     // cell must not blend with its neighbour before the laplacian does.
-    for (int i = 0; i < 2; ++i)
-    {
-        COMPAGES_TRY_ASSIGN(m_field[i],
-                            compages::gpu::Texture::create(
-                                { .format = compages::gpu::PixelFormat::RGBA32F,
-                                  .width = SIZE,
-                                  .height = SIZE,
-                                  .magnify = compages::gpu::Filter::Nearest,
-                                  .minify = compages::gpu::Filter::Nearest,
-                                  .wrap_x = compages::gpu::Wrap::Repeat,
-                                  .wrap_y = compages::gpu::Wrap::Repeat }));
-        COMPAGES_TRY(m_target[i].attach(m_field[i]));
-    }
+    COMPAGES_TRY_ASSIGN(m_field,
+                        compages::gpu::TexturePingPong::create(
+                            { .format = compages::gpu::PixelFormat::RGBA32F,
+                              .width = SIZE,
+                              .height = SIZE,
+                              .magnify = compages::gpu::Filter::Nearest,
+                              .minify = compages::gpu::Filter::Nearest,
+                              .wrap_x = compages::gpu::Wrap::Repeat,
+                              .wrap_y = compages::gpu::Wrap::Repeat }));
 
     // U everywhere, and a square of V in the middle to start the reaction.
     std::vector<compages::Vector4f> cells(
@@ -114,7 +110,7 @@ compages::Status GrayScott::setUp()
                 compages::Vector4f(0.5f, 0.25f, 0.0f, 1.0f);
         }
     }
-    COMPAGES_TRY(m_field[0].write(
+    COMPAGES_TRY(m_field.current().write(
         std::as_bytes(std::span<const compages::Vector4f>(cells))));
 
     COMPAGES_TRY(m_step.loadSources(SCREEN_VERTEX, STEP_FRAGMENT));
@@ -130,15 +126,16 @@ void GrayScott::draw(compages::world::ViewFrame const&)
     // Several steps per frame, so that a pattern shows within seconds.
     for (int i = 0; i < STEPS_PER_FRAME; ++i)
     {
-        const int next = 1 - m_current;
-        m_step["previous"] = m_field[m_current];
-        compages::gpu::RenderPass into(
-            m_target[next], { .clear_color = false, .clear_depth = false });
-        m_step.draw(3u);
-        m_current = next;
+        m_step["previous"] = m_field.current();
+        {
+            compages::gpu::RenderPass into(
+                m_field.next(), { .clear_color = false, .clear_depth = false });
+            m_step.draw(3u);
+        }
+        m_field.swap();
     }
 
-    m_show["image"] = m_field[m_current];
+    m_show["image"] = m_field.current();
     m_show.draw(3u);
 }
 

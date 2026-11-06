@@ -273,3 +273,47 @@ TEST_F(FramebufferTest, ReleasingItDoesNotReleaseTheTextures)
     ASSERT_TRUE(color.valid());
     ASSERT_EQ(compages::gpu::liveTextures(), 1u);
 }
+
+TEST_F(FramebufferTest, ATexturePingPongDrawsIntoTheOtherTexture)
+{
+    auto made = compages::gpu::TexturePingPong::create(
+        { .kind = compages::gpu::TextureKind::Texture2D,
+          .format = compages::gpu::PixelFormat::RGBA8,
+          .width = WIDTH,
+          .height = HEIGHT,
+          .levels = 1u });
+    ASSERT_TRUE(bool(made)) << made.error();
+    auto field = made.take();
+    ASSERT_TRUE(field.valid());
+    const compages::gpu::TextureHandle first = field.current().handle();
+
+    auto program = tests::programFromSources(VERTEX, RED_FRAGMENT).take();
+    const compages::gpu::VertexLayout layout = compages::gpu::VertexLayout::of<Corner>();
+    auto pipeline = compages::gpu::Pipeline::create<Corner>(program, layout).take();
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
+                        .take();
+    {
+        compages::gpu::RenderPass pass(field.currentTarget(),
+                                       { .color = { 0.0f, 0.0f, 1.0f, 1.0f } });
+    }
+    {
+        compages::gpu::RenderPass pass(field.next());
+        ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline, vertices); })));
+    }
+    field.swap();
+    ASSERT_NE(field.current().handle(), first);
+
+    // What was drawn into next() is now current(); the old state is untouched.
+    const std::size_t at =
+        ((static_cast<std::size_t>(HEIGHT / 2) * WIDTH) + (WIDTH / 2)) * 4u;
+    auto drawn = field.current().read();
+    ASSERT_TRUE(bool(drawn)) << drawn.error();
+    ASSERT_EQ(static_cast<int>(drawn.value()[at]), 255);
+    field.swap();
+    auto old = field.current().read();
+    ASSERT_TRUE(bool(old)) << old.error();
+    ASSERT_EQ(static_cast<int>(old.value()[at]), 0);
+    ASSERT_EQ(static_cast<int>(old.value()[at + 2u]), 255);
+}

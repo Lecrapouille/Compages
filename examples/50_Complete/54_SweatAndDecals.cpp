@@ -584,21 +584,14 @@ compages::Status SweatAndDecals::makeTargets()
     // The skin reads the water between texels: linear.
     field.magnify = compages::gpu::Filter::Linear;
     field.minify = compages::gpu::Filter::Linear;
-    for (int i = 0; i < 2; ++i)
-    {
-        COMPAGES_TRY_ASSIGN(m_fluid[i], compages::gpu::Texture::create(field));
-        COMPAGES_TRY(m_fluid_target[i].attach(m_fluid[i]));
-        clear(m_fluid_target[i]);
-    }
+    COMPAGES_TRY_ASSIGN(m_fluid, compages::gpu::TexturePingPong::create(field));
+    clear(m_fluid);
     field.format = compages::gpu::PixelFormat::RGBA16F;
     field.width = DECAL_SIZE;
     field.height = DECAL_SIZE;
-    for (int i = 0; i < 2; ++i)
-    {
-        COMPAGES_TRY_ASSIGN(m_decals[i], compages::gpu::Texture::create(field));
-        COMPAGES_TRY(m_decals_target[i].attach(m_decals[i]));
-        clear(m_decals_target[i]);
-    }
+    COMPAGES_TRY_ASSIGN(m_decals,
+                        compages::gpu::TexturePingPong::create(field));
+    clear(m_decals);
 
     // UV passes: no depth, both faces (the winding in UV space is any).
     const compages::gpu::RenderState flat{ .depth_test = false,
@@ -636,12 +629,17 @@ compages::Status SweatAndDecals::makeTargets()
 }
 
 // ----------------------------------------------------------------------------
-void SweatAndDecals::clear(compages::gpu::Framebuffer const& p_target) const
+void SweatAndDecals::clear(compages::gpu::TexturePingPong const& p_field) const
 {
-    compages::gpu::RenderPass const pass(p_target,
-                                         { .clear_color = true,
-                                           .color = { 0.0f, 0.0f, 0.0f, 0.0f },
-                                           .clear_depth = false });
+    for (compages::gpu::Framebuffer const* target :
+         { &p_field.currentTarget(), &p_field.next() })
+    {
+        compages::gpu::RenderPass const pass(
+            *target,
+            { .clear_color = true,
+              .color = { 0.0f, 0.0f, 0.0f, 0.0f },
+              .clear_depth = false });
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -685,15 +683,15 @@ void SweatAndDecals::simulate(float p_dt)
     m_fluid_pass["forces"] = m_forces;
     for (int i = 0; i < steps; ++i)
     {
-        const int next = 1 - m_current;
-        m_fluid_pass["previous"] = m_fluid[m_current];
+        m_fluid_pass["previous"] = m_fluid.current();
         m_fluid_pass["drop"] =
             (i == 0) ? m_drop : compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
-        compages::gpu::RenderPass const pass(
-            m_fluid_target[next],
-            { .clear_color = false, .clear_depth = false });
-        m_fluid_pass.draw(3u);
-        m_current = next;
+        {
+            compages::gpu::RenderPass const pass(
+                m_fluid.next(), { .clear_color = false, .clear_depth = false });
+            m_fluid_pass.draw(3u);
+        }
+        m_fluid.swap();
     }
     m_drop = compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 }
@@ -701,17 +699,18 @@ void SweatAndDecals::simulate(float p_dt)
 // ----------------------------------------------------------------------------
 void SweatAndDecals::wash(float p_dt)
 {
-    const int next = 1 - m_paint;
-    m_wash_pass["paint"] = m_decals[m_paint];
-    m_wash_pass["fluidMap"] = m_fluid[m_current];
+    m_wash_pass["paint"] = m_decals.current();
+    m_wash_pass["fluidMap"] = m_fluid.current();
     m_wash_pass["forces"] = m_forces;
     m_wash_pass["dt"] = std::min(p_dt, 0.05f);
     m_wash_pass["speed"] = m_speed;
     m_wash_pass["washing"] = m_washing;
-    compages::gpu::RenderPass const pass(
-        m_decals_target[next], { .clear_color = false, .clear_depth = false });
-    m_wash_pass.draw(3u);
-    m_paint = next;
+    {
+        compages::gpu::RenderPass const pass(
+            m_decals.next(), { .clear_color = false, .clear_depth = false });
+        m_wash_pass.draw(3u);
+    }
+    m_decals.swap();
 }
 
 // ----------------------------------------------------------------------------
@@ -812,7 +811,7 @@ void SweatAndDecals::stampDecal(Hit const& p_hit)
                                               0.2f + 0.8f * unit(m_random),
                                               0.2f + 0.8f * unit(m_random));
     compages::gpu::RenderPass const pass(
-        m_decals_target[m_paint],
+        m_decals.currentTarget(),
         { .clear_color = false, .clear_depth = false });
     m_decal_pass.draw();
 }
@@ -828,14 +827,12 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
 
     if (m_wipe)
     {
-        clear(m_fluid_target[0]);
-        clear(m_fluid_target[1]);
+        clear(m_fluid);
         m_wipe = false;
     }
     if (m_peel)
     {
-        clear(m_decals_target[0]);
-        clear(m_decals_target[1]);
+        clear(m_decals);
         m_peel = false;
     }
     if (p_frame.input.mouse_left_pressed && p_frame.input.mouse_over)
@@ -883,8 +880,8 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
 
     // The extra maps of the skin, on the units its shader was given.
     m_normal_map.bind(2u);
-    m_decals[m_paint].bind(3u);
-    m_fluid[m_current].bind(4u);
+    m_decals.current().bind(3u);
+    m_fluid.current().bind(4u);
     if (compages::renderer::Material* skin = m_scene.assets().material(m_skin))
     {
         skin->program.set("showWater", m_show_water ? 1 : 0);

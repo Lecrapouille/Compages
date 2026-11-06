@@ -94,11 +94,11 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 |------|------|
 | `10a_HeightMap` | a hundred thousand heights computed on the CPU |
 | `10b_Terrain3D` | an island colored by a 3D texture (water to snow) |
-| `11a_GameOfLife` | one cell = one pixel, two ping-pong textures |
+| `11a_GameOfLife` | one cell = one pixel, a `TexturePingPong` |
 | `11b_GrayScott` | the same ping-pong, with floats |
 | `12_ComputeParticles` | compute writes the buffer, the draw reads it |
 | `13_Galaxy` | eight thousand stars in a dark matter halo, tiles in shared memory, ping-pong; Save writes `galaxy.csv` |
-| `14_SpiralGalaxy` | density waves: black-body ramp, point sprites |
+| `14_SpiralGalaxy` | density waves computed in the vertex shader from the time: no CPU loop, no compute shader |
 | `15_Lorenz` | a growing curve; only the new part is sent |
 | `16_NeuralNetwork` | a neural network learns on the GPU; the CPU gives the examples and reads the answers |
 

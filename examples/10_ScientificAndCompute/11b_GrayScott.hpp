@@ -39,9 +39,7 @@ public:
 
 private:
 
-    compages::gpu::Texture m_field[2];
-    compages::gpu::Framebuffer m_target[2];
-    int m_current = 0;
+    compages::gpu::TexturePingPong m_field;
 
     compages::gpu::Drawable m_step;
     compages::gpu::Drawable m_show;

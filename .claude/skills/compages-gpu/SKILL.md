@@ -46,6 +46,9 @@ mesh.draw();
   **`gpu::barrier(Barrier::VertexAttrib | ...)` yourself** (missing barrier =
   race, not compile error); `buffer.download()` needs a CPU mirror and the
   right barrier. Demos `00c_Compute`, `12_ComputeParticles`, `13_Galaxy`, `21_IndirectDraw`.
+- Ping-pong (`GPU/PingPong.hpp`): `PingPong<T>` + `gpu::dispatch(program, state, { .read = "In", .write = "Out" })`
+  (bind, dispatch, barrier Storage|VertexAttrib, swap); `TexturePingPong` for fragment-shader steps:
+  read `current()`, `RenderPass(next())`, `swap()`.
 - State: `mesh.state().depth_test = true` (blending, culling, primitive);
   `mesh.indices({...})`. After ImGui or any foreign GL code:
   `gpu::forgetRenderState()`.

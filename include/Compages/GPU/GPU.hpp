@@ -59,6 +59,7 @@
 #include "Compages/GPU/FieldReflection.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
 #include "Compages/GPU/Handle.hpp"
+#include "Compages/GPU/PingPong.hpp"
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/PixelFormat.hpp"
 #include "Compages/GPU/ProgramReflection.hpp"
