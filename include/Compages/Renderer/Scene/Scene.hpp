@@ -193,6 +193,33 @@ public:
                                  float p_intensity = 1.0f,
                                  float p_range = 10.0f);
 
+    // --- Helpers -------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    //! \brief A grid on the ground (the XZ plane), centred on the origin:
+    //! what shows scale and height at a glance. It is an entity: move it,
+    //! hide it, destroy it.
+    //! \param[in] p_size width of the whole grid.
+    //! \param[in] p_divisions cells along one side.
+    // ------------------------------------------------------------------------
+    compages::world::Entity grid(float p_size, std::uint32_t p_divisions);
+
+    // ------------------------------------------------------------------------
+    //! \brief Three axes, X red, Y green, Z blue. Hang them from an entity to
+    //! see how it is placed and turned:
+    //! \code
+    //! scene.axes(0.3f).parent(arm);
+    //! \endcode
+    //! \param[in] p_length length of each axis.
+    // ------------------------------------------------------------------------
+    compages::world::Entity axes(float p_length);
+
+    // ------------------------------------------------------------------------
+    //! \brief Show or hide the box around the mesh of an entity. The box
+    //! turns and moves with it.
+    // ------------------------------------------------------------------------
+    void showBounds(compages::world::EntityId p_entity, bool p_show);
+
     //! \brief The camera render() uses when given none.
     void activeCamera(compages::world::EntityId p_camera);
     [[nodiscard]] compages::world::Entity activeCamera() const;

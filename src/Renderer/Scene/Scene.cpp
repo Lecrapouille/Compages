@@ -18,6 +18,7 @@
 #include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/Renderer/Animation/Animator.hpp"
+#include "Compages/Renderer/Components/Helpers.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Import/PrefabInstantiate.hpp"
 #include "Compages/Renderer/Render/Picker.hpp"
@@ -36,6 +37,79 @@ namespace compages::renderer
 
 namespace
 {
+
+// ----------------------------------------------------------------------------
+//! \brief Turn the helper components (Grid, Axes, ShowBounds) into lines,
+//! where their entities are now.
+// ----------------------------------------------------------------------------
+void queueHelpers(compages::world::World& p_world,
+                  AssetManager const& p_assets,
+                  DebugDraw& p_debug)
+{
+    p_world.each<Grid>(
+        [&](compages::world::EntityId p_entity, Grid const& p_grid)
+        {
+            if (!p_world.enabledInHierarchy(p_entity))
+            {
+                return;
+            }
+            const compages::Matrix44f& m = p_world.worldMatrix(p_entity);
+            const float half = 0.5f * p_grid.size;
+            const float step = p_grid.size / float(p_grid.divisions);
+            for (std::uint32_t i = 0u; i <= p_grid.divisions; ++i)
+            {
+                const float t = -half + (float(i) * step);
+                const bool centre = (2u * i) == p_grid.divisions;
+                const compages::Vector3f color =
+                    centre ? p_grid.color * 1.8f : p_grid.color;
+                p_debug.line(compages::transformPoint(m, { t, 0.0f, -half }),
+                             compages::transformPoint(m, { t, 0.0f, half }),
+                             color);
+                p_debug.line(compages::transformPoint(m, { -half, 0.0f, t }),
+                             compages::transformPoint(m, { half, 0.0f, t }),
+                             color);
+            }
+        });
+    p_world.each<Axes>(
+        [&](compages::world::EntityId p_entity, Axes const& p_axes)
+        {
+            if (!p_world.enabledInHierarchy(p_entity))
+            {
+                return;
+            }
+            const compages::Matrix44f& m = p_world.worldMatrix(p_entity);
+            const compages::Vector3f origin =
+                compages::transformPoint(m, { 0.0f, 0.0f, 0.0f });
+            const float l = p_axes.length;
+            p_debug.line(origin,
+                         compages::transformPoint(m, { l, 0.0f, 0.0f }),
+                         { 1.0f, 0.2f, 0.2f });
+            p_debug.line(origin,
+                         compages::transformPoint(m, { 0.0f, l, 0.0f }),
+                         { 0.2f, 1.0f, 0.2f });
+            p_debug.line(origin,
+                         compages::transformPoint(m, { 0.0f, 0.0f, l }),
+                         { 0.3f, 0.5f, 1.0f });
+        });
+    p_world.each<ShowBounds, MeshRenderer>(
+        [&](compages::world::EntityId p_entity,
+            ShowBounds const& p_show,
+            MeshRenderer const& p_renderer)
+        {
+            MeshAsset const* mesh = p_assets.mesh(p_renderer.mesh);
+            if ((mesh == nullptr) || !p_world.enabledInHierarchy(p_entity))
+            {
+                return;
+            }
+            // A little larger than the mesh: lines lying on its faces would
+            // be half hidden by them.
+            compages::AABB box = mesh->local_bounds;
+            const compages::Vector3f margin = (box.max - box.min) * 0.02f;
+            box.min = box.min - margin;
+            box.max = box.max + margin;
+            p_debug.box(box, p_world.worldMatrix(p_entity), p_show.color);
+        });
+}
 
 } // namespace
 
@@ -251,6 +325,30 @@ compages::world::Entity Scene::lamp(std::string p_name,
 {
     return m_world.entity(std::move(p_name))
         .set(compages::world::PointLight{ p_color, p_intensity, p_range });
+}
+
+compages::world::Entity Scene::grid(float p_size, std::uint32_t p_divisions)
+{
+    return m_world.entity("Grid").set(
+        Grid{ .size = p_size, .divisions = std::max(1u, p_divisions) });
+}
+
+compages::world::Entity Scene::axes(float p_length)
+{
+    return m_world.entity("Axes").set(Axes{ .length = p_length });
+}
+
+void Scene::showBounds(compages::world::EntityId p_entity, bool p_show)
+{
+    compages::world::Entity entity(m_world, p_entity);
+    if (p_show)
+    {
+        entity.set(ShowBounds{});
+    }
+    else
+    {
+        entity.remove<ShowBounds>();
+    }
 }
 
 compages::Vector3f Scene::frameAll()
@@ -486,6 +584,7 @@ void Scene::render(compages::world::EntityId p_camera)
     m_impl->sky.draw(snapshot.value().camera);
 
     compages::gpu::check(m_impl->renderer.render(snapshot.value(), *m_assets));
+    queueHelpers(m_world, *m_assets, m_impl->debug);
     compages::gpu::check(m_impl->debug.flush(snapshot.value().camera));
     m_impl->debug.clear();
 }

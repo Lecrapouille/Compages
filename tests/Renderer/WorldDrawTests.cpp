@@ -15,6 +15,7 @@
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
+#include "Compages/Renderer/Components/Helpers.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/World.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
@@ -214,5 +215,34 @@ TEST_F(WorldDrawTest, AnUnlitShapeIsDrawnAsItsColour)
     const std::size_t at = ((16u * 32u) + 16u) * 4u;
     EXPECT_EQ(static_cast<int>(pixels[at]), 255);
     EXPECT_EQ(static_cast<int>(pixels[at + 1u]), 255);
+    std::filesystem::remove(path);
+}
+
+// Helpers are components of entities: a grid and axes are entities of their
+// own, the bounds a component of the shape, removed when hidden.
+TEST_F(WorldDrawTest, HelpersAreComponentsOfEntities)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    compages::world::Entity grid = scene.grid(4.0f, 8u);
+    compages::world::Entity axes = scene.axes(0.5f);
+    compages::world::Entity cube = scene.box("Cube");
+    scene.showBounds(cube.id(), true);
+
+    EXPECT_FLOAT_EQ(grid.get<compages::renderer::Grid>().size, 4.0f);
+    EXPECT_EQ(grid.get<compages::renderer::Grid>().divisions, 8u);
+    EXPECT_FLOAT_EQ(axes.get<compages::renderer::Axes>().length, 0.5f);
+    EXPECT_TRUE(cube.has<compages::renderer::ShowBounds>());
+    scene.showBounds(cube.id(), false);
+    EXPECT_FALSE(cube.has<compages::renderer::ShowBounds>());
+
+    // Drawn with no frame error.
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.camera().position(0.0f, 2.0f, 5.0f).lookAt(0.0f, 0.0f, 0.0f);
+    scene.update(compages::world::ViewFrame{});
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_helpers_test.png";
+    auto written = scene.renderToFile(path, 32u, 32u);
+    EXPECT_TRUE(bool(written)) << written.error();
     std::filesystem::remove(path);
 }

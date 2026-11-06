@@ -37,9 +37,10 @@ std::string RobotArm::description() const
     return "An ABB IRB 2400 loaded from its URDF file: one entity per link, a "
            "revolute joint between each. The sliders of Try it set the joint "
            "angles within their limits, and the World computes where every "
-           "link and the tool end up: forward kinematics. Right drag turns "
-           "around the robot. Needs irb2400.urdf in "
-           "external/Compages-data/.";
+           "link and the tool end up: forward kinematics. The axes hung from "
+           "each joint and from the tool show their frames (X red, Y green, "
+           "Z blue) turning with them. Right drag turns around the robot. "
+           "Needs irb2400.urdf in external/Compages-data/.";
 }
 
 // ----------------------------------------------------------------------------
@@ -76,6 +77,18 @@ compages::Status RobotArm::setUp()
     };
     collect(robot.value());
 
+    // Helpers: the ground, and the frame of every joint and of the tool. An
+    // axes entity hung from a link turns with it.
+    m_scene.grid(4.0f, 16u);
+    for (compages::world::Entity const& joint : m_joints)
+    {
+        m_frames.push_back(m_scene.axes(0.35f).parent(joint));
+    }
+    if (m_tool)
+    {
+        m_frames.push_back(m_scene.axes(0.45f).parent(m_tool));
+    }
+
     const compages::Vector3f middle = m_scene.frameAll();
     m_scene.activeCamera().add<compages::world::Orbit>(middle);
     return m_scene.prepare();
@@ -90,6 +103,13 @@ void RobotArm::draw(compages::world::ViewFrame const& p_frame)
 // ----------------------------------------------------------------------------
 void RobotArm::controls()
 {
+    if (ImGui::Checkbox("Show the frames", &m_show_frames))
+    {
+        for (compages::world::Entity& frame : m_frames)
+        {
+            frame.enable(m_show_frames);
+        }
+    }
     for (compages::world::Entity const& joint : m_joints)
     {
         if (auto const* revolute = joint.find<compages::world::RevoluteJoint>())

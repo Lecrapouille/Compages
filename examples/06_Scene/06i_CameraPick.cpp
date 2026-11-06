@@ -19,7 +19,8 @@ const compages::renderer::Look PICKED =
 std::string CameraPick::description() const
 {
     return "1 orbits around the cubes, 2 flies (right drag looks, WASD and QE "
-           "move). A left click selects the cube under the mouse.";
+           "move). A left click selects the cube under the mouse: it changes "
+           "colour and shows its bounds (showBounds).";
 }
 
 // ----------------------------------------------------------------------------
@@ -56,11 +57,13 @@ void CameraPick::select(compages::world::EntityId p_entity)
     if (m_world.alive(m_selection))
     {
         m_scene.look(m_selection, PLAIN);
+        m_scene.showBounds(m_selection, false);
     }
     m_selection = p_entity;
     if (m_world.alive(m_selection))
     {
         m_scene.look(m_selection, PICKED);
+        m_scene.showBounds(m_selection, true);
     }
 }
 

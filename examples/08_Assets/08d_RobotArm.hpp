@@ -50,6 +50,9 @@ private:
     //! \brief The jointed links, from the base to the tool.
     std::vector<compages::world::Entity> m_joints;
     compages::world::Entity m_tool;
+    //! \brief The axes hung from each joint and from the tool.
+    std::vector<compages::world::Entity> m_frames;
+    bool m_show_frames = true;
 };
 
 } // namespace examples

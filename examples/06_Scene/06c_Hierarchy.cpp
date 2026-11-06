@@ -18,7 +18,8 @@ std::string Hierarchy::description() const
 {
     return "A car is an entity without a shape. The body, the cabin and four "
            "wheels hang from it with parent(): only the car is moved each "
-           "frame, and every part follows.";
+           "frame, and every part follows. The axes hung from the car show "
+           "this pivot: X forward, Y up.";
 }
 
 // ----------------------------------------------------------------------------
@@ -33,6 +34,7 @@ compages::Status Hierarchy::setUp()
 
     // The pivot, then the parts placed relative to it.
     m_car = m_world.entity("Car");
+    m_scene.axes(2.2f).parent(m_car);
     const auto red = compages::renderer::color(0.8f, 0.1f, 0.1f);
     const auto black = compages::renderer::color(0.05f, 0.05f, 0.05f);
     m_scene.box("Body", red).parent(m_car).position(0.0f, 0.5f, 0.0f).scale(2.0f, 0.4f, 1.0f);
