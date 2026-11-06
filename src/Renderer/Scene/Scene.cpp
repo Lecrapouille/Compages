@@ -552,12 +552,26 @@ void Scene::render(compages::world::EntityId p_camera)
         const float y = std::clamp(v.y, 0.0f, 1.0f);
         const float w = std::clamp(v.width, 0.0f, 1.0f - x);
         const float h = std::clamp(v.height, 0.0f, 1.0f - y);
-        part.x = where.x + std::uint32_t(std::lround(x * float(where.width)));
-        part.y = where.y + std::uint32_t(std::lround(y * float(where.height)));
-        part.width =
-            std::max(1u, std::uint32_t(std::lround(w * float(where.width))));
-        part.height =
-            std::max(1u, std::uint32_t(std::lround(h * float(where.height))));
+        // Round the two edges, not the origin and the size: on 667 pixels,
+        // a half from 0.5 would start at 334 and be 334 wide, one pixel
+        // outside the target. Two halves sharing an edge then share it
+        // exactly, without a gap or an overlap.
+        const auto edge = [](float p_fraction, std::uint32_t p_size)
+        {
+            return std::min(p_size,
+                            std::uint32_t(std::lround(p_fraction *
+                                                      float(p_size))));
+        };
+        const std::uint32_t left = edge(x, where.width);
+        const std::uint32_t right = edge(x + w, where.width);
+        const std::uint32_t bottom = edge(y, where.height);
+        const std::uint32_t top = edge(y + h, where.height);
+        part.x = where.x + std::min(left, where.width - 1u);
+        part.y = where.y + std::min(bottom, where.height - 1u);
+        part.width = std::max(1u, right - std::min(left, right));
+        part.height = std::max(1u, top - std::min(bottom, top));
+        part.width = std::min(part.width, where.x + where.width - part.x);
+        part.height = std::min(part.height, where.y + where.height - part.y);
     }
     compages::gpu::RenderPass pass(part);
     if (!pass.open())
@@ -565,8 +579,11 @@ void Scene::render(compages::world::EntityId p_camera)
         return;
     }
 
+    // The extractor takes the size of the whole target and applies the
+    // viewport of the camera itself: given the part, it would apply it twice
+    // and squash a split view to half its width.
     auto snapshot =
-        SceneExtractor::extract(*this, p_camera, part.width, part.height);
+        SceneExtractor::extract(*this, p_camera, where.width, where.height);
     if (!snapshot)
     {
         return compages::gpu::reportError(snapshot.error());

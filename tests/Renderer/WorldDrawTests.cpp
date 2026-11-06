@@ -246,3 +246,53 @@ TEST_F(WorldDrawTest, HelpersAreComponentsOfEntities)
     EXPECT_TRUE(bool(written)) << written.error();
     std::filesystem::remove(path);
 }
+
+// A camera drawing into the left half of a 64 x 32 target sees a square: its
+// projection must not stretch X (the viewport was once applied twice).
+TEST_F(WorldDrawTest, ACameraOnHalfThePictureKeepsItsProportions)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    compages::world::Entity eye = scene.camera().position(0.0f, 0.0f, 3.0f);
+    eye.get<compages::world::Camera>().viewport = { 0.0f, 0.0f, 0.5f, 1.0f };
+    scene.box("Cube");
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "compages_half_test.png";
+    ASSERT_TRUE(bool(scene.renderToFile(path, 64u, 32u)));
+    compages::Matrix44f const& projection = scene.lastCamera().projection;
+    EXPECT_NEAR(projection[0][0], projection[1][1], 1e-4f);
+    EXPECT_EQ(scene.lastCamera().viewport_width, 32u);
+    std::filesystem::remove(path);
+}
+
+// On an odd width, two halves must fit: 667 pixels give 333 and 334, not two
+// passes of 334 of which the right one leaves the target.
+TEST_F(WorldDrawTest, TwoHalvesFitAnOddWidth)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    compages::world::Entity left = scene.camera("Left").position(0.0f, 0.0f, 3.0f);
+    left.get<compages::world::Camera>().viewport = { 0.0f, 0.0f, 0.5f, 1.0f };
+    compages::world::Entity right = scene.camera("Right").position(0.0f, 0.0f, 3.0f);
+    right.get<compages::world::Camera>().viewport = { 0.5f, 0.0f, 0.5f, 1.0f };
+    scene.box("Cube");
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto color = compages::gpu::Texture::create({ .width = 667u, .height = 31u }).take();
+    auto target = compages::gpu::Framebuffer::create(color).take();
+    auto drawn = compages::gpu::attempt(
+        [&]
+        {
+            compages::gpu::RenderPass pass(target);
+            scene.render(left.id());
+            EXPECT_EQ(scene.lastCamera().viewport_width, 334u);
+            scene.render(right.id());
+            EXPECT_FLOAT_EQ(scene.lastCamera().viewport_x, 334.0f);
+            EXPECT_EQ(scene.lastCamera().viewport_width, 333u);
+        });
+    EXPECT_TRUE(bool(drawn)) << drawn.error();
+}
