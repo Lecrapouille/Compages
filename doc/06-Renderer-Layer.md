@@ -43,11 +43,27 @@ scene.draw(frame);
 ```cpp
 compages::renderer::color(r, g, b);      // lit color
 compages::renderer::texture("file.jpg"); // lit, tinted by the color (white by default)
+compages::renderer::unlit(r, g, b);      // a flat color no light changes: a bulb, a marker
 compages::renderer::normals();           // normals shown as colors
 compages::renderer::depth(near, far);    // distance, black to white
+compages::renderer::seeThrough(look, 0.35f); // any look, see-through (1 solid, 0 invisible)
 ```
 
-`06f_GeometryShowcase` lines the primitives up with these four looks; `06e_TexturedSpheres` shows a color, a photo, and a tinted photo.
+`06f_GeometryShowcase` lines the primitives up with these looks; `06e_TexturedSpheres` shows a color, a photo, a tinted photo, and a glass ball in front of them.
+
+**See-through objects.** A look with an opacity below one is drawn after all the solid objects, sorted from the farthest to the nearest, and blended over what is already drawn. It does not write the depth, so a second glass behind the first still shows. The sorting is per object (by the centre of its box): two see-through objects that cross each other can still be drawn in the wrong order.
+
+### Helpers
+
+Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.
+
+```cpp
+scene.grid(10.0f, 20u);               // a grid on the ground, 20 cells across
+scene.axes(0.5f).parent(arm);         // X red, Y green, Z blue, turning with the arm
+scene.showBounds(cube.id(), true);    // the box around the mesh of the cube
+```
+
+`06b_Transforms` uses the three: the axes show the turn of the box, the bounds the size of the cone. `06c_Hierarchy` shows the pivot of a car, `06i_CameraPick` the bounds of the selection, and `08d_RobotArm` the frame of every joint of a robot (Try it hides them).
 
 Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 
@@ -127,9 +143,27 @@ scene.activeCamera(id);
   scene.camera().position(1.6f, 1.2f, 1.6f).add<compages::world::Rig>(compages::Vector3f(0.35f, 0.0f, 0.0f));
   ```
 
+**Colours.** Every colour you give a `Scene` (looks, lights, ambient, fog) is
+**sRGB**, the colour of a colour picker or a web page. The renderer turns it
+into **linear** light, where adding two lights gives twice the light, and the
+shaders compute in linear. At the end, a **tone curve** turns the light, which
+has no upper limit, into a screen colour between 0 and 1, and the result is
+encoded back to sRGB for the screen. The background is written as it is.
+
+```cpp
+scene.environment().tone_mapping = compages::renderer::ToneMapping::Aces;  // the default
+scene.environment().exposure = 1.5f;   // brighter, like opening the lens
+```
+
+`ToneMapping::Aces` (the film curve) keeps contrast and keeps bright colours
+coloured; `Reinhard` is softer; `None` clamps, so what is too bright turns flat
+white. `06d_Lights` has both settings in its Try it panel. Pictures given with
+`texture()` are read as sRGB too; glTF colour factors are already linear, as
+the format says.
+
 **Light and shadow.** The lit and PBR materials share one shading: the sun,
 a hemisphere ambient (faces turned up get more sky than faces turned down),
-a soft fill light from the eye, a small highlight, and a soft tone curve.
+a soft fill light from the eye and a small highlight; then the tone curve.
 The sun casts shadows: before drawing, the renderer draws the depth of the
 scene seen from the sun into a picture (`Environment::shadow_resolution`,
 2048 by default), fitted to the objects that cast; the materials read it
@@ -159,6 +193,28 @@ nearby scene per lamp: turn it on for the lamps that matter. Something that
 holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
 (`RenderFlags::NoShadowCaster`), or it hides the lamp from everything.
 `10a_MvpDemo` (one lamp) and `10b_DoomLike` (the torches) use them.
+
+### Draw into a file, without a screen
+
+```cpp
+scene.update(frame);
+COMPAGES_TRY(scene.renderToFile("scene.png", 1280u, 720u));
+```
+
+`renderToFile` draws what the active camera sees into an off-screen picture of
+that size and writes it as PNG. It only needs an OpenGL context, not a window:
+the program `Compages-headless` (`examples/Headless/main.cpp`) makes one with
+EGL and no surface, so the same code runs on a server, in a container or in a
+CI job, on a GPU or with Mesa llvmpipe (no GPU):
+
+```sh
+./build/linux-gcc-debug/bin/Compages-headless scene.png 1280 720
+```
+
+The library still never makes the context: the program does, then calls
+`gpu::init(eglGetProcAddress)`. Like `render`, `renderToFile` draws the world
+as the last `update` left it. It waits for the GPU: use it for a report, a
+thumbnail, or a test that compares pictures, not for every frame.
 
 ---
 

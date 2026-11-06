@@ -48,7 +48,8 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
 | compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
 | ping-pong | `PingPong<T>::from(data)`: `current()`, `next()`, `swap()`; `dispatch(program, state, { .read = "In", .write = "Out" })`; `TexturePingPong::create(desc)`: `current()` (texture), `next()` / `currentTarget()` (framebuffers), `swap()` |
-| read back | `buffer.download()` after the right barrier |
+| read back | `buffer.download()` after the right barrier; `texture.read()` |
+| save a picture | `texture.saveFile("out.png")` (2D, R8 / RGB8 / RGBA8) |
 | after ImGui | `forgetRenderState()` |
 
 GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawable`; `upload()` does it for a `Buffer` you manage yourself.
@@ -90,7 +91,10 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | camera, sun, lamp | `scene.camera()` `scene.sun(name, color, intensity)` `scene.lamp(…)` |
 | shadows | `environment().shadows` (sun), `PointLight::shadows` (one lamp), `environment().shadow_resolution`, `environment().lamp_shadow_resolution` |
 | primitives | `scene.box(name, look)` `sphere` `plane` `cylinder` `cone` `pyramid` |
-| looks | `color(r, g, b)` `texture("a.jpg")` `normals()` `depth(near, far)` |
+| looks | `color(r, g, b)` `texture("a.jpg")` `unlit(r, g, b)` `normals()` `depth(near, far)` `seeThrough(look, opacity)` |
+| helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
+| colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
+| picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |
 | prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |
 | frame | `scene.draw(ViewFrame)`, or `update` then `render()` / `render(cameraId)` |

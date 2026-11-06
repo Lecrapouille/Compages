@@ -23,7 +23,16 @@ scene.draw(frame);                       // = update(frame) + render()
 ```
 
 - Primitives: `box sphere plane cylinder cone pyramid (name, look)`; looks:
-  `color(r,g,b)`, `texture("f.jpg")`, `normals()`, `depth(near, far)`.
+  `color(r,g,b)`, `texture("f.jpg")`, `unlit(r,g,b)`, `normals()`, `depth(near, far)`,
+  `seeThrough(look, opacity)` (drawn after the solid ones, farthest first, blended, no depth write).
+- Colours given to a Scene (looks, lights, ambient, fog) are sRGB; MaterialInstance and the
+  snapshot hold linear (`srgbToLinear`, done in Looks and the extractor). Shaders end with
+  `present()` = exposure + tone curve (`environment().tone_mapping`, `.exposure`) + sRGB encode.
+- Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),
+  `scene.showBounds(id, bool)`; components in `Renderer/Components/Helpers.hpp`, drawn as
+  DebugDraw lines at each render.
+- `scene.renderToFile("out.png", w, h)` (after update); `Compages-headless` makes an EGL
+  context with no surface; `gpu::Texture::saveFile(path)` writes a 2D R8/RGB8/RGBA8 PNG.
 - Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF
   with joints); `assets().loadFile(path)` → `PrefabId`, `instantiate(id)`;
   `frameAll()`; `play(model, "Walk")`, `clips(model)`; `copy(entity)` shares

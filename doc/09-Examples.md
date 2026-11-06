@@ -44,6 +44,12 @@ This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) re
 
 The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new demo is a `.hpp`/`.cpp` pair in its folder plus one line there.
 
+Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) draws a scene into a PNG with **no screen at all**: an EGL context without surface, then `Scene::renderToFile`. It runs on a server or in CI, on a GPU or with Mesa llvmpipe ([chapter 6](06-Renderer-Layer.md)):
+
+```sh
+./build/linux-gcc-debug/bin/Compages-headless scene.png 1280 720
+```
+
 ---
 
 ## 🧭 2. The folders and the layers
@@ -69,69 +75,63 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ## 🟧 3. 01 — First steps: how do I draw?
 
-| Demo | Idea |
-|------|------|
-| `01a_Dummy` | the gallery cycle, zero GPU resource |
-| `01b_ClearScreen` | `clear` and two passes, no shader |
-| `01c_Triangle` | `Drawable`, data by name |
-| `01d_InterleavedTriangle` | a `Vertex` struct, `BufferUsage::Static` |
-| `01e_BorrowedTriangle` | a `Buffer` we own, borrowed by two drawables (`borrowVertices`) |
-| `01f_VertexSyntax` | every way of writing and changing vertices, one small triangle each |
-
-![Triangle](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png)
+| Demo | Idea | Picture |
+|------|------|---------|
+| `01a_Dummy` | the gallery cycle, zero GPU resource | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01a_Dummy.png" alt="01a_Dummy" width="200"> |
+| `01b_ClearScreen` | `clear` and two passes, no shader | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01b_ClearScreen.png" alt="01b_ClearScreen" width="200"> |
+| `01c_Triangle` | `Drawable`, data by name | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png" alt="01c_Triangle" width="200"> |
+| `01d_InterleavedTriangle` | a `Vertex` struct, `BufferUsage::Static` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01d_InterleavedTriangle.png" alt="01d_InterleavedTriangle" width="200"> |
+| `01e_BorrowedTriangle` | a `Buffer` we own, borrowed by two drawables (`borrowVertices`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01e_BorrowedTriangle.png" alt="01e_BorrowedTriangle" width="200"> |
+| `01f_VertexSyntax` | every way of writing and changing vertices, one small triangle each | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01f_VertexSyntax.png" alt="01f_VertexSyntax" width="200"> |
 
 ---
 
 ## 🟧 4. 02 — Changing data: how do I send what changes?
 
-| Demo | Idea |
-|------|------|
-| `02a_CpuGpuSync` | CPU copy; orange bars = not sent yet; a button prints both copies to the console |
-| `02b_DynamicGeometry` | `BufferUsage::Dynamic`: one edited corner follows the mouse |
-| `02c_HeightMap` | a hundred thousand heights computed on the CPU, all sent again |
-| `02d_Lorenz` | a growing curve; only the new part is sent |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `02a_CpuGpuSync` | CPU copy; orange bars = not sent yet; a button prints both copies to the console | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/02a_CpuGpuSync.png" alt="02a_CpuGpuSync" width="200"> |
+| `02b_DynamicGeometry` | `BufferUsage::Dynamic`: one edited corner follows the mouse | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/02b_DynamicGeometry.png" alt="02b_DynamicGeometry" width="200"> |
+| `02c_HeightMap` | a hundred thousand heights computed on the CPU, all sent again | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/02c_HeightMap.png" alt="02c_HeightMap" width="200"> |
+| `02d_Lorenz` | a growing curve; only the new part is sent | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/02d_Lorenz.png" alt="02d_Lorenz" width="200"> |
 
 ---
 
 ## 🟧 5. 03 — Images: textures and 3D on the raw GPU
 
-| Demo | Idea |
-|------|------|
-| `03a_TexturedQuad` | `quad["image"] = texture` |
-| `03b_MultiTextureBlend` | five textures, a blend map painted with the mouse |
-| `03c_DepthAndTransforms` | indices, depth, culling, three matrices |
-| `03d_PointClouds` | a sphere drawn with `GL_POINTS` |
-| `03e_Terrain3D` | an island colored by a 3D texture (water to snow) |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `03a_TexturedQuad` | `quad["image"] = texture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/03a_TexturedQuad.png" alt="03a_TexturedQuad" width="200"> |
+| `03b_MultiTextureBlend` | five textures, a blend map painted with the mouse | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/03b_MultiTextureBlend.png" alt="03b_MultiTextureBlend" width="200"> |
+| `03c_DepthAndTransforms` | indices, depth, culling, three matrices | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/03c_DepthAndTransforms.png" alt="03c_DepthAndTransforms" width="200"> |
+| `03d_PointClouds` | a sphere drawn with `GL_POINTS` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/03d_PointClouds.png" alt="03d_PointClouds" width="200"> |
+| `03e_Terrain3D` | an island colored by a 3D texture (water to snow) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/03e_Terrain3D.png" alt="03e_Terrain3D" width="200"> |
 
 ---
 
 ## 🟧 6. 04 — Passes: pixels computed by a shader, several passes
 
-| Demo | Idea |
-|------|------|
-| `04a_Mandelbrot` | no vertex buffer, only `gl_VertexID` |
-| `04b_ComplexShader` | a long shader on a quad |
-| `04c_MultiPassMesh` | one `VertexBuffer<Vertex>`, borrowed by three drawables |
-| `04d_RenderToTexture` | a cube drawn off-screen, the texture read twice |
-| `04e_PostProcess` | a scene off-screen, then a full-screen pass |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `04a_Mandelbrot` | no vertex buffer, only `gl_VertexID` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04a_Mandelbrot.png" alt="04a_Mandelbrot" width="200"> |
+| `04b_ComplexShader` | a long shader on a quad | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04b_ComplexShader.png" alt="04b_ComplexShader" width="200"> |
+| `04c_MultiPassMesh` | one `VertexBuffer<Vertex>`, borrowed by three drawables | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04c_MultiPassMesh.png" alt="04c_MultiPassMesh" width="200"> |
+| `04d_RenderToTexture` | a cube drawn off-screen, the texture read twice | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04d_RenderToTexture.png" alt="04d_RenderToTexture" width="200"> |
+| `04e_PostProcess` | a scene off-screen, then a full-screen pass | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04e_PostProcess.png" alt="04e_PostProcess" width="200"> |
 
 ---
 
 ## 🧪 7. 05 — Simulation: make the GPU compute
 
-| Demo | Idea |
-|------|------|
-| `05a_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console |
-| `05b_GameOfLife` | one cell = one pixel, a `TexturePingPong` |
-| `05c_GrayScott` | the same ping-pong, with floats |
-| `05d_ComputeParticles` | compute writes the buffer, the draw reads it |
-| `05e_SpiralGalaxy` | a formula of the time, computed in the vertex shader: no CPU loop, no compute shader |
-| `05f_Galaxy` | a state that depends on the previous one: eight thousand stars, tiles in shared memory, `PingPong`; Save writes `galaxy.csv` |
-| `05g_NeuralNetwork` | a neural network learns on the GPU; the CPU gives the examples and reads the answers |
-
-![Particles](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png)
-
-![Galaxy](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png)
+| Demo | Idea | Picture |
+|------|------|---------|
+| `05a_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05a_Compute.png" alt="05a_Compute" width="200"> |
+| `05b_GameOfLife` | one cell = one pixel, a `TexturePingPong` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05b_GameOfLife.png" alt="05b_GameOfLife" width="200"> |
+| `05c_GrayScott` | the same ping-pong, with floats | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05c_GrayScott.png" alt="05c_GrayScott" width="200"> |
+| `05d_ComputeParticles` | compute writes the buffer, the draw reads it | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png" alt="05d_ComputeParticles" width="200"> |
+| `05e_SpiralGalaxy` | a formula of the time, computed in the vertex shader: no CPU loop, no compute shader. | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05e_SpiralGalaxy.png" alt="05e_SpiralGalaxy" width="200"> |
+| `05f_Galaxy` | a state that depends on the previous one: eight thousand stars, tiles in shared memory, `PingPong`; Save writes `galaxy.csv` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png" alt="05f_Galaxy" width="200"> |
+| `05g_NeuralNetwork` | a neural network learns on the GPU; the CPU gives the examples and reads the answers | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05g_NeuralNetwork.png" alt="05g_NeuralNetwork" width="200"> |
 
 `05f_Galaxy`: each star starts on a circular orbit, with the speed that balances the pull of what is inside its radius (the stars nearer the centre, and a dark matter halo). Slower, the disk falls into the centre; a cold, heavy disk breaks into clumps within one turn. The halo and a little disorder in the speeds keep it a disk. The arms wind up as it turns, as they do in a real galaxy (the stars near the centre go round faster): `05e_SpiralGalaxy` shows the density waves that keep arms in place. Save reads the stars back from the GPU and writes `galaxy.csv` (`x,y,vx,vy`, one line per star) in the current folder. To plot those positions in Python (scatter of `x` and `y`, comment lines ignored), run `python3 examples/05_Simulation/05f_Galaxy_plot_xy.py path/to/galaxy.csv` (`matplotlib` required; `-o out.png` saves instead of opening a window).
 
@@ -147,67 +147,63 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ## 🟩 8. 06 — Scene: compose a scene, like Three.js
 
-| Demo | Idea |
-|------|------|
-| `06a_FirstScene` | shape, camera, light, one draw per frame |
-| `06b_Transforms` | `position`, `rotation`, `scale` chain; `rotate` adds a turn |
-| `06c_Hierarchy` | a car pivot, body and wheels hung with `parent()`: move one, all follow |
-| `06d_Lights` | ambient, sun, two lamps going round with their bulbs |
-| `06e_TexturedSpheres` | color, photo, tinted photo |
-| `06f_GeometryShowcase` | primitives: lit, textured, depth, normals |
-| `06g_TextureGallery` | nine images of the assets repository |
-| `06h_Skybox` | six faces; the sky turns with the camera |
-| `06i_CameraPick` | orbit or fly, click to select |
-| `06j_SplitViews` | one world, two cameras, one update |
-| `06k_MiscLookAt` | a thousand cones look at a sphere |
-| `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` |
-
-![Cube](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png)
+| Demo | Idea | Picture |
+|------|------|---------|
+| `06a_FirstScene` | shape, camera, light, one draw per frame | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png" alt="06a_FirstScene" width="200"> |
+| `06b_Transforms` | `position`, `rotation`, `scale` chain; `rotate` adds a turn; helpers: grid, axes, bounds | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06b_Transforms.png" alt="06b_Transforms" width="200"> |
+| `06c_Hierarchy` | a car pivot, body and wheels hung with `parent()`: move one, all follow; axes show the pivot | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06c_Hierarchy.png" alt="06c_Hierarchy" width="200"> |
+| `06d_Lights` | ambient, sun, two lamps going round with their unlit bulbs; exposure and tone curve in Try it | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06d_Lights.png" alt="06d_Lights" width="200"> |
+| `06e_TexturedSpheres` | color, photo, tinted photo, a see-through glass ball | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06e_TexturedSpheres.png" alt="06e_TexturedSpheres" width="200"> |
+| `06f_GeometryShowcase` | primitives: lit, textured, depth, normals | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06f_GeometryShowcase.png" alt="06f_GeometryShowcase" width="200"> |
+| `06g_TextureGallery` | nine images of the assets repository | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06g_TextureGallery.png" alt="06g_TextureGallery" width="200"> |
+| `06h_Skybox` | six faces; the sky turns with the camera | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06h_Skybox.png" alt="06h_Skybox" width="200"> |
+| `06i_CameraPick` | orbit or fly, click to select: the cube changes colour and shows its bounds | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06i_CameraPick.png" alt="06i_CameraPick" width="200"> |
+| `06j_SplitViews` | one world, two cameras, one update | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png" alt="06j_SplitViews" width="200"> |
+| `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
+| `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
 
 ---
 
 ## 🟦 9. 07 — World: things that move by themselves
 
-| Demo | Idea |
-|------|------|
-| `07a_HeadlessWorld` | ECS and routine, no drawing |
-| `07b_Routines` | three cubes, three routines; Space for the green one |
-| `07c_MovingRobot` | boxes linked by joints, a `Walk` routine |
-| `07d_AnimatedModel` | hips and shoulders as joints |
-| `07e_ExternalPhysics` | a small outside engine stepped in `fixedUpdate`; `PoseDriver::External`; shocks sent as `Contact` messages |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `07a_HeadlessWorld` | ECS and routine, no drawing | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07a_HeadlessWorld.png" alt="07a_HeadlessWorld" width="200"> |
+| `07b_Routines` | three cubes, three routines; Space for the green one | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07b_Routines.png" alt="07b_Routines" width="200"> |
+| `07c_MovingRobot` | boxes linked by joints, a `Walk` routine | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07c_MovingRobot.png" alt="07c_MovingRobot" width="200"> |
+| `07d_AnimatedModel` | hips and shoulders as joints | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07d_AnimatedModel.png" alt="07d_AnimatedModel" width="200"> |
+| `07e_ExternalPhysics` | a small outside engine stepped in `fixedUpdate`; `PoseDriver::External`; shocks sent as `Contact` messages | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07e_ExternalPhysics.png" alt="07e_ExternalPhysics" width="200"> |
 
 ---
 
 ## 🟩 10. 08 — Assets: load files
 
-| Demo | Idea |
-|------|------|
-| `08a_GltfModel` | `Duck.glb`, `frameAll` |
-| `08b_GltfAnimation` | animation clips of `Soldier.glb` |
-| `08c_PrefabAndSave` | three copies, then a JSON of asset names |
-| `08d_RobotArm` | URDF IRB 2400, forward kinematics |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `08a_GltfModel` | `Duck.glb`, `frameAll` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08a_GltfModel.png" alt="08a_GltfModel" width="200"> |
+| `08b_GltfAnimation` | animation clips of `Soldier.glb` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08b_GltfAnimation.png" alt="08b_GltfAnimation" width="200"> |
+| `08c_PrefabAndSave` | three copies, then a JSON of asset names | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08c_PrefabAndSave.png" alt="08c_PrefabAndSave" width="200"> |
+| `08d_RobotArm` | URDF IRB 2400, forward kinematics; the frame of each joint (axes), a grid | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08d_RobotArm.png" alt="08d_RobotArm" width="200"> |
 
 ---
 
 ## ⚡ 11. 09 — Performance: draw a lot
 
-| Demo | Idea |
-|------|------|
-| `09a_SpriteBatch` | a hundred thousand sprites, one draw, per-instance data |
-| `09b_ManyCubes` | 1,728 cubes, one mesh, sorted by look, culling |
-| `09c_IndirectDraw` | compute writes the survivors and the draw command; the CPU never reads the count |
+| Demo | Idea | Picture |
+|------|------|---------|
+| `09a_SpriteBatch` | a hundred thousand sprites, one draw, per-instance data | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/09a_SpriteBatch.png" alt="09a_SpriteBatch" width="200"> |
+| `09b_ManyCubes` | 1,728 cubes, one mesh, sorted by look, culling | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/09b_ManyCubes.png" alt="09b_ManyCubes" width="200"> |
+| `09c_IndirectDraw` | compute writes the survivors and the draw command; the CPU never reads the count | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/09c_IndirectDraw.png" alt="09c_IndirectDraw" width="200"> |
 
 ---
 
 ## 🎮 12. 10 — Complete: everything together
 
-| Demo | Idea |
-|------|------|
-| `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes |
-| `10b_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels |
-| `10c_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh |
-
-![Doom-like](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png)
+| Demo | Idea | Picture |
+|------|------|---------|
+| `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10a_MvpDemo.png" alt="10a_MvpDemo" width="200"> |
+| `10b_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png" alt="10b_DoomLike" width="200"> |
+| `10c_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10c_SweatAndDecals.png" alt="10c_SweatAndDecals" width="200"> |
 
 `10b_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the torch, L for the lantern. The green light leaves the level.
 
