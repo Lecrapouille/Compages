@@ -25,7 +25,7 @@
 //!
 //! Two tables that swap at each step (PingPong) are in PingPong.hpp.
 //!
-//! Demos: 00c_Compute (the smallest case) and 12_ComputeParticles (a compute
+//! Demos: 05a_Compute (the smallest case) and 05d_ComputeParticles (a compute
 //! pass writing the vertices a draw then reads).
 // ****************************************************************************
 

@@ -37,7 +37,7 @@ scene.draw(frame);                       // = update(frame) + render()
   `RenderSnapshot` (sorted by material then mesh, culled) → `Renderer`
   (`ShadowPass` for the shadows, `Skybox` behind). Folders: `Scene/` (Scene, Looks, Environment, RenderSettings), `Assets/`,
   `Import/` (glTF, STL, URDF visuals), `Procedural/`, `Animation/`, `Render/`.
-- Live texture (`Renderer/Procedural/CanvasTexture.hpp`, demo `39a_CanvasPaint`):
+- Live texture (`Renderer/Procedural/CanvasTexture.hpp`, demo `06l_CanvasPaint`):
   `create(w, h)`, `setMapping(AABB local, flip_u, flip_v)`, `bind(scene.assets(), "name")`,
   `applyLook(scene, entity)`, `paintWorld(point, worldMatrix, color, radius_m)` /
   `paintLocal` / `paintLineWorld`, then `sync()` (dirty rectangle only). Rows from

@@ -90,12 +90,12 @@ After the build, in `build/linux-gcc-debug/` (`make COMPILATION_MODE=release` bu
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples                 # every demo, with panels
-./build/linux-gcc-debug/bin/Compages-examples 13_Galaxy       # start on one demo
+./build/linux-gcc-debug/bin/Compages-examples 05f_Galaxy       # start on one demo
 ```
 
 One window holds a viewport, the list of demos, an inspector, the source of the demo, a console and GPU counters. **PgUp / PgDn** change demo, **F1** hides the panels, **Esc** quits. All keys: [chapter 9](09-Examples.md#-1-the-window).
 
-![Galaxy: eight thousand stars in a compute shader](images/13_Galaxy.png)
+![Galaxy: eight thousand stars in a compute shader](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png)
 
 Check that every demo builds, draws and frees its GPU objects:
 

@@ -56,7 +56,7 @@ world.update(step);
 compages::world::Entity gun = world.lookup("Ship/Gun");
 ```
 
-Here `position()` is the **transform** of the graph, not a component of yours. `30_HeadlessWorld` moves its entities with its own `Position` and `Velocity` structs instead, and `each` sees an entity only if it has both. Choose what fits: particle integration with your structs, mechanical links with the graph. Both can live together.
+Here `position()` is the **transform** of the graph, not a component of yours. `07a_HeadlessWorld` moves its entities with its own `Position` and `Velocity` structs instead, and `each` sees an entity only if it has both. Choose what fits: particle integration with your structs, mechanical links with the graph. Both can live together.
 
 `Entity` is a handle: copying it does not copy the entity. An empty handle, or one whose entity was destroyed, is `false` in `if (entity)`. `entity.enable(false)` switches an entity and its descendants off.
 
@@ -189,7 +189,7 @@ void onMessage(compages::world::Message const& p_message) override
 }
 ```
 
-`40_ExternalPhysics` does exactly this: a `Physics` routine steps a small engine in `fixedUpdate` and sends the shocks; a `Squash` routine on each ball swells at a shock.
+`07e_ExternalPhysics` does exactly this: a `Physics` routine steps a small engine in `fixedUpdate` and sends the shocks; a `Squash` routine on each ball swells at a shock.
 
 ### A behavior tree is not a routine
 
@@ -199,7 +199,7 @@ A routine can **host** a behavior tree (BlackThorn, BehaviorTree.CPP…): it own
 
 Routines are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`, [section 1](#-1-two-mechanisms-one-container)). For millions, keep the data on the GPU: see the table [Where does my data live?](01-Introduction.md#where-does-my-data-live).
 
-`51_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controllers `Orbit` and `Fly` are routines too.
+`07b_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controllers `Orbit` and `Fly` are routines too.
 
 ---
 
@@ -228,7 +228,7 @@ A joint keeps two values. The **commanded** value is the one you set; it may be 
 | prismatic (slides) | `.prismatic(axis, min, max)`, then `.joint().offset(o)` | `slider.prismatic({ 0, 0, 1 }, 0.0_m, 0.3_m).joint().offset(0.1_m)` |
 | fixed | the local transform | — |
 
-`31_MovingRobot` builds three robots from boxes this way. `38_RobotArm` loads a URDF (ABB IRB 2400): one entity per link, one revolute joint between each, and sliders to set the angles within their limits. This is forward kinematics, still independent of the rendering: the demo only uses a `Scene` to look at the arm.
+`07c_MovingRobot` builds three robots from boxes this way. `08d_RobotArm` loads a URDF (ABB IRB 2400): one entity per link, one revolute joint between each, and sliders to set the angles within their limits. This is forward kinematics, still independent of the rendering: the demo only uses a `Scene` to look at the arm.
 
 A URDF describes a robot, not only its look, so the chain belongs to the World: `compages::world::loadUrdf(world, path)` (`World/Import/UrdfLoader.hpp`) builds it headless. `parseUrdf` reads the file without creating anything, and `buildUrdf` builds it with a callback for each link: the renderer uses that callback to add the visuals.
 
@@ -274,7 +274,7 @@ struct Physics: compages::world::Routine
 
 `scene.draw(viewFrame)` (or `world.update(frame)` headless) then runs the routine, computes the matrices and draws. Without a routine, step the engine between `World::step()` and `World::update()`: the routines have run, the matrices are not computed yet.
 
-`40_ExternalPhysics` does this with a tiny engine of a few lines (gravity, bounces, balls against balls), written without any Compages type. RobotIK does the same with MuJoCo.
+`07e_ExternalPhysics` does this with a tiny engine of a few lines (gravity, bounces, balls against balls), written without any Compages type. RobotIK does the same with MuJoCo.
 
 ---
 
@@ -296,7 +296,7 @@ And what lives elsewhere:
 | draw calls | `gpu::`, called by the renderer |
 | window, GLFW | your application, or `examples/Common/Window.cpp` |
 
-Saving a scene (`35_PrefabAndSave`) touches both: the world and the asset catalog. The JSON keeps asset **names**, not GPU ids.
+Saving a scene (`08c_PrefabAndSave`) touches both: the world and the asset catalog. The JSON keeps asset **names**, not GPU ids.
 
 ---
 
@@ -327,13 +327,16 @@ You fill `elapsed` (and `total`) yourself in a headless loop.
 
 ## 🧭 8. Demos of this layer
 
+The folder `07_World/` follows this chapter.
+
 | Demo | Idea |
 |------|------|
-| `30_HeadlessWorld` | ECS, routine, `lookup`, no GPU |
-| `31_MovingRobot` | hierarchy and joints |
-| `32c_MiscLookAt` | `lookAt` on a thousand transforms |
-| `38_RobotArm` | URDF, forward kinematics |
-| `40_ExternalPhysics` | an outside engine in `fixedUpdate` writes the poses (`PoseDriver::External`) and sends `Contact` messages |
-| `51_Routines` | several routines, input |
+| `07a_HeadlessWorld` | ECS, routine, `lookup`, no GPU |
+| `07b_Routines` | several routines, input |
+| `07c_MovingRobot` | hierarchy and joints |
+| `07d_AnimatedModel` | hips and shoulders as joints |
+| `07e_ExternalPhysics` | an outside engine in `fixedUpdate` writes the poses (`PoseDriver::External`) and sends `Contact` messages |
+| `06k_MiscLookAt` | `lookAt` on a thousand transforms |
+| `08d_RobotArm` | URDF, forward kinematics |
 
 Next: [06-Renderer-Layer.md](06-Renderer-Layer.md) — a picture of this world.

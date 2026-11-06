@@ -11,7 +11,7 @@ The third layer turns a `world::World` into an image: camera, lights, materials,
 
 The ten-line cube is commented in [chapter 3 §3](03-Tutorial.md#-3-a-picture-of-the-world).
 
-![Three.js-like: a cube, an orbit, a sun](images/50_ThreeJsLike.png)
+![Three.js-like: a cube, an orbit, a sun](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png)
 
 ---
 
@@ -47,7 +47,7 @@ compages::renderer::normals();           // normals shown as colors
 compages::renderer::depth(near, far);    // distance, black to white
 ```
 
-`33c_GeometryShowcase` lines the primitives up with these four looks; `33a_TexturedSpheres` shows a color, a photo, and a tinted photo.
+`06f_GeometryShowcase` lines the primitives up with these four looks; `06e_TexturedSpheres` shows a color, a photo, and a tinted photo.
 
 Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 
@@ -68,7 +68,7 @@ Scene::draw(ViewFrame)
 ```
 
 - Draws are **sorted** by material, then by mesh, to change pipelines as rarely as possible.
-- **Culling** happens during extraction, before the snapshot: what the camera cannot see is not drawn. `20b_ManyCubes` (1,728 cubes, one mesh, five looks) shows the number of draw calls change while the camera moves.
+- **Culling** happens during extraction, before the snapshot: what the camera cannot see is not drawn. `09b_ManyCubes` (1,728 cubes, one mesh, five looks) shows the number of draw calls change while the camera moves.
 - `RenderSnapshot` is a plain value: the renderer never reads the `World` while drawing. The renderer tests build snapshots by hand (`Renderer/Render/SceneExtractor.hpp`, `RenderSnapshot.hpp`, `Renderer.hpp`).
 
 ### Several views of one world
@@ -84,7 +84,7 @@ scene.render();          // the active camera
 map.render(top);         // a minimap
 ```
 
-`32a_SplitViews`: a perspective orbit on the left, an orthographic top view on the right. A camera whose viewport covers part of the image clears and draws only this part.
+`06j_SplitViews`: a perspective orbit on the left, an orthographic top view on the right. A camera whose viewport covers part of the image clears and draws only this part.
 
 ---
 
@@ -100,11 +100,11 @@ map.render(top);         // a minimap
 | `scene.clips(model)` | the clip names, in file order |
 | `scene.copy(entity)` | draws another entity with the same mesh and look (cheap duplicates) |
 
-`load` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`38_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
+`load` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
 
-- `34_GltfModel` loads `Duck.glb` and frames the camera.
-- `36b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).
-- `35_PrefabAndSave` places a prefab three times, moves each copy alone, then writes `/tmp/compages_prefab_scene.json` with asset names.
+- `08a_GltfModel` loads `Duck.glb` and frames the camera.
+- `08b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).
+- `08c_PrefabAndSave` places a prefab three times, moves each copy alone, then writes `/tmp/compages_prefab_scene.json` with asset names.
 
 ---
 
@@ -117,9 +117,9 @@ scene.lamp("Lamp", color, intensity, range);
 scene.activeCamera(id);
 ```
 
-- The sky (`37_Skybox`) turns with the camera but never comes closer.
-- `scene.pick({ x, y })` reads the result of the last `render`, pixel counted from the bottom left, like the mouse coordinates (`32b_CameraPick`).
-- `scene.debug()` queues debug lines for the next render, then forgets them (`52_MvpDemo`).
+- The sky (`06h_Skybox`) turns with the camera but never comes closer.
+- `scene.pick({ x, y })` reads the result of the last `render`, pixel counted from the bottom left, like the mouse coordinates (`06i_CameraPick`).
+- `scene.debug()` queues debug lines for the next render, then forgets them (`10a_MvpDemo`).
 - Ready-made controls, as routines: `Orbit` (right button, wheel), `Fly` (right button to look, WASD, Q, E) and `Rig`. `32b` switches between `Orbit` and `Fly`. `FPSController` keeps you on the ground; it is applied directly, not as a routine.
 - `Rig` is a strategy-game camera, looking at a point of the ground. The left button drags the ground (the grabbed point stays under the mouse), the right or middle button turns, the wheel zooms; W A S D or the arrows move, Q and E turn, R and F zoom, Shift runs. The camera glides to the wanted pose; each frame covers the part `1 - exp(-sharpness * dt)` of the way, so the glide is the same at any frame rate and never overshoots (a `Lerp(a, b, dt * speed)` does both wrong). The logic is in `RigController`, tested without a window.
 
@@ -158,7 +158,7 @@ of the lamp is drawn into its faces. The cost is six more draws of the
 nearby scene per lamp: turn it on for the lamps that matter. Something that
 holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
 (`RenderFlags::NoShadowCaster`), or it hides the lamp from everything.
-`52_MvpDemo` (one lamp) and `53_DoomLike` (the torches) use them.
+`10a_MvpDemo` (one lamp) and `10b_DoomLike` (the torches) use them.
 
 ---
 
@@ -166,7 +166,7 @@ holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
 
 For a texture you change while the simulation runs (a robot that paints on a canvas, a height-field editor, a CPU simulation shown on a quad), use `compages::renderer::CanvasTexture`: an RGBA8 image in CPU memory, registered as a texture asset, sent to the GPU in part only.
 
-📁 header `<Compages/Renderer/Procedural/CanvasTexture.hpp>` · demo `39a_CanvasPaint`
+📁 header `<Compages/Renderer/Procedural/CanvasTexture.hpp>` · demo `06l_CanvasPaint`
 
 ```cpp
 compages::renderer::CanvasTexture canvas;
@@ -213,24 +213,27 @@ Performance:
 
 ## 🎮 6. The game
 
-`53_DoomLike` shows the three layers together: textured walls, fog, glTF soldiers and robots, an animated gun, particles, impacts, barrels. Click in the window to capture the mouse, Escape to release it. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload.
+`10b_DoomLike` shows the three layers together: textured walls, fog, glTF soldiers and robots, an animated gun, particles, impacts, barrels. Click in the window to capture the mouse, Escape to release it. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload.
 
-![Doom-like](images/53_DoomLike.png)
+![Doom-like](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png)
 
 ---
 
 ## 🧭 7. Demos of this layer
 
+The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow this chapter.
+
 | Demo | Idea |
 |------|------|
-| `50_ThreeJsLike` | the minimum: shape, camera, light, `draw` |
-| `33c_GeometryShowcase` | primitives and debug looks |
-| `34_GltfModel` | `load`, `frameAll` |
-| `36b_GltfAnimation` | animation clips |
-| `32a_SplitViews` | one world, two cameras |
-| `20b_ManyCubes` | sorting and culling |
-| `39a_CanvasPaint` | painting on a live texture |
-| `53_DoomLike` | the three layers together |
-| `54_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
+| `06a_FirstScene` | the minimum: shape, camera, light, `draw` |
+| `06b_Transforms`, `06c_Hierarchy`, `06d_Lights` | place shapes, hang them from a parent, light them |
+| `06f_GeometryShowcase` | primitives and debug looks |
+| `08a_GltfModel` | `load`, `frameAll` |
+| `08b_GltfAnimation` | animation clips |
+| `06j_SplitViews` | one world, two cameras |
+| `09b_ManyCubes` | sorting and culling |
+| `06l_CanvasPaint` | painting on a live texture |
+| `10b_DoomLike` | the three layers together |
+| `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 
 Next: [07-Architecture.md](07-Architecture.md), or the full list of demos in [09-Examples.md](09-Examples.md).

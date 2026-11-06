@@ -16,7 +16,7 @@
 //! needing the same projection matrix means three calls, and three copies the
 //! driver keeps. A uniform block is one buffer, written once, bound to a
 //! numbered point, and read by every program declaring a block on that point.
-//! That is what makes a frame of several passes cheap (05a_MultiPassMesh).
+//! That is what makes a frame of several passes cheap (04c_MultiPassMesh).
 //!
 //! There are two ways to fill one, and the difference between them is the whole
 //! subject of this file.

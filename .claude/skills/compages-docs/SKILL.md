@@ -49,4 +49,5 @@ chapter tables: keep them in sync. Code comments point to chapters
   `#-2-build`). Do not use emojis with U+FE0F (⚠️ 🖥️ 🛠️ 🏗️ …) in headings:
   the selector stays in the id.
 - Logos in `doc/logos/` (`Compages.png` plain, `compages-layers.png` with the
-  three layer captions); screenshots in `doc/images/`.
+  three layer captions); screenshots only in Compages-data `doc/examples/<demo>.png`, linked as
+  `https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/<demo>.png`.

@@ -11,7 +11,7 @@ The first layer speaks **shader**. You write GLSL, fill the data with the names 
 
 The commented triangle is in [chapter 3 §1](03-Tutorial.md#-1-a-triangle-named-by-the-shader).
 
-![Particles: a compute shader writes the buffer, the draw reads it](images/12_ComputeParticles.png)
+![Particles: a compute shader writes the buffer, the draw reads it](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png)
 
 ---
 
@@ -50,7 +50,7 @@ mesh.draw();
 `operator[]` does not guess: the shader already classified each name as an attribute, a uniform or a sampler. The same syntax works for the three.
 
 - Attributes given one by one are **stored interleaved** (position, color, position, color…): the layout the GPU reads best.
-- Assigning an attribute marks a **dirty range**; `draw()` sends only what was marked. In `02a_DynamicGeometry`, moving the top corner sends one vertex out of three. `00b_CpuGpuSync` shows the same on a raw `Buffer`, with orange bars for the bytes the GPU does not have yet (there you call `upload()` yourself).
+- Assigning an attribute marks a **dirty range**; `draw()` sends only what was marked. In `02b_DynamicGeometry`, moving the top corner sends one vertex out of three. `02a_CpuGpuSync` shows the same on a raw `Buffer`, with orange bars for the bytes the GPU does not have yet (there you call `upload()` yourself).
 - The dirty range is **one range**, from the first change to the last: changing element 1 and element 5000 sends everything between them, in one copy.
 - Uniforms are written at each draw. A texture gets a unit and is bound only for the draw.
 
@@ -77,7 +77,7 @@ mesh.setVertices(corners);                          // or any std::vector, std::
 mesh.editVertex<Vertex>(2u).position.y = 0.5f;      // marked, sent at the next draw
 ```
 
-`editVertex(i)` (one), `editVertices(first, count)` (a run), `editVertices()` (all) and `emplace_back(v)` mark what changed; the next draw sends only that (`02a_DynamicGeometry`). `02b_VertexSyntax` shows every way side by side.
+`editVertex(i)` (one), `editVertices(first, count)` (a run), `editVertices()` (all) and `emplace_back(v)` mark what changed; the next draw sends only that (`02b_DynamicGeometry`). `01f_VertexSyntax` shows every way side by side.
 
 ### One rule: who owns the vertices
 
@@ -136,7 +136,7 @@ Only the first message is kept; `frameErrorCount()` says how many came after. `p
 
 ## 🧮 5. Compute
 
-A compute shader does not draw pixels: you give it a grid. The same `Buffer` can be the storage block it writes and the vertices of the next draw, with no copy through the CPU. This is `12_ComputeParticles`:
+A compute shader does not draw pixels: you give it a grid. The same `Buffer` can be the storage block it writes and the vertices of the next draw, with no copy through the CPU. This is `05d_ComputeParticles`:
 
 ```cpp
 COMPAGES_TRY(step.dispatchItems(count));
@@ -146,9 +146,9 @@ points.draw();
 
 > ⚡ `barrier` is **not** added after a dispatch for you: the GPU may run ahead. A missing barrier gives a race, not a compile error. Combine the flags with `|` (`VertexAttrib`, `Storage`, `Command`, `All`… in `GPU/Enums.hpp`).
 
-- `00c_Compute` is the smallest one: an array of numbers, then `download()` brings the result back to the CPU (orange bars while the CPU copy is late).
-- `13_Galaxy`: two ping-pong buffers, eight thousand stars, tiles in work group memory (see below).
-- `14_SpiralGalaxy`, inspired by Glumpy, needs **no compute shader**: each body rides a fixed ellipse, so its position is a formula of the time. The vertex shader computes it; the vertices are sent once and each frame writes one uniform, `years`. When the next state depends on the previous one (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong below.
+- `05a_Compute` is the smallest one: an array of numbers, then `download()` brings the result back to the CPU (orange bars while the CPU copy is late).
+- `05f_Galaxy`: two ping-pong buffers, eight thousand stars, tiles in work group memory (see below).
+- `05e_SpiralGalaxy`, inspired by Glumpy, needs **no compute shader**: each body rides a fixed ellipse, so its position is a formula of the time. The vertex shader computes it; the vertices are sent once and each frame writes one uniform, `years`. When the next state depends on the previous one (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong below.
 
 ### 🏓 Ping-pong: read one copy, write the other
 
@@ -167,7 +167,7 @@ step 2:   B -> A
 step 3:   A -> B
 ```
 
-**Buffers** (a compute shader). `gpu::PingPong<T>` holds two storage buffers, and `gpu::dispatch` runs one step in one call. The names of the two storage blocks are given with their role, so they cannot be swapped by mistake. This is the loop of `13_Galaxy`:
+**Buffers** (a compute shader). `gpu::PingPong<T>` holds two storage buffers, and `gpu::dispatch` runs one step in one call. The names of the two storage blocks are given with their role, so they cannot be swapped by mistake. This is the loop of `05f_Galaxy`:
 
 ```cpp
 // setUp: the first state, in both buffers.
@@ -182,7 +182,7 @@ m_points.draw();
 
 `dispatch` ends with `barrier(Storage | VertexAttrib)`, so the next step and a draw both see the new state; when it fails, it does not swap. For a step that needs something else (two dispatches, other blocks), do it by hand: `bind("Input", current())`, `bind("Output", next())`, `dispatchItems(count())`, `barrier(...)`, `swap()`.
 
-**Textures** (a fragment shader). `gpu::TexturePingPong` holds two textures and the framebuffer that draws into each one. A fragment shader must not sample the texture it draws into, for the same reason. The render pass stays in your code: it says where the draw goes. This is `11a_GameOfLife` (also `11b_GrayScott`, `54_SweatAndDecals`):
+**Textures** (a fragment shader). `gpu::TexturePingPong` holds two textures and the framebuffer that draws into each one. A fragment shader must not sample the texture it draws into, for the same reason. The render pass stays in your code: it says where the draw goes. This is `05b_GameOfLife` (also `05c_GrayScott`, `10c_SweatAndDecals`):
 
 ```cpp
 // setUp
@@ -199,9 +199,9 @@ m_field.swap();                                          // it becomes current
 m_show["image"] = m_field.current();
 ```
 
-`currentTarget()` draws over the current state in place, without a step: `54_SweatAndDecals` paints a decal there. A render pass makes its writes visible to the next pass by itself; a compute dispatch needs the `barrier`.
+`currentTarget()` draws over the current state in place, without a step: `10c_SweatAndDecals` paints a decal there. A render pass makes its writes visible to the next pass by itself; a compute dispatch needs the `barrier`.
 
-To see the numbers on the CPU, read the current copy back: `m_stars.current().read()` returns a `std::vector<T>` (`13_Galaxy` writes it to `galaxy.csv`); `buffer.download()` refreshes the CPU copy of a buffer that keeps one (`00c_Compute`). Both make the CPU wait for the GPU: do it once, not every frame. The helper script `examples/10_ScientificAndCompute/13_Galaxy_plot_xy.py` displays the star positions from that CSV with matplotlib.
+To see the numbers on the CPU, read the current copy back: `m_stars.current().read()` returns a `std::vector<T>` (`05f_Galaxy` writes it to `galaxy.csv`); `buffer.download()` refreshes the CPU copy of a buffer that keeps one (`05a_Compute`). Both make the CPU wait for the GPU: do it once, not every frame. The helper script `examples/05_Simulation/05f_Galaxy_plot_xy.py` displays the star positions from that CSV with matplotlib.
 
 ---
 
@@ -209,24 +209,24 @@ To see the numbers on the CPU, read the current copy back: `m_stars.current().re
 
 | Need | Types | Demo |
 |------|-------|------|
-| one mesh, several shaders | one `VertexBuffer<Vertex>`, borrowed by several `Drawable` | `05a_MultiPassMesh` |
-| draw into an image | `Framebuffer`, `RenderPass`, `Texture` | `05b_RenderToTexture`, `05c_PostProcess` |
-| cellular automaton on an image | two `Texture`, swapped | `11a_GameOfLife`, `11b_GrayScott` |
-| compute writes the vertices | `ComputeProgram`, `Buffer`, `barrier` | `12_ComputeParticles`, `13_Galaxy` |
-| the CPU never counts the survivors | compute → indirect draw command | `21_IndirectDraw` |
-| height field computed on the CPU | dynamic vertices, fixed indices | `10a_HeightMap`, `10b_Terrain3D` |
+| one mesh, several shaders | one `VertexBuffer<Vertex>`, borrowed by several `Drawable` | `04c_MultiPassMesh` |
+| draw into an image | `Framebuffer`, `RenderPass`, `Texture` | `04d_RenderToTexture`, `04e_PostProcess` |
+| cellular automaton on an image | two `Texture`, swapped | `05b_GameOfLife`, `05c_GrayScott` |
+| compute writes the vertices | `ComputeProgram`, `Buffer`, `barrier` | `05d_ComputeParticles`, `05f_Galaxy` |
+| the CPU never counts the survivors | compute → indirect draw command | `09c_IndirectDraw` |
+| height field computed on the CPU | dynamic vertices, fixed indices | `02c_HeightMap`, `03e_Terrain3D` |
 
-`05a_MultiPassMesh` is the milestone: one `VertexBuffer<Vertex>`, three drawables (lit, normals, wireframe) that borrow it. Each shader reads only the fields it needs; a field it does not declare is skipped, a field of the wrong type is an error. So the layout is declared **on the C++ side**: the shader does not guess it, and you never write `glVertexAttribPointer`.
+`04c_MultiPassMesh` is the milestone: one `VertexBuffer<Vertex>`, three drawables (lit, normals, wireframe) that borrow it. Each shader reads only the fields it needs; a field it does not declare is skipped, a field of the wrong type is an error. So the layout is declared **on the C++ side**: the shader does not guess it, and you never write `glVertexAttribPointer`.
 
-Beneath the `Drawable`, the same is written with a `Program` and `Pipeline::create<Vertex>(program, state)`, which checks the struct against the shader, then `gpu::drawIndexed(pipeline, vertices, indices)` (`54_SweatAndDecals`).
+Beneath the `Drawable`, the same is written with a `Program` and `Pipeline::create<Vertex>(program, state)`, which checks the struct against the shader, then `gpu::drawIndexed(pipeline, vertices, indices)` (`10c_SweatAndDecals`).
 
 ---
 
 ## 🎚 7. Passes and state
 
 - `gpu::clear(color)` clears the current target.
-- A `RenderPass` sets the viewport, clears, and chooses the target (framebuffer or window). `01a_ClearScreen` opens two passes, one per half of the window, without shader.
-- `drawable.state().depth_test = true` (also blending, culling, primitive) belongs to the drawable. The pipeline is rebuilt only when the state changes. `04_DepthAndTransforms` uses depth test and back-face culling.
+- A `RenderPass` sets the viewport, clears, and chooses the target (framebuffer or window). `01b_ClearScreen` opens two passes, one per half of the window, without shader.
+- `drawable.state().depth_test = true` (also blending, culling, primitive) belongs to the drawable. The pipeline is rebuilt only when the state changes. `03c_DepthAndTransforms` uses depth test and back-face culling.
 - `gpu::forgetRenderState()`: call it after another library (ImGui in the gallery) touched the context, so that the backend stops trusting its cached state.
 
 Driver messages (`KHR_debug`) go to stderr as `[gpu] warning:` and `[gpu] error:`.
@@ -241,18 +241,13 @@ Driver objects live in pools: an index plus a generation. Destroying twice does 
 
 ## 🧭 9. Gallery path for this layer
 
-Read them in this order; each demo adds one idea:
+The gallery folders `01` to `05` follow this chapter. Read them in order; each demo adds one idea:
 
-1. `00b_CpuGpuSync` — CPU copy, pending range.
-2. `00c_Compute` — one computation, one read-back.
-3. `01b_Triangle` then `01c_InterleavedTriangle` — by name, then by struct (`Static`).
-4. `01d_BorrowedTriangle` — a `Buffer` we own, borrowed by two drawables.
-5. `02a_DynamicGeometry` — `Dynamic`: one edited vertex.
-6. `02b_VertexSyntax` — every way of writing and changing vertices, side by side.
-7. `04_DepthAndTransforms` — indices, depth, matrices.
-8. `05a_MultiPassMesh` — one buffer, three drawables.
-9. `06a_Mandelbrot` — no vertex buffer, only `gl_VertexID`.
-10. `11a_GameOfLife` → `12_ComputeParticles` → `13_Galaxy` → `14_SpiralGalaxy` → `16_NeuralNetwork` (three compute passes in a row).
+1. `01_FirstSteps/` — `01c_Triangle` (by name), `01d_InterleavedTriangle` (by struct), `01e_BorrowedTriangle` (a `Buffer` we own, borrowed by two drawables), `01f_VertexSyntax` (every way side by side).
+2. `02_ChangingData/` — `02a_CpuGpuSync` (CPU copy, pending range), `02b_DynamicGeometry` (one edited vertex), `02c_HeightMap` (all sent again), `02d_Lorenz` (only the new part sent).
+3. `03_Images/` — textures, then `03c_DepthAndTransforms` (indices, depth, matrices).
+4. `04_Passes/` — `04a_Mandelbrot` (no vertex buffer), `04c_MultiPassMesh` (one buffer, three drawables), render to texture, post-process.
+5. `05_Simulation/` — `05a_Compute` (one computation, one read-back), `05b_GameOfLife` (`TexturePingPong`), `05d_ComputeParticles`, `05e_SpiralGalaxy` (a formula: the vertex shader is enough), `05f_Galaxy` (a state: `PingPong`), `05g_NeuralNetwork` (three compute passes in a row).
 
 All demos: [chapter 9](09-Examples.md).
 

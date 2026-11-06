@@ -116,7 +116,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples
-./build/linux-gcc-debug/bin/Compages-examples 50_ThreeJsLike
+./build/linux-gcc-debug/bin/Compages-examples 06a_FirstScene
 ./build/linux-gcc-debug/bin/Compages-examples --check
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```

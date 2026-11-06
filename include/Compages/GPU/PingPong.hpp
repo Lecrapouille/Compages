@@ -27,10 +27,10 @@
 //! \endcode
 //!
 //! What it holds:
-//! - PingPong: two storage buffers, for a compute shader (13_Galaxy).
+//! - PingPong: two storage buffers, for a compute shader (05f_Galaxy).
 //! - dispatch(program, pingpong, blocks): one step in one call.
 //! - TexturePingPong: two textures and the framebuffers that draw into them,
-//!   for a fragment shader working on an image (11a_GameOfLife).
+//!   for a fragment shader working on an image (05b_GameOfLife).
 // ****************************************************************************
 
 #include "Compages/Core/NotCopiable.hpp"

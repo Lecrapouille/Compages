@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Compages-Commercial
+// Copyright (c) 2018-2026 Quentin Quadrat
+//
+// This file is part of Compages. It is available under the GNU GPL v3 or,
+// for users who cannot use the GPL, under a commercial license.
+// See LICENSING.md for details.
+
+#include "10_Complete/10a_MvpDemo.hpp"
+#include "Compages/World/Entity.hpp"
+
+#include "Compages/Core/AABB.hpp"
+
+#include <array>
+#include <cmath>
+
+namespace examples
+{
+
+// ----------------------------------------------------------------------------
+//! \brief What a unit box covers, around its own origin.
+// ----------------------------------------------------------------------------
+const compages::AABB UNIT =
+    compages::AABB::fromCorners({ -0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f });
+
+// ----------------------------------------------------------------------------
+//! \brief Falls, and bounces on the floor losing a part of its speed, then
+//! starts again from where it was.
+// ----------------------------------------------------------------------------
+struct Bounce: compages::world::Routine
+{
+    void start() override
+    {
+        from = entity().position();
+    }
+
+    void update(float p_dt) override
+    {
+        // Gravity, then a bounce that loses speed. Once it barely moves, it
+        // is put back where it started.
+        compages::Vector3f position = entity().position();
+        speed -= 9.81f * p_dt;
+        position.y += speed * p_dt;
+        if (position.y < 0.5f)
+        {
+            position.y = 0.5f;
+            speed = -0.7f * speed;
+            if (std::abs(speed) < 0.5f)
+            {
+                position = from;
+                speed = 0.0f;
+            }
+        }
+        entity().position(position).rotate(p_dt, { 1.0f, 0.0f, 0.0f });
+    }
+
+    compages::Vector3f from;
+    float speed = 0.0f;
+};
+
+// ----------------------------------------------------------------------------
+//! \brief Goes round the vertical axis, at its height and its distance.
+// ----------------------------------------------------------------------------
+struct Circle: compages::world::Routine
+{
+    void update(float) override
+    {
+        // A circle at a fixed height, from the total time.
+        const float angle = 0.8f * frame().total;
+        entity().position(6.0f * std::cos(angle), 6.0f, 6.0f * std::sin(angle));
+    }
+};
+
+// ----------------------------------------------------------------------------
+//! \brief Turns on itself.
+// ----------------------------------------------------------------------------
+struct MvpDemo::Spin: compages::world::Routine
+{
+    void update(float p_dt) override
+    {
+        transform().rotateY(0.9f * p_dt);
+    }
+};
+
+// ----------------------------------------------------------------------------
+std::string MvpDemo::description() const
+{
+    return "Falling cubes bouncing on a floor, a spinning block and a lamp "
+           "going round, all driven by routines, with debug boxes drawn "
+           "around the cubes.";
+}
+
+// ----------------------------------------------------------------------------
+compages::Status MvpDemo::setUp()
+{
+    // A sun, and a lamp that goes round on its own.
+    m_scene.background(0.04f, 0.06f, 0.10f).ambient(0.08f, 0.09f, 0.12f);
+    m_scene.camera()
+        .position(0.0f, 12.0f, 28.0f)
+        .add<compages::world::Orbit>(compages::Vector3f(0.0f, 2.0f, 0.0f));
+    m_scene.sun("Sun", { 1.0f, 0.96f, 0.88f }, 0.8f);
+    // The lamp casts shadows too: the cubes are drawn six more times, once
+    // per face of a cube of 90 degree views around it.
+    m_scene.lamp("Lamp", { 1.0f, 0.85f, 0.5f }, 2.0f, 20.0f)
+        .add<Circle>()
+        .get<compages::world::PointLight>()
+        .shadows = true;
+
+    // The floor is a thin box. The spinner and the falling cubes sit on it.
+    m_scene.box("Floor", compages::renderer::color(0.2f, 0.5f, 0.95f))
+        .position(0.0f, -0.5f, 0.0f)
+        .scale(40.0f, 1.0f, 40.0f);
+    m_scene.box("Spinner", compages::renderer::color(0.2f, 0.5f, 0.95f))
+        .position(0.0f, 1.0f, -6.0f)
+        .add<Spin>();
+
+    const std::array<compages::Vector3f, 4u> starts{
+        compages::Vector3f(-4.0f, 8.0f, -2.0f),
+        compages::Vector3f(0.0f, 10.0f, 1.0f),
+        compages::Vector3f(3.0f, 12.0f, -1.0f),
+        compages::Vector3f(-2.0f, 14.0f, 3.0f)
+    };
+    for (compages::Vector3f const& start : starts)
+    {
+        m_cubes.emplace_back(
+            m_scene.box("Cube", compages::renderer::color(0.9f, 0.2f, 0.2f))
+                .position(start)
+                .add<Bounce>());
+    }
+    return m_scene.prepare();
+}
+
+// ----------------------------------------------------------------------------
+void MvpDemo::draw(compages::world::ViewFrame const& p_frame)
+{
+    // Moved first, so that the boxes are drawn where the cubes are now.
+    m_scene.update(p_frame);
+    for (compages::world::Entity const& cube : m_cubes)
+    {
+        m_scene.debug().box(UNIT, cube.worldMatrix(), { 1.0f, 0.8f, 0.2f });
+    }
+    m_scene.render();
+}
+
+} // namespace examples

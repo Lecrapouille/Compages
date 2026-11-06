@@ -41,7 +41,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 
 ## 📷 Images
 
-Five screenshots live in `doc/images/` so that the pages render without the assets repository. The full gallery is written into the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository by:
+The screenshots live in the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository, in `doc/examples/`, one per demo; the pages link to them there. They are written by:
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples

@@ -331,7 +331,7 @@ struct FormatOf<compages::Vector<T, N>>
 //!
 //! Worth having for exactly one reason: a per instance transform. Giving each
 //! instance its own model matrix as a field read once per object is what turns
-//! a thousand draw calls into one, and it is how 20a_SpriteBatch works.
+//! a thousand draw calls into one, and it is how 09a_SpriteBatch works.
 //!
 //! On the order of the numbers. C++ stores row-major Scilab matrices; each
 //! vertex attribute slot is one row (\c Matrix[i]), which matches how

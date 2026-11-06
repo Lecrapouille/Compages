@@ -5,7 +5,7 @@ One binary, `Compages-examples`, holds every demo: viewport, list, inspector, so
 ```sh
 make -j"$(nproc)"
 ./build/linux-gcc-debug/bin/Compages-examples
-./build/linux-gcc-debug/bin/Compages-examples 01b_Triangle
+./build/linux-gcc-debug/bin/Compages-examples 01c_Triangle
 ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
@@ -40,7 +40,7 @@ The viewport draws the demo into a texture: the panels never hide part of the im
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 
-This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository; five of these images are copied in `doc/images/` for the documentation. It writes in a clone of yours, not in the copy fetched by MyMakefile: `git clone https://github.com/Lecrapouille/Compages-data.git external/Compages-data` first.
+This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository, where every page of the documentation takes its screenshots. It writes in a clone of yours, not in the copy fetched by MyMakefile: `git clone https://github.com/Lecrapouille/Compages-data.git external/Compages-data` first.
 
 The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new demo is a `.hpp`/`.cpp` pair in its folder plus one line there.
 
@@ -48,67 +48,94 @@ The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new 
 
 ## 🧭 2. The folders and the layers
 
-| Folder | Layers |
-|--------|--------|
-| `00_GettingStarted/`, `10_ScientificAndCompute/` | GPU |
-| `20_Performance/` | GPU, then Renderer (for the cubes) |
-| `30_WorldAndAssets/` | World, then World + Renderer |
-| `50_Complete/` | all three, up to a game |
+| Folder | Question | Layer | Guide |
+|--------|----------|-------|-------|
+| `01_FirstSteps/` | How do I draw? | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `03_Images/` | Textures and 3D on the raw GPU | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `04_Passes/` | Pixels computed by a shader, several passes | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `05_Simulation/` | Make the GPU compute | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `06_Scene/` | Compose a scene, like Three.js | 🟩 Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
+| `07_World/` | Things that move by themselves | 🟦 World | [doc/05-World-Layer.md](05-World-Layer.md) |
+| `08_Assets/` | Load files (glTF, URDF, prefabs) | 🟩 Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
+| `09_Performance/` | Draw a lot | GPU, then Renderer | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
+| `10_Complete/` | Everything together, up to a game | the three layers | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
 
-`30_HeadlessWorld` ends before any `Scene` code.
+`07a_HeadlessWorld` ends before any `Scene` code.
 
 Demos that read files need the `Compages-data` repository, fetched by `make` with the other third parties.
 
 ---
 
-## 🟧 3. 00 — Getting started
+## 🟧 3. 01 — First steps: how do I draw?
 
 | Demo | Idea |
 |------|------|
-| `00a_Dummy` | the gallery cycle, zero GPU resource |
-| `00b_CpuGpuSync` | CPU copy; orange bars = not sent yet; a button prints both copies to the console |
-| `00c_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console |
-| `01a_ClearScreen` | `clear` and two passes, no shader |
-| `01b_Triangle` | `Drawable`, data by name |
-| `01c_InterleavedTriangle` | a `Vertex` struct, `BufferUsage::Static` |
-| `01d_BorrowedTriangle` | a `Buffer` we own, borrowed by two drawables (`borrowVertices`) |
-| `02a_DynamicGeometry` | `BufferUsage::Dynamic`: one edited corner follows the mouse |
-| `02b_VertexSyntax` | every way of writing and changing vertices, one small triangle each |
-| `03a_TexturedQuad` | `quad["image"] = texture` |
-| `03b_MultiTextureBlend` | five textures, a blend map painted with the mouse |
-| `04_DepthAndTransforms` | indices, depth, culling, three matrices |
-| `05a_MultiPassMesh` | one `VertexBuffer<Vertex>`, borrowed by three drawables |
-| `05b_RenderToTexture` | a cube drawn off-screen, the texture read twice |
-| `05c_PostProcess` | a scene off-screen, then a full-screen pass |
-| `06a_Mandelbrot` | no vertex buffer, only `gl_VertexID` |
-| `06b_ComplexShader` | a long shader on a quad |
-| `07_PointClouds` | a sphere drawn with `GL_POINTS` |
+| `01a_Dummy` | the gallery cycle, zero GPU resource |
+| `01b_ClearScreen` | `clear` and two passes, no shader |
+| `01c_Triangle` | `Drawable`, data by name |
+| `01d_InterleavedTriangle` | a `Vertex` struct, `BufferUsage::Static` |
+| `01e_BorrowedTriangle` | a `Buffer` we own, borrowed by two drawables (`borrowVertices`) |
+| `01f_VertexSyntax` | every way of writing and changing vertices, one small triangle each |
 
-![Triangle](images/01b_Triangle.png)
+![Triangle](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png)
 
 ---
 
-## 🧪 4. 10 — Scientific and compute
+## 🟧 4. 02 — Changing data: how do I send what changes?
 
 | Demo | Idea |
 |------|------|
-| `10a_HeightMap` | a hundred thousand heights computed on the CPU |
-| `10b_Terrain3D` | an island colored by a 3D texture (water to snow) |
-| `11a_GameOfLife` | one cell = one pixel, a `TexturePingPong` |
-| `11b_GrayScott` | the same ping-pong, with floats |
-| `12_ComputeParticles` | compute writes the buffer, the draw reads it |
-| `13_Galaxy` | eight thousand stars in a dark matter halo, tiles in shared memory, ping-pong; Save writes `galaxy.csv` |
-| `14_SpiralGalaxy` | density waves computed in the vertex shader from the time: no CPU loop, no compute shader |
-| `15_Lorenz` | a growing curve; only the new part is sent |
-| `16_NeuralNetwork` | a neural network learns on the GPU; the CPU gives the examples and reads the answers |
+| `02a_CpuGpuSync` | CPU copy; orange bars = not sent yet; a button prints both copies to the console |
+| `02b_DynamicGeometry` | `BufferUsage::Dynamic`: one edited corner follows the mouse |
+| `02c_HeightMap` | a hundred thousand heights computed on the CPU, all sent again |
+| `02d_Lorenz` | a growing curve; only the new part is sent |
 
-![Particles](images/12_ComputeParticles.png)
+---
 
-![Galaxy](images/13_Galaxy.png)
+## 🟧 5. 03 — Images: textures and 3D on the raw GPU
 
-`13_Galaxy`: each star starts on a circular orbit, with the speed that balances the pull of what is inside its radius (the stars nearer the centre, and a dark matter halo). Slower, the disk falls into the centre; a cold, heavy disk breaks into clumps within one turn. The halo and a little disorder in the speeds keep it a disk. The arms wind up as it turns, as they do in a real galaxy (the stars near the centre go round faster): `14_SpiralGalaxy` shows the density waves that keep arms in place. Save reads the stars back from the GPU and writes `galaxy.csv` (`x,y,vx,vy`, one line per star) in the current folder. To plot those positions in Python (scatter of `x` and `y`, comment lines ignored), run `python3 examples/10_ScientificAndCompute/13_Galaxy_plot_xy.py path/to/galaxy.csv` (`matplotlib` required; `-o out.png` saves instead of opening a window).
+| Demo | Idea |
+|------|------|
+| `03a_TexturedQuad` | `quad["image"] = texture` |
+| `03b_MultiTextureBlend` | five textures, a blend map painted with the mouse |
+| `03c_DepthAndTransforms` | indices, depth, culling, three matrices |
+| `03d_PointClouds` | a sphere drawn with `GL_POINTS` |
+| `03e_Terrain3D` | an island colored by a 3D texture (water to snow) |
 
-`16_NeuralNetwork`: a multilayer perceptron, 2 → 16 → 16 → 1 (tanh, tanh, sigmoid), learns to tell two classes of points apart (circle, XOR or two spirals). The CPU makes the examples and the first weights, and reads the answers back; the GPU does all the computation in three compute shaders:
+---
+
+## 🟧 6. 04 — Passes: pixels computed by a shader, several passes
+
+| Demo | Idea |
+|------|------|
+| `04a_Mandelbrot` | no vertex buffer, only `gl_VertexID` |
+| `04b_ComplexShader` | a long shader on a quad |
+| `04c_MultiPassMesh` | one `VertexBuffer<Vertex>`, borrowed by three drawables |
+| `04d_RenderToTexture` | a cube drawn off-screen, the texture read twice |
+| `04e_PostProcess` | a scene off-screen, then a full-screen pass |
+
+---
+
+## 🧪 7. 05 — Simulation: make the GPU compute
+
+| Demo | Idea |
+|------|------|
+| `05a_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console |
+| `05b_GameOfLife` | one cell = one pixel, a `TexturePingPong` |
+| `05c_GrayScott` | the same ping-pong, with floats |
+| `05d_ComputeParticles` | compute writes the buffer, the draw reads it |
+| `05e_SpiralGalaxy` | a formula of the time, computed in the vertex shader: no CPU loop, no compute shader |
+| `05f_Galaxy` | a state that depends on the previous one: eight thousand stars, tiles in shared memory, `PingPong`; Save writes `galaxy.csv` |
+| `05g_NeuralNetwork` | a neural network learns on the GPU; the CPU gives the examples and reads the answers |
+
+![Particles](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png)
+
+![Galaxy](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png)
+
+`05f_Galaxy`: each star starts on a circular orbit, with the speed that balances the pull of what is inside its radius (the stars nearer the centre, and a dark matter halo). Slower, the disk falls into the centre; a cold, heavy disk breaks into clumps within one turn. The halo and a little disorder in the speeds keep it a disk. The arms wind up as it turns, as they do in a real galaxy (the stars near the centre go round faster): `05e_SpiralGalaxy` shows the density waves that keep arms in place. Save reads the stars back from the GPU and writes `galaxy.csv` (`x,y,vx,vy`, one line per star) in the current folder. To plot those positions in Python (scatter of `x` and `y`, comment lines ignored), run `python3 examples/05_Simulation/05f_Galaxy_plot_xy.py path/to/galaxy.csv` (`matplotlib` required; `-o out.png` saves instead of opening a window).
+
+`05g_NeuralNetwork`: a multilayer perceptron, 2 → 16 → 16 → 1 (tanh, tanh, sigmoid), learns to tell two classes of points apart (circle, XOR or two spirals). The CPU makes the examples and the first weights, and reads the answers back; the GPU does all the computation in three compute shaders:
 
 1. gradients: one invocation per example, the forward pass then the backward pass (chain rule); each writes its own gradient, one float per weight;
 2. update: one invocation per weight, the mean of its gradients over the examples, then an Adam step (one more invocation averages the loss);
@@ -118,56 +145,73 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## ⚡ 5. 20 — Performance
+## 🟩 8. 06 — Scene: compose a scene, like Three.js
 
 | Demo | Idea |
 |------|------|
-| `20a_SpriteBatch` | a hundred thousand sprites, one draw, per-instance data |
-| `20b_ManyCubes` | 1,728 cubes, one mesh, sorted by look, culling |
-| `21_IndirectDraw` | compute writes the survivors and the draw command; the CPU never reads the count |
+| `06a_FirstScene` | shape, camera, light, one draw per frame |
+| `06b_Transforms` | `position`, `rotation`, `scale` chain; `rotate` adds a turn |
+| `06c_Hierarchy` | a car pivot, body and wheels hung with `parent()`: move one, all follow |
+| `06d_Lights` | ambient, sun, two lamps going round with their bulbs |
+| `06e_TexturedSpheres` | color, photo, tinted photo |
+| `06f_GeometryShowcase` | primitives: lit, textured, depth, normals |
+| `06g_TextureGallery` | nine images of the assets repository |
+| `06h_Skybox` | six faces; the sky turns with the camera |
+| `06i_CameraPick` | orbit or fly, click to select |
+| `06j_SplitViews` | one world, two cameras, one update |
+| `06k_MiscLookAt` | a thousand cones look at a sphere |
+| `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` |
+
+![Cube](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png)
 
 ---
 
-## 🟦 6. 30 — World and files
+## 🟦 9. 07 — World: things that move by themselves
 
 | Demo | Idea |
 |------|------|
-| `30_HeadlessWorld` | ECS and routine, no drawing |
-| `31_MovingRobot` | boxes linked by joints, a `Walk` routine |
-| `32a_SplitViews` | one world, two cameras, one update |
-| `32b_CameraPick` | orbit or fly, click to select |
-| `32c_MiscLookAt` | a thousand cones look at a sphere |
-| `33a_TexturedSpheres` | color, photo, tinted photo |
-| `33b_TextureGallery` | nine images of the assets repository |
-| `33c_GeometryShowcase` | primitives: lit, textured, depth, normals |
-| `34_GltfModel` | `Duck.glb`, `frameAll` |
-| `35_PrefabAndSave` | three copies, then a JSON of asset names |
-| `36a_AnimatedModel` | hips and shoulders as joints |
-| `36b_GltfAnimation` | animation clips of `Soldier.glb` |
-| `37_Skybox` | six faces; the sky turns with the camera |
-| `38_RobotArm` | URDF IRB 2400, forward kinematics |
-| `39a_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` |
-| `40_ExternalPhysics` | a small outside engine stepped in `fixedUpdate`; `PoseDriver::External`; shocks sent as `Contact` messages |
+| `07a_HeadlessWorld` | ECS and routine, no drawing |
+| `07b_Routines` | three cubes, three routines; Space for the green one |
+| `07c_MovingRobot` | boxes linked by joints, a `Walk` routine |
+| `07d_AnimatedModel` | hips and shoulders as joints |
+| `07e_ExternalPhysics` | a small outside engine stepped in `fixedUpdate`; `PoseDriver::External`; shocks sent as `Contact` messages |
 
 ---
 
-## 🟩 7. 50 — Complete
+## 🟩 10. 08 — Assets: load files
 
 | Demo | Idea |
 |------|------|
-| `50_ThreeJsLike` | shape, camera, light, one draw per frame |
-| `51_Routines` | three cubes, three routines; Space for the green one |
-| `52_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes |
-| `53_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels |
-| `54_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh |
+| `08a_GltfModel` | `Duck.glb`, `frameAll` |
+| `08b_GltfAnimation` | animation clips of `Soldier.glb` |
+| `08c_PrefabAndSave` | three copies, then a JSON of asset names |
+| `08d_RobotArm` | URDF IRB 2400, forward kinematics |
 
-![Cube](images/50_ThreeJsLike.png)
+---
 
-![Doom-like](images/53_DoomLike.png)
+## ⚡ 11. 09 — Performance: draw a lot
 
-`53_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the torch, L for the lantern. The green light leaves the level.
+| Demo | Idea |
+|------|------|
+| `09a_SpriteBatch` | a hundred thousand sprites, one draw, per-instance data |
+| `09b_ManyCubes` | 1,728 cubes, one mesh, sorted by look, culling |
+| `09c_IndirectDraw` | compute writes the survivors and the draw command; the CPU never reads the count |
 
-`54_SweatAndDecals`: the head of the three.js `webgl_decals` demo (Lee Perry-Smith). Nothing is simulated in 3D. The mesh is drawn into its own UV map (`gl_Position = uv`), so one texel of a texture is one small piece of skin:
+---
+
+## 🎮 12. 10 — Complete: everything together
+
+| Demo | Idea |
+|------|------|
+| `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes |
+| `10b_DoomLike` | the game: glTF, particles, fog, shadows of the torches, two levels |
+| `10c_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh |
+
+![Doom-like](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png)
+
+`10b_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the torch, L for the lantern. The green light leaves the level.
+
+`10c_SweatAndDecals`: the head of the three.js `webgl_decals` demo (Lee Perry-Smith). Nothing is simulated in 3D. The mesh is drawn into its own UV map (`gl_Position = uv`), so one texel of a texture is one small piece of skin:
 
 1. Force pass: gravity projected on the skin. `dFdx` and `dFdy` of the world position give the two tangents of the UV map, so the slope is written in texels per second. The pass also writes where the skin faces down (drops fall there) and where it sweats (the forehead).
 2. Water pass (ping-pong): pores fill small beads. A texel holds one drop and the place of the drop inside the texel, so drops glide instead of jumping. A bead heavier than a threshold runs down the force field; when it crosses the border of its texel it goes to that neighbour (diagonals too) and leaves a thin wet film. It stops when it has left most of its water behind, at a threshold that changes from texel to texel (rough skin). Each texel computes what its eight neighbours send it, so water is never created on the way.
@@ -178,10 +222,10 @@ The skin material is the PBR shader of the Renderer (`shaders::pbrFragment()`) w
 
 ---
 
-## 🪟 8. Window, ImGui and physics
+## 🪟 13. Window, ImGui and physics
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.
-- There is no physics engine in the library: `40_ExternalPhysics` shows how to plug one in ([chapter 5](05-World-Layer.md#plug-in-a-physics-engine)).
+- There is no physics engine in the library: `07e_ExternalPhysics` shows how to plug one in ([chapter 5](05-World-Layer.md#plug-in-a-physics-engine)).
 
 Next: [10-Debugging.md](10-Debugging.md).

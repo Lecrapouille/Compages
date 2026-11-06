@@ -47,7 +47,7 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
   `update()` runs `KinematicSystem` then `TransformSystem` (loops, no recursion).
 - Who writes a pose: `PoseDriver { Kinematic, Animation, External }`
   (`World/Components/PoseDriver.hpp`). A physics engine is outside Compages: it
-  marks its bodies `External` and writes their pose each step (`40_ExternalPhysics`).
+  marks its bodies `External` and writes their pose each step (`07e_ExternalPhysics`).
   `world.step(frame)` runs the routines, `world.update()` the matrices,
   `world.endStep()` lateUpdate; `world.update(frame)` does the three.
 - URDF headless: `compages::world::loadUrdf(world, path)` (`World/Import/`).
@@ -61,7 +61,7 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 - `world` includes only `Core`: no `gpu::` type, no mesh, no window here.
   Meshes/materials/clips belong to `compages::renderer`.
 - Store `EntityId` (generational) rather than raw pointers.
-- A headless test checks numbers, not pixels (`30_HeadlessWorld` reports with
+- A headless test checks numbers, not pixels (`07a_HeadlessWorld` reports with
   `gpu::reportError` inside the gallery only).
 
 Quick check without the gallery (verified):

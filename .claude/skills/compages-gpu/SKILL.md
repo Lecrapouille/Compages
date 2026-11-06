@@ -37,15 +37,15 @@ mesh.draw();
   `Static` (no CPU copy, never written; a compute pass may write a StorageBuffer),
   `Stream` (no CPU copy, `write()`), `Dynamic` (CPU copy, `[]`/`emplace_back`, `upload()`).
 - One mesh, several shaders: one `VertexBuffer<Vertex>`, `d.borrowVertices(buffer)` in
-  each `Drawable` (demos `01d_BorrowedTriangle`, `05a_MultiPassMesh`). One level
+  each `Drawable` (demos `01e_BorrowedTriangle`, `04c_MultiPassMesh`). One level
   lower: `Pipeline::create<Vertex>(program, state)` per shader (checks the
-  layout; a dropped attribute is fine, a type mismatch fails), `54_SweatAndDecals`.
-- All the vertex syntaxes side by side: `02b_VertexSyntax`.
+  layout; a dropped attribute is fine, a type mismatch fails), `10c_SweatAndDecals`.
+- All the vertex syntaxes side by side: `01f_VertexSyntax`.
 - Off-screen: `Framebuffer`, `RenderPass` (viewport, clear, target), `Texture` (`05b`, `05c`).
 - Compute: `ComputeProgram` `loadSource(src)` / `loadFile(path)`, `dispatchItems(n)`, then
   **`gpu::barrier(Barrier::VertexAttrib | ...)` yourself** (missing barrier =
   race, not compile error); `buffer.download()` needs a CPU mirror and the
-  right barrier. Demos `00c_Compute`, `12_ComputeParticles`, `13_Galaxy`, `21_IndirectDraw`.
+  right barrier. Demos `05a_Compute`, `05d_ComputeParticles`, `05f_Galaxy`, `09c_IndirectDraw`.
 - Ping-pong (`GPU/PingPong.hpp`): `PingPong<T>` + `gpu::dispatch(program, state, { .read = "In", .write = "Out" })`
   (bind, dispatch, barrier Storage|VertexAttrib, swap); `TexturePingPong` for fragment-shader steps:
   read `current()`, `RenderPass(next())`, `swap()`.

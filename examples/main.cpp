@@ -16,7 +16,7 @@
 //! Run it with no argument to start at the first one, or with the name of an
 //! example to start there:
 //! \code
-//! ./build/Compages-examples 04_DepthAndTransforms
+//! ./build/Compages-examples 03c_DepthAndTransforms
 //! ./build/Compages-examples --check
 //! \endcode
 //!

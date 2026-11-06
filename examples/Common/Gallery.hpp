@@ -52,7 +52,7 @@ namespace examples
 //!
 //! \code
 //! Gallery gallery;
-//! gallery.add<Triangle>("01b_Triangle", "00_GettingStarted/01b_Triangle.cpp");
+//! gallery.add<Triangle>("01c_Triangle", "01_FirstSteps/01c_Triangle.cpp");
 //! return gallery.run() ? EXIT_SUCCESS : EXIT_FAILURE;
 //! \endcode
 // ****************************************************************************
@@ -153,7 +153,7 @@ private:
     {
         std::string name;
         //! \brief The name shown to people, without its number: "Dummy" for
-        //! "00a_Dummy". The name itself stays what --start and the files use.
+        //! "01a_Dummy". The name itself stays what --start and the files use.
         std::string title;
         std::string source;
         //! \brief The folder of the source, spelled for people: "Getting

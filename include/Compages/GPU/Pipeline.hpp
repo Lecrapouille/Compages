@@ -21,7 +21,7 @@
 //! only asked to confirm that it can be fed by it. One VertexBuffer<Vertex>
 //! holding position, normal and texture coordinates can thus feed a pass that
 //! reads all three and a shadow pass that reads only the position
-//! (05a_MultiPassMesh).
+//! (04c_MultiPassMesh).
 //!
 //! The check is a real one: a layout offering "aPosition" to a shader declaring
 //! "position" is an error naming both lists, and so are a vec2 field feeding a
@@ -296,7 +296,7 @@ private:
 //!
 //! Pipelines that read a vertex the same way share one, so this is at most the
 //! number of live pipelines and usually far less: the passes of
-//! 05a_MultiPassMesh read the same vertex, so they cost one between them.
+//! 04c_MultiPassMesh read the same vertex, so they cost one between them.
 //! Watching this number stay put while pipelines come and go is what says the
 //! sharing works.
 //! \return the number of vertex readers held.

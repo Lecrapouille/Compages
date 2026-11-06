@@ -179,22 +179,22 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 
 | Goal | File | Demo |
 |------|------|------|
-| triangle | `GPU/Drawable.hpp` | `01b_Triangle` |
-| compute | `GPU/ComputeProgram.hpp` | `12_ComputeParticles` |
-| ping-pong | `GPU/PingPong.hpp` | `13_Galaxy`, `11a_GameOfLife` |
-| headless world | `World/World.hpp` | `30_HeadlessWorld` |
-| joints | `World/Kinematics/Joint.hpp` | `38_RobotArm` |
-| scene | `Renderer/Scene/Scene.hpp` | `50_ThreeJsLike` |
+| triangle | `GPU/Drawable.hpp` | `01c_Triangle` |
+| compute | `GPU/ComputeProgram.hpp` | `05d_ComputeParticles` |
+| ping-pong | `GPU/PingPong.hpp` | `05f_Galaxy`, `05b_GameOfLife` |
+| headless world | `World/World.hpp` | `07a_HeadlessWorld` |
+| joints | `World/Kinematics/Joint.hpp` | `08d_RobotArm` |
+| scene | `Renderer/Scene/Scene.hpp` | `06a_FirstScene` |
 | extraction | `Renderer/Render/SceneExtractor.hpp` | renderer tests |
-| assets | `Renderer/Assets/`, `Renderer/Import/` | `34_GltfModel` |
-| physics engine | `World/Components/PoseDriver.hpp` | `40_ExternalPhysics` |
+| assets | `Renderer/Assets/`, `Renderer/Import/` | `08a_GltfModel` |
+| physics engine | `World/Components/PoseDriver.hpp` | `07e_ExternalPhysics` |
 
 ---
 
 ## 🪟 9. Window and physics
 
 - GLFW exists only in `examples/Common/Window.cpp`. After the ImGui panels of the gallery, `gpu::forgetRenderState()` resets the cached state of the backend.
-- Compages has no physics engine and will not get one. The world holds the poses; your engine (MuJoCo, Bullet, Jolt, your own) computes them and writes them into the entities at each step. The renderer only shows the result. See [chapter 5](05-World-Layer.md#plug-in-a-physics-engine) and `40_ExternalPhysics`.
+- Compages has no physics engine and will not get one. The world holds the poses; your engine (MuJoCo, Bullet, Jolt, your own) computes them and writes them into the entities at each step. The renderer only shows the result. See [chapter 5](05-World-Layer.md#plug-in-a-physics-engine) and `07e_ExternalPhysics`.
 
 ---
 

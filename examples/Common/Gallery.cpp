@@ -93,8 +93,8 @@ static void carry(compages::gpu::ResourceStatistics& p_counts,
 }
 
 // ----------------------------------------------------------------------------
-//! \brief "00_GettingStarted/01b_Triangle.cpp" is in chapter "Getting Started",
-//! "10_ScientificAndCompute/..." in "Scientific & Compute".
+//! \brief "01_FirstSteps/01c_Triangle.cpp" is in chapter "First Steps",
+//! "05_Simulation/..." in "Simulation".
 // ----------------------------------------------------------------------------
 static std::string chapterOf(std::string const& p_source)
 {

@@ -4,7 +4,7 @@
 
 The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compages) is told in the [README](../README.md#-the-story). Two technical lessons of OpenGLCppWrapper shaped the three layers of [chapter 1](01-Introduction.md#-3-three-layers):
 
-1. **One mesh, several shaders.** "One vertex array per program" copied the vertices for nothing. [bgfx](https://github.com/bkaradzic/bgfx), [sokol_gfx](https://github.com/floooh/sokol) and [regl](https://github.com/regl-project/regl) declare the vertex layout in application code. Compages does the same with `VertexBuffer<Vertex>`: several `Drawable` borrow one buffer (`05a_MultiPassMesh`), and `Pipeline` does the same one level lower.
+1. **One mesh, several shaders.** "One vertex array per program" copied the vertices for nothing. [bgfx](https://github.com/bkaradzic/bgfx), [sokol_gfx](https://github.com/floooh/sokol) and [regl](https://github.com/regl-project/regl) declare the vertex layout in application code. Compages does the same with `VertexBuffer<Vertex>`: several `Drawable` borrow one buffer (`04c_MultiPassMesh`), and `Pipeline` does the same one level lower.
 2. **Simulating and showing are two jobs.** OpenGLCppWrapper had a node tree with a virtual `onDraw()`: handy for demos, but GPU buffers lived in the nodes, a node could not move without breaking them, and nothing ran in a test without an OpenGL context. Splitting the world (what exists and moves), the renderer (catalog and snapshots) and the GPU (shaders and uploads) follows the generational ids of ECS engines such as [Bevy](https://github.com/bevyengine/bevy), and the short scene code of [Three.js](https://github.com/mrdoob/three.js).
 
 ---

@@ -2,7 +2,7 @@
 
 In this page you write three programs, one per layer: a triangle drawn from a shader, a world that moves without any screen, and a 3D scene in ten lines. Go only as far as the first layer that does your job.
 
-The first and third programs are demos of the gallery: open them with `./build/linux-gcc-debug/bin/Compages-examples 01b_Triangle` and `./build/linux-gcc-debug/bin/Compages-examples 50_ThreeJsLike`, and read their source in the **Source** panel. The second one runs in a terminal; its output below is real.
+The first and third programs are demos of the gallery: open them with `./build/linux-gcc-debug/bin/Compages-examples 01c_Triangle` and `./build/linux-gcc-debug/bin/Compages-examples 06a_FirstScene`, and read their source in the **Source** panel. The second one runs in a terminal; its output below is real.
 
 ---
 
@@ -30,7 +30,7 @@ compages::gpu::shutdown();
 
 ## 🔺 1. A triangle named by the shader
 
-📁 `examples/00_GettingStarted/01b_Triangle.cpp` · more in [chapter 4](04-GPU-Layer.md)
+📁 `examples/01_FirstSteps/01c_Triangle.cpp` · more in [chapter 4](04-GPU-Layer.md)
 
 The vertex shader declares two attributes, `position` and `color`. These names are all the C++ side needs to know:
 
@@ -87,7 +87,7 @@ compages::gpu::clear({ 0.1f, 0.1f, 0.15f });
 m_triangle.draw();      // sends what changed, then draws
 ```
 
-![Triangle](images/01b_Triangle.png)
+![Triangle](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png)
 
 What happened:
 
@@ -97,7 +97,7 @@ What happened:
 
 A wrong name, or a `vec2` given three numbers, does not crash: the message is kept and lists what the shader really declares. `prepare()` returns it before your loop; during the loop, read it with `compages::gpu::takeFrameError()` ([chapter 10](10-Debugging.md)).
 
-When your vertices are already a struct, the field names must match the shader. You also say whether they will change. In `01c_InterleavedTriangle` they never do, so they are `Static`: sent once, then the CPU frees its copy:
+When your vertices are already a struct, the field names must match the shader. You also say whether they will change. In `01d_InterleavedTriangle` they never do, so they are `Static`: sent once, then the CPU frees its copy:
 
 ```cpp
 struct Vertex
@@ -112,15 +112,15 @@ m_triangle.setVertices<Vertex>(
       { { 0.0f, 0.8f }, { 0.9f, 0.9f, 0.1f } } });
 ```
 
-`01d_BorrowedTriangle` keeps the corners in a `Buffer` you own, read by two drawables with `borrowVertices()`. `02a_DynamicGeometry` gives the other answer, `BufferUsage::Dynamic`, and moves one corner with `editVertex()`; `02b_VertexSyntax` shows every syntax side by side. [Chapter 4 §3](04-GPU-Layer.md#-3-typed-vertices) has the table of the choices.
+`01e_BorrowedTriangle` keeps the corners in a `Buffer` you own, read by two drawables with `borrowVertices()`. `02b_DynamicGeometry` gives the other answer, `BufferUsage::Dynamic`, and moves one corner with `editVertex()`; `01f_VertexSyntax` shows every syntax side by side. [Chapter 4 §3](04-GPU-Layer.md#-3-typed-vertices) has the table of the choices.
 
-📌 Remember: **the shader names, C++ fills, `draw()` sends.** Next steps in the gallery: `02a_DynamicGeometry` (only the moved corner is sent), then `10_ScientificAndCompute/` (Game of Life, particles, galaxy).
+📌 Remember: **the shader names, C++ fills, `draw()` sends.** Next steps in the gallery: `02b_DynamicGeometry` (only the moved corner is sent), then `05_Simulation/` (Game of Life, particles, galaxy).
 
 ---
 
 ## 🌍 2. A world without a screen
 
-📁 `examples/30_WorldAndAssets/30_HeadlessWorld.cpp` · more in [chapter 5](05-World-Layer.md)
+📁 `examples/07_World/07a_HeadlessWorld.cpp` · more in [chapter 5](05-World-Layer.md)
 
 No `gpu::init` here, no window, no OpenGL. The container is `compages::world::World`. An `Entity` is a handle that you chain, like a Three.js object.
 
@@ -239,13 +239,13 @@ angle 120 deg -> hand at (0, -1, 0.5)
 - You set the angle; `update` computes the local transform of the shoulder, and the hand follows: this is **forward kinematics**, still without any screen.
 - 120° is outside the limits: the joint stays at 90°.
 
-📌 This is how the layer is tested: `30_HeadlessWorld` fails if the player did not move, with zero pixels to look at.
+📌 This is how the layer is tested: `07a_HeadlessWorld` fails if the player did not move, with zero pixels to look at.
 
 ---
 
 ## 🧊 3. A picture of the world
 
-📁 `examples/50_Complete/50_ThreeJsLike.cpp` · more in [chapter 6](06-Renderer-Layer.md)
+📁 `examples/06_Scene/06a_FirstScene.cpp` · more in [chapter 6](06-Renderer-Layer.md)
 
 The gallery gives the demo a `compages::world::World m_world` and a `compages::renderer::Scene m_scene{ m_world }`. Setup:
 
@@ -267,7 +267,7 @@ m_cube.rotate(p_frame.elapsed, { 0.4f, 1.0f, 0.0f });
 m_scene.draw(p_frame);
 ```
 
-![Cube](images/50_ThreeJsLike.png)
+![Cube](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png)
 
 - `box` returns an entity of the **world**: you move it like any other entity. The mesh and the material are renderer components.
 - `Orbit` is a routine that reads the mouse from the `ViewFrame` (a `Frame` plus keyboard and mouse). Right drag turns, the wheel zooms.

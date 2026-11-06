@@ -14,7 +14,7 @@ A black window, a shader that compiles but shows nothing, a demo that fails `--c
 
 - Only the first frame error is kept; `frameErrorCount()` counts the others.
 - `setBreakOnError(true)` asserts on the first recorded error, so that the debugger stops on the faulty line (no effect when assertions are disabled in your build).
-- The gallery shows the message over the demo. A demo that calls `compages::gpu::reportError(...)` fails `--check`: this is how `30_HeadlessWorld` reports that the player did not move.
+- The gallery shows the message over the demo. A demo that calls `compages::gpu::reportError(...)` fails `--check`: this is how `07a_HeadlessWorld` reports that the player did not move.
 
 ---
 
@@ -34,7 +34,7 @@ In the gallery they also appear in the console panel, filtered by level. A drive
 ## 🔍 3. apitrace: every OpenGL call
 
 ```sh
-apitrace trace --api gl ./build/linux-gcc-debug/bin/Compages-examples 04_DepthAndTransforms
+apitrace trace --api gl ./build/linux-gcc-debug/bin/Compages-examples 03c_DepthAndTransforms
 qapitrace Compages-examples.trace
 ```
 

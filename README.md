@@ -95,9 +95,9 @@ compages::gpu::clear({ 0.1f, 0.1f, 0.15f });
 triangle.draw();
 ```
 
-<img src="doc/images/01b_Triangle.png" alt="Triangle" width="360"> <img src="doc/images/13_Galaxy.png" alt="Galaxy" width="360">
+<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png" alt="Triangle" width="360"> <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png" alt="Galaxy" width="360">
 
-The same door leads to simulations: in `13_Galaxy`, 8000 stars attract each other in a compute shader, and the drawable reads the buffer the computation just wrote. This screenshot on the right shows initial step of the galaxy simulation.
+The same door leads to simulations: in `05f_Galaxy`, 8000 stars attract each other in a compute shader, and the drawable reads the buffer the computation just wrote. This screenshot on the right shows initial step of the galaxy simulation.
 
 ### 🟦 World — things that move, without any screen
 
@@ -131,7 +131,7 @@ cube.rotate(frame.elapsed, { 0.4f, 1.0f, 0.0f });
 scene.draw(frame);
 ```
 
-<img src="doc/images/50_ThreeJsLike.png" alt="Cube" width="360"> <img src="doc/images/53_DoomLike.png" alt="Doom-like" width="360">
+<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png" alt="Cube" width="360"> <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png" alt="Doom-like" width="360">
 
 `scene.loadFile(...)` reads some glTF files used for games but also files such as STL and URDF used in robotic (with their joints). The gallery goes up to a small Doom-like game or basic robot forward kinematic.
 

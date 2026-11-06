@@ -34,8 +34,8 @@ namespace examples
 //!
 //! \code
 //! Console console;
-//! console.add(compages::gpu::LogLevel::Warning, "slow path taken", "01b_Triangle");
-//! console.add(compages::gpu::LogLevel::Warning, "slow path taken", "01b_Triangle");
+//! console.add(compages::gpu::LogLevel::Warning, "slow path taken", "01c_Triangle");
+//! console.add(compages::gpu::LogLevel::Warning, "slow path taken", "01c_Triangle");
 //! console.messages().front().count;   // 2
 //! \endcode
 // ****************************************************************************
