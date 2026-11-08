@@ -104,7 +104,7 @@ Check that every demo builds, draws and frees its GPU objects:
 ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
-`--check` runs each demo for a few frames, closes it, and fails if a GPU handle is left.
+`--check` runs each demo for a few frames, closes it, and fails if a GPU handle is left. Add the name of a demo to check only that one: `--check 06a_FirstScene`.
 
 ---
 

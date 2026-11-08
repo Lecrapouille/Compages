@@ -41,7 +41,7 @@ external/           external.mk declares the third parties, versions.lock their 
 ```bash
 make                                      # lib + gallery (fetches the third parties)
 make check                                # unit tests
-./build/linux-gcc-debug/bin/Compages-examples [name]          # gallery; --check = run all, fail on GPU leaks/errors
+./build/linux-gcc-debug/bin/Compages-examples [name]          # gallery; --check [name] = run all (or one), fail on GPU leaks/errors
 xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
     MESA_GLSL_VERSION_OVERRIDE=450 ./build/linux-gcc-debug/bin/Compages-examples --check   # no screen
 ```

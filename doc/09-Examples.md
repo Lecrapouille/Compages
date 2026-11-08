@@ -31,6 +31,7 @@ The viewport draws the demo into a texture: the panels never hide part of the im
 | Option | Effect |
 |--------|--------|
 | `--check` | runs each demo for a few frames; fails if a GPU handle is left |
+| `--check NAME` | the same for one demo only, for example `--check 10d_EarthMoon` |
 | `--cycle` | goes through the demos by itself (for a second screen) |
 | `--shots DIR` | saves one PNG per demo; use with `--check` or `--cycle` |
 | `--shots-with-panels DIR` | the same, with the panels in the picture |

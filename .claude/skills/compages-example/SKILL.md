@@ -30,7 +30,8 @@ folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
    line to `COMPAGES_EXAMPLE_MANIFEST` in `examples/Common/ExampleManifest.hpp`
    (the manifest is the list of demos; budget 0 = none).
 3. `make && ./build/linux-gcc-debug/bin/Compages-examples NNx_Name`, then
-   `./build/linux-gcc-debug/bin/Compages-examples --check` (fails on frame errors and leftover GPU handles).
+   `./build/linux-gcc-debug/bin/Compages-examples --check NNx_Name` (that demo only; fails on frame
+   errors and leftover GPU handles), then `--check` alone before a commit (every demo).
 4. Document it in doc/09-Examples.md (and the layer chapter if it introduces a call).
 
 ## Rules
@@ -42,6 +43,6 @@ folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
 - Only `examples/Common/Window.cpp` talks to GLFW; demos never create windows.
 - Assets come from `external/Compages-data/` (`Common/DataPath.hpp`).
 - Screenshots: `./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples`
-  (`--shots-with-panels` keeps the panels), in a git clone of Compages-data
+  (`--shots-with-panels` keeps the panels; add a name for one demo only), in a git clone of Compages-data
   (`git clone https://github.com/Lecrapouille/Compages-data.git external/Compages-data`).
   The docs link the PNGs there by raw.githubusercontent URL; there is no doc/images/.

@@ -7,6 +7,7 @@ make -j"$(nproc)"
 ./build/linux-gcc-debug/bin/Compages-examples
 ./build/linux-gcc-debug/bin/Compages-examples 06a_FirstScene
 ./build/linux-gcc-debug/bin/Compages-examples --check
+./build/linux-gcc-debug/bin/Compages-examples --check 06a_FirstScene   # one demo only
 ```
 
 Read the folders in order: each folder answers one question, and each demo adds one idea to the previous one (`05b` is chapter 5, step b).

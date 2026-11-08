@@ -18,10 +18,11 @@
 //! \code
 //! ./build/Compages-examples 03c_DepthAndTransforms
 //! ./build/Compages-examples --check
+//! ./build/Compages-examples --check 10d_EarthMoon
 //! \endcode
 //!
-//! With --check, every example is built, drawn for a few frames and closed, and
-//! the program fails if any of them could not run or left anything behind on
+//! With --check, every example (or only the one named) is built, drawn for a
+//! few frames and closed, and the program fails if any of them could not run or left anything behind on
 //! the device. That is a leak test as much as a smoke test, and it is the
 //! reason all of the examples are one program rather than seventeen.
 //!
@@ -69,10 +70,11 @@ int main(int argc, char* argv[])
         {
             std::cout
                 << "Usage: " << argv[0] << " [options] [name of an example]\n"
-                << "  --check       draw every example for a few frames, then "
-                   "report anything\n"
-                << "                that failed or was left on the device, and "
-                   "exit\n"
+                << "  --check       draw every example (or only the one named) "
+                   "for a few\n"
+                << "                frames, then report anything that failed or "
+                   "was left\n"
+                << "                on the device, and exit\n"
                 << "  --cycle       move on to the next example every few "
                    "seconds\n"
                 << "  --no-overlay  start with the panels hidden (F1 shows "

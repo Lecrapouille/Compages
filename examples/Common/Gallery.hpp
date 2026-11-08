@@ -80,7 +80,7 @@ public:
         //!
         //! With frames set, this turns the gallery into a test: every example
         //! is built, drawn, and closed, and anything it failed to give back is
-        //! reported.
+        //! reported. With \c start set, only that example has its turn.
         bool visit_all = false;
 
         //! \brief Show the panels around the example.

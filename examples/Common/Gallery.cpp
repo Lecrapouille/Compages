@@ -674,6 +674,11 @@ compages::Status Gallery::run(Options const& p_options)
                 break;
             }
         }
+        if (!found && p_options.visit_all)
+        {
+            // A check of an example that does not exist must not pass.
+            return compages::failure("No example is called " + p_options.start);
+        }
         if (!found)
         {
             std::cerr << "No example is called " << p_options.start
@@ -682,8 +687,9 @@ compages::Status Gallery::run(Options const& p_options)
     }
     show(start);
 
-    //! How many examples are left to visit when the gallery walks the list.
-    std::size_t remaining = m_entries.size();
+    //! How many examples are left to visit when the gallery walks the list:
+    //! only the one named, or all of them.
+    std::size_t remaining = p_options.start.empty() ? m_entries.size() : 1u;
 
     while (!m_window.closing())
     {
