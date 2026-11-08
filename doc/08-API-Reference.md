@@ -104,6 +104,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | sky | `scene.skybox({ "+x", "-x", "+y", "-y", "+z", "-z" })` |
 | picking | `scene.pick({ x, y })` |
 | debug lines | `scene.debug()` |
+| text on the picture | `scene.font(file)`, `entity.set(Label{ .text, .color, .pixels, .hide_closer_than })`, `camera.set(Caption{ .text, .color, .pixels, .at })` |
 | live texture | `CanvasTexture`: `create`, `setMapping`, `bind`, `paintWorld`, `sync`, `applyLook` |
 
 ---
@@ -115,6 +116,13 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | `compages::Frame` | `elapsed`, `total`, `width`, `height` |
 | `compages::world::ViewFrame` | a `Frame` plus keyboard and mouse |
 
+| Maths (`Core/`) | Call |
+|-----------------|------|
+| position in metres, in double | `compages::Vector3m` (`Vector3g::UNIT_Y * 6371.0_km`); `vector::norm`, `distance`, `dot` keep the units, `normalize` gives a `Vector3g` |
+| into the World (float metres) | `compages::toMetres(1.0_au)`, `toMetres(vector3m)`; not `.to<float>()`, which keeps the unit of the type |
+| turn a direction onto another | `Quatf::fromTo(from, to)`, `upTo(direction)` (+Y onto it), `upFrom(direction)` (it onto +Y) |
+| double rotation to float | `compages::Quatf(quatd)` |
+
 ---
 
 ## 📷 7. Gallery
@@ -123,6 +131,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 ./build/linux-gcc-debug/bin/Compages-examples
 ./build/linux-gcc-debug/bin/Compages-examples 06a_FirstScene
 ./build/linux-gcc-debug/bin/Compages-examples --check
+./build/linux-gcc-debug/bin/Compages-examples --check 06a_FirstScene
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 

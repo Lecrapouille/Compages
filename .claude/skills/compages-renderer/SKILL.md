@@ -31,10 +31,17 @@ scene.draw(frame);                       // = update(frame) + render()
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),
   `scene.showBounds(id, bool)`; components in `Renderer/Components/Helpers.hpp`, drawn as
   DebugDraw lines at each render.
+- Text (`Renderer/Components/Text.hpp`): `scene.font(ttf)` once, then `entity.set(Label{ .text,
+  .color, .pixels, .hide_closer_than })` (name next to an entity) and `camera.set(Caption{ .text,
+  .color, .pixels, .at })` (fixed place of that camera's picture, top-left pixels, '\n' lines;
+  update `.text` each frame). SDF atlas baked by stb_truetype (`src/Renderer/Render/TextDraw.*`,
+  Latin-1), one draw after the debug lines; caption first, a label covering earlier text is
+  skipped; labels not occluded by geometry. Font in Compages-data `fonts/`. Prefer it to the
+  gallery `hud()` (ImGui, gallery only).
 - The Scene pass uses reversed depth (`PassDesc::reversed_depth`, `CameraFrame::reversed_projection`,
   glClipControl 0..1, compares mirrored in the backend). Drawing over a Scene picture with its depth:
   open a pass with `reversed_depth = true`, use `lastCamera().reversed_projection` (10b_DoomLike particles).
-  Planet scales: floating origin (double sim outside, write offsets from the rocket), `10d_EarthMoon`.
+  Planet scales: floating origin (double sim outside in `Vector3m`, write `toMetres(p - origin)`), `10d_EarthMoon`.
 - `scene.renderToFile("out.png", w, h)` (after update); `Compages-headless` makes an EGL
   context with no surface; `gpu::Texture::saveFile(path)` writes a 2D R8/RGB8/RGBA8 PNG.
 - Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF

@@ -65,6 +65,26 @@ scene.showBounds(cube.id(), true);    // the box around the mesh of the cube
 
 `06b_Transforms` uses the three: the axes show the turn of the box, the bounds the size of the cone. `06c_Hierarchy` shows the pivot of a car, `06i_CameraPick` the bounds of the selection, and `08d_RobotArm` the frame of every joint of a robot (Try it hides them).
 
+### Text on the picture: labels and captions
+
+Two components write on the picture (`Renderer/Components/Text.hpp`). A `Label` writes a name next to its entity: a dot on the point, the text on its right. A `Caption`, set on a camera, writes at a fixed place of what that camera sees (each view of a split screen has its own); change its `text` each frame for numbers that move. The letters keep their size in pixels at any distance. Load a font once (TrueType or OpenType; a wrong file is reported by `prepare()`), then set the components:
+
+```cpp
+scene.font(dataPath("fonts/DejaVuSans.ttf"));
+camera.set(compages::renderer::Caption{ .text = "Altitude 0 km",  // '\n' for more lines
+                                        .color = { 1.0f, 0.96f, 0.88f },
+                                        .pixels = 16.0f,
+                                        .at = { 12.0f, 10.0f } });   // pixels from the top left
+mars.set(compages::renderer::Label{ .text = "Mars",              // UTF-8, Latin-1 letters
+                                    .color = { 1.0f, 0.95f, 0.85f },  // sRGB
+                                    .pixels = 15.0f,                  // height of the letters
+                                    .hide_closer_than = 0.0f });      // metres; 0 = always
+```
+
+The letters are drawn the way of Glumpy: the font is baked once into a picture of **distance fields** (stb_truetype), where each pixel says how far it is from the edge of the letter. The shader cuts at the edge with a one-pixel smooth step, so a letter is sharp at any size, and a second cut a little outside gives a dark halo, readable on a bright planet. All the labels are drawn in one call, after everything else.
+
+Two rules: a label that would cover text already written on the picture (a caption, another label) is not written, so the names stay readable where things crowd; and a label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius.
+
 Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 
 ---
@@ -225,11 +245,13 @@ Three things let a metre and 384 000 km live in one picture (`10d_EarthMoon`):
 - **Floating origin.** A `float` has 24 bits: near the Moon, 3.8 × 10⁸ m from the origin, two neighbouring floats are 32 m apart, and the rocket would shake by 32 m. Changing the unit does not help (in km, the step is still 32 m). Keep the simulation in `double`, outside Compages (as in `07e_ExternalPhysics`), and each frame write into the `World` the positions **relative to the rocket**, which stay small. Far things get the large numbers, where 32 m is less than a pixel.
 
 ```cpp
-const Point origin = rocket;                 // double, from the simulation
-m_earth.position(toFloat(EARTH - origin));
-m_moon.position(toFloat(MOON - origin));
+const compages::Vector3m origin = rocket;              // metres in double, from the simulation
+m_earth.position(compages::toMetres(EARTH - origin));  // float metres for the World
+m_moon.position(compages::toMetres(MOON - origin));
 m_rocket.position(0.0f, 0.0f, 0.0f);
 ```
+
+`compages::Vector3m` keeps the unit in the type: `Vector3g::UNIT_Y * 6371.0_km` is a position, `vector::distance` gives a `meter_t`, `vector::normalize` a plain `Vector3g`. `compages::toMetres` turns lengths into the floats of the World; prefer it to `.to<float>()`, which gives the number in the unit of the type (`(1.0_au).to<float>()` is 1).
 
 A sphere wears an **equirectangular** picture (a planet, a 360° sky) the way a globe does: the top row on the north pole (+Y), east to the right seen from outside.
 

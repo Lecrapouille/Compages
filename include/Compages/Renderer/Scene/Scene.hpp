@@ -13,6 +13,7 @@
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
+#include "Compages/Renderer/Components/Text.hpp"
 #include "Compages/Renderer/Scene/Environment.hpp"
 #include "Compages/Renderer/Render/Raycast.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
@@ -279,6 +280,22 @@ public:
     //! -Y, +Z and -Z.
     // ------------------------------------------------------------------------
     Scene& skybox(std::array<std::filesystem::path, 6u> const& p_faces);
+
+    // ------------------------------------------------------------------------
+    //! \brief The font of the Label and Caption components (text on the
+    //! picture, Renderer/Components/Text.hpp): its letters are baked once
+    //! into a picture of distance fields, sharp at any size. A failure (a
+    //! missing file, not a font) is returned by prepare().
+    //! \code
+    //! scene.font(dataPath("fonts/DejaVuSans.ttf"));
+    //! scene.sphere("Mars", look).set(compages::renderer::Label{
+    //!     .text = "Mars", .color = { 1.0f, 0.95f, 0.85f }, .pixels = 16.0f,
+    //!     .hide_closer_than = 0.0f });
+    //! \endcode
+    //! \param[in] p_file A TrueType or OpenType font file.
+    //! \return This Scene, to chain.
+    // ------------------------------------------------------------------------
+    Scene& font(std::filesystem::path const& p_file);
 
     [[nodiscard]] RenderSettings& renderSettings();
     [[nodiscard]] RenderSettings const& renderSettings() const;

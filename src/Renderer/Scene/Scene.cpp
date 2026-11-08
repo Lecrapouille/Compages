@@ -7,6 +7,7 @@
 
 #include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"
+#include "../Render/TextDraw.hpp"
 #include "../Render/Skybox.hpp"
 #include "Compages/World/Entity.hpp"
 
@@ -19,6 +20,7 @@
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
 #include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/Helpers.hpp"
+#include "Compages/Renderer/Components/Text.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Import/PrefabInstantiate.hpp"
 #include "Compages/Renderer/Render/Picker.hpp"
@@ -111,6 +113,31 @@ void queueHelpers(compages::world::World& p_world,
         });
 }
 
+// ----------------------------------------------------------------------------
+//! \brief Lay out the Caption of the camera, then the Label components,
+//! where their entities are now.
+// ----------------------------------------------------------------------------
+void queueText(compages::world::World& p_world,
+               compages::world::EntityId p_camera_id,
+               CameraFrame const& p_camera,
+               TextDraw& p_text)
+{
+    if (Caption const* caption = p_world.tryGet<Caption>(p_camera_id))
+    {
+        p_text.add(*caption, p_camera);
+    }
+    p_world.each<Label>(
+        [&](compages::world::EntityId p_entity, Label const& p_label)
+        {
+            if (p_world.enabledInHierarchy(p_entity))
+            {
+                p_text.add(p_label,
+                             compages::translation(p_world.worldMatrix(p_entity)),
+                             p_camera);
+            }
+        });
+}
+
 } // namespace
 
 // ****************************************************************************
@@ -128,6 +155,7 @@ struct Scene::Impl
     Looks looks;
     Renderer renderer;
     DebugDraw debug;
+    TextDraw text;
     compages::world::EntityId active_camera{};
     RenderSettings settings{};
     Environment environment{};
@@ -479,6 +507,12 @@ Scene& Scene::skybox(std::array<std::filesystem::path, 6u> const& p_faces)
     return *this;
 }
 
+Scene& Scene::font(std::filesystem::path const& p_file)
+{
+    compages::gpu::check(m_impl->text.loadFont(p_file));
+    return *this;
+}
+
 Status Scene::prepare()
 {
     m_world.each<compages::renderer::MeshRenderer>(
@@ -609,6 +643,9 @@ void Scene::render(compages::world::EntityId p_camera)
     queueHelpers(m_world, *m_assets, m_impl->debug);
     compages::gpu::check(m_impl->debug.flush(snapshot.value().camera));
     m_impl->debug.clear();
+    // Last, over everything: the caption of the camera and the names.
+    queueText(m_world, p_camera, snapshot.value().camera, m_impl->text);
+    compages::gpu::check(m_impl->text.flush(snapshot.value().camera));
 }
 
 void Scene::render()
