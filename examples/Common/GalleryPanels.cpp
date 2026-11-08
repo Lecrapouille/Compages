@@ -413,6 +413,21 @@ void Gallery::drawViewport()
     }
     drawHud(at.x, at.y, size.x, size.y);
     ImGui::End();
+    drawOverlay(at.x, at.y, size.x, size.y);
+}
+
+// ----------------------------------------------------------------------------
+void Gallery::drawOverlay(float p_x, float p_y, float p_width, float p_height)
+{
+    if ((m_current == nullptr) || (m_current->progress().done < 1.0f))
+    {
+        return;
+    }
+    // The same rule as the keys sent to draw() (Gallery::makeFrame).
+    ImGuiIO const& io = ImGui::GetIO();
+    const bool keys = !io.WantTextInput &&
+                      (!m_show_overlay || m_view_focused || m_view_hovered || !io.WantCaptureKeyboard);
+    m_current->overlay(Example::Overlay{ .x = p_x, .y = p_y, .width = p_width, .height = p_height, .keys = keys });
 }
 
 // ----------------------------------------------------------------------------

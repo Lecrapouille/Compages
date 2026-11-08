@@ -219,6 +219,9 @@ private:
     //! covers on the screen, in points.
     void drawHud(float p_x, float p_y, float p_width, float p_height);
 
+    //! \brief The windows of the example over the picture (Example::overlay).
+    void drawOverlay(float p_x, float p_y, float p_width, float p_height);
+
     //! \brief A file of examples/ as the Source panel shows it.
     struct SourceFile
     {

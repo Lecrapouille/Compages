@@ -734,6 +734,7 @@ compages::Status Gallery::run(Options const& p_options)
             {
                 ImGuiIO const& io = ImGui::GetIO();
                 drawHud(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
+                drawOverlay(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
             }
             runExample();
 

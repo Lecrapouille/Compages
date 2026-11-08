@@ -7,44 +7,51 @@
 
 #pragma once
 
-#include "10_Complete/10e_ArchipelagoLand.hpp"
+#include "10_Complete/Archipelago/Browser.hpp"
+#include "10_Complete/Archipelago/FineTiles.hpp"
+#include "10_Complete/Archipelago/Highlight.hpp"
+#include "10_Complete/Archipelago/Job.hpp"
+#include "10_Complete/Archipelago/Knowledge.hpp"
+#include "10_Complete/Archipelago/Labels.hpp"
+#include "10_Complete/Archipelago/Land.hpp"
+#include "10_Complete/Archipelago/Panels.hpp"
+#include "10_Complete/Archipelago/Sea.hpp"
+#include "10_Complete/Archipelago/Wildlife.hpp"
 #include "Common/Example.hpp"
 
 #include "Compages/Core/Vector.hpp"
-#include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 
-#include <array>
-#include <future>
 #include <memory>
 #include <mutex>
-#include <vector>
+#include <string>
 
 namespace examples
 {
 
 // ****************************************************************************
 //! \brief A map of knowledge, after Chréage: islands of themes made of
-//! Voronoi cells, a main river per island, a tributary per region, a link
-//! per cell along it; rivers that dig their valleys; a living sea.
+//! Voronoi cells around the graph of their links, a main river per island,
+//! a tributary per region, a link per cell along it; rivers that dig their
+//! valleys; a living sea.
 //!
-//! The land is made on the CPU, in a thread, from a seed
-//! (10e_ArchipelagoLand.cpp); the gallery shows a progress bar meanwhile.
-//! This file shows it:
-//! - level of detail: the map is cut in 8 x 8 tiles. From afar, one mesh of
-//!   31 m and one picture of 16 m a pixel; near the camera, tiles of 8 m and
-//!   2 m a pixel are made in the background and take the place of the
-//!   coarse ones, with skirts that hide the cracks between the two;
-//! - the ground: near the camera, real pictures of grass, sand and rock
-//!   (tiled every few metres) give the map its grain;
-//! - the sea: near the camera, a surface whose corners move with Gerstner
-//!   waves (a vertex shader); farther, waves in the normals only; the alpha
-//!   of the picture of the map says where the water is and how deep;
-//! - boats, birds and fish move by a few lines each;
-//! - the camera is a Rig; a click flies to a part with
-//!   RigController::flyTo(); a Tooltip lists the links of a region.
+//! The contents and their graph come from IslandedBrowser (bookmarks of
+//! Firefox, Archipelago/Knowledge.hpp). The land is made on the CPU, in a
+//! thread, around this graph and from a seed (Archipelago/Land.hpp); the
+//! gallery shows a progress bar meanwhile. The folder Archipelago/ holds the
+//! parts; this class puts them together:
+//! - Sea: the coarse tiles of the map, the ocean, the surface of the sea
+//!   whose corners move with Gerstner waves;
+//! - FineTiles: near the camera, finer tiles made in the background;
+//! - Wildlife: boats, birds and fish, a few lines each;
+//! - Labels, Highlight: the names, the pins, the region under the mouse;
+//! - Panels: over the picture, the interface of IslandedBrowser (a tooltip,
+//!   the details of the choice, a search, a status bar, a help on H);
+//! - Browser: the links open in the web browser.
+//! The camera is a Rig; a double click flies to a region with
+//! RigController::flyTo.
 // ****************************************************************************
-class Archipelago: public Example
+class Archipelago: public Example, private archipelago::Navigator
 {
 public:
 
@@ -59,6 +66,7 @@ public:
     [[nodiscard]] compages::Status setUp() override;
     void draw(compages::world::ViewFrame const& p_frame) override;
     void controls() override;
+    void overlay(Overlay const& p_view) override;
     [[nodiscard]] Progress progress() const override;
 
 private:
@@ -78,167 +86,83 @@ private:
         std::string step = "Starting";
     };
 
-    //! \brief A fine tile near the camera: its mesh and picture, made in the
-    //! background, then sent to the GPU.
-    struct Detail
+    //! \brief How the land is made (Try it panel).
+    struct Generation
     {
-        //! \brief The tile it shows, -1 for none.
-        int tile = -1;
-        compages::world::Entity entity;
-        compages::renderer::TextureAssetId texture{};
-        std::future<archipelago::Patch> job;
-        bool ready = false;
-        //! \brief The frame it was last wanted at: the oldest is reused.
-        std::uint64_t used = 0u;
+        int seed = 7;
+        int erosion_steps = 60;
     };
 
-    //! \brief A boat sails round an island, in water deep enough.
-    struct Boat
+    //! \brief The mouse: the place under it, the place chosen by a click,
+    //! where the left button went down (a click if it comes up near), the
+    //! last click (a second one on the same place soon after is a double
+    //! click), the middle button.
+    struct Pointer
     {
-        compages::world::Entity root;
-        compages::Vector2f centre;
-        //! \brief The distance to the centre of the loop, per 1/64 turn.
-        std::vector<float> radii;
-        float angle;
-        //! \brief Metres a second; negative goes clockwise.
-        float speed;
+        archipelago::Place hovered;
+        archipelago::Place chosen;
+        compages::Vector2f press{ 0.0f, 0.0f };
+        bool was_down = false;
+        archipelago::Place clicked;
+        float clicked_at = -10.0f;
+        bool middle_was_down = false;
     };
 
-    //! \brief A bird circles over an island, flapping, then gliding.
-    struct Bird
-    {
-        compages::world::Entity root;
-        compages::world::Entity left;
-        compages::world::Entity right;
-        compages::Vector3f centre;
-        float radius;
-        float angle;
-        float speed;
-        float phase;
-    };
+    //! \brief Read the layout of IslandedBrowser, or take the pages built in.
+    void loadKnowledge();
 
-    //! \brief A fish swims in circles in a lagoon; sometimes it jumps.
-    struct Fish
-    {
-        compages::world::Entity shadow;
-        compages::world::Entity jumper;
-        compages::Vector2f centre;
-        float radius;
-        float angle;
-        float speed;
-        //! \brief Seconds before the next jump, and into the jump (< 0: none).
-        float wait;
-        float jump;
-    };
+    //! \brief Make the land and its coarse patch, telling how far it goes.
+    [[nodiscard]] static Loaded makeMap(archipelago::Recipe const& p_recipe,
+                                        Report& p_report);
 
-    //! \brief Start making the land from m_seed in a thread.
+    //! \brief Start making the land in a thread.
     void startLoading();
 
-    //! \brief The land is made: show it (the coarse tiles, the names, the
-    //! animals), on the first load or after Generate.
+    //! \brief The land is made: show it, on the first load or after Generate.
     [[nodiscard]] compages::Status finishLoading(Loaded p_loaded);
 
-    //! \brief The PBR shader with the main() of the map (ground, sea,
-    //! rivers), the pictures of the ground, and the surface of the sea.
-    [[nodiscard]] compages::Status makeSea();
+    //! \brief The region and the link under a pixel of the picture.
+    [[nodiscard]] archipelago::Place
+    placeUnder(compages::Vector2f p_mouse) const;
 
-    //! \brief Move the surface of the sea under the camera, sized to what it
-    //! sees, or hide it from afar.
-    void placeSurface();
+    //! \brief As IslandedBrowser: a click selects, a double click opens a
+    //! link or flies to a region, a middle or Ctrl click opens.
+    void handleMouse(compages::world::Input const& p_input);
 
-    //! \brief Drape the cell under the mouse: a veil and a band along its
-    //! edges, on the ground.
-    void outlineCell(int p_cell);
+    //! \brief A click on the picture, released where it was pressed.
+    void click(archipelago::Place p_place, bool p_open);
 
-    //! \brief The height of the swell at a point of the sea, as the vertex
-    //! shader moves the surface (without its sideways motion).
-    [[nodiscard]] float swellAt(float p_x, float p_z) const;
-
-    //! \brief Dress a drawn entity with the shader of the map.
-    [[nodiscard]] compages::Status wearSea(compages::world::Entity p_entity);
-
-    //! \brief Choose the fine tiles near the camera, start the missing ones,
-    //! show those that are ready instead of the coarse ones.
-    void updateDetails();
-
-    //! \brief Wait for the fine tiles being made, and hide them all.
-    void dropDetails();
-
-    //! \brief The ground of the coarse patch at a point: fast, for the mouse
-    //! and the animals.
-    [[nodiscard]] float baseHeight(float p_x, float p_z) const;
-
-    //! \brief Put the boats, the birds and the fish where the land allows.
-    void placeAnimals();
-
-    //! \brief Move them by \p p_dt seconds of their time.
-    void animate(float p_dt);
-
-    //! \brief The region and the part under a pixel of the picture.
-    [[nodiscard]] archipelago::Place placeUnder(compages::Vector2f p_mouse) const;
-
-    //! \brief Fly to a part of a region (or to the whole map), and choose it.
-    void flyTo(int p_region, int p_part);
-
-    //! \brief The names readable from where the camera is, and the tooltips
-    //! of the region under the mouse and of the chosen one.
-    void updateText();
+    // Navigator: what the panels ask.
+    void select(archipelago::Place p_place) override;
+    void zoomOn(archipelago::Place p_place) override;
+    void zoomOnIsland(std::size_t p_island) override;
+    void home() override;
+    void open(archipelago::Place p_place) override;
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
     compages::world::Entity m_camera;
-    compages::world::Entity m_ocean;
-    std::vector<compages::world::Entity> m_tiles;
-    compages::renderer::TextureAssetId m_picture{};
-    compages::renderer::MaterialId m_sea{};
-    compages::renderer::MaterialId m_surface_material{};
-    compages::world::Entity m_surface;
-    //! \brief Where the surface of the sea is, and its half width (negative:
-    //! hidden).
-    compages::Vector2f m_surface_centre{ 0.0f, 0.0f };
-    float m_surface_radius = -1.0f;
-    //! \brief The pictures of the ground: grass, sand, rock.
-    std::array<compages::gpu::Texture, 3> m_grounds;
-    //! \brief The veil and the band of the cell under the mouse, the cell
-    //! they show and the width of the band.
-    compages::world::Entity m_cell_veil;
-    compages::world::Entity m_cell_band;
-    int m_outlined = -1;
-    float m_band_width = 0.0f;
+    archipelago::Sea m_sea;
+    archipelago::FineTiles m_fine;
+    archipelago::Wildlife m_wildlife;
+    archipelago::Highlight m_highlight;
+    archipelago::Labels m_labels;
+    archipelago::Browser m_browser;
+    archipelago::Panels m_panels;
 
-    std::future<Loaded> m_loading;
+    archipelago::Job<Loaded> m_loading;
     std::shared_ptr<Report> m_report;
+    Loaded m_map;
     bool m_ready = false;
-    archipelago::Land m_land;
-    archipelago::Patch m_base;
-    std::vector<Detail> m_details;
-    std::uint64_t m_clock = 0u;
+    //! \brief What the map shows, and why it is not the layout file.
+    archipelago::Knowledge m_knowledge;
+    std::string m_message;
 
-    std::vector<compages::world::Entity> m_island_names;
-    std::vector<compages::world::Entity> m_region_names;
-    //! \brief The pins of the links: a stick and a head on the cell of each
-    //! link, with its name.
-    std::vector<std::vector<compages::world::Entity>> m_part_names;
-    std::vector<Boat> m_boats;
-    std::vector<Bird> m_birds;
-    std::vector<Fish> m_fish;
-
-    int m_seed = 7;
-    int m_erosion_steps = 60;
-    archipelago::Place m_hovered;
-    archipelago::Place m_chosen;
-    bool m_borders = true;
-    bool m_names = true;
-    bool m_animals = true;
-    bool m_details_on = true;
-    //! \brief How much faster the animals live than the clock: a boat at 7
-    //! m/s takes an hour round an island.
-    float m_time_scale = 8.0f;
+    Generation m_generation;
+    archipelago::View m_view;
+    Pointer m_pointer;
     //! \brief Seconds since the start, for the waves.
     float m_time = 0.0f;
-    //! \brief Where the left button went down: a click if it comes up near.
-    compages::Vector2f m_press{ 0.0f, 0.0f };
-    bool m_was_down = false;
 };
 
 } // namespace examples

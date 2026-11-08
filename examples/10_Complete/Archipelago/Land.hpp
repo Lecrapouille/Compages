@@ -9,8 +9,9 @@
 
 // ****************************************************************************
 //! \file
-//! \brief The land of 10e_Archipelago, made on the CPU from a seed, in
-//! metres. Nothing here touches the GPU, so it can run in a thread.
+//! \brief The land of 10e_Archipelago, made on the CPU from a graph of
+//! contents and a seed, in metres. Nothing here touches the GPU, so it can
+//! run in a thread.
 //!
 //! The method is the one Chréage asked for (I. Aberkane, "Mind Ergonomy for
 //! the Knowledge Economy", 2016, chapter 11), after A. Patel's "Polygonal
@@ -18,55 +19,53 @@
 //! each cell is land or sea; the relief of the cells grows by uplift and
 //! river erosion on the graph of the cells (Cordonnier et al. 2016).
 //!
+//! The land is built around the graph of the contents (Placement.hpp): each
+//! island gets a disc as large as its number of links, where the layout of
+//! the graph put it; the land is the union of round shapes on its links and
+//! along the edges of the graph; each land cell belongs to the region of the
+//! nearest link. Related links are so on the same island, side by side.
+//!
 //! The thesis maps the contents "as loci along a strand": a river is a
 //! strand of places, each place a strand of smaller places, down to the
 //! last ones, which hold the contents. So here:
 //! - an island (a theme) is structured by its main river, the largest basin
 //!   the erosion made;
-//! - a region (a topic) is a tributary of that river, with the cells around
-//!   it, in the order of the river from its mouth to its source;
-//! - a link is a cell on the bank of the tributary.
+//! - a region (a topic) is a basin: the uplift is stronger on the borders
+//!   between regions, so they become ridges; its tributary runs down from
+//!   its highest cell to the main river;
+//! - a link is a cell along the tributary, in the order of the layout.
 //! Only these rivers are drawn; they dig their bed and their valley in the
 //! smooth ground between the cells.
 // ****************************************************************************
+
+#include "10_Complete/Archipelago/Map.hpp"
+#include "10_Complete/Archipelago/Rivers.hpp"
 
 #include "Compages/Core/Vector.hpp"
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 namespace examples::archipelago
 {
 
-//! \brief The side of the map, in metres, centred on the origin, X east, -Z
-//! north.
-inline constexpr float MAP = 16000.0f;
-//! \brief Voronoi cells along a side: 96 x 96 cells of 167 m.
-inline constexpr int CELLS = 96;
-inline constexpr float CELL_SIZE = MAP / float(CELLS);
-//! \brief The highest ground and the deepest sea of the map.
-inline constexpr float PEAK = 520.0f;
-inline constexpr float SEABED = 90.0f;
-//! \brief The alpha of the picture says what the shader of the map draws:
-//! the sea from 0 (the shore) to SEA_ALPHA (SEABED deep and more), a river
-//! at RIVER_ALPHA, the land at 1.
-inline constexpr float SEA_ALPHA = 0.9f;
-inline constexpr float RIVER_ALPHA = 0.94f;
-
-//! \brief What a map is made from: the islands, and how many regions and
-//! parts each one has.
+//! \brief What a map is made from: the graph of the contents, as a force
+//! directed layout placed it (IslandedBrowser, see Knowledge.hpp). Its unit
+//! does not matter: the islands are fitted to the map.
 struct Recipe
 {
     std::uint32_t seed;
-    //! \brief Where each island is and how large, in metres, before the
-    //! seed moves it a little.
-    std::vector<compages::Vector2f> centres;
-    std::vector<float> radii;
-    //! \brief Per region: its island, and how many parts it is cut into.
-    std::vector<std::size_t> region_islands;
-    std::vector<std::size_t> region_parts;
+    //! \brief The node of each island in the layout.
+    std::vector<compages::Vector2f> islands;
+    //! \brief A region: its island, its node, the nodes of its links.
+    struct Group
+    {
+        std::size_t island;
+        compages::Vector2f node;
+        std::vector<compages::Vector2f> links;
+    };
+    std::vector<Group> regions;
     //! \brief Steps of the erosion (40 000 years each): older land, deeper
     //! valleys.
     int erosion_steps;
@@ -93,22 +92,14 @@ struct Region
     std::vector<Part> parts;
 };
 
-//! \brief An island, as the seed made it.
+//! \brief An island, as the graph placed it: the disc it was given, which
+//! its coast follows loosely.
 struct Island
 {
     compages::Vector2f centre;
     float radius;
     //! \brief Its highest point.
     compages::Vector3f peak;
-};
-
-//! \brief A river from its source to the sea or to the river it joins: a
-//! smooth spline through the cells it flows through, then its meanders.
-struct River
-{
-    std::vector<compages::Vector2f> points;
-    //! \brief Its width at each point, in metres.
-    std::vector<float> widths;
 };
 
 //! \brief Where a point is: its cell, its region, its link (-1 for none).
@@ -141,10 +132,11 @@ struct Patch
     {
         return heights[std::size_t(((p_j + 1) * (cells + 3)) + p_i + 1)];
     }
-};
 
-//! \brief How far a long job has gone, from 0 to 1, and what it does.
-using Progress = std::function<void(float, char const*)>;
+    //! \brief The height between the corners (bilinear), as its mesh shows
+    //! it; clamped to the patch and its ring.
+    [[nodiscard]] float heightAt(float p_x, float p_z) const;
+};
 
 // ****************************************************************************
 //! \brief A whole map: the cells, the regions, the rivers.
@@ -165,18 +157,8 @@ struct Land
     //! region: the only rivers of the map.
     std::vector<River> rivers;
 
-    //! \brief One segment of a river, for the rivers near a point.
-    struct Segment
-    {
-        compages::Vector2f a;
-        compages::Vector2f b;
-        float width_a;
-        float width_b;
-    };
-    std::vector<Segment> segments;
-    //! \brief The segments whose valley reaches each square of a 64 x 64
-    //! grid over the map.
-    std::vector<std::vector<int>> buckets;
+    //! \brief Their segments, to find the nearest river of a point.
+    RiverIndex river_index;
 
     //! \brief The ground at a point: the cells, smoothly, a little roughness,
     //! and the bed and the valley of the rivers dug in it. The sea is below
@@ -192,7 +174,11 @@ struct Land
 
     //! \brief The nearest river: the distance to its middle line, and its
     //! half width there. Far away: a large distance.
-    void nearestRiver(float p_x, float p_z, float& p_distance, float& p_half) const;
+    void
+    nearestRiver(float p_x, float p_z, float& p_distance, float& p_half) const
+    {
+        river_index.nearest(p_x, p_z, p_distance, p_half);
+    }
 };
 
 // ----------------------------------------------------------------------------

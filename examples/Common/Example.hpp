@@ -127,6 +127,32 @@ public:
         return {};
     }
 
+    //! \brief Where the picture is on the screen, for overlay().
+    struct Overlay
+    {
+        //! \brief Its top left corner and its size, in the points of Dear
+        //! ImGui.
+        float x;
+        float y;
+        float width;
+        float height;
+        //! \brief The keyboard is for the picture (it has the focus, the
+        //! pointer is over it, or no panel wants the keys): its shortcuts
+        //! apply.
+        bool keys;
+    };
+
+    // ------------------------------------------------------------------------
+    //! \brief Dear ImGui windows over the picture, panels shown or not: the
+    //! details of what is chosen, a search box, a help. Called every frame
+    //! once the set-up is done. The pointer over one of these windows does not reach
+    //! draw(), nor do the keys typed into a text field. Nothing by default.
+    // ------------------------------------------------------------------------
+    virtual void overlay(Overlay const& p_view)
+    {
+        (void)p_view;
+    }
+
     //! \brief How far a long set-up has gone, when it runs in the background.
     struct Progress
     {
