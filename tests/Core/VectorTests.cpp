@@ -807,3 +807,35 @@ TEST(TestVectors, testComplexMath)
     // = (3^2 + 1^2 + 0^2 + 2^2 + 2^2) / 5
     ASSERT_EQ(3.6f, compages::vector::mean(deviation2));
 }
+
+//--------------------------------------------------------------------------
+TEST(TestVector3D, quantities)
+{
+    using namespace units::literals;
+    using compages::Vector3g;
+    using compages::Vector3m;
+    using units::length::meter_t;
+
+    // A direction times a length is a position, in the unit of the length;
+    // the copy converts it into metres.
+    Vector3m const a(Vector3g(0.0, 1.0, 0.0) * 2.0_km);
+    EXPECT_DOUBLE_EQ(a.y.value(), 2000.0);
+    Vector3m const b = 0.5 * Vector3m(meter_t(3.0), meter_t(0.0), meter_t(4.0));
+    EXPECT_DOUBLE_EQ(b.z.value(), 2.0);
+    // Norm and distance in metres; dot in square metres, or metres with a
+    // direction.
+    meter_t const n = compages::vector::norm(Vector3m(meter_t(3.0), meter_t(0.0), meter_t(4.0)));
+    EXPECT_DOUBLE_EQ(n.value(), 5.0);
+    EXPECT_DOUBLE_EQ(compages::vector::distance(a, a).value(), 0.0);
+    units::area::square_meter_t const s = compages::vector::dot(a, a);
+    EXPECT_DOUBLE_EQ(s.value(), 4.0e6);
+    meter_t const along = compages::vector::dot(a, Vector3g(0.0, 1.0, 0.0));
+    EXPECT_DOUBLE_EQ(along.value(), 2000.0);
+    // The direction of metres is a plain unit vector.
+    Vector3g const d = compages::vector::normalize(a);
+    EXPECT_DOUBLE_EQ(d.y, 1.0);
+    // Into the World: floats, in metres (not in the unit of the type).
+    EXPECT_FLOAT_EQ(compages::toMetres(1.0_au), 149597870700.0f);
+    compages::Vector3f const f = compages::toMetres(a);
+    EXPECT_FLOAT_EQ(f.y, 2000.0f);
+}

@@ -173,6 +173,55 @@ template <typename T>
     return std::sqrt(x);
 }
 
+//! \brief A physical quantity: a number with its unit in its type
+//! (units::length::meter_t, units::angle::radian_t, units::time::day_t...).
+template <typename T>
+concept Quantity = units::traits::is_unit_t<T>::value;
+
+namespace detail
+{
+template <typename T>
+struct PlainType
+{
+    using type = T;
+};
+
+template <Quantity T>
+    requires units::traits::is_dimensionless_unit<T>::value
+struct PlainType<T>
+{
+    using type = typename units::traits::unit_t_traits<T>::underlying_type;
+};
+} // namespace detail
+
+//! \brief The type \c T, a quantity without unit (a ratio, a cosine) made a
+//! plain number: metres / metres is a double, metres stay metres.
+template <typename T>
+using Plain = typename detail::PlainType<T>::type;
+
+//! \brief Square root of a quantity, in the matching unit.
+//! \param[in] x A quantity whose unit is a square (square metres).
+//! \return Its square root (metres).
+template <Quantity T>
+[[nodiscard]] auto sqrt(T const x)
+{
+    return units::math::sqrt(x);
+}
+
+//! \brief A length as the World stores it: a float, in metres.
+//!
+//! Prefer it to \c length.to<float>(), which gives the number in the unit
+//! of the type: \c (1.0_au).to<float>() is 1, not 1.5e11.
+//! \code
+//! sphere.scale(compages::toMetres(2.0 * 6371.0_km));   // 12742000
+//! \endcode
+//! \param[in] p_length A length in any unit (km, au...).
+//! \return The length in metres, rounded to a float (24 bits).
+[[nodiscard]] constexpr float toMetres(units::length::meter_t const p_length)
+{
+    return static_cast<float>(p_length.value());
+}
+
 //! \brief Default tolerance, in ULPs, used by almostEqual().
 inline constexpr std::uint32_t DEFAULT_MAX_ULPS = 6u;
 

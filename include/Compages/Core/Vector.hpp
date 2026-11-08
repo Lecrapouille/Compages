@@ -785,6 +785,10 @@ using Vector2g = Vector<double, 2u>;
 using Vector3g = Vector<double, 3u>;
 using Vector4g = Vector<double, 4u>;
 
+//! \brief A position in metres, in double, with its unit in the type: the
+//! simulation of a large world (see toMetres() for the World).
+using Vector3m = Vector<units::length::meter_t, 3u>;
+
 // *****************************************************************************
 // Overloaded math unary operators
 // *****************************************************************************
@@ -995,6 +999,81 @@ Vector<T, n> operator*(Vector<T, n> const& a, T const b)
     size_t i = n;
     while (i--)
         result[i] = a[i] * b;
+    return result;
+}
+
+namespace detail
+{
+template <typename T, typename U>
+struct Product
+{
+    using type = ::compages::Plain<decltype(std::declval<T>() * std::declval<U>())>;
+};
+
+template <typename T>
+    requires(!Quantity<T>)
+struct Product<T, T>
+{
+    using type = T;
+};
+} // namespace detail
+
+//! \brief The type of \c T times \c U: \c T for two plain numbers of the same
+//! type, else what the units say (a direction times metres is metres, metres
+//! times metres square metres, metres over metres a double).
+template <typename T, typename U>
+using Product = typename detail::Product<T, U>::type;
+
+//! \brief A number and a quantity, or two numbers of the same type: what a
+//! vector may be multiplied by, and dotted with.
+template <typename T, typename U>
+concept Multipliable = std::same_as<T, U> || Quantity<T> || Quantity<U>;
+
+// *****************************************************************************
+//! \brief Vector times a quantity, or a vector of quantities times a number.
+//! \code
+//! compages::Vector3m const top = compages::Vector3g::UNIT_Y * 6371.0_km;
+//! compages::Vector3m const half = top * 0.5;
+//! \endcode
+//! \param[in] a The vector (a direction, metres...).
+//! \param[in] b The number or the quantity.
+//! \return Each element times \c b, in the unit of the product.
+// *****************************************************************************
+template <typename T, typename U, size_t n>
+    requires(!std::same_as<T, U>) && (Quantity<T> || Quantity<U>) &&
+            (std::is_arithmetic_v<U> || Quantity<U>)
+Vector<Product<T, U>, n> operator*(Vector<T, n> const& a, U const b)
+{
+    Vector<Product<T, U>, n> result;
+    size_t i = n;
+    while (i--)
+        result[i] = Product<T, U>(a[i] * b);
+    return result;
+}
+
+// *****************************************************************************
+//! \brief Same, the quantity or the number first: 6371.0_km * direction.
+// *****************************************************************************
+template <typename T, typename U, size_t n>
+    requires(!std::same_as<T, U>) && (Quantity<T> || Quantity<U>) &&
+            (std::is_arithmetic_v<T> || Quantity<T>)
+Vector<Product<T, U>, n> operator*(T const a, Vector<U, n> const& b)
+{
+    return b * a;
+}
+
+// *****************************************************************************
+//! \brief A vector of lengths as the World stores it: floats, in metres.
+//! \param[in] p_lengths Lengths in any unit, in double.
+//! \return The lengths in metres, rounded to floats (24 bits).
+// *****************************************************************************
+template <size_t n>
+[[nodiscard]] Vector<float, n> toMetres(Vector<units::length::meter_t, n> const& p_lengths)
+{
+    Vector<float, n> result;
+    size_t i = n;
+    while (i--)
+        result[i] = toMetres(p_lengths[i]);
     return result;
 }
 
@@ -1259,16 +1338,19 @@ Vector<T, 3u> cross(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
 
 // *************************************************************************
 //! \brief Dot product, aka scalar product (general algorithm).
+//! \note Two vectors of quantities give the product of their units: metres
+//! dot metres is square metres, metres dot a direction is metres.
 //! \return a . b = transpose([a_x a_y a_z ...]) . transpose([b_x b_y b_z ...])
 // *************************************************************************
-template <typename T, size_t n>
-T dot(Vector<T, n> const& a, Vector<T, n> const& b)
+template <typename T, typename U, size_t n>
+    requires Multipliable<T, U>
+Product<T, U> dot(Vector<T, n> const& a, Vector<U, n> const& b)
 {
-    T result = zero<T>();
+    Product<T, U> result = zero<Product<T, U>>();
     size_t i = n;
 
     while (i--)
-        result += a[i] * b[i];
+        result += Product<T, U>(a[i] * b[i]);
     return result;
 }
 
@@ -1277,10 +1359,11 @@ T dot(Vector<T, n> const& a, Vector<T, n> const& b)
 //! \return a . b = transpose([a_x a_y a_z]) . transpose([b_x b_y b_z])
 //! Fast path when both operands are known to be 3D.
 // *************************************************************************
-template <typename T>
-T dot(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
+template <typename T, typename U>
+    requires Multipliable<T, U>
+Product<T, U> dot(Vector<T, 3u> const& a, Vector<U, 3u> const& b)
 {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
+    return Product<T, U>(a.x * b.x + a.y * b.y + a.z * b.z);
 }
 
 // *************************************************************************
@@ -1288,10 +1371,11 @@ T dot(Vector<T, 3u> const& a, Vector<T, 3u> const& b)
 //! \return a . b = transpose([a_x a_y]) . transpose([b_x b_y])
 //! Fast path when both operands are known to be 2D.
 // *************************************************************************
-template <typename T>
-T dot(Vector<T, 2u> const& a, Vector<T, 2u> const& b)
+template <typename T, typename U>
+    requires Multipliable<T, U>
+Product<T, U> dot(Vector<T, 2u> const& a, Vector<U, 2u> const& b)
 {
-    return a.x * b.x + a.y * b.y;
+    return Product<T, U>(a.x * b.x + a.y * b.y);
 }
 
 // *************************************************************************
@@ -1299,7 +1383,7 @@ T dot(Vector<T, 2u> const& a, Vector<T, 2u> const& b)
 //! \note Alias for squaredNorm()
 // *************************************************************************
 template <typename T, size_t n>
-T squaredMagnitude(Vector<T, n> const& a)
+Product<T, T> squaredMagnitude(Vector<T, n> const& a)
 {
     return dot(a, a);
 }
@@ -1309,13 +1393,14 @@ T squaredMagnitude(Vector<T, n> const& a)
 //! \note Alias for squaredMagnitude()
 // *************************************************************************
 template <typename T, size_t n>
-T squaredNorm(Vector<T, n> const& a)
+Product<T, T> squaredNorm(Vector<T, n> const& a)
 {
     return dot(a, a);
 }
 
 // *************************************************************************
-//! \brief Gets the magnitude (norm) of this vector.
+//! \brief Gets the magnitude (norm) of this vector, in its unit (metres
+//! for a Vector3m).
 //! \note Alias for norm()
 // *************************************************************************
 template <typename T, size_t n>
@@ -1338,7 +1423,7 @@ T norm(Vector<T, n> const& a)
 //! \brief Gets the squared magnitude of a - b.
 // *************************************************************************
 template <typename T, size_t n>
-T squaredDistance(Vector<T, n> const& a, Vector<T, n> const& b)
+Product<T, T> squaredDistance(Vector<T, n> const& a, Vector<T, n> const& b)
 {
     return squaredNorm(a - b);
 }
@@ -1349,7 +1434,7 @@ T squaredDistance(Vector<T, n> const& a, Vector<T, n> const& b)
 template <typename T, size_t n>
 T distance(Vector<T, n> const& a, Vector<T, n> const& b)
 {
-    return sqrt(squaredDistance(a, b));
+    return T(sqrt(squaredDistance(a, b)));
 }
 
 // *************************************************************************
@@ -1359,15 +1444,34 @@ T distance(Vector<T, n> const& a, Vector<T, n> const& b)
 //! for direction vectors in 2D/3D geometry.
 // *************************************************************************
 template <typename T, size_t n>
+    requires(!Quantity<T>)
 Vector<T, n> normalize(Vector<T, n> const& a)
 {
     return a / norm(a);
 }
 
 // *************************************************************************
+//! \brief The direction of a vector of quantities: a unit vector of plain
+//! numbers (a Vector3m gives a Vector3g).
+//! \note Undefined behavior if the norm is zero.
+// *************************************************************************
+template <Quantity T, size_t n>
+Vector<Plain<decltype(std::declval<T>() / std::declval<T>())>, n> normalize(Vector<T, n> const& a)
+{
+    using Ratio = Plain<decltype(std::declval<T>() / std::declval<T>())>;
+    T const length = norm(a);
+    Vector<Ratio, n> result;
+    size_t i = n;
+    while (i--)
+        result[i] = Ratio(a[i] / length);
+    return result;
+}
+
+// *************************************************************************
 //! \brief British spelling alias for normalize().
 // *************************************************************************
 template <typename T, size_t n>
+    requires(!Quantity<T>)
 Vector<T, n> normalise(Vector<T, n> const& a)
 {
     return normalize(a);
@@ -1405,7 +1509,7 @@ Vector<T, 3u> orthogonal(Vector<T, 3u> const& a)
 {
     // Implementation due to Sam Hocevar - see blog post:
     // http://lolengine.net/blog/2013/09/21/picking-orthogonal-Vector-combing-coconuts
-    if (abs(a.x) > abs(a.z))
+    if (::compages::abs(a.x) > ::compages::abs(a.z))
         return { -a.y, a.x, zero<T>() };
     else
         return { zero<T>(), -a.z, a.y };

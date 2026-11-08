@@ -340,3 +340,47 @@ TEST(TestQuaternions, basisAndDot)
     double const d = compages::dot(a, a);
     EXPECT_DOUBLE_EQ(d, (1.0 / 3.0) * (1.0 / 3.0)); // a float result would differ
 }
+
+//--------------------------------------------------------------------------
+TEST(TestQuaternions, fromTo)
+{
+    using compages::Quatd;
+    using compages::Vector3g;
+    auto expect_near = [](Vector3g const& a, Vector3g const& b)
+    {
+        EXPECT_NEAR(a.x, b.x, 1e-12);
+        EXPECT_NEAR(a.y, b.y, 1e-12);
+        EXPECT_NEAR(a.z, b.z, 1e-12);
+    };
+    // Any lengths: only the directions count.
+    Vector3g const to = compages::vector::normalize(Vector3g(1.0, 2.0, -3.0));
+    expect_near(Quatd::fromTo(Vector3g(0.0, 4.0, 0.0), to * 7.0) * Vector3g(0.0, 1.0, 0.0), to);
+    // Same direction: the identity.
+    expect_near(Quatd::fromTo(to, to * 2.0) * Vector3g(1.0, 0.0, 0.0), Vector3g(1.0, 0.0, 0.0));
+    // Opposite directions: a half turn.
+    expect_near(Quatd::fromTo(Vector3g(0.0, 1.0, 0.0), Vector3g(0.0, -1.0, 0.0)) * Vector3g(0.0, 1.0, 0.0),
+                Vector3g(0.0, -1.0, 0.0));
+    // A null direction: the identity.
+    expect_near(Quatd::fromTo(Vector3g(0.0, 0.0, 0.0), to) * to, to);
+}
+
+//--------------------------------------------------------------------------
+TEST(TestQuaternions, upToAndUpFrom)
+{
+    using namespace units::literals;
+    using compages::Vector3g;
+    Vector3g const to = compages::vector::normalize(Vector3g(1.0, -2.0, 0.5));
+    Vector3g const up(0.0, 1.0, 0.0);
+    Vector3g const turned = compages::upTo(to) * up;
+    Vector3g const back = compages::upFrom(to) * to;
+    for (size_t i = 0u; i < 3u; ++i)
+    {
+        EXPECT_NEAR(turned[i], to[i], 1e-12);
+        EXPECT_NEAR(back[i], up[i], 1e-12);
+    }
+    // Metres: only the direction counts. Float copy of a double rotation.
+    compages::Quatd const q = compages::upTo(compages::Vector3g(0.0, 0.0, 1.0) * 3.0_km);
+    compages::Quatf const f(q);
+    EXPECT_NEAR(double(f.a), q.a, 1e-7);
+    EXPECT_NEAR(double(f.b), q.b, 1e-7);
+}

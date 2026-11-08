@@ -42,6 +42,7 @@
 #pragma once
 
 #include "Matrix.hpp"
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -139,6 +140,20 @@ public:
     }
 
     //--------------------------------------------------------------------------
+    //! \brief Copy a quaternion of another precision (a rotation computed in
+    //! double, stored in float by the World).
+    //! \param[in] other The quaternion to copy.
+    //--------------------------------------------------------------------------
+    template <typename U>
+    explicit Quat(Quat<U> const& other) noexcept
+    {
+        data[0] = static_cast<T>(other.data[0]);
+        data[1] = static_cast<T>(other.data[1]);
+        data[2] = static_cast<T>(other.data[2]);
+        data[3] = static_cast<T>(other.data[3]);
+    }
+
+    //--------------------------------------------------------------------------
     //! \brief Construct a quaternion from a rotation matrix
     //--------------------------------------------------------------------------
     Quat(Matrix<T, 4u, 4u> const& m)
@@ -199,6 +214,37 @@ public:
         Quat<T> const ry = rotation(pitch, T(0), T(1), T(0));
         Quat<T> const rz = rotation(yaw, T(0), T(0), T(1));
         return rz * ry * rx;
+    }
+
+    //--------------------------------------------------------------------------
+    //! \brief Creates the shortest rotation that turns the direction \c from
+    //! onto the direction \c to. Unlike a lookAt(), it has no "up" to lose
+    //! when the two directions are parallel.
+    //! \code
+    //! // Stand a rocket built along +Y on its path.
+    //! rocket.rotation(compages::Quatf::fromTo(compages::Vector3f::UNIT_Y, heading));
+    //! \endcode
+    //! \param[in] from Direction before the turn; any length but zero.
+    //! \param[in] to Direction after the turn; any length but zero.
+    //! \return The rotation; the identity when a direction is null; a half
+    //! turn about any perpendicular axis when they are opposite.
+    //--------------------------------------------------------------------------
+    static Quat<T> fromTo(Vector<T, 3u> const& from, Vector<T, 3u> const& to)
+    {
+        T const lengths = vector::norm(from) * vector::norm(to);
+        if (lengths <= T(0))
+        {
+            return Quat<T>();
+        }
+        T const cosine = std::clamp(vector::dot(from, to) / lengths, T(-1), T(1));
+        units::angle::radian_t const angle(std::acos(cosine));
+        Vector<T, 3u> const axis = vector::cross(from, to);
+        if (vector::norm(axis) <= lengths * std::numeric_limits<T>::epsilon() * T(10))
+        {
+            // Parallel: no turn, or a half turn about a perpendicular.
+            return (cosine > T(0)) ? Quat<T>() : fromAngleAxis(angle, vector::orthogonal(from));
+        }
+        return fromAngleAxis(angle, axis);
     }
 
     //--------------------------------------------------------------------------
@@ -697,6 +743,53 @@ T dot(Quat<T> const& q1, Quat<T> const& q2)
 //! \brief Heading about Z: where the X axis of the rotated frame points in the
 //! horizontal plane (Z up).
 //! \return The yaw angle in (-pi, pi].
+// *****************************************************************************
+//! \brief The rotation that turns +Y onto a direction: how a thing built
+//! along +Y (a rocket, a cylinder, the pole of a planet) is pointed.
+//! \param[in] p_direction Where +Y must point; any length but zero.
+//! \return Quat::fromTo(+Y, p_direction).
+// *****************************************************************************
+template <std::floating_point T>
+[[nodiscard]] Quat<T> upTo(Vector<T, 3u> const& p_direction)
+{
+    return Quat<T>::fromTo(Vector<T, 3u>(T(0), T(1), T(0)), p_direction);
+}
+
+// *****************************************************************************
+//! \brief The rotation that turns a direction onto +Y: the inverse of
+//! upTo(), which brings a place of a globe to its top.
+//! \param[in] p_direction What must end on +Y; any length but zero.
+//! \return Quat::fromTo(p_direction, +Y).
+// *****************************************************************************
+template <std::floating_point T>
+[[nodiscard]] Quat<T> upFrom(Vector<T, 3u> const& p_direction)
+{
+    return Quat<T>::fromTo(p_direction, Vector<T, 3u>(T(0), T(1), T(0)));
+}
+
+// *****************************************************************************
+//! \brief upTo() for a vector of quantities (a velocity in metres): only its
+//! direction counts.
+//! \param[in] p_direction Where +Y must point; any length but zero.
+//! \return The rotation, in double.
+// *****************************************************************************
+template <Quantity T>
+[[nodiscard]] Quat<double> upTo(Vector<T, 3u> const& p_direction)
+{
+    return upTo(Vector<double, 3u>(vector::normalize(p_direction)));
+}
+
+// *****************************************************************************
+//! \brief upFrom() for a vector of quantities: only its direction counts.
+//! \param[in] p_direction What must end on +Y; any length but zero.
+//! \return The rotation, in double.
+// *****************************************************************************
+template <Quantity T>
+[[nodiscard]] Quat<double> upFrom(Vector<T, 3u> const& p_direction)
+{
+    return upFrom(Vector<double, 3u>(vector::normalize(p_direction)));
+}
+
 template <typename T>
 units::angle::radian_t yaw(Quat<T> const& q)
 {
