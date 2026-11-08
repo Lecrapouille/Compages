@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 // ****************************************************************************
 //! \file
@@ -122,6 +123,45 @@ public:
     //! the middle. Empty, the default, writes nothing.
     // ------------------------------------------------------------------------
     [[nodiscard]] virtual std::string hud() const
+    {
+        return {};
+    }
+
+    //! \brief How far a long set-up has gone, when it runs in the background.
+    struct Progress
+    {
+        //! \brief From 0 to 1; 1 is ready.
+        float done;
+        //! \brief What it does now, in a few words.
+        std::string step;
+    };
+
+    // ------------------------------------------------------------------------
+    //! \brief An example that builds a large world in a thread returns from
+    //! setUp() at once, and says here how far it has gone: the gallery shows
+    //! a progress bar over the picture until it reaches 1, and a check waits
+    //! for it before it counts its frames. Ready by default.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] virtual Progress progress() const
+    {
+        return { 1.0f, {} };
+    }
+
+    //! \brief A word written over the picture, at a point of it.
+    struct Label
+    {
+        //! \brief Where, from 0 to 1 across the picture, from its top left.
+        float x;
+        float y;
+        std::string text;
+    };
+
+    // ------------------------------------------------------------------------
+    //! \brief Names written next to points of the picture, panels shown or
+    //! not: what finds a planet smaller than a pixel. The example projects its
+    //! 3D points itself (with Scene::lastCamera()). Empty by default.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] virtual std::vector<Label> labels() const
     {
         return {};
     }

@@ -114,8 +114,9 @@ void queueHelpers(compages::world::World& p_world,
 }
 
 // ----------------------------------------------------------------------------
-//! \brief Lay out the Caption of the camera, then the Label components,
-//! where their entities are now.
+//! \brief Lay out the Caption of the camera, then the Tooltip components,
+//! then the Label components, where their entities are now: a label gives
+//! way to a tooltip.
 // ----------------------------------------------------------------------------
 void queueText(compages::world::World& p_world,
                compages::world::EntityId p_camera_id,
@@ -126,6 +127,16 @@ void queueText(compages::world::World& p_world,
     {
         p_text.add(*caption, p_camera);
     }
+    p_world.each<Tooltip>(
+        [&](compages::world::EntityId p_entity, Tooltip const& p_tooltip)
+        {
+            if (p_world.enabledInHierarchy(p_entity))
+            {
+                p_text.add(p_tooltip,
+                           compages::translation(p_world.worldMatrix(p_entity)),
+                           p_camera);
+            }
+        });
     p_world.each<Label>(
         [&](compages::world::EntityId p_entity, Label const& p_label)
         {

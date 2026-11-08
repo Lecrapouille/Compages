@@ -193,3 +193,91 @@ TEST(RigController, WheelZoomsByAFactor)
     rig.apply(world, camera, input, 0.0f);
     ASSERT_NEAR(rig.distance, 10.0f * std::exp(-rig.zoom_step), 1.0e-4f);
 }
+
+TEST(RigController, WheelKeepsThePointUnderTheMouse)
+{
+    // Like a map: the point of the ground under the mouse stays there.
+    compages::world::World world;
+    const compages::world::EntityId camera = world.create("cam");
+    compages::world::RigController rig;
+    rig.pitch = -0.9f;
+    rig.distance = 10.0f;
+    rig.snap(world, camera);
+
+    compages::world::RigInput input;
+    input.mouse = compages::Vector2f(0.6f, -0.3f);
+    // The point of the plane y = 0 under the mouse, from the camera pose.
+    auto under = [&]()
+    {
+        const compages::world::LocalTransformView pose = world.transform(camera);
+        const float half = std::tan(input.fov * 0.5f);
+        const compages::Vector3f ray =
+            compages::Quatf(pose.rotation) *
+            compages::Vector3f(input.mouse.x * half * input.aspect, input.mouse.y * half, -1.0f);
+        const compages::Vector3f eye = pose.position;
+        return eye + (ray * (-eye.y / ray.y));
+    };
+    const compages::Vector3f before = under();
+    input.zoom_delta = 3.0f;
+    rig.apply(world, camera, input, 0.0f);
+    rig.snap(world, camera);
+    ASSERT_LT(rig.distance, 10.0f);
+    const compages::Vector3f after = under();
+    ASSERT_NEAR(after.x, before.x, 1.0e-3f);
+    ASSERT_NEAR(after.z, before.z, 1.0e-3f);
+    // The target moved toward the mouse (to the right: +X at yaw 0).
+    ASSERT_GT(rig.target.x, 0.1f);
+}
+
+TEST(RigController, FlightEndsWhereAskedWithoutAJolt)
+{
+    compages::world::World world;
+    const compages::world::EntityId camera = world.create("cam");
+    compages::world::RigController rig;
+    rig.max_distance = 1.0e5f;
+    rig.distance = 100.0f;
+    rig.snap(world, camera);
+    const compages::Vector3f far(5000.0f, 0.0f, 0.0f);
+    rig.flyTo(far, 200.0f);
+    ASSERT_TRUE(rig.flying());
+
+    // The first frame barely moves: no jolt at the start.
+    const float dt = 1.0f / 60.0f;
+    rig.apply(world, camera, compages::world::RigInput{}, dt);
+    ASSERT_LT(rig.currentTarget().x, 1.0f);
+
+    // On the way, the camera goes up to see both ends.
+    float highest = 0.0f;
+    for (int i = 0; i < 6000 && rig.flying(); ++i)
+    {
+        rig.apply(world, camera, compages::world::RigInput{}, dt);
+        highest = std::max(highest, rig.currentDistance());
+    }
+    ASSERT_FALSE(rig.flying());
+    ASSERT_GT(highest, 1000.0f);
+    ASSERT_NEAR(rig.currentTarget().x, far.x, 1.0e-3f);
+    ASSERT_NEAR(rig.currentDistance(), 200.0f, 1.0e-3f);
+}
+
+TEST(RigController, InputStopsTheFlightWhereItIs)
+{
+    compages::world::World world;
+    const compages::world::EntityId camera = world.create("cam");
+    compages::world::RigController rig;
+    rig.max_distance = 1.0e5f;
+    rig.distance = 100.0f;
+    rig.snap(world, camera);
+    rig.flyTo(compages::Vector3f(5000.0f, 0.0f, 0.0f), 100.0f);
+    for (int i = 0; i < 150; ++i)
+    {
+        rig.apply(world, camera, compages::world::RigInput{}, 1.0f / 60.0f);
+    }
+    const compages::Vector3f now = rig.currentTarget();
+    ASSERT_TRUE(rig.flying());
+    ASSERT_GT(now.x, 100.0f);
+    compages::world::RigInput input;
+    input.rotate = true;
+    rig.apply(world, camera, input, 1.0f / 60.0f);
+    ASSERT_FALSE(rig.flying());
+    ASSERT_NEAR(rig.target.x, now.x, 1.0e-3f);
+}

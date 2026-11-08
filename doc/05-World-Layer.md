@@ -199,7 +199,16 @@ A routine can **host** a behavior tree (BlackThorn, BehaviorTree.CPP…): it own
 
 Routines are flexible but pay the price of objects: virtual calls and scattered memory. For thousands of entities, prefer a system (`each`, [section 1](#-1-two-mechanisms-one-container)). For millions, keep the data on the GPU: see the table [Where does my data live?](01-Introduction.md#where-does-my-data-live).
 
-`07b_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controllers `Orbit` and `Fly` are routines too.
+`07b_Routines` puts three routines on three cubes (spin, float, "breathe" while Space is pressed). The camera controllers `Orbit`, `Fly` and `Rig` are routines too.
+
+`Rig` is the camera of a strategy game or of a map: the left button drags the ground, the right button turns, the wheel zooms toward the point under the mouse (that point stays under the mouse). To jump to another place, do not move the target: call `flyTo`. The camera then goes up, across and down along the path of van Wijk and Nuij (the path of a map viewer). It starts and stops with no speed and no acceleration, so there is no jolt; the farther the place, the higher it goes. Any input of the user stops the flight where it is (`10e_Archipelago`):
+
+```cpp
+compages::world::RigController& rig = camera.get<compages::world::Rig>().controller;
+rig.flight_pace = 0.8f;                                       // seconds per unit of path
+rig.flyTo(compages::Vector3f(4200.0f, 0.0f, -3100.0f), 3200.0f);  // target, distance (m)
+if (rig.flying()) { /* ... */ }
+```
 
 ---
 

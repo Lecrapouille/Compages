@@ -11,6 +11,7 @@
 #include <imgui_internal.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 namespace examples
@@ -421,11 +422,6 @@ void Gallery::drawHud(float p_x, float p_y, float p_width, float p_height)
     {
         return;
     }
-    const std::string text = m_current->hud();
-    if (text.empty())
-    {
-        return;
-    }
 
     // On top of everything, so that it is seen whether the panels are shown
     // or not. A shadow under each line keeps it readable on a bright picture.
@@ -435,6 +431,46 @@ void Gallery::drawHud(float p_x, float p_y, float p_width, float p_height)
     const float large = ImGui::GetFontSize() * 3.0f;
     const ImU32 shadow = IM_COL32(0, 0, 0, 200);
     const ImU32 white = IM_COL32(255, 245, 225, 255);
+
+    // The labels: a dot on the point, the word beside it.
+    draw->PushClipRect(ImVec2(p_x, p_y), ImVec2(p_x + p_width, p_y + p_height), true);
+    for (Example::Label const& label : m_current->labels())
+    {
+        const ImVec2 point(p_x + (label.x * p_width), p_y + (label.y * p_height));
+        const ImVec2 place(point.x + 6.0f, point.y - (small * 0.5f));
+        draw->AddCircleFilled(point, 2.5f, white);
+        draw->AddText(font, small, ImVec2(place.x + 1.0f, place.y + 1.0f), shadow,
+                      label.text.c_str());
+        draw->AddText(font, small, place, white, label.text.c_str());
+    }
+    draw->PopClipRect();
+
+    // A set-up running in the background: a bar in the middle of the picture.
+    const Example::Progress progress = m_current->progress();
+    if (progress.done < 1.0f)
+    {
+        const float bar_width = std::min(420.0f, p_width * 0.6f);
+        const float bar_height = ImGui::GetFontSize() * 1.2f;
+        const ImVec2 corner(p_x + ((p_width - bar_width) * 0.5f), p_y + (p_height * 0.5f));
+        const ImVec2 end(corner.x + bar_width, corner.y + bar_height);
+        const float filled = std::clamp(progress.done, 0.0f, 1.0f);
+        draw->AddRectFilled(ImVec2(corner.x - 2.0f, corner.y - 2.0f), ImVec2(end.x + 2.0f, end.y + 2.0f),
+                            IM_COL32(10, 20, 35, 200), 5.0f);
+        draw->AddRectFilled(corner, ImVec2(corner.x + (bar_width * filled), end.y),
+                            IM_COL32(255, 210, 125, 255), 4.0f);
+        char caption[160];
+        std::snprintf(caption, sizeof(caption), "%s  %d %%", progress.step.c_str(), int(filled * 100.0f));
+        const ImVec2 extent = font->CalcTextSizeA(small, p_width, 0.0f, caption);
+        const ImVec2 place(p_x + ((p_width - extent.x) * 0.5f), corner.y - (small * 1.5f));
+        draw->AddText(font, small, ImVec2(place.x + 1.0f, place.y + 1.0f), shadow, caption);
+        draw->AddText(font, small, place, white, caption);
+    }
+
+    const std::string text = m_current->hud();
+    if (text.empty())
+    {
+        return;
+    }
     float small_y = p_y + 10.0f;
     float large_y = p_y + (p_height * 0.35f);
 

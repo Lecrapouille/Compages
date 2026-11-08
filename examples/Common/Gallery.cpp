@@ -351,6 +351,7 @@ void Gallery::show(std::size_t p_index)
 
     m_failure.clear();
     m_frames = 0u;
+    m_loading_frames = 0u;
     m_example_time = 0.0f;
     m_index = p_index;
     m_focus_view = true;
@@ -505,8 +506,20 @@ compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
 void Gallery::runExample()
 {
     // Counted even when nothing runs, so that a run walking the list does not
-    // stall on an example that failed to set itself up.
-    ++m_frames;
+    // stall on an example that failed to set itself up. Not while the example
+    // loads in the background (a check would picture the progress bar), up
+    // to about ten minutes at 60 frames a second.
+    constexpr std::size_t MAX_LOADING_FRAMES = 36000u;
+    const bool loading = (m_current != nullptr) && (m_current->progress().done < 1.0f) &&
+                         (m_loading_frames < MAX_LOADING_FRAMES);
+    if (loading)
+    {
+        ++m_loading_frames;
+    }
+    else
+    {
+        ++m_frames;
+    }
     if (m_current == nullptr)
     {
         return;

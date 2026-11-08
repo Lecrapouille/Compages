@@ -21,7 +21,8 @@ folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
    std::string description() const override;   // the one idea this demo adds
    compages::Status setUp() override;          // everything that can fail; return prepare()
    void draw(compages::world::ViewFrame const& p_frame) override;
-   // optional: controls() (ImGui panel), keyMap(), capturesMouse(), hud()
+   // optional: controls() (ImGui panel), keyMap(), capturesMouse(), hud(),
+   // progress() (a set-up made in a thread: progress bar, --check waits)
    ```
 
    Members hold the state (`compages::world::World m_world;`

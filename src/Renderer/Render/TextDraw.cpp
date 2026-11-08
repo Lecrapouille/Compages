@@ -36,18 +36,21 @@ in vec2 position;
 in vec2 uv;
 in vec3 color;
 in float halo;
+in float opacity;
 
 uniform vec2 viewport;
 
 out vec2 vUv;
 out vec3 vColor;
 out float vHalo;
+out float vOpacity;
 
 void main()
 {
     vUv = uv;
     vColor = color;
     vHalo = halo;
+    vOpacity = opacity;
     gl_Position = vec4((position / viewport) * 2.0 - 1.0, 0.0, 1.0);
 }
 )";
@@ -60,6 +63,7 @@ constexpr char const* LABEL_FRAGMENT = R"(#version 450 core
 in vec2 vUv;
 in vec3 vColor;
 in float vHalo;
+in float vOpacity;
 
 uniform sampler2D atlas;
 
@@ -73,11 +77,11 @@ void main()
     float halo = 0.75 * smoothstep(vHalo - soft, vHalo + soft, field);
     // The letter over its black halo.
     float alpha = letter + (halo * (1.0 - letter));
-    if (alpha < 0.004)
+    if ((alpha * vOpacity) < 0.004)
     {
         discard;
     }
-    oColor = vec4(vColor * (letter / alpha), alpha);
+    oColor = vec4(vColor * (letter / alpha), alpha * vOpacity);
 }
 )";
 
@@ -344,14 +348,73 @@ void TextDraw::quad(FontAtlas::Glyph const& p_glyph,
     // Row 0 of a letter is its top, and row 0 of the atlas is v = 0.
     const float v0 = float(p_glyph.y) / float(m_atlas.height);
     const float v1 = float(p_glyph.y + p_glyph.height) / float(m_atlas.height);
-    const LabelVertex top_left{ { p_left, p_top }, { u0, v0 }, p_color, p_halo };
-    const LabelVertex top_right{ { right, p_top }, { u1, v0 }, p_color, p_halo };
-    const LabelVertex bottom_left{ { p_left, bottom }, { u0, v1 }, p_color, p_halo };
-    const LabelVertex bottom_right{ { right, bottom }, { u1, v1 }, p_color, p_halo };
+    const LabelVertex top_left{ { p_left, p_top }, { u0, v0 }, p_color, p_halo, 1.0f };
+    const LabelVertex top_right{ { right, p_top }, { u1, v0 }, p_color, p_halo, 1.0f };
+    const LabelVertex bottom_left{ { p_left, bottom }, { u0, v1 }, p_color, p_halo, 1.0f };
+    const LabelVertex bottom_right{ { right, bottom }, { u1, v1 }, p_color, p_halo, 1.0f };
     for (LabelVertex const& corner :
          { bottom_left, bottom_right, top_right, top_right, top_left, bottom_left })
     {
         m_pending.emplace_back(corner);
+    }
+}
+
+// ----------------------------------------------------------------------------
+void TextDraw::solid(std::array<compages::Vector2f, 4u> const& p_corners,
+                     compages::Vector3f const& p_color,
+                     float p_opacity)
+{
+    FontAtlas::Glyph const& dot = m_atlas.glyph(FontAtlas::DOT);
+    const compages::Vector2f inside((float(dot.x) + (0.5f * float(dot.width))) / float(m_atlas.width),
+                                    (float(dot.y) + (0.5f * float(dot.height))) / float(m_atlas.height));
+    for (const std::size_t i : { 0u, 1u, 2u, 2u, 3u, 0u })
+    {
+        m_pending.push_back({ p_corners[i], inside, p_color, 0.45f, p_opacity });
+    }
+}
+
+// ----------------------------------------------------------------------------
+void TextDraw::frame(Room const& p_room,
+                     float p_radius,
+                     compages::Vector3f const& p_color,
+                     float p_opacity)
+{
+    // The disc of the dot has a radius of 0.16 baked letters; the glyph is
+    // PADDING pixels of field wider on each side. Scaled so that its radius
+    // is p_radius, its half reaches past the edge of the disc by the field
+    // that draws the rim.
+    FontAtlas::Glyph const& dot = m_atlas.glyph(FontAtlas::DOT);
+    const float scale = p_radius / (0.16f * FontAtlas::BAKE_PIXELS);
+    const float half = 0.5f * float(dot.width) * scale;
+    const float halo = haloFor(scale);
+    // Four columns and four rows: the outer ones end where the field does,
+    // the inner ones sit on the centres of the corners.
+    const std::array<float, 4u> xs = { p_room.left + p_radius - half, p_room.left + p_radius,
+                                       p_room.right - p_radius, p_room.right - p_radius + half };
+    const std::array<float, 4u> ys = { p_room.bottom + p_radius - half, p_room.bottom + p_radius,
+                                       p_room.top - p_radius, p_room.top - p_radius + half };
+    const float u0 = float(dot.x) / float(m_atlas.width);
+    const float uc = (float(dot.x) + (0.5f * float(dot.width))) / float(m_atlas.width);
+    const float u1 = float(dot.x + dot.width) / float(m_atlas.width);
+    const float v0 = float(dot.y) / float(m_atlas.height);
+    const float vc = (float(dot.y) + (0.5f * float(dot.height))) / float(m_atlas.height);
+    const float v1 = float(dot.y + dot.height) / float(m_atlas.height);
+    // The field is a disc: the same from the bottom or the top.
+    const std::array<float, 4u> us = { u0, uc, uc, u1 };
+    const std::array<float, 4u> vs = { v1, vc, vc, v0 };
+    for (std::size_t row = 0u; row < 3u; ++row)
+    {
+        for (std::size_t column = 0u; column < 3u; ++column)
+        {
+            const LabelVertex a{ { xs[column], ys[row] }, { us[column], vs[row] }, p_color, halo, p_opacity };
+            const LabelVertex b{ { xs[column + 1u], ys[row] }, { us[column + 1u], vs[row] }, p_color, halo, p_opacity };
+            const LabelVertex c{ { xs[column + 1u], ys[row + 1u] }, { us[column + 1u], vs[row + 1u] }, p_color, halo, p_opacity };
+            const LabelVertex d{ { xs[column], ys[row + 1u] }, { us[column], vs[row + 1u] }, p_color, halo, p_opacity };
+            for (LabelVertex const& corner : { a, b, c, c, d, a })
+            {
+                m_pending.emplace_back(corner);
+            }
+        }
     }
 }
 
@@ -465,6 +528,117 @@ void TextDraw::add(Label const& p_label,
          haloFor(scale));
     line(codes, start, py - (0.5f * (m_atlas.ascent + m_atlas.descent) * scale), scale,
          p_label.color);
+}
+
+// ----------------------------------------------------------------------------
+void TextDraw::add(Tooltip const& p_tooltip,
+                   compages::Vector3f const& p_point,
+                   CameraFrame const& p_camera)
+{
+    if (m_atlas.width == 0u)
+    {
+        m_missing_font = true;
+        return;
+    }
+    const compages::Vector4f clip =
+        p_camera.view_projection * compages::Vector4f(p_point, 1.0f);
+    if (clip.w <= 0.0f)
+    {
+        return;   // behind the camera
+    }
+    const float x = clip.x / clip.w;
+    const float y = clip.y / clip.w;
+    if ((std::abs(x) > 1.0f) || (std::abs(y) > 1.0f))
+    {
+        return;
+    }
+    const float view_width = float(p_camera.viewport_width);
+    const float view_height = float(p_camera.viewport_height);
+    const float px = (0.5f * (x + 1.0f)) * view_width;
+    const float py = (0.5f * (y + 1.0f)) * view_height;
+
+    // The lines and their sizes: the title a quarter taller.
+    const float pixels = p_tooltip.pixels;
+    const float title_pixels = 1.25f * pixels;
+    const float scale = pixels / FontAtlas::BAKE_PIXELS;
+    const float title_scale = title_pixels / FontAtlas::BAKE_PIXELS;
+    const std::vector<char32_t> title = decodeUtf8(p_tooltip.title);
+    std::vector<std::vector<char32_t>> lines;
+    for (std::size_t begin = 0u; begin < p_tooltip.text.size();)
+    {
+        std::size_t end = p_tooltip.text.find('\n', begin);
+        if (end == std::string::npos)
+        {
+            end = p_tooltip.text.size();
+        }
+        lines.emplace_back(decodeUtf8(std::string_view(p_tooltip.text).substr(begin, end - begin)));
+        begin = end + 1u;
+    }
+    const float pad = 0.6f * pixels;
+    const float spacing = 1.25f * pixels;
+    const float gap = lines.empty() ? 0.0f : (0.6f * pixels);
+    float widest = width(title, title_scale);
+    for (std::vector<char32_t> const& line_codes : lines)
+    {
+        widest = std::max(widest, width(line_codes, scale));
+    }
+    const float box_width = widest + (2.0f * pad);
+    const float box_height = (2.0f * pad) + (1.15f * title_pixels) + gap +
+                             (float(lines.size()) * spacing);
+
+    // Above the point, or below it when the top of the picture is too
+    // close; slid sideways to stay inside the picture.
+    const float stem = 1.8f * pixels;
+    const bool above = (py + stem + box_height) <= view_height;
+    Room box;
+    box.bottom = above ? (py + stem) : (py - stem - box_height);
+    box.top = box.bottom + box_height;
+    box.left = std::clamp(px - (1.5f * pixels), 2.0f, std::max(2.0f, view_width - box_width - 2.0f));
+    box.right = box.left + box_width;
+    const Room room{ std::min(box.left, px - pixels), std::min(box.bottom, py - pixels),
+                     std::max(box.right, px + pixels), std::max(box.top, py + pixels) };
+    if (!reserve(room))
+    {
+        return;
+    }
+
+    // The stem from the point to the edge of the frame, the dot on the
+    // point, then the frame over the stem.
+    const float radius = std::min(0.5f * pixels, 0.25f * box_height);
+    const float foot = std::clamp(px, box.left + radius + 2.0f, box.right - radius - 2.0f);
+    const float edge = above ? box.bottom : box.top;
+    const compages::Vector2f along(foot - px, edge - py);
+    const float length = std::max(compages::vector::norm(along), 1.0e-3f);
+    const compages::Vector2f across = compages::Vector2f(-along.y, along.x) * (1.0f / length);
+    const compages::Vector2f point(px, py);
+    const compages::Vector2f end(foot, edge);
+    solid({ point - across, point + across, end + across, end - across },
+          p_tooltip.accent, 0.9f);
+    const float dot_scale = (0.45f * pixels) / FontAtlas::BAKE_PIXELS;
+    FontAtlas::Glyph const& dot = m_atlas.glyph(FontAtlas::DOT);
+    quad(dot, px + (dot.left * dot_scale), py - (dot.top * dot_scale), dot_scale,
+         p_tooltip.accent, haloFor(dot_scale));
+    frame(box, radius, p_tooltip.background, p_tooltip.opacity);
+
+    // The title, a thin line under it, the lines.
+    float baseline = box.top - pad - (m_atlas.ascent * title_scale);
+    line(title, box.left + pad, baseline, title_scale, p_tooltip.accent);
+    baseline += m_atlas.descent * title_scale;
+    if (!lines.empty())
+    {
+        const float rule = baseline - (0.3f * pixels);
+        solid({ compages::Vector2f(box.left + pad, rule - 0.5f),
+                compages::Vector2f(box.right - pad, rule - 0.5f),
+                compages::Vector2f(box.right - pad, rule + 0.5f),
+                compages::Vector2f(box.left + pad, rule + 0.5f) },
+              p_tooltip.accent, 0.5f);
+        baseline -= gap + (m_atlas.ascent * scale);
+        for (std::vector<char32_t> const& line_codes : lines)
+        {
+            line(line_codes, box.left + pad, baseline, scale, p_tooltip.color);
+            baseline -= spacing;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------

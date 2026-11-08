@@ -12,6 +12,8 @@
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include <optional>
+
 namespace compages::world
 {
 
@@ -76,7 +78,17 @@ struct RigInput
 //! \c 1 - exp(-sharpness * dt) of the way left, so it never overshoots,
 //! whatever \c dt. The pan keeps the grabbed point of the ground under the
 //! mouse: it is computed with the wanted pose, not with the gliding one, so
-//! the ground does not slide away while the camera catches up.
+//! the ground does not slide away while the camera catches up. The wheel
+//! zooms toward the point of the ground under the mouse, like a map: that
+//! point stays under the mouse.
+//!
+//! A jump to another place (a click on a name, a menu) is a flight, not a
+//! glide: flyTo() goes up, across and down along the path of van Wijk and
+//! Nuij, the one a map viewer takes. The path starts and ends with no speed
+//! and no acceleration, so the camera neither jerks off nor stops dead; the
+//! farther the place, the higher the camera goes, so that both ends are seen
+//! in the middle of the trip. Any input of the user stops the flight where
+//! it is.
 //!
 //! The world is Y-up; the ground is the plane \c y = \c ground.
 //!
@@ -119,6 +131,9 @@ public:
     float max_distance = 100.0f;
     float min_pitch = -1.55f;
     float max_pitch = 0.3f;
+    //! \brief Seconds of a flight per unit of its path: a path unit is a
+    //! zoom by e (2.7 times) or a pan of one view width.
+    float flight_pace = 0.8f;
 
     // ------------------------------------------------------------------------
     //! \brief Consume one frame of input, glide and write the camera pose.
@@ -130,6 +145,22 @@ public:
     //! \brief Jump to the wanted pose now (no glide), and write it.
     // ------------------------------------------------------------------------
     void snap(World& p_world, EntityId p_camera);
+
+    // ------------------------------------------------------------------------
+    //! \brief Fly to another place: look at \p p_target from \p p_distance,
+    //! by the smooth path described above. The yaw and the pitch glide to
+    //! \c yaw and \c pitch on the way.
+    //! \param[in] p_target The point of the ground to look at.
+    //! \param[in] p_distance The distance to see it from (clamped to the
+    //!   limits; the camera may go beyond \c max_distance on the way).
+    // ------------------------------------------------------------------------
+    void flyTo(compages::Vector3f const& p_target, float p_distance);
+
+    //! \brief Is a flight under way?
+    [[nodiscard]] bool flying() const
+    {
+        return m_flight.has_value();
+    }
 
     //! \brief The point looked at now (gliding toward \c target).
     [[nodiscard]] compages::Vector3f currentTarget() const
@@ -147,6 +178,30 @@ private:
 
     void writePose(World& p_world, EntityId p_camera) const;
 
+    //! \brief A flight under way: the path of van Wijk and Nuij from one
+    //! view to another, as a pan \c u and a view width \c w, both functions
+    //! of the length \c s along the path.
+    struct Flight
+    {
+        compages::Vector3f from;
+        compages::Vector3f to;
+        //! \brief Distance to the target at both ends.
+        float w0 = 1.0f;
+        float w1 = 1.0f;
+        //! \brief How far the targets are apart.
+        float u1 = 0.0f;
+        //! \brief The first of the two constants of the path.
+        float r0 = 0.0f;
+        //! \brief Length of the path, its duration, the time flown.
+        float length = 0.0f;
+        float duration = 0.0f;
+        float time = 0.0f;
+    };
+
+    //! \brief Advance the flight by \p p_dt and write where it is in the
+    //! pose now; forget it at its end.
+    void fly(float p_dt);
+
     //! Pose now: it glides toward the wanted one.
     compages::Vector3f m_target{ 0.0f, 0.0f, 0.0f };
     float m_yaw = 0.0f;
@@ -155,6 +210,7 @@ private:
     //! Point of the ground grabbed by the pan.
     compages::Vector3f m_grab{ 0.0f, 0.0f, 0.0f };
     bool m_grabbing = false;
+    std::optional<Flight> m_flight;
 };
 
 } // namespace compages::world

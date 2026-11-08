@@ -65,9 +65,9 @@ scene.showBounds(cube.id(), true);    // the box around the mesh of the cube
 
 `06b_Transforms` uses the three: the axes show the turn of the box, the bounds the size of the cone. `06c_Hierarchy` shows the pivot of a car, `06i_CameraPick` the bounds of the selection, and `08d_RobotArm` the frame of every joint of a robot (Try it hides them).
 
-### Text on the picture: labels and captions
+### Text on the picture: labels, tooltips and captions
 
-Two components write on the picture (`Renderer/Components/Text.hpp`). A `Label` writes a name next to its entity: a dot on the point, the text on its right. A `Caption`, set on a camera, writes at a fixed place of what that camera sees (each view of a split screen has its own); change its `text` each frame for numbers that move. The letters keep their size in pixels at any distance. Load a font once (TrueType or OpenType; a wrong file is reported by `prepare()`), then set the components:
+Three components write on the picture (`Renderer/Components/Text.hpp`). A `Label` writes a name next to its entity: a dot on the point, the text on its right. A `Tooltip` is a box of lines that points at its entity, like the tooltip of a web page. A `Caption`, set on a camera, writes at a fixed place of what that camera sees (each view of a split screen has its own); change its `text` each frame for numbers that move. The letters keep their size in pixels at any distance. Load a font once (TrueType or OpenType; a wrong file is reported by `prepare()`), then set the components:
 
 ```cpp
 scene.font(dataPath("fonts/DejaVuSans.ttf"));
@@ -79,11 +79,21 @@ mars.set(compages::renderer::Label{ .text = "Mars",              // UTF-8, Latin
                                     .color = { 1.0f, 0.95f, 0.85f },  // sRGB
                                     .pixels = 15.0f,                  // height of the letters
                                     .hide_closer_than = 0.0f });      // metres; 0 = always
+region.set(compages::renderer::Tooltip{ .title = "Astronomie",   // a quarter taller
+                                        .text = "fr.wikipedia.org/wiki/Astronomie\n"
+                                                "fr.wikipedia.org/wiki/Galaxie",
+                                        .color = { 0.90f, 0.94f, 0.98f },       // the lines
+                                        .accent = { 1.0f, 0.82f, 0.48f },       // title, stem, dot
+                                        .background = { 0.05f, 0.10f, 0.17f },  // the frame
+                                        .opacity = 0.86f,                       // of the frame
+                                        .pixels = 14.0f });
 ```
+
+A tooltip always faces the camera. It sits above its point, or below when there is no room above, and it slides sideways to stay inside the picture. A stem joins the frame to the point. The frame has round corners and a dark rim: it is the dot of the labels cut in nine parts, its quarters at the corners and its middle stretched between them, so it costs no other shader. Set the component to show the tooltip and remove it to hide it (`10e_Archipelago` shows the links of the region under the mouse).
 
 The letters are drawn the way of Glumpy: the font is baked once into a picture of **distance fields** (stb_truetype), where each pixel says how far it is from the edge of the letter. The shader cuts at the edge with a one-pixel smooth step, so a letter is sharp at any size, and a second cut a little outside gives a dark halo, readable on a bright planet. All the labels are drawn in one call, after everything else.
 
-Two rules: a label that would cover text already written on the picture (a caption, another label) is not written, so the names stay readable where things crowd; and a label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius.
+Two rules: a label that would cover text already written on the picture (a caption, a tooltip, another label) is not written, so the names stay readable where things crowd; and a label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius.
 
 Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 

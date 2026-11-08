@@ -244,6 +244,9 @@ private:
     std::size_t m_index = 0u;
     //! \brief How many frames the current example has been given.
     std::size_t m_frames = 0u;
+    //! \brief Frames drawn while the example loads in the background: not
+    //! counted by a check, up to a limit.
+    std::size_t m_loading_frames = 0u;
     //! \brief Every example that failed or leaked, and what it said.
     std::vector<std::string> m_problems;
     //! \brief Why the current example is not running, if it is not.

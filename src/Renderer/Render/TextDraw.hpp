@@ -120,6 +120,16 @@ public:
              compages::Vector3f const& p_point,
              CameraFrame const& p_camera);
 
+    //! \brief Lay out a tooltip, if its point is in front of the camera and
+    //! inside the picture. Tooltips are laid out after the caption and
+    //! before the labels.
+    //! \param[in] p_tooltip What to write.
+    //! \param[in] p_point Where its entity is, in the World.
+    //! \param[in] p_camera The camera of the picture being drawn.
+    void add(Tooltip const& p_tooltip,
+             compages::Vector3f const& p_point,
+             CameraFrame const& p_camera);
+
     //! \brief Lay out a caption on the picture. Captions are laid out before
     //! the labels, which are then not written over them.
     //! \param[in] p_caption What to write, and where.
@@ -142,6 +152,9 @@ private:
         //! \brief The field value where the halo ends: lower for a smaller
         //! label, so that the halo is about as wide in pixels.
         float halo;
+        //! \brief Multiplies the alpha: 1 for letters, less for a frame the
+        //! picture shows through.
+        float opacity;
     };
 
     //! \brief The rectangle a label takes on the picture, in pixels.
@@ -178,6 +191,21 @@ private:
               float p_scale,
               compages::Vector3f const& p_color,
               float p_halo);
+
+    //! \brief Two triangles of one colour, of any four corners given
+    //! counterclockwise: the inside of the dot, where the field is full.
+    void solid(std::array<compages::Vector2f, 4u> const& p_corners,
+               compages::Vector3f const& p_color,
+               float p_opacity);
+
+    //! \brief A rectangle with round corners and a dark rim: the dot cut in
+    //! nine, its quarters at the corners, its middle stretched between them.
+    //! \param[in] p_room The edge of the rectangle, in pixels.
+    //! \param[in] p_radius The radius of the corners, in pixels.
+    void frame(Room const& p_room,
+               float p_radius,
+               compages::Vector3f const& p_color,
+               float p_opacity);
 
     FontAtlas m_atlas;
     compages::gpu::Texture m_texture;

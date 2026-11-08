@@ -95,6 +95,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |
+| map camera (`Rig`) | left drag pans, wheel zooms toward the mouse; `RigController::flyTo(target, distance)`, `flying()`, `flight_pace` |
 | picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |
 | prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |
@@ -104,7 +105,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | sky | `scene.skybox({ "+x", "-x", "+y", "-y", "+z", "-z" })` |
 | picking | `scene.pick({ x, y })` |
 | debug lines | `scene.debug()` |
-| text on the picture | `scene.font(file)`, `entity.set(Label{ .text, .color, .pixels, .hide_closer_than })`, `camera.set(Caption{ .text, .color, .pixels, .at })` |
+| text on the picture | `scene.font(file)`, `entity.set(Label{ .text, .color, .pixels, .hide_closer_than })`, `entity.set(Tooltip{ .title, .text, .color, .accent, .background, .opacity, .pixels })`, `camera.set(Caption{ .text, .color, .pixels, .at })` |
 | live texture | `CanvasTexture`: `create`, `setMapping`, `bind`, `paintWorld`, `sync`, `applyLook` |
 
 ---

@@ -65,6 +65,17 @@ std::optional<compages::Vector3f> groundUnder(compages::Vector3f const& p_target
     return eye + (ray * t);
 }
 
+//! \brief How much a flight zooms out for a pan: the rho of van Wijk and
+//! Nuij. Their tests found sqrt(2) the most pleasing.
+constexpr double FLIGHT_RHO = 1.41421356;
+
+//! \brief An ease with no speed and no acceleration at 0 and 1: what
+//! starts and stops a flight without a jolt (Perlin's smootherstep).
+double smootherstep(double p_x)
+{
+    return p_x * p_x * p_x * ((p_x * ((p_x * 6.0) - 15.0)) + 10.0);
+}
+
 //! \brief Part of the way left a glide covers in \p p_dt: never more than
 //! all of it, the same path at any frame rate.
 float glide(float p_sharpness, float p_dt)
@@ -113,7 +124,31 @@ void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_i
         yaw -= p_input.look_delta.x * look_sensitivity;
         pitch += p_input.look_delta.y * look_sensitivity;
     }
-    distance *= std::exp(-p_input.zoom_delta * zoom_step);
+    // Any input stops a flight where the camera is now.
+    const bool touched = p_input.pan || p_input.rotate || (std::abs(p_input.zoom_delta) > 0.0f) ||
+                         p_input.forward || p_input.back || p_input.left || p_input.right ||
+                         p_input.turn_left || p_input.turn_right || p_input.zoom_in ||
+                         p_input.zoom_out;
+    if (m_flight && touched)
+    {
+        target = m_target;
+        distance = m_distance;
+        m_flight.reset();
+    }
+    if (std::abs(p_input.zoom_delta) > 0.0f)
+    {
+        // Toward the point under the mouse: it stays under the mouse.
+        const std::optional<compages::Vector3f> before =
+            groundUnder(target, yaw, pitch, distance, p_input, ground);
+        distance = std::clamp(distance * std::exp(-p_input.zoom_delta * zoom_step),
+                              min_distance, max_distance);
+        const std::optional<compages::Vector3f> after =
+            groundUnder(target, yaw, pitch, distance, p_input, ground);
+        if (before && after)
+        {
+            target = target + (*before - *after);
+        }
+    }
     if (p_input.pan)
     {
         // The grabbed point stays under the mouse in the wanted view.
@@ -148,12 +183,85 @@ void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_i
 
     // --- The glide --------------------------------------------------------
     const float k = glide(sharpness, p_dt);
-    m_target = m_target + ((target - m_target) * k);
     m_yaw += (yaw - m_yaw) * k;
     m_pitch += (pitch - m_pitch) * k;
-    // The log of the distance glides: a zoom looks even, near or far.
-    m_distance = std::exp(std::log(m_distance) + (std::log(distance) - std::log(m_distance)) * k);
+    if (m_flight)
+    {
+        fly(p_dt);
+    }
+    else
+    {
+        m_target = m_target + ((target - m_target) * k);
+        // The log of the distance glides: a zoom looks even, near or far.
+        m_distance =
+            std::exp(std::log(m_distance) + (std::log(distance) - std::log(m_distance)) * k);
+    }
     writePose(p_world, p_camera);
+}
+
+void RigController::flyTo(compages::Vector3f const& p_target, float p_distance)
+{
+    Flight flight;
+    flight.from = m_target;
+    flight.to = p_target;
+    flight.w0 = m_distance;
+    flight.w1 = std::clamp(p_distance, min_distance, max_distance);
+    const double w0 = double(flight.w0);
+    const double w1 = double(flight.w1);
+    const double u1 = double(compages::vector::norm(p_target - m_target));
+    const double rho2 = FLIGHT_RHO * FLIGHT_RHO;
+    if (u1 < (1.0e-6 * std::max(w0, w1)))
+    {
+        // No pan: a zoom alone, by the same ratio each second.
+        flight.length = float(std::abs(std::log(w1 / w0)) / FLIGHT_RHO);
+    }
+    else
+    {
+        // van Wijk and Nuij, "Smooth and efficient zooming and panning"
+        // (2003): r_i = ln(-b_i + sqrt(b_i^2 + 1)) = -asinh(b_i).
+        const double b0 = ((w1 * w1) - (w0 * w0) + (rho2 * rho2 * u1 * u1)) / (2.0 * w0 * rho2 * u1);
+        const double b1 = ((w1 * w1) - (w0 * w0) - (rho2 * rho2 * u1 * u1)) / (2.0 * w1 * rho2 * u1);
+        const double r0 = -std::asinh(b0);
+        const double r1 = -std::asinh(b1);
+        flight.u1 = float(u1);
+        flight.r0 = float(r0);
+        flight.length = float((r1 - r0) / FLIGHT_RHO);
+    }
+    flight.duration = std::max(0.25f, flight.length * flight_pace);
+    target = p_target;
+    distance = flight.w1;
+    m_grabbing = false;
+    m_flight = flight;
+}
+
+void RigController::fly(float p_dt)
+{
+    Flight& flight = *m_flight;
+    flight.time += std::max(p_dt, 0.0f);
+    const double x = std::min(double(flight.time / flight.duration), 1.0);
+    const double eased = smootherstep(x);
+    const double w0 = double(flight.w0);
+    if (flight.u1 <= 0.0f)
+    {
+        m_target = flight.to;
+        m_distance = float(w0 * std::pow(double(flight.w1) / w0, eased));
+    }
+    else
+    {
+        const double s = eased * double(flight.length);
+        const double r0 = double(flight.r0);
+        const double rho2 = FLIGHT_RHO * FLIGHT_RHO;
+        const double u = (w0 / rho2) * ((std::cosh(r0) * std::tanh((FLIGHT_RHO * s) + r0)) -
+                                         std::sinh(r0));
+        m_target = flight.from + ((flight.to - flight.from) * float(u / double(flight.u1)));
+        m_distance = float(w0 * std::cosh(r0) / std::cosh((FLIGHT_RHO * s) + r0));
+    }
+    if (x >= 1.0)
+    {
+        m_target = flight.to;
+        m_distance = flight.w1;
+        m_flight.reset();
+    }
 }
 
 void RigController::snap(World& p_world, EntityId p_camera)
@@ -165,6 +273,7 @@ void RigController::snap(World& p_world, EntityId p_camera)
     m_pitch = pitch;
     m_distance = distance;
     m_grabbing = false;
+    m_flight.reset();
     writePose(p_world, p_camera);
 }
 
