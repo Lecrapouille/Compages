@@ -11,8 +11,10 @@
 #include "Common/Example.hpp"
 
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Texture.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 
+#include <array>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -23,8 +25,8 @@ namespace examples
 
 // ****************************************************************************
 //! \brief A map of knowledge, after Chréage: islands of themes made of
-//! Voronoi cells, regions and parts made of cells, rivers that dig their
-//! valleys, a living sea.
+//! Voronoi cells, a main river per island, a tributary per region, a link
+//! per cell along it; rivers that dig their valleys; a living sea.
 //!
 //! The land is made on the CPU, in a thread, from a seed
 //! (10e_ArchipelagoLand.cpp); the gallery shows a progress bar meanwhile.
@@ -33,8 +35,11 @@ namespace examples
 //!   31 m and one picture of 16 m a pixel; near the camera, tiles of 8 m and
 //!   2 m a pixel are made in the background and take the place of the
 //!   coarse ones, with skirts that hide the cracks between the two;
-//! - the sea and the rivers: the PBR shader of the Renderer with another
-//!   main(); the alpha of the picture says where the water is;
+//! - the ground: near the camera, real pictures of grass, sand and rock
+//!   (tiled every few metres) give the map its grain;
+//! - the sea: near the camera, a surface whose corners move with Gerstner
+//!   waves (a vertex shader); farther, waves in the normals only; the alpha
+//!   of the picture of the map says where the water is and how deep;
 //! - boats, birds and fish move by a few lines each;
 //! - the camera is a Rig; a click flies to a part with
 //!   RigController::flyTo(); a Tooltip lists the links of a region.
@@ -133,8 +138,21 @@ private:
     //! animals), on the first load or after Generate.
     [[nodiscard]] compages::Status finishLoading(Loaded p_loaded);
 
-    //! \brief The PBR shader with the main() of the sea and the rivers.
+    //! \brief The PBR shader with the main() of the map (ground, sea,
+    //! rivers), the pictures of the ground, and the surface of the sea.
     [[nodiscard]] compages::Status makeSea();
+
+    //! \brief Move the surface of the sea under the camera, sized to what it
+    //! sees, or hide it from afar.
+    void placeSurface();
+
+    //! \brief Drape the cell under the mouse: a veil and a band along its
+    //! edges, on the ground.
+    void outlineCell(int p_cell);
+
+    //! \brief The height of the swell at a point of the sea, as the vertex
+    //! shader moves the surface (without its sideways motion).
+    [[nodiscard]] float swellAt(float p_x, float p_z) const;
 
     //! \brief Dress a drawn entity with the shader of the map.
     [[nodiscard]] compages::Status wearSea(compages::world::Entity p_entity);
@@ -173,6 +191,20 @@ private:
     std::vector<compages::world::Entity> m_tiles;
     compages::renderer::TextureAssetId m_picture{};
     compages::renderer::MaterialId m_sea{};
+    compages::renderer::MaterialId m_surface_material{};
+    compages::world::Entity m_surface;
+    //! \brief Where the surface of the sea is, and its half width (negative:
+    //! hidden).
+    compages::Vector2f m_surface_centre{ 0.0f, 0.0f };
+    float m_surface_radius = -1.0f;
+    //! \brief The pictures of the ground: grass, sand, rock.
+    std::array<compages::gpu::Texture, 3> m_grounds;
+    //! \brief The veil and the band of the cell under the mouse, the cell
+    //! they show and the width of the band.
+    compages::world::Entity m_cell_veil;
+    compages::world::Entity m_cell_band;
+    int m_outlined = -1;
+    float m_band_width = 0.0f;
 
     std::future<Loaded> m_loading;
     std::shared_ptr<Report> m_report;
@@ -184,6 +216,8 @@ private:
 
     std::vector<compages::world::Entity> m_island_names;
     std::vector<compages::world::Entity> m_region_names;
+    //! \brief The pins of the links: a stick and a head on the cell of each
+    //! link, with its name.
     std::vector<std::vector<compages::world::Entity>> m_part_names;
     std::vector<Boat> m_boats;
     std::vector<Bird> m_birds;

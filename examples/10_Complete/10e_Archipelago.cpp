@@ -51,12 +51,16 @@ struct Theme
     float x;
     float z;
     float radius;
+    //! \brief The colour of its pins (sRGB), the hue of its regions.
+    std::array<float, 3> hue;
 };
 
 constexpr std::array THEMES = {
-    Theme{ "Sciences", -3.9f, -3.2f, 3.0f }, Theme{ "Arts", 3.9f, -3.9f, 2.5f },
-    Theme{ "Histoire", 4.1f, 3.0f, 2.7f },   Theme{ "Techniques", -3.7f, 3.7f, 2.6f },
-    Theme{ "Société", 0.2f, 0.0f, 1.7f },
+    Theme{ "Sciences", -3.9f, -3.2f, 3.0f, { 0.35f, 0.45f, 0.95f } },
+    Theme{ "Arts", 3.9f, -3.9f, 2.5f, { 0.95f, 0.35f, 0.55f } },
+    Theme{ "Histoire", 4.1f, 3.0f, 2.7f, { 0.95f, 0.62f, 0.25f } },
+    Theme{ "Techniques", -3.7f, 3.7f, 2.6f, { 0.20f, 0.75f, 0.75f } },
+    Theme{ "Société", 0.2f, 0.0f, 1.7f, { 0.50f, 0.85f, 0.30f } },
 };
 
 //! \brief A region: its island, its name, its links (one part each).
@@ -146,6 +150,46 @@ const Vector3f SKY{ 0.81f, 0.855f, 0.88f };
 constexpr float BOAT_SEEN = 1.0f / 1100.0f;
 constexpr float BIRD_SEEN = 1.0f / 300.0f;
 constexpr float FISH_SEEN = 1.0f / 600.0f;
+constexpr float PIN_SEEN = 1.0f / 500.0f;
+
+//! \brief The surface of the sea: 160 x 160 quads, as wide as twice the
+//! distance of the camera (1.2 to 7 km), shown within 6 km.
+constexpr int SURFACE_CELLS = 160;
+const float SURFACE_WITHIN = toMetres(6.0_km);
+
+//! \brief The swells of the sea, the same for the shaders and for the
+//! boats: direction (x, z), wavelength (m), steepness (amplitude times k).
+//! A wide fan, wavelengths that share no ratio: the sum never repeats into
+//! stripes. Each one runs at the speed of deep water waves, omega^2 = g k:
+//! the swell of 233 m at 19 m/s, a period of 12 s, 1.7 m high.
+struct Swell
+{
+    float x;
+    float z;
+    float length;
+    float steepness;
+};
+constexpr std::array SWELLS = { Swell{ 0.80f, 0.60f, 233.0f, 0.045f }, Swell{ 0.20f, 0.98f, 151.0f, 0.040f },
+                                Swell{ 0.98f, -0.20f, 97.0f, 0.040f },  Swell{ 0.55f, 0.83f, 61.0f, 0.035f },
+                                Swell{ -0.30f, 0.95f, 39.0f, 0.030f },  Swell{ 0.90f, 0.43f, 27.0f, 0.030f },
+                                Swell{ 0.10f, -0.99f, 17.0f, 0.025f },  Swell{ 0.71f, 0.71f, 11.0f, 0.020f } };
+constexpr float GRAVITY = 9.81f;
+
+//! \brief The swells as GLSL constants, written from SWELLS.
+std::string swellsGlsl()
+{
+    std::string text = "const int SWELL_COUNT = " + std::to_string(SWELLS.size()) +
+                       ";\nconst vec4 SWELLS[SWELL_COUNT] = vec4[SWELL_COUNT](";
+    for (std::size_t i = 0u; i < SWELLS.size(); ++i)
+    {
+        char swell[96];
+        std::snprintf(swell, sizeof(swell), "%svec4(%f, %f, %f, %f)", (i == 0u) ? "" : ", ", double(SWELLS[i].x),
+                      double(SWELLS[i].z), double(SWELLS[i].length), double(SWELLS[i].steepness));
+        text += swell;
+    }
+    return text + ");\nconst float GRAVITY = 9.81;\nconst float PI = 3.14159265;\nconst float MAP_SIZE = " +
+           std::to_string(MAP) + ";\n";
+}
 
 constexpr float TURN = 6.2831853f;
 
@@ -174,7 +218,8 @@ compages::renderer::MeshAsset meshOf(Patch const& p_patch, int p_i, int p_j, int
 {
     compages::renderer::MeshAsset mesh;
     const float step = p_patch.size / float(p_patch.cells);
-    auto ground = [&](int p_a, int p_b) { return std::max(0.0f, p_patch.height(p_a, p_b)); };
+    // The sea bed at its depth: the surface of the sea goes over it.
+    auto ground = [&](int p_a, int p_b) { return std::max(-(archipelago::SEABED + 6.0f), p_patch.height(p_a, p_b)); };
     const int side = p_cells + 1;
     float top = 0.0f;
     for (int j = 0; j < side; ++j)
@@ -240,7 +285,7 @@ compages::renderer::MeshAsset meshOf(Patch const& p_patch, int p_i, int p_j, int
     const float x0 = p_patch.x + (float(p_i) * step);
     const float z0 = p_patch.z + (float(p_j) * step);
     mesh.local_bounds = compages::AABB::fromCorners(
-        Vector3f(x0, -SKIRT, z0), Vector3f(x0 + (float(p_cells) * step), top, z0 + (float(p_cells) * step)));
+        Vector3f(x0, -(archipelago::SEABED + 6.0f) - SKIRT, z0), Vector3f(x0 + (float(p_cells) * step), top, z0 + (float(p_cells) * step)));
     return mesh;
 }
 
@@ -257,85 +302,192 @@ compages::renderer::TextureAsset pictureOf(std::string p_name, Patch const& p_pa
     return picture;
 }
 
-// --- The sea ----------------------------------------------------------------
+// --- The shaders -------------------------------------------------------------
 
 // The main() of the map: the PBR shader of the Renderer (its lights, its
 // shadow, its fog and its tone curve are kept) with water where the alpha
 // of the picture says: the sea from 0 (the shore) to 0.9 (90 m deep), a
 // river at 0.94, the land at 1.
 //
-// The swells are sums of sines. Each one obeys the dispersion of deep
-// water, omega^2 = g k: a swell 233 m long runs at 19 m/s with a period of
-// 12 s. Where a wave is smaller than a pixel (fwidth of its phase), it
-// fades instead of shimmering. The water mirrors the sky more at a grazing
-// look (Schlick's Fresnel), the sun glints in it, and bands of surf run to
-// the shore. A river gets the short ripples, the sky and the glint.
-constexpr char const* SEA_MAIN = R"(
+// The land: near the camera, pictures of grass, sand and rock give it its
+// grain. Each is read at two scales (6 m and 23 m: no visible tiling) and
+// divided by its mean colour (its smallest mipmap), so the colours of the
+// map stay; sand on the beaches, rock on the steep slopes, grass elsewhere.
+//
+// The sea: waves in the normals (they fade where they are smaller than a
+// pixel: fwidth of the phase), the sky in the water at a grazing look
+// (Schlick's Fresnel), the glint of the sun, bands of surf running to the
+// shore. Where the surface of the sea is drawn (near the camera), these
+// fade out: the surface makes them, and the ground shows the sea bed.
+constexpr char const* MAP_MAIN = R"(
 uniform float time;
-
-const float PI = 3.14159265;
-const float GRAVITY = 9.81;
-// Spread over a wide fan, with wavelengths that share no ratio: the sum
-// never repeats into stripes. Direction (x, z), wavelength in metres,
-// steepness (amplitude times k).
-const int SWELL_COUNT = 8;
-const vec4 SWELLS[SWELL_COUNT] = vec4[SWELL_COUNT](vec4( 0.80,  0.60, 233.0, 0.045),
-                                                   vec4( 0.20,  0.98, 151.0, 0.040),
-                                                   vec4( 0.98, -0.20,  97.0, 0.040),
-                                                   vec4( 0.55,  0.83,  61.0, 0.035),
-                                                   vec4(-0.30,  0.95,  39.0, 0.030),
-                                                   vec4( 0.90,  0.43,  27.0, 0.030),
-                                                   vec4( 0.10, -0.99,  17.0, 0.025),
-                                                   vec4( 0.71,  0.71,  11.0, 0.020));
+uniform sampler2D grassMap;
+uniform sampler2D sandMap;
+uniform sampler2D rockMap;
+uniform vec2 surfaceCentre;
+uniform float surfaceRadius;
 
 out vec4 oColor;
+
+vec3 grain(sampler2D p_map, vec2 p_at)
+{
+    vec3 fine = texture(p_map, p_at / 6.0).rgb;
+    vec3 coarse = texture(p_map, p_at / 23.0).rgb;
+    vec3 mean = textureLod(p_map, vec2(0.5), 12.0).rgb;
+    return (0.5 * (fine + coarse)) / max(mean, vec3(0.02));
+}
 
 void main()
 {
     vec4 texel = hasBaseColorMap ? texture(baseColorMap, vUv) : vec4(1.0);
     vec3 base = texel.rgb * baseColorFactor;
+    vec2 p = vWorldPos.xz;
+    float near = 1.0 - smoothstep(250.0, 1600.0, length(cameraPos - vWorldPos));
     if (texel.a > 0.97)
     {
-        oColor = vec4(present(applyFog(shade(base, normalize(vNormal), vWorldPos), vWorldPos)), opacity);
+        vec3 n = normalize(vNormal);
+        float sand = 1.0 - smoothstep(2.0, 6.0, vWorldPos.y);
+        float rock = smoothstep(0.22, 0.42, 1.0 - n.y) * (1.0 - sand);
+        float grass = max(1.0 - sand - rock, 0.0);
+        vec3 ground = (grain(grassMap, p) * grass) + (grain(sandMap, p) * sand) + (grain(rockMap, p) * rock);
+        base *= mix(vec3(1.0), ground, 0.9 * near);
+        oColor = vec4(present(applyFog(shade(base, n, vWorldPos), vWorldPos)), opacity);
         return;
     }
     bool river = texel.a > 0.915;
     float depth = river ? 0.5 : texel.a / 0.9;
-    vec2 p = vWorldPos.xz;
+    vec3 up = vec3(0.0, 1.0, 0.0);
+    // The sea bed: sand in the shallows.
+    base *= mix(vec3(1.0), grain(sandMap, p), 0.6 * near * (1.0 - smoothstep(0.0, 0.3, depth)));
+    vec3 bed = shade(base, up, vWorldPos);
     vec2 slope = vec2(0.0);
     for (int i = river ? 5 : 0; i < SWELL_COUNT; ++i)
     {
         vec2 d = normalize(SWELLS[i].xy);
         float k = 2.0 * PI / SWELLS[i].z;
-        float omega = sqrt(GRAVITY * k);
-        float phase = k * dot(d, p) - omega * time + float(i) * 1.7;
+        float phase = k * dot(d, p) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
         float fade = 1.0 - smoothstep(0.3, 1.2, fwidth(phase));
         slope += d * (SWELLS[i].w * cos(phase) * fade);
     }
     // Gusts: patches where the wind ruffles the water more, drifting.
     slope *= 0.6 + 0.4 * sin(p.x * 0.0021 + time * 0.05) * sin(p.y * 0.0017 - time * 0.04);
-    vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 n = normalize(vec3(-slope.x, 1.0, -slope.y));
     vec3 toEye = normalize(cameraPos - vWorldPos);
     vec3 toLight = normalize(-lightDir);
-    // The sky in the water, from a normal half way to the vertical: a
-    // softer Fresnel, without bright stripes at a grazing look.
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(normalize(n + up), toEye), 0.0), 5.0);
-    vec3 water = shade(base, up, vWorldPos);
-    water = mix(water, fogColor * 1.1, 0.7 * fresnel);
+    vec3 water = mix(bed, fogColor * 1.1, 0.7 * fresnel);
     float sun = sunVisibility(up, toLight, vWorldPos);
     water += lightColor * (2.5 * sun * pow(max(dot(reflect(-toLight, n), toEye), 0.0), 240.0));
     if (!river)
     {
-        // Surf: bands that run toward the shore over the last metres of
-        // depth, broken into pieces, and a fringe that never leaves the beach.
         float shallow = 1.0 - smoothstep(0.0, 0.07, depth);
         float bands = sin(depth * 260.0 + time * 1.4);
         float broken = 0.5 + 0.5 * sin(p.x * 0.031 + time * 0.21) * sin(p.y * 0.027 - time * 0.17);
         float foam = shallow * smoothstep(0.55, 0.95, bands) * broken + (1.0 - smoothstep(0.0, 0.015, depth)) * 0.7;
         water = mix(water, vec3(0.85, 0.9, 0.9) * (0.6 + 0.4 * sun), clamp(foam, 0.0, 1.0) * 0.75);
     }
-    oColor = vec4(present(applyFog(water, vWorldPos)), opacity);
+    // Under the surface of the sea, the sea bed alone.
+    float open = (river || surfaceRadius <= 0.0)
+                     ? 1.0
+                     : smoothstep(0.7 * surfaceRadius, surfaceRadius, length(p - surfaceCentre));
+    oColor = vec4(present(applyFog(mix(bed, water, open), vWorldPos)), opacity);
+}
+)";
+
+// The surface of the sea, its vertex shader: the PBR one, with each corner
+// moved by Gerstner waves (GPU Gems 1, chapter 1): a point of the water goes
+// round a small circle, up and forward on the crest, so the crests are
+// sharp and the troughs wide. The waves die in the shallows; on land the
+// surface goes under the ground. Swells shorter than three quads are left
+// to the normals of the fragment shader.
+constexpr char const* SURFACE_WAVES = R"(
+uniform float time;
+uniform sampler2D baseColorMap;
+uniform float gridStep;
+
+out float vCrest;
+
+vec3 gWaveNormal;
+
+vec4 displace(vec4 p_world)
+{
+    float water = textureLod(baseColorMap, p_world.xz / MAP_SIZE + 0.5, 0.0).a;
+    float calm = (water > 0.91) ? 0.0 : smoothstep(0.0, 0.08, water / 0.9);
+    vec3 offset = vec3(0.0);
+    vec3 normal = vec3(0.0, 1.0, 0.0);
+    vCrest = 0.0;
+    for (int i = 0; i < SWELL_COUNT; ++i)
+    {
+        vec2 d = normalize(SWELLS[i].xy);
+        float k = 2.0 * PI / SWELLS[i].z;
+        float amplitude = calm * smoothstep(3.0, 6.0, SWELLS[i].z / gridStep) * SWELLS[i].w / k;
+        float phase = k * dot(d, p_world.xz) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
+        const float Q = 0.6;
+        offset.xz += Q * amplitude * d * cos(phase);
+        offset.y += amplitude * sin(phase);
+        normal.xz -= d * (k * amplitude * cos(phase));
+        normal.y -= Q * k * amplitude * sin(phase);
+        vCrest += k * amplitude * sin(phase);
+    }
+    if (water > 0.91)
+    {
+        offset.y = -8.0;
+    }
+    gWaveNormal = normalize(normal);
+    return vec4(p_world.xyz + offset, 1.0);
+}
+)";
+
+// The surface of the sea, its fragment shader: the sea bed shows through
+// the shallows, the deep water is darker and more opaque; the sky, the
+// glint, foam on the steepest crests and in the surf; the surface fades at
+// its edge into the waves of the ground.
+constexpr char const* SURFACE_MAIN = R"(
+uniform float time;
+uniform vec2 surfaceCentre;
+uniform float surfaceRadius;
+
+in float vCrest;
+
+out vec4 oColor;
+
+void main()
+{
+    vec2 p = vWorldPos.xz;
+    vec4 texel = hasBaseColorMap ? texture(baseColorMap, p / MAP_SIZE + 0.5) : vec4(0.0);
+    if (texel.a > 0.91)
+    {
+        discard;
+    }
+    float depth = texel.a / 0.9;
+    vec3 up = vec3(0.0, 1.0, 0.0);
+    // Ripples smaller than the quads, in the normal.
+    vec2 slope = vec2(0.0);
+    for (int i = 5; i < SWELL_COUNT; ++i)
+    {
+        vec2 d = normalize(SWELLS[i].xy);
+        float k = 2.0 * PI / SWELLS[i].z;
+        float phase = k * dot(d, p) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
+        slope += d * (SWELLS[i].w * cos(phase) * (1.0 - smoothstep(0.3, 1.2, fwidth(phase))));
+    }
+    vec3 n = normalize(normalize(vNormal) + vec3(-slope.x, 0.0, -slope.y));
+    vec3 toEye = normalize(cameraPos - vWorldPos);
+    vec3 toLight = normalize(-lightDir);
+    float sun = sunVisibility(up, toLight, vWorldPos);
+    vec3 body = shade(mix(vec3(0.05, 0.32, 0.38), vec3(0.01, 0.06, 0.14), smoothstep(0.0, 0.6, depth)) * baseColorFactor,
+                      up, vWorldPos);
+    float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, toEye), 0.0), 5.0);
+    vec3 water = mix(body, fogColor * 1.1, fresnel);
+    water += lightColor * (3.0 * sun * pow(max(dot(reflect(-toLight, n), toEye), 0.0), 200.0));
+    float shallow = 1.0 - smoothstep(0.0, 0.07, depth);
+    float bands = sin(depth * 260.0 + time * 1.4);
+    float broken = 0.5 + 0.5 * sin(p.x * 0.031 + time * 0.21) * sin(p.y * 0.027 - time * 0.17);
+    float foam = clamp(shallow * smoothstep(0.55, 0.95, bands) * broken + smoothstep(0.16, 0.24, vCrest) * 0.6, 0.0, 1.0);
+    water = mix(water, vec3(0.9, 0.95, 0.95) * (0.6 + 0.4 * sun), foam);
+    float alpha = mix(0.3, 0.92, smoothstep(0.0, 0.35, depth));
+    alpha = max(alpha, max(fresnel, foam));
+    alpha *= 1.0 - smoothstep(0.7 * surfaceRadius, surfaceRadius, length(p - surfaceCentre));
+    oColor = vec4(present(applyFog(water, vWorldPos)), alpha * opacity);
 }
 )";
 
@@ -362,13 +514,13 @@ Archipelago::~Archipelago()
 std::string Archipelago::description() const
 {
     return "A map of knowledge after Chréage: islands of Voronoi cells whose "
-           "relief grows by uplift and river erosion, regions and parts made "
-           "of cells, rivers that run down from cell to cell and dig their "
-           "valleys in the mesh. Made in a thread behind a progress bar; "
-           "near the camera, finer tiles (8 m, 2 m a pixel) replace the "
-           "coarse ones. The sea is the PBR shader with another main(). Left "
-           "drag moves, right drag turns, the wheel zooms toward the mouse; "
-           "a click flies to a part.";
+           "relief grows by uplift and river erosion. As the thesis maps contents "
+           "along a strand: a theme is an island and its main river, a topic a "
+           "tributary, a link a cell along it (a pin). The rivers dig their "
+           "valleys in the mesh. Made in a thread behind a progress bar; near the "
+           "camera, finer tiles, pictures of grass, sand and rock, and a sea whose "
+           "vertices move with Gerstner waves. Left drag moves, right drag turns, "
+           "the wheel zooms toward the mouse; a click flies there";
 }
 
 // ----------------------------------------------------------------------------
@@ -480,20 +632,230 @@ Archipelago::Progress Archipelago::progress() const
 // ----------------------------------------------------------------------------
 compages::Status Archipelago::makeSea()
 {
+    // The pictures of the ground (ambientCG, CC0): sRGB, repeated, with
+    // mipmaps; on the units the Renderer leaves free (0: the albedo, 1 and
+    // 7: the shadows).
+    const std::array<char const*, 3> grounds = { "terrain/grass.jpg", "terrain/sand.jpg", "terrain/rock.jpg" };
+    for (std::size_t k = 0u; k < grounds.size(); ++k)
+    {
+        const std::filesystem::path file = dataPath(grounds[k]);
+        if (file.empty())
+        {
+            return compages::failure(std::string(grounds[k]) + " is missing from external/Compages-data/");
+        }
+        compages::gpu::LoadOptions options;
+        options.srgb = true;
+        options.wrap = compages::gpu::Wrap::Repeat;
+        COMPAGES_TRY_ASSIGN(m_grounds[k], compages::gpu::Texture::fromFile(file, options));
+    }
+
     // The PBR shader of the Renderer up to its main(), then ours: the
     // renderer still sets every uniform it knows (lights, shadow, fog).
-    std::string source = compages::renderer::shaders::pbrFragment();
-    source = source.substr(0u, source.find("out vec4 oColor;")) + SEA_MAIN;
-    compages::renderer::Material material;
-    material.name = "ArchipelagoSea";
-    material.family = compages::renderer::ShaderFamily::PbrMinimal;
-    COMPAGES_TRY(material.program.loadSources(compages::renderer::shaders::pbrVertex(), source));
-    COMPAGES_TRY_ASSIGN(material.pipeline,
-                        compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
-                            material.program,
-                            compages::gpu::RenderState{ .depth_test = true, .cull = compages::gpu::CullMode::Back }));
-    COMPAGES_TRY_ASSIGN(m_sea, m_scene.assets().addMaterial(material.name, std::move(material)));
+    const std::string pbr = compages::renderer::shaders::pbrFragment();
+    const std::string head = pbr.substr(0u, pbr.find("out vec4 oColor;")) + swellsGlsl();
+    {
+        compages::renderer::Material material;
+        material.name = "ArchipelagoMap";
+        material.family = compages::renderer::ShaderFamily::PbrMinimal;
+        COMPAGES_TRY(material.program.loadSources(compages::renderer::shaders::pbrVertex(), head + MAP_MAIN));
+        COMPAGES_TRY_ASSIGN(material.pipeline,
+                            compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
+                                material.program,
+                                compages::gpu::RenderState{ .depth_test = true, .cull = compages::gpu::CullMode::Back }));
+        material.program.set("grassMap", 2);
+        material.program.set("sandMap", 3);
+        material.program.set("rockMap", 4);
+        COMPAGES_TRY_ASSIGN(m_sea, m_scene.assets().addMaterial(material.name, std::move(material)));
+    }
+    {
+        // The vertex shader of the PBR material, with the waves moving its
+        // corners before they are projected.
+        std::string vertex = compages::renderer::shaders::pbrVertex();
+        const std::size_t main = vertex.find("void main()");
+        vertex = vertex.substr(0u, main) + swellsGlsl() + SURFACE_WAVES + vertex.substr(main);
+        for (auto const& [from, to] : { std::pair<char const*, char const*>{ "vWorldPos = world.xyz;",
+                                                                             "world = displace(world);\n    vWorldPos = world.xyz;" },
+                                        std::pair<char const*, char const*>{ "vUv = uv;", "vUv = uv;\n    vNormal = gWaveNormal;" } })
+        {
+            const std::size_t at = vertex.find(from);
+            if (at == std::string::npos)
+            {
+                return compages::failure(std::string("The PBR vertex shader has no '") + from + "'");
+            }
+            vertex.replace(at, std::string(from).size(), to);
+        }
+        compages::renderer::Material material;
+        material.name = "ArchipelagoSurface";
+        material.family = compages::renderer::ShaderFamily::PbrMinimal;
+        COMPAGES_TRY(material.program.loadSources(vertex, head + SURFACE_MAIN));
+        COMPAGES_TRY_ASSIGN(material.pipeline,
+                            compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
+                                material.program,
+                                compages::gpu::RenderState{ .depth_test = true, .cull = compages::gpu::CullMode::Back }));
+        // Over the sea bed, blended, without writing the depth.
+        COMPAGES_TRY_ASSIGN(material.see_through,
+                            compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
+                                material.program,
+                                compages::gpu::RenderState{ .depth_test = true,
+                                                            .depth_write = false,
+                                                            .blend = compages::gpu::Blend::alpha(),
+                                                            .cull = compages::gpu::CullMode::Back }));
+        COMPAGES_TRY_ASSIGN(m_surface_material, m_scene.assets().addMaterial(material.name, std::move(material)));
+    }
     return compages::success();
+}
+
+// ----------------------------------------------------------------------------
+float Archipelago::swellAt(float p_x, float p_z) const
+{
+    const float depth = -baseHeight(p_x, p_z) / archipelago::SEABED;
+    const float calm = std::clamp((depth / 0.08f), 0.0f, 1.0f);
+    float height = 0.0f;
+    for (std::size_t i = 0u; i < SWELLS.size(); ++i)
+    {
+        const float length = std::hypot(SWELLS[i].x, SWELLS[i].z);
+        const float k = TURN / SWELLS[i].length;
+        const float phase = (k * (((SWELLS[i].x * p_x) + (SWELLS[i].z * p_z)) / length)) -
+                            (std::sqrt(GRAVITY * k) * m_time) + (float(i) * 1.7f);
+        height += calm * (SWELLS[i].steepness / k) * std::sin(phase);
+    }
+    return height;
+}
+
+// ----------------------------------------------------------------------------
+void Archipelago::placeSurface()
+{
+    compages::world::RigController const& rig = m_camera.get<compages::world::Rig>().controller;
+    const float distance = rig.currentDistance();
+    if (distance > SURFACE_WITHIN)
+    {
+        m_surface.enable(false);
+        m_surface_radius = -1.0f;
+        return;
+    }
+    // As wide as twice the distance; its corners on a grid of its own step,
+    // so that the waves do not swim when it follows the camera.
+    const float size = std::clamp(2.0f * distance, toMetres(1.2_km), toMetres(7.0_km));
+    const float step = size / float(SURFACE_CELLS);
+    const Vector3f target = rig.currentTarget();
+    m_surface_centre = Vector2f(std::round(target.x / step) * step, std::round(target.z / step) * step);
+    m_surface_radius = 0.5f * size;
+    m_surface.enable(true)
+        .position(m_surface_centre.x, 0.0f, m_surface_centre.y)
+        .scale(size, 1.0f, size);
+    if (compages::renderer::Material* surface = m_scene.assets().material(m_surface_material))
+    {
+        surface->program.set("gridStep", step);
+    }
+}
+
+// ----------------------------------------------------------------------------
+void Archipelago::outlineCell(int p_cell)
+{
+    const float distance = m_camera.get<compages::world::Rig>().controller.currentDistance();
+    // The band keeps about 3 pixels wide from where the camera is.
+    const float width = std::max(toMetres(3.0_m), 0.0035f * distance);
+    if ((p_cell == m_outlined) && (std::abs(width - m_band_width) < 0.15f * m_band_width))
+    {
+        return;
+    }
+    m_outlined = p_cell;
+    m_band_width = width;
+    m_cell_veil.enable(p_cell >= 0);
+    m_cell_band.enable(p_cell >= 0);
+    if (p_cell < 0)
+    {
+        return;
+    }
+    // The corners of the cell, each edge cut in 8 so that it follows the
+    // ground, a little over it.
+    const std::vector<Vector2f> corners = m_land.cellPolygon(p_cell);
+    std::vector<Vector2f> rim;
+    for (std::size_t k = 0u; k < corners.size(); ++k)
+    {
+        for (int s = 0; s < 8; ++s)
+        {
+            rim.push_back(corners[k] + ((corners[(k + 1u) % corners.size()] - corners[k]) * (float(s) / 8.0f)));
+        }
+    }
+    Vector2f middle(0.0f, 0.0f);
+    for (Vector2f const& corner : corners)
+    {
+        middle = middle + (corner * (1.0f / float(corners.size())));
+    }
+    const float lift = toMetres(2.0_m) + (0.002f * distance);
+    auto onGround = [&](Vector2f p_at)
+    {
+        compages::renderer::MeshVertex vertex;
+        vertex.position = Vector3f(p_at.x, std::max(0.0f, m_land.heightAt(p_at.x, p_at.y)) + lift, p_at.y);
+        vertex.normal = Vector3f::UNIT_Y;
+        return vertex;
+    };
+    // The veil: a fan from the middle, its points half way too, so that
+    // it bends with the ground.
+    compages::renderer::MeshAsset veil;
+    veil.source_vertices.push_back(onGround(middle));
+    for (Vector2f const& point : rim)
+    {
+        veil.source_vertices.push_back(onGround((middle + point) * 0.5f));
+        veil.source_vertices.push_back(onGround(point));
+    }
+    const std::uint32_t count = std::uint32_t(rim.size());
+    for (std::uint32_t k = 0u; k < count; ++k)
+    {
+        const std::uint32_t half = 1u + (2u * k);
+        const std::uint32_t edge = half + 1u;
+        const std::uint32_t next_half = 1u + (2u * ((k + 1u) % count));
+        const std::uint32_t next_edge = next_half + 1u;
+        // Counterclockwise from above: the corners of the cell are.
+        // Facing up (the corners turn clockwise from above), and down too:
+        // seen from any side.
+        for (const std::uint32_t index : { 0u, next_half, half, half, next_half, edge, edge, next_half, next_edge,
+                                           0u, half, next_half, half, edge, next_half, edge, next_edge, next_half })
+        {
+            veil.source_indices.push_back(index);
+        }
+    }
+    // The band: from the edge inward by its width.
+    compages::renderer::MeshAsset band;
+    for (Vector2f const& point : rim)
+    {
+        const Vector2f inward = middle - point;
+        const float length = std::max(std::hypot(inward.x, inward.y), 1.0f);
+        band.source_vertices.push_back(onGround(point));
+        band.source_vertices.push_back(onGround(point + (inward * (std::min(width, 0.45f * length) / length))));
+    }
+    for (std::uint32_t k = 0u; k < count; ++k)
+    {
+        const std::uint32_t a = 2u * k;
+        const std::uint32_t b = 2u * ((k + 1u) % count);
+        for (const std::uint32_t index : { a, a + 1u, b, b, a + 1u, b + 1u, a, b, a + 1u, b, b + 1u, a + 1u })
+        {
+            band.source_indices.push_back(index);
+        }
+    }
+    for (auto [entity, mesh] : { std::pair<compages::world::Entity, compages::renderer::MeshAsset*>{ m_cell_veil, &veil },
+                                 std::pair<compages::world::Entity, compages::renderer::MeshAsset*>{ m_cell_band, &band } })
+    {
+        mesh->index_count = mesh->source_indices.size();
+        mesh->local_bounds = compages::AABB::fromCorners(Vector3f(middle.x - 400.0f, -10.0f, middle.y - 400.0f),
+                                                         Vector3f(middle.x + 400.0f, archipelago::PEAK + 50.0f, middle.y + 400.0f));
+        compages::renderer::MeshAsset* current = m_scene.assets().mesh(entity.get<compages::renderer::MeshRenderer>().mesh);
+        if (current == nullptr)
+        {
+            continue;
+        }
+        current->source_vertices = std::move(mesh->source_vertices);
+        current->source_indices = std::move(mesh->source_indices);
+        current->index_count = mesh->index_count;
+        current->local_bounds = mesh->local_bounds;
+        current->releaseGpu();
+        const compages::Status sent = current->upload();
+        if (!sent)
+        {
+            compages::gpu::reportError(sent.error());
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -570,9 +932,10 @@ compages::Status Archipelago::finishLoading(Loaded p_loaded)
     }
     if (first)
     {
-        // The ocean around the map: four trapezoids out to 150 km, reading
-        // the deep water of the edge of the picture. Outside the shadows:
-        // the shadow picture stays fitted to the islands.
+        // The ocean around the map: four trapezoids out to 150 km, as deep as
+        // the edge of the map, reading the deep water of the edge of the
+        // picture. Outside the shadows: the shadow picture stays fitted to
+        // the islands.
         const float far = toMetres(150.0_km);
         const float near = 0.5f * MAP;
         compages::renderer::MeshAsset skirt;
@@ -584,7 +947,7 @@ compages::Status Archipelago::finishLoading(Loaded p_loaded)
             {
                 compages::renderer::MeshVertex vertex;
                 const Vector2f p = corner * (reach / near);
-                vertex.position = Vector3f(p.x, 0.0f, p.y);
+                vertex.position = Vector3f(p.x, -(archipelago::SEABED + 6.0f), p.y);
                 vertex.normal = Vector3f::UNIT_Y;
                 vertex.uv = Vector2f((corner.x > 0.0f) ? 1.0f : 0.0f, (corner.y > 0.0f) ? 1.0f : 0.0f);
                 skirt.source_vertices.push_back(vertex);
@@ -600,11 +963,95 @@ compages::Status Archipelago::finishLoading(Loaded p_loaded)
             }
         }
         skirt.index_count = skirt.source_indices.size();
-        skirt.local_bounds = compages::AABB::fromCorners(Vector3f(-far, -1.0f, -far), Vector3f(far, 1.0f, far));
+        skirt.local_bounds = compages::AABB::fromCorners(Vector3f(-far, -100.0f, -far), Vector3f(far, 1.0f, far));
         m_ocean = m_scene.mesh(std::move(skirt), "Ocean");
         m_scene.look(m_ocean, m_picture);
         COMPAGES_TRY(wearSea(m_ocean));
         m_ocean.get<compages::renderer::MeshRenderer>().flags = compages::renderer::RenderFlags::NoShadowCaster;
+
+        // The surface of the sea: a square of one metre, 160 x 160 quads,
+        // scaled and moved by placeSurface(); see-through (opacity under
+        // one), so it is drawn after the ground.
+        compages::renderer::MeshAsset grid;
+        for (int j = 0; j <= SURFACE_CELLS; ++j)
+        {
+            for (int i = 0; i <= SURFACE_CELLS; ++i)
+            {
+                compages::renderer::MeshVertex vertex;
+                vertex.position = Vector3f((float(i) / float(SURFACE_CELLS)) - 0.5f, 0.0f,
+                                           (float(j) / float(SURFACE_CELLS)) - 0.5f);
+                vertex.normal = Vector3f::UNIT_Y;
+                grid.source_vertices.push_back(vertex);
+            }
+        }
+        for (int j = 0; j < SURFACE_CELLS; ++j)
+        {
+            for (int i = 0; i < SURFACE_CELLS; ++i)
+            {
+                const std::uint32_t a = std::uint32_t((j * (SURFACE_CELLS + 1)) + i);
+                const std::uint32_t d = a + std::uint32_t(SURFACE_CELLS + 1);
+                for (const std::uint32_t index : { a, d, a + 1u, a + 1u, d, d + 1u })
+                {
+                    grid.source_indices.push_back(index);
+                }
+            }
+        }
+        grid.index_count = grid.source_indices.size();
+        grid.local_bounds = compages::AABB::fromCorners(Vector3f(-0.5f, -10.0f, -0.5f), Vector3f(0.5f, 10.0f, 0.5f));
+        m_surface = m_scene.mesh(std::move(grid), "Sea surface");
+        m_scene.look(m_surface, m_picture);
+        m_surface.get<compages::renderer::MeshRenderer>().flags = compages::renderer::RenderFlags::NoShadowCaster;
+        if (compages::renderer::MaterialInstance* instance = m_scene.assets().materialInstance(
+                m_surface.get<compages::renderer::MeshRenderer>().material_instance))
+        {
+            instance->material = m_surface_material;
+            instance->opacity = 0.99f;
+        }
+
+        // The cell under the mouse: a veil and a band, made by outlineCell()
+        // (a triangle under the sea until then).
+        auto triangle = []()
+        {
+            compages::renderer::MeshAsset mesh;
+            for (Vector3f const& corner :
+                 { Vector3f(0.0f, -500.0f, 0.0f), Vector3f(1.0f, -500.0f, 0.0f), Vector3f(0.0f, -500.0f, 1.0f) })
+            {
+                compages::renderer::MeshVertex vertex;
+                vertex.position = corner;
+                vertex.normal = Vector3f::UNIT_Y;
+                mesh.source_vertices.push_back(vertex);
+            }
+            mesh.source_indices = { 0u, 1u, 2u };
+            mesh.index_count = 3u;
+            mesh.local_bounds = compages::AABB::fromCorners(Vector3f(0.0f, -501.0f, 0.0f), Vector3f(1.0f, -499.0f, 1.0f));
+            return mesh;
+        };
+        m_cell_veil = m_scene.mesh(triangle(), "Cell veil",
+                                   compages::renderer::seeThrough(compages::renderer::unlit(1.0f, 0.97f, 0.85f), 0.3f));
+        m_cell_band = m_scene.mesh(triangle(), "Cell band", compages::renderer::unlit(1.0f, 0.82f, 0.48f));
+        for (compages::world::Entity overlay : { m_cell_veil, m_cell_band })
+        {
+            overlay.get<compages::renderer::MeshRenderer>().flags = compages::renderer::RenderFlags::NoShadowCaster;
+            overlay.enable(false);
+        }
+
+        // The pins of the links: a white stick, a head of the colour of the
+        // island.
+        for (std::size_t r = 0u; r < m_part_names.size(); ++r)
+        {
+            std::array<float, 3> const& hue = THEMES[TOPICS[r].theme].hue;
+            for (compages::world::Entity pin : m_part_names[r])
+            {
+                m_scene.cylinder("Pin", compages::renderer::color(0.95f, 0.95f, 0.92f))
+                    .parent(pin)
+                    .position(0.0f, 6.0f, 0.0f)
+                    .scale(0.6f, 12.0f, 0.6f);
+                m_scene.sphere("Pin head", compages::renderer::color(hue[0], hue[1], hue[2]))
+                    .parent(pin)
+                    .position(0.0f, 13.0f, 0.0f)
+                    .scale(4.0f);
+            }
+        }
     }
 
     // --- The names ---------------------------------------------------------
@@ -626,12 +1073,12 @@ compages::Status Archipelago::finishLoading(Loaded p_loaded)
         for (std::size_t part = 0u; part < region.parts.size(); ++part)
         {
             const Vector2f site = region.parts[part].site;
-            m_part_names[r][part].position(site.x, std::max(0.0f, m_land.heightAt(site.x, site.y)) + toMetres(20.0_m),
-                                           site.y);
+            m_part_names[r][part].position(site.x, std::max(0.0f, m_land.heightAt(site.x, site.y)), site.y);
         }
     }
     m_hovered = {};
     m_chosen = {};
+    m_outlined = -2;
     placeAnimals();
     m_ready = true;
     return m_scene.prepare();
@@ -998,7 +1445,8 @@ void Archipelago::animate(float p_dt)
         boat.angle = std::fmod(boat.angle + ((boat.speed * p_dt) / radius(boat.angle)) + TURN, TURN);
         const Vector2f here = pointAt(boat.angle);
         const Vector2f ahead = pointAt(boat.angle + ((boat.speed > 0.0f) ? 0.01f : -0.01f)) - here;
-        const Vector3f at(here.x, 0.0f, here.y);
+        // On the swell, as the surface of the sea moves.
+        const Vector3f at(here.x, swellAt(here.x, here.y) - 0.3f, here.y);
         // The bow (-Z) toward where it goes; it rolls on the swell.
         const float roll = 0.06f * std::sin((1.3f * m_time) + (40.0f * boat.angle));
         boat.root.position(at)
@@ -1029,7 +1477,8 @@ void Archipelago::animate(float p_dt)
     {
         fish.angle = std::fmod(fish.angle + ((fish.speed * p_dt) / fish.radius), TURN);
         const Vector2f here = fish.centre + (Vector2f(std::cos(fish.angle), std::sin(fish.angle)) * fish.radius);
-        const Vector3f at(here.x, 0.05f, here.y);
+        // A metre under the surface.
+        const Vector3f at(here.x, -1.2f, here.y);
         const float size = seen(at, FISH_SEEN);
         const Quatf way = heading(3.14159265f - fish.angle);
         fish.shadow.position(at).rotation(way).scale(0.35f * size, 0.1f * size, size);
@@ -1171,8 +1620,12 @@ void Archipelago::updateText()
                                         .hide_closer_than = 0.0f });
         for (std::size_t k = 0u; k < m_part_names[r].size(); ++k)
         {
+            // The pin of the link: within the distance of the names of the
+            // regions, at least as large as the eye needs.
             compages::world::Entity part = m_part_names[r][k];
-            const bool near = compages::vector::norm(part.position() - eye) < PART_NAMES_WITHIN;
+            const float away = compages::vector::norm(part.position() - eye);
+            part.enable(away < REGION_NAMES_WITHIN).scale(std::max(1.0f, away * PIN_SEEN));
+            const bool near = away < PART_NAMES_WITHIN;
             // A part named as its region (its first link, often) is
             // already named.
             show(part, m_names && near && (pageName(topic.links[k]) != topic.name),
@@ -1188,9 +1641,12 @@ void Archipelago::updateText()
 void Archipelago::draw(compages::world::ViewFrame const& p_frame)
 {
     m_time += p_frame.elapsed;
-    if (compages::renderer::Material* sea = m_scene.assets().material(m_sea))
+    for (const compages::renderer::MaterialId id : { m_sea, m_surface_material })
     {
-        sea->program.set("time", m_time);
+        if (compages::renderer::Material* material = m_scene.assets().material(id))
+        {
+            material->program.set("time", m_time);
+        }
     }
 
     // The land made in the thread, shown when it is ready.
@@ -1254,12 +1710,24 @@ void Archipelago::draw(compages::world::ViewFrame const& p_frame)
         }
         if (m_hovered.region >= 0)
         {
-            archipelago::Region const& region = m_land.regions[std::size_t(m_hovered.region)];
-            lines(region.border, { 0.9f, 0.95f, 1.0f });
-            if (m_hovered.part >= 0)
-            {
-                lines(region.parts[std::size_t(m_hovered.part)].border, { 1.0f, 1.0f, 1.0f });
-            }
+            lines(m_land.regions[std::size_t(m_hovered.region)].border, { 0.9f, 0.95f, 1.0f });
+        }
+    }
+    // The cell under the mouse, draped on the ground.
+    outlineCell(m_hovered.cell);
+    // The surface of the sea under the camera, the pictures of the ground on
+    // their units, the clock of the waves.
+    placeSurface();
+    for (std::size_t k = 0u; k < m_grounds.size(); ++k)
+    {
+        m_grounds[k].bind(std::uint32_t(2u + k));
+    }
+    for (const compages::renderer::MaterialId id : { m_sea, m_surface_material })
+    {
+        if (compages::renderer::Material* material = m_scene.assets().material(id))
+        {
+            material->program.set("surfaceCentre", m_surface_centre);
+            material->program.set("surfaceRadius", m_surface_radius);
         }
     }
 

@@ -48,10 +48,12 @@ constexpr float CREEP = 0.05f;
 //! \brief One step: 40 000 years.
 constexpr float YEARS = 4.0e4f;
 
-//! \brief The land a river drains before it shows (0.3 km2), and its width:
-//! rivers widen with the square root of their flow (the hydraulic geometry
-//! of Leopold and Maddock), so with that of their area.
-constexpr float RIVER_AREA = 0.3e6f;
+//! \brief The main river goes up while it drains at least this (five
+//! cells); a tributary while it drains two, at most TRIBUTARY_CELLS long. Its width follows
+//! the square root of its flow (the hydraulic geometry of Leopold and
+//! Maddock), so of the area it drains.
+constexpr float STRAND_AREA = 5.0f * CELL_SIZE * CELL_SIZE;
+constexpr std::size_t TRIBUTARY_CELLS = 12u;
 constexpr float RIVER_WIDTH = 5.0f;
 constexpr float RIVER_GROWTH = 8.0f;   // metres more per sqrt(km2)
 //! \brief A river meanders with a wavelength of about eleven times its
@@ -59,12 +61,8 @@ constexpr float RIVER_GROWTH = 8.0f;   // metres more per sqrt(km2)
 constexpr float MEANDER_WAVELENGTH = 11.0f;
 constexpr float MEANDER_SWING = 0.9f;
 
-//! \brief The noise that bends the coasts, and the borders of the regions
-//! and of the parts (the cells that make them are chosen from bent
-//! coordinates, so the borders wave from cell to cell).
+//! \brief The noise that bends the coasts.
 constexpr float COAST_BEND = 1100.0f;
-constexpr float BORDER_BEND = 350.0f;
-constexpr float PART_BEND = 200.0f;
 //! \brief How far the sites move from the centres of their grid squares, in
 //! squares: under 0.3, the nearest site of a point is always among the 3 x 3
 //! squares around it.
@@ -545,23 +543,25 @@ void paint(Land const& p_land, float p_x, float p_z, float p_height, float p_slo
         colour = { colour.r * tone, colour.g * tone, colour.b * tone };
 
         const int region = p_land.regions_of[cell];
+        const bool link = (p_land.parts_of[cell] >= 0);
         if (region >= 0)
         {
+            // The hue of the island, lighter or darker per region; the cells
+            // of the links stronger.
             Region const& owner = p_land.regions[std::size_t(region)];
             const Rgb hue = HUES[owner.island % HUES.size()];
-            const int part = p_land.parts_of[cell];
-            const float shade = 0.75f + (0.12f * float(region % 4)) + (0.06f * float(part % 3));
-            colour = mix(colour, Rgb{ hue.r * shade, hue.g * shade, hue.b * shade }, 0.34f);
+            const float shade = 0.75f + (0.12f * float(region % 4));
+            colour = mix(colour, Rgb{ hue.r * shade, hue.g * shade, hue.b * shade }, link ? 0.6f : 0.34f);
         }
-        // The edges of the cells: faint between two cells of a part, firmer
-        // between two parts, bold between two regions.
+        // The edges of the cells: faint inside a region, firmer around a
+        // link, bold between two regions.
         if (hit.across >= 0)
         {
             const std::size_t across = std::size_t(hit.across);
             const bool other_region = (p_land.regions_of[across] != region);
-            const bool other_part = other_region || (p_land.parts_of[across] != p_land.parts_of[cell]);
+            const bool other_part = other_region || link || (p_land.parts_of[across] >= 0);
             const float half = other_region ? 5.0f : (other_part ? 2.5f : 1.2f);
-            const float strength = other_region ? 0.75f : (other_part ? 0.5f : 0.22f);
+            const float strength = other_region ? 0.75f : (other_part ? 0.55f : 0.22f);
             if ((region >= 0) || other_region)
             {
                 colour = mix(colour, BORDER, strength * line(hit.edge, half, p_pixel));
@@ -599,7 +599,7 @@ constexpr int OUTLINE_GRID = 512;
 std::vector<Vector3f> outline(Land const& p_land, std::vector<float> const& p_field, std::array<int, 4> const& p_box)
 {
     std::vector<Vector3f> segments;
-    constexpr float LIFT = 8.0f;
+    constexpr float LIFT = 4.0f;
     constexpr float STEP = MAP / float(OUTLINE_GRID);
     auto at = [&](int p_i, int p_j) { return std::size_t((p_j * (OUTLINE_GRID + 1)) + p_i); };
     auto position = [&](int p_i, int p_j)
@@ -623,7 +623,9 @@ std::vector<Vector3f> outline(Land const& p_land, std::vector<float> const& p_fi
                 }
                 const float t = fa / (fa - fb);
                 const Vector2f p = position(a[0], a[1]) + ((position(b[0], b[1]) - position(a[0], a[1])) * t);
-                crossings[found++] = Vector3f(p.x, std::max(0.0f, cellHeight(p_land, p.x, p.y)) + LIFT, p.y);
+                // On the ground as the meshes show it, valleys of the rivers
+                // included.
+                crossings[found++] = Vector3f(p.x, std::max(0.0f, p_land.heightAt(p.x, p.y)) + LIFT, p.y);
             }
             for (std::size_t k = 0u; (k + 1u) < found; k += 2u)
             {
@@ -692,8 +694,51 @@ float Land::heightAt(float p_x, float p_z) const
 // ----------------------------------------------------------------------------
 Place Land::placeOf(float p_x, float p_z) const
 {
-    const std::size_t cell = std::size_t(hitCell(sites, Vector2f(p_x, p_z)).cell);
-    return { regions_of[cell], parts_of[cell] };
+    const int cell = hitCell(sites, Vector2f(p_x, p_z)).cell;
+    return { cell, regions_of[std::size_t(cell)], parts_of[std::size_t(cell)] };
+}
+
+// ----------------------------------------------------------------------------
+std::vector<Vector2f> Land::cellPolygon(int p_cell) const
+{
+    // A square around the site, cut by the bisector with each site around
+    // (Sutherland-Hodgman): what is left is nearer the site than any other.
+    const Vector2f own = sites[std::size_t(p_cell)];
+    const float reach = 2.0f * CELL_SIZE;
+    std::vector<Vector2f> polygon = { own + Vector2f(-reach, -reach), own + Vector2f(reach, -reach),
+                                      own + Vector2f(reach, reach), own + Vector2f(-reach, reach) };
+    const int ci = p_cell % CELLS;
+    const int cj = p_cell / CELLS;
+    for (int j = std::max(0, cj - 2); j <= std::min(CELLS - 1, cj + 2); ++j)
+    {
+        for (int i = std::max(0, ci - 2); i <= std::min(CELLS - 1, ci + 2); ++i)
+        {
+            const int other = cellAt(i, j);
+            if (other == p_cell)
+            {
+                continue;
+            }
+            const Vector2f site = sites[std::size_t(other)];
+            std::vector<Vector2f> kept;
+            for (std::size_t k = 0u; k < polygon.size(); ++k)
+            {
+                const Vector2f a = polygon[k];
+                const Vector2f b = polygon[(k + 1u) % polygon.size()];
+                const float da = bisector(own, site, a);
+                const float db = bisector(own, site, b);
+                if (da >= 0.0f)
+                {
+                    kept.push_back(a);
+                }
+                if ((da >= 0.0f) != (db >= 0.0f))
+                {
+                    kept.push_back(a + ((b - a) * (da / (da - db))));
+                }
+            }
+            polygon = std::move(kept);
+        }
+    }
+    return polygon;
 }
 
 // ----------------------------------------------------------------------------
@@ -832,87 +877,11 @@ Land makeLand(Recipe const& p_recipe, Progress const& p_progress)
         }
     }
 
-    // --- The rivers: down the receivers, from each source -----------------
+    // --- The strands: a main river per island, a tributary per region ----
+    // "Noems as loci along a strand": the main river is the highest place of
+    // an island; its tributaries are the places of its regions, from the
+    // mouth to the source; the cells along a tributary hold the links.
     p_progress(0.6f, "Rivers");
-    {
-        auto isRiver = [&](std::size_t p_c) { return (outlet[p_c] == 0) && (drainage.areas[p_c] >= RIVER_AREA); };
-        std::vector<char> fed(count, 0);
-        for (std::size_t c = 0u; c < count; ++c)
-        {
-            if (isRiver(c) && (drainage.receivers[c] >= 0))
-            {
-                fed[std::size_t(drainage.receivers[c])] = 1;
-            }
-        }
-        std::vector<char> traced(count, 0);
-        for (std::size_t source = 0u; source < count; ++source)
-        {
-            if (!isRiver(source) || (fed[source] != 0))
-            {
-                continue;
-            }
-            std::vector<Vector2f> points;
-            std::vector<float> widths;
-            int c = int(source);
-            while (true)
-            {
-                const float width = RIVER_WIDTH + (RIVER_GROWTH * std::sqrt(drainage.areas[std::size_t(c)] / 1.0e6f));
-                if (outlet[std::size_t(c)] != 0)
-                {
-                    // Into the sea: to the coast, between the last land cell
-                    // and this one, and a little beyond.
-                    points.push_back((points.back() * 0.3f) + (land.sites[std::size_t(c)] * 0.7f));
-                    widths.push_back(widths.back());
-                    break;
-                }
-                points.push_back(land.sites[std::size_t(c)]);
-                widths.push_back(width);
-                if ((traced[std::size_t(c)] != 0) || (drainage.receivers[std::size_t(c)] < 0))
-                {
-                    break;
-                }
-                traced[std::size_t(c)] = 1;
-                c = drainage.receivers[std::size_t(c)];
-            }
-            if (points.size() < 3u)
-            {
-                continue;
-            }
-            std::vector<float> curve_widths;
-            const std::vector<Vector2f> curve = spline(points, widths, curve_widths);
-            land.rivers.push_back(meander(curve, curve_widths, seed));
-        }
-        // The segments, and the squares their valleys reach.
-        land.buckets.assign(std::size_t(BUCKETS) * BUCKETS, {});
-        for (River const& river : land.rivers)
-        {
-            for (std::size_t k = 0u; (k + 1u) < river.points.size(); ++k)
-            {
-                const Land::Segment segment{ river.points[k], river.points[k + 1u], river.widths[k],
-                                             river.widths[k + 1u] };
-                const float reach = valleyReach(0.5f * std::max(segment.width_a, segment.width_b));
-                const int index = int(land.segments.size());
-                land.segments.push_back(segment);
-                const int i0 = std::clamp(int((std::min(segment.a.x, segment.b.x) - reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
-                const int i1 = std::clamp(int((std::max(segment.a.x, segment.b.x) + reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
-                const int j0 = std::clamp(int((std::min(segment.a.y, segment.b.y) - reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
-                const int j1 = std::clamp(int((std::max(segment.a.y, segment.b.y) + reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
-                for (int j = j0; j <= j1; ++j)
-                {
-                    for (int i = i0; i <= i1; ++i)
-                    {
-                        land.buckets[std::size_t((j * BUCKETS) + i)].push_back(index);
-                    }
-                }
-            }
-        }
-    }
-
-    // --- The regions and their parts: groups of cells ---------------------
-    // The sites of the groups are spread out: the best of 40 random land
-    // cells is the one farthest from the sites already placed (Mitchell). A
-    // cell goes to the group whose site is nearest to its bent site.
-    p_progress(0.7f, "Regions");
     std::vector<std::vector<int>> island_regions(land.islands.size());
     for (std::size_t r = 0u; r < p_recipe.region_islands.size(); ++r)
     {
@@ -921,119 +890,268 @@ Land makeLand(Recipe const& p_recipe, Progress const& p_progress)
         land.regions.push_back(region);
         island_regions[region.island].push_back(int(r));
     }
-    auto spread = [&](std::vector<int> const& p_cells, std::size_t p_count)
+    std::vector<std::vector<int>> donors(count);
+    for (std::size_t c = 0u; c < count; ++c)
     {
-        std::vector<Vector2f> placed;
-        std::uniform_int_distribution<std::size_t> any(0u, std::max<std::size_t>(p_cells.size(), 1u) - 1u);
-        for (std::size_t k = 0u; (k < p_count) && !p_cells.empty(); ++k)
+        if ((outlet[c] == 0) && (drainage.receivers[c] >= 0))
         {
-            Vector2f best = land.sites[std::size_t(p_cells[any(random)])];
-            float best_score = -1.0f;
-            for (int tries = 0; tries < 40; ++tries)
-            {
-                const Vector2f p = land.sites[std::size_t(p_cells[any(random)])];
-                float score = 1.0e9f;
-                for (Vector2f const& other : placed)
-                {
-                    score = std::min(score, std::hypot(p.x - other.x, p.y - other.y));
-                }
-                if (score > best_score)
-                {
-                    best_score = score;
-                    best = p;
-                }
-            }
-            placed.push_back(best);
-        }
-        return placed;
-    };
-    auto bend = [&](Vector2f p_point, float p_amount, std::uint32_t p_salt)
-    {
-        return p_point + Vector2f(p_amount * ((2.0f * noise(p_point.x / 900.0f, p_point.y / 900.0f, seed + p_salt)) - 1.0f),
-                                  p_amount * ((2.0f * noise(p_point.x / 900.0f, p_point.y / 900.0f, seed + p_salt + 1u)) - 1.0f));
-    };
-    auto nearestOf = [](std::vector<Vector2f> const& p_sites, Vector2f p_point)
-    {
-        std::size_t best = 0u;
-        float distance = 1.0e30f;
-        for (std::size_t k = 0u; k < p_sites.size(); ++k)
-        {
-            const Vector2f d = p_point - p_sites[k];
-            if (((d.x * d.x) + (d.y * d.y)) < distance)
-            {
-                distance = (d.x * d.x) + (d.y * d.y);
-                best = k;
-            }
-        }
-        return best;
-    };
-    land.regions_of.assign(count, -1);
-    land.parts_of.assign(count, -1);
-    for (std::size_t k = 0u; k < land.islands.size(); ++k)
-    {
-        std::vector<int> cells;
-        std::vector<int> high;
-        float highest = -1.0e9f;
-        for (std::size_t c = 0u; c < count; ++c)
-        {
-            if (land.islands_of[c] == std::int8_t(k))
-            {
-                cells.push_back(int(c));
-                if (land.elevations[c] > 30.0f)
-                {
-                    high.push_back(int(c));
-                }
-                if (land.elevations[c] > highest)
-                {
-                    highest = land.elevations[c];
-                    land.islands[k].peak = Vector3f(land.sites[c].x, highest, land.sites[c].y);
-                }
-            }
-        }
-        const std::vector<Vector2f> sites = spread(high.empty() ? cells : high, island_regions[k].size());
-        for (std::size_t r = 0u; r < sites.size(); ++r)
-        {
-            land.regions[std::size_t(island_regions[k][r])].site = sites[r];
-        }
-        for (const int c : cells)
-        {
-            if (!sites.empty())
-            {
-                land.regions_of[std::size_t(c)] =
-                    island_regions[k][nearestOf(sites, bend(land.sites[std::size_t(c)], BORDER_BEND, 21u))];
-            }
+            donors[std::size_t(drainage.receivers[c])].push_back(int(c));
         }
     }
-    for (std::size_t r = 0u; r < land.regions.size(); ++r)
+    std::vector<char> on_river(count, 0);
+    // From a cell up the river: always the donor that drains most, while it
+    // drains at least p_least. The path goes upstream.
+    auto upstream = [&](int p_from, std::size_t p_longest, float p_least)
     {
-        std::vector<int> cells;
+        std::vector<int> path{ p_from };
+        on_river[std::size_t(p_from)] = 1;
+        int c = p_from;
+        while (path.size() < p_longest)
+        {
+            int best = -1;
+            float area = p_least;
+            for (const int d : donors[std::size_t(c)])
+            {
+                if ((on_river[std::size_t(d)] == 0) && (drainage.areas[std::size_t(d)] >= area))
+                {
+                    area = drainage.areas[std::size_t(d)];
+                    best = d;
+                }
+            }
+            if (best < 0)
+            {
+                break;
+            }
+            path.push_back(best);
+            on_river[std::size_t(best)] = 1;
+            c = best;
+        }
+        return path;
+    };
+    auto widthOf = [&](int p_c)
+    { return RIVER_WIDTH + (RIVER_GROWTH * std::sqrt(drainage.areas[std::size_t(p_c)] / 1.0e6f)); };
+    // A river from cells given upstream first, to an end point: a spline
+    // through the sites, then its meanders.
+    auto addRiver = [&](std::vector<int> const& p_upstream, Vector2f p_end)
+    {
+        std::vector<Vector2f> points;
+        std::vector<float> widths;
+        for (auto it = p_upstream.rbegin(); it != p_upstream.rend(); ++it)
+        {
+            points.push_back(land.sites[std::size_t(*it)]);
+            widths.push_back(widthOf(*it));
+        }
+        points.push_back(p_end);
+        widths.push_back(widths.back());
+        std::vector<float> curve_widths;
+        const std::vector<Vector2f> curve = spline(points, widths, curve_widths);
+        land.rivers.push_back(meander(curve, curve_widths, seed));
+    };
+    std::vector<std::vector<int>> paths(land.regions.size());
+    for (std::size_t k = 0u; k < land.islands.size(); ++k)
+    {
+        // The mouth: the coast cell of the island that drains most.
+        int mouth = -1;
+        float largest = 0.0f;
         for (std::size_t c = 0u; c < count; ++c)
         {
-            if (land.regions_of[c] == int(r))
+            const int receiver = drainage.receivers[c];
+            if ((land.islands_of[c] == std::int8_t(k)) && (outlet[c] == 0) && (receiver >= 0) &&
+                (outlet[std::size_t(receiver)] != 0) && (drainage.areas[c] > largest))
             {
-                cells.push_back(int(c));
+                largest = drainage.areas[c];
+                mouth = int(c);
             }
         }
-        const std::vector<Vector2f> sites = spread(cells, p_recipe.region_parts[r]);
-        for (Vector2f const& site : sites)
+        if (mouth < 0)
         {
-            land.regions[r].parts.push_back(Part{ site, {} });
+            continue;
         }
-        for (const int c : cells)
+        const std::vector<int> main = upstream(mouth, count, STRAND_AREA);
+        // Into the sea: past the coast, between the mouth and the sea cell.
+        const Vector2f sea_site = land.sites[std::size_t(drainage.receivers[std::size_t(mouth)])];
+        addRiver(main, (land.sites[std::size_t(mouth)] * 0.3f) + (sea_site * 0.7f));
+
+        // The tributaries, spread along the strand: the main river is cut
+        // into as many stretches as the island has regions, and each
+        // stretch gives the donor that drains most (on either bank).
+        struct Root
         {
-            land.parts_of[std::size_t(c)] = int(nearestOf(sites, bend(land.sites[std::size_t(c)], PART_BEND, 31u)));
+            int cell;
+            std::size_t along;
+            float area;
+        };
+        const std::size_t wanted = island_regions[k].size();
+        std::vector<Root> chosen;
+        for (std::size_t n = 0u; (n < wanted) && (wanted > 0u); ++n)
+        {
+            // From the stretch outward, until a donor is found.
+            const std::size_t first = (n * main.size()) / wanted;
+            const std::size_t last = ((n + 1u) * main.size()) / wanted;
+            for (std::size_t widen = 0u; widen <= main.size(); ++widen)
+            {
+                Root best{ -1, 0u, -1.0f };
+                const std::size_t from = (first > widen) ? (first - widen) : 0u;
+                const std::size_t to = std::min(main.size(), last + widen);
+                for (std::size_t i = from; i < to; ++i)
+                {
+                    for (const int d : donors[std::size_t(main[i])])
+                    {
+                        const bool taken = std::any_of(chosen.begin(), chosen.end(), [&](Root const& p_r) { return p_r.cell == d; });
+                        if ((on_river[std::size_t(d)] == 0) && !taken && (drainage.areas[std::size_t(d)] > best.area))
+                        {
+                            best = { d, i, drainage.areas[std::size_t(d)] };
+                        }
+                    }
+                }
+                if (best.cell >= 0)
+                {
+                    chosen.push_back(best);
+                    break;
+                }
+            }
         }
-        // A region of no cell (an island too small) still has its parts,
-        // at its site.
-        while (land.regions[r].parts.size() < p_recipe.region_parts[r])
+        std::sort(chosen.begin(), chosen.end(), [](Root const& p_a, Root const& p_b) { return p_a.along < p_b.along; });
+        for (std::size_t n = 0u; n < chosen.size(); ++n)
         {
-            land.regions[r].parts.push_back(Part{ land.regions[r].site, {} });
+            const int r = island_regions[k][n];
+            paths[std::size_t(r)] = upstream(chosen[n].cell, TRIBUTARY_CELLS, 2.0f * CELL_SIZE * CELL_SIZE);
+            addRiver(paths[std::size_t(r)], land.sites[std::size_t(main[chosen[n].along])]);
+        }
+        // An island too small for all its tributaries: the regions left
+        // start from cells of the main river.
+        for (std::size_t n = chosen.size(); n < wanted; ++n)
+        {
+            paths[std::size_t(island_regions[k][n])] = { main[(n * main.size()) / std::max<std::size_t>(wanted, 1u)] };
+        }
+    }
+    // The segments, and the squares their valleys reach.
+    land.buckets.assign(std::size_t(BUCKETS) * BUCKETS, {});
+    for (River const& river : land.rivers)
+    {
+        for (std::size_t k = 0u; (k + 1u) < river.points.size(); ++k)
+        {
+            const Land::Segment segment{ river.points[k], river.points[k + 1u], river.widths[k], river.widths[k + 1u] };
+            const float reach = valleyReach(0.5f * std::max(segment.width_a, segment.width_b));
+            const int index = int(land.segments.size());
+            land.segments.push_back(segment);
+            const int i0 = std::clamp(int((std::min(segment.a.x, segment.b.x) - reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
+            const int i1 = std::clamp(int((std::max(segment.a.x, segment.b.x) + reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
+            const int j0 = std::clamp(int((std::min(segment.a.y, segment.b.y) - reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
+            const int j1 = std::clamp(int((std::max(segment.a.y, segment.b.y) + reach + (0.5f * MAP)) / BUCKET_SIZE), 0, BUCKETS - 1);
+            for (int j = j0; j <= j1; ++j)
+            {
+                for (int i = i0; i <= i1; ++i)
+                {
+                    land.buckets[std::size_t((j * BUCKETS) + i)].push_back(index);
+                }
+            }
         }
     }
 
-    // --- The outlines of the regions and of the parts ---------------------
-    // Traced on a grid of 31 m around the cells of each group: inside where
-    // the distance to the border of the group is positive.
+    // --- The regions: the cells nearest each tributary ---------------------
+    // A breadth-first walk on the graph of the cells, from all the
+    // tributaries at once, inside their island: each cell goes to the
+    // tributary it is fewest cells from.
+    p_progress(0.7f, "Regions");
+    land.regions_of.assign(count, -1);
+    land.parts_of.assign(count, -1);
+    std::vector<int> steps_from_river(count, -1);
+    {
+        std::vector<int> queue;
+        for (std::size_t r = 0u; r < land.regions.size(); ++r)
+        {
+            for (const int c : paths[r])
+            {
+                if (land.regions_of[std::size_t(c)] < 0)
+                {
+                    land.regions_of[std::size_t(c)] = int(r);
+                    steps_from_river[std::size_t(c)] = 0;
+                    queue.push_back(c);
+                }
+            }
+        }
+        for (std::size_t head = 0u; head < queue.size(); ++head)
+        {
+            const int c = queue[head];
+            const int ci = c % CELLS;
+            const int cj = c / CELLS;
+            for (int j = std::max(0, cj - 1); j <= std::min(CELLS - 1, cj + 1); ++j)
+            {
+                for (int i = std::max(0, ci - 1); i <= std::min(CELLS - 1, ci + 1); ++i)
+                {
+                    const std::size_t n = std::size_t(cellAt(i, j));
+                    if ((land.regions_of[n] < 0) && (outlet[n] == 0) && (land.islands_of[n] == land.islands_of[std::size_t(c)]))
+                    {
+                        land.regions_of[n] = land.regions_of[std::size_t(c)];
+                        steps_from_river[n] = steps_from_river[std::size_t(c)] + 1;
+                        queue.push_back(int(n));
+                    }
+                }
+            }
+        }
+    }
+    // The links: cells spread along the tributary, from its mouth to its
+    // source; a short tributary lends its nearest cells.
+    for (std::size_t r = 0u; r < land.regions.size(); ++r)
+    {
+        Region& region = land.regions[r];
+        std::vector<int> const& path = paths[r];
+        const std::size_t links = p_recipe.region_parts[r];
+        std::vector<int> cells;
+        if (path.size() >= links)
+        {
+            for (std::size_t k = 0u; k < links; ++k)
+            {
+                cells.push_back(path[((2u * k + 1u) * path.size()) / (2u * links)]);
+            }
+        }
+        else
+        {
+            cells = path;
+            std::vector<int> near;
+            for (std::size_t c = 0u; c < count; ++c)
+            {
+                if ((land.regions_of[c] == int(r)) && (steps_from_river[c] > 0))
+                {
+                    near.push_back(int(c));
+                }
+            }
+            std::sort(near.begin(), near.end(), [&](int p_a, int p_b)
+                      { return steps_from_river[std::size_t(p_a)] < steps_from_river[std::size_t(p_b)]; });
+            for (std::size_t k = 0u; (cells.size() < links) && (k < near.size()); ++k)
+            {
+                cells.push_back(near[k]);
+            }
+        }
+        for (std::size_t k = 0u; k < links; ++k)
+        {
+            // An island of a single cell: every link on it.
+            const int cell = cells.empty() ? 0 : cells[std::min(k, cells.size() - 1u)];
+            region.parts.push_back(Part{ cell, land.sites[std::size_t(cell)] });
+            if (!cells.empty() && (k < cells.size()))
+            {
+                land.parts_of[std::size_t(cell)] = int(k);
+            }
+        }
+        region.site = path.empty() ? region.parts.front().site : land.sites[std::size_t(path[path.size() / 2u])];
+    }
+    for (std::size_t k = 0u; k < land.islands.size(); ++k)
+    {
+        float highest = -1.0e9f;
+        for (std::size_t c = 0u; c < count; ++c)
+        {
+            if ((land.islands_of[c] == std::int8_t(k)) && (land.elevations[c] > highest))
+            {
+                highest = land.elevations[c];
+                land.islands[k].peak = Vector3f(land.sites[c].x, highest, land.sites[c].y);
+            }
+        }
+    }
+
+    // --- The outlines of the regions --------------------------------------
+    // Traced on a grid of 31 m around the cells of each region: inside where
+    // the distance to the border of the region is positive.
     {
         const std::size_t side = std::size_t(OUTLINE_GRID + 1);
         std::vector<float> field(side * side, -1.0f);
@@ -1058,25 +1176,16 @@ Land makeLand(Recipe const& p_recipe, Progress const& p_progress)
             const int margin = int(CELL_SIZE / STEP) + 2;
             box = { std::max(0, box[0] - margin), std::max(0, box[1] - margin), std::min(OUTLINE_GRID, box[2] + margin),
                     std::min(OUTLINE_GRID, box[3] + margin) };
-            auto trace = [&](auto&& p_member)
+            for (int j = box[1]; j <= box[3]; ++j)
             {
-                for (int j = box[1]; j <= box[3]; ++j)
+                for (int i = box[0]; i <= box[2]; ++i)
                 {
-                    for (int i = box[0]; i <= box[2]; ++i)
-                    {
-                        const Vector2f p((-0.5f * MAP) + (float(i) * STEP), (-0.5f * MAP) + (float(j) * STEP));
-                        field[(std::size_t(j) * side) + std::size_t(i)] = groupField(land.sites, p, p_member);
-                    }
+                    const Vector2f p((-0.5f * MAP) + (float(i) * STEP), (-0.5f * MAP) + (float(j) * STEP));
+                    field[(std::size_t(j) * side) + std::size_t(i)] =
+                        groupField(land.sites, p, [&](int p_c) { return land.regions_of[std::size_t(p_c)] == int(r); });
                 }
-                return outline(land, field, box);
-            };
-            land.regions[r].border = trace([&](int p_c) { return land.regions_of[std::size_t(p_c)] == int(r); });
-            for (std::size_t part = 0u; part < land.regions[r].parts.size(); ++part)
-            {
-                land.regions[r].parts[part].border =
-                    trace([&](int p_c)
-                          { return (land.regions_of[std::size_t(p_c)] == int(r)) && (land.parts_of[std::size_t(p_c)] == int(part)); });
             }
+            land.regions[r].border = outline(land, field, box);
         }
     }
     p_progress(1.0f, "Map ready");

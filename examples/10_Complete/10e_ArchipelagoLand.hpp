@@ -15,11 +15,19 @@
 //! The method is the one Chréage asked for (I. Aberkane, "Mind Ergonomy for
 //! the Knowledge Economy", 2016, chapter 11), after A. Patel's "Polygonal
 //! Map Generation": the map is a Voronoi diagram of a few thousand cells;
-//! each cell is land or sea; the rivers run from cell to cell down to the
-//! coast, along a smooth spline; regions are groups of cells. The relief of
-//! the cells grows by uplift and river erosion on the graph of the cells
-//! (Cordonnier et al. 2016). Between the cells, the ground is smooth, and the
-//! rivers dig their bed and their valley in it.
+//! each cell is land or sea; the relief of the cells grows by uplift and
+//! river erosion on the graph of the cells (Cordonnier et al. 2016).
+//!
+//! The thesis maps the contents "as loci along a strand": a river is a
+//! strand of places, each place a strand of smaller places, down to the
+//! last ones, which hold the contents. So here:
+//! - an island (a theme) is structured by its main river, the largest basin
+//!   the erosion made;
+//! - a region (a topic) is a tributary of that river, with the cells around
+//!   it, in the order of the river from its mouth to its source;
+//! - a link is a cell on the bank of the tributary.
+//! Only these rivers are drawn; they dig their bed and their valley in the
+//! smooth ground between the cells.
 // ****************************************************************************
 
 #include "Compages/Core/Vector.hpp"
@@ -64,21 +72,24 @@ struct Recipe
     int erosion_steps;
 };
 
-//! \brief A part of a region: a group of its cells.
+//! \brief A link of a region: a cell on the bank of its tributary.
 struct Part
 {
-    //! \brief The point the group grows from, in metres (x, z).
+    //! \brief Its cell, and the site of the cell, in metres (x, z).
+    int cell;
     compages::Vector2f site;
-    //! \brief Its outline, two points per segment, over the ground.
-    std::vector<compages::Vector3f> border;
 };
 
-//! \brief A region of an island: a group of its cells.
+//! \brief A region of an island: a tributary of its main river and the
+//! cells around it.
 struct Region
 {
     std::size_t island;
+    //! \brief The middle of its tributary: where its name is written.
     compages::Vector2f site;
+    //! \brief Its outline, two points per segment, over the ground.
     std::vector<compages::Vector3f> border;
+    //! \brief Its links, from the mouth of its tributary to its source.
     std::vector<Part> parts;
 };
 
@@ -100,9 +111,10 @@ struct River
     std::vector<float> widths;
 };
 
-//! \brief Where a point is among the regions: region and part, -1 for none.
+//! \brief Where a point is: its cell, its region, its link (-1 for none).
 struct Place
 {
+    int cell = -1;
     int region = -1;
     int part = -1;
 };
@@ -141,7 +153,7 @@ struct Land
 {
     std::uint32_t seed = 0u;
     //! \brief Per cell (CELLS x CELLS, row after row along +Z): its site, its
-    //! height, its island (-1: none), its region and its part (-1: none).
+    //! height, its island (-1: none), its region and its link (-1: none).
     std::vector<compages::Vector2f> sites;
     std::vector<float> elevations;
     std::vector<std::int8_t> islands_of;
@@ -149,6 +161,8 @@ struct Land
     std::vector<int> parts_of;
     std::vector<Island> islands;
     std::vector<Region> regions;
+    //! \brief The main river of each island and the tributary of each
+    //! region: the only rivers of the map.
     std::vector<River> rivers;
 
     //! \brief One segment of a river, for the rivers near a point.
@@ -169,8 +183,12 @@ struct Land
     //! zero. The same at any resolution.
     [[nodiscard]] float heightAt(float p_x, float p_z) const;
 
-    //! \brief The region and the part a point is in (those of its cell).
+    //! \brief The cell, the region and the link a point is in.
     [[nodiscard]] Place placeOf(float p_x, float p_z) const;
+
+    //! \brief The corners of a Voronoi cell in metres (x, z), clockwise seen
+    //! from above (+Y).
+    [[nodiscard]] std::vector<compages::Vector2f> cellPolygon(int p_cell) const;
 
     //! \brief The nearest river: the distance to its middle line, and its
     //! half width there. Far away: a large distance.
