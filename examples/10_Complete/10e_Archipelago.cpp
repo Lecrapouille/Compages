@@ -38,7 +38,7 @@ using compages::Vector3f;
 //! \brief The layout shown by default: the 118 public bookmarks of
 //! IslandedBrowser (github.com/Lecrapouille/IslandedBrowser), in
 //! Compages-data. COMPAGES_ARCHIPELAGO gives another one, written by
-//! `IslandedBrowser organization.json --layout layout.json`.
+//! `IslandedBrowser -d DIR --layout` (DIR/layout.json).
 static constexpr char const* KNOWLEDGE = "archipelago/bookmarks-layout.json";
 
 static constexpr float VISIT_DISTANCE = toMetres(2.4_km);
@@ -120,7 +120,7 @@ compages::Status Archipelago::setUp()
         .lookAt(0.0f, 0.0f, 0.0f);
 
     loadKnowledge();
-    m_labels.create(m_scene, m_knowledge);
+    m_pins.create(m_scene, m_knowledge);
     m_highlight.create(m_scene);
 
     m_camera = m_scene.camera().position(
@@ -136,6 +136,15 @@ compages::Status Archipelago::setUp()
     rig.min_distance = toMetres(150.0_m);
     rig.max_distance = toMetres(60.0_km);
     rig.max_pitch = -0.12f;
+    // The camera never enters a hill nor the sea: the ground as the screen
+    // shows it (fine tiles near the camera, else the coarse map), at least
+    // the level of the sea, plus room for the waves.
+    rig.height_at = [this](float p_x, float p_z)
+    {
+        return m_ready ? std::max(0.0f, m_fine.groundAt(m_map.base, p_x, p_z))
+                       : 0.0f;
+    };
+    rig.clearance = toMetres(15.0_m);
     COMPAGES_TRY(m_sea.create(m_scene));
     // The land is made in a thread: setUp() returns at once, the gallery
     // shows how far it has gone (progress()), draw() shows it when ready.
@@ -216,7 +225,7 @@ compages::Status Archipelago::finishLoading(Loaded p_loaded)
     m_fine.drop();
     m_map = std::move(p_loaded);
     COMPAGES_TRY(m_sea.show(m_scene, m_map.base));
-    m_labels.place(m_map.land, m_knowledge);
+    m_pins.place(m_map.land);
     m_highlight.reset();
     m_pointer.hovered = {};
     m_pointer.chosen = {};
@@ -410,6 +419,13 @@ void Archipelago::overlay(Overlay const& p_view)
     {
         return;
     }
+    m_signs.draw(p_view,
+                 m_scene.lastCamera(),
+                 m_map.land,
+                 m_knowledge,
+                 m_pointer.hovered,
+                 m_pointer.chosen,
+                 m_view.names);
     m_panels.draw(
         p_view,
         m_knowledge,
@@ -449,7 +465,7 @@ void Archipelago::draw(compages::world::ViewFrame const& p_frame)
                   m_view.details,
                   m_sea.tiles());
     handleMouse(p_frame.input);
-    m_labels.update(m_camera.position(), m_knowledge, m_view.names);
+    m_pins.update(m_camera.position());
     if (m_view.animals)
     {
         m_wildlife.animate(m_map.base,
@@ -459,8 +475,12 @@ void Archipelago::draw(compages::world::ViewFrame const& p_frame)
     }
     // The region under the mouse, draped on the ground; the outline of the
     // chosen one.
-    m_highlight.show(
-        m_scene, m_map.land, m_pointer.hovered.region, rig.currentDistance());
+    m_highlight.show(m_scene,
+                     m_map.land,
+                     m_map.base,
+                     m_fine,
+                     m_pointer.hovered.region,
+                     rig.currentDistance());
     if (m_view.borders && (m_pointer.chosen.region >= 0))
     {
         std::vector<Vector3f> const& border =

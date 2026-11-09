@@ -277,11 +277,28 @@ void RigController::snap(World& p_world, EntityId p_camera)
     writePose(p_world, p_camera);
 }
 
+//! Under the relief, the eye rises straight up to the least height, and the
+//! pitch is made steeper so that it still looks at the target: the yaw does
+//! not change, nor the point looked at. Only the pose written changes: the
+//! wanted and the gliding poses stay, so the camera comes back down by
+//! itself once the hill is behind.
 void RigController::writePose(World& p_world, EntityId p_camera) const
 {
     LocalTransformView local = p_world.transform(p_camera);
-    local.position = eyeOf(m_target, m_yaw, m_pitch, m_distance);
-    local.rotation = yawPitch(m_yaw, m_pitch);
+    compages::Vector3f eye = eyeOf(m_target, m_yaw, m_pitch, m_distance);
+    float looking = m_pitch;
+    if (height_at)
+    {
+        const float lowest = height_at(eye.x, eye.z) + clearance;
+        if (eye.y < lowest)
+        {
+            eye.y = lowest;
+            const float across = std::hypot(eye.x - m_target.x, eye.z - m_target.z);
+            looking = -std::atan2(eye.y - m_target.y, across);
+        }
+    }
+    local.position = eye;
+    local.rotation = yawPitch(m_yaw, looking);
 }
 
 } // namespace compages::world

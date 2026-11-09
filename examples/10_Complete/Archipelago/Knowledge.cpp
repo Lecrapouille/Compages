@@ -178,6 +178,23 @@ private:
 };
 
 // ----------------------------------------------------------------------------
+std::string shortTitle(std::string const& p_title)
+{
+    constexpr std::size_t MOST = 40u;
+    if (p_title.size() <= MOST)
+    {
+        return p_title;
+    }
+    std::size_t cut = MOST;
+    while ((cut > 0u) &&
+           ((static_cast<unsigned char>(p_title[cut]) & 0xC0u) == 0x80u))
+    {
+        --cut;
+    }
+    return p_title.substr(0u, cut) + "…";
+}
+
+// ----------------------------------------------------------------------------
 compages::Result<Knowledge> loadKnowledge(std::filesystem::path const& p_path)
 {
     compages::Result<std::vector<Node>> nodes = readNodes(p_path);

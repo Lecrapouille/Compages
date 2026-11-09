@@ -49,6 +49,26 @@ public:
     //! \brief How many are shown.
     [[nodiscard]] std::size_t shown() const;
 
+    //! \brief The ground as the screen shows it at a point: the fine tile
+    //! shown there, else the coarse patch \p p_base (bilinear between their
+    //! corners). What an overlay draped on the ground must stay above.
+    [[nodiscard]] float
+    groundAt(Patch const& p_base, float p_x, float p_z) const;
+
+    //! \brief The tiles shown fine, one bit per tile of the map (TILES x
+    //! TILES = 64): an overlay draped on the ground is made again when the
+    //! bits under it change.
+    [[nodiscard]] std::uint64_t shownMask() const
+    {
+        return m_shown_mask;
+    }
+
+    //! \brief The bit of the tile under a point (0 outside the map).
+    [[nodiscard]] static std::uint64_t bitAt(float p_x, float p_z);
+
+    //! \brief The side of a quad of a fine tile (about 8 m).
+    [[nodiscard]] static float step();
+
 private:
 
     //! \brief A fine tile: its mesh and picture, made in the background,
@@ -61,6 +81,10 @@ private:
         compages::renderer::TextureAssetId texture{};
         Job<Patch> job;
         bool ready = false;
+        //! \brief Shown this frame, in the place of its coarse tile.
+        bool shown = false;
+        //! \brief Its heights, kept for groundAt() (without its picture).
+        Patch ground{};
         //! \brief The frame it was last wanted at: the oldest is reused.
         std::uint64_t used = 0u;
     };
@@ -85,6 +109,7 @@ private:
 
     std::vector<Detail> m_details;
     std::uint64_t m_clock = 0u;
+    std::uint64_t m_shown_mask = 0u;
 };
 
 } // namespace examples::archipelago

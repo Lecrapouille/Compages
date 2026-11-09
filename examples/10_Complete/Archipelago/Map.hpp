@@ -33,8 +33,12 @@ inline constexpr float PEAK = compages::toMetres(units::length::meter_t(520.0));
 inline constexpr float SEABED =
     compages::toMetres(units::length::meter_t(90.0));
 //! \brief The alpha of the picture says what the shader of the map draws:
-//! the sea from 0 (the shore) to SEA_ALPHA (SEABED deep and more), a river
-//! at RIVER_ALPHA, the land at 1.
+//! the sea from SEA_ALPHA (the shore) down to 0 (SEABED deep and more), a
+//! river at RIVER_ALPHA, the land at 1. The sea grows toward the land: the
+//! GPU blends the pixels of the picture, and along a coast the blend of the
+//! shore and of the land must still read as shallow water. (The other way
+//! round, shore 0 and land 1, the blend went through every depth: a dark
+//! line of deep water, in steps of pixels, along every coast.)
 inline constexpr float SEA_ALPHA = 0.9f;
 inline constexpr float RIVER_ALPHA = 0.94f;
 

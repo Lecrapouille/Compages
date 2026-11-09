@@ -20,9 +20,9 @@ namespace examples::archipelago
 
 // ****************************************************************************
 //! \brief Boats sail round the islands where the water is deep enough, on
-//! the swell; gulls circle and flap; fish swim in the lagoons and jump. A
-//! few lines each. Each one is drawn at least as large as a part of its
-//! distance to the camera, like the icons of a map.
+//! the swell; gulls circle low along the coasts and flap; fish swim in the
+//! lagoons and jump. A few lines each. Each one is drawn at least as large
+//! as a part of its distance to the camera, like the icons of a map.
 // ****************************************************************************
 class Wildlife
 {
@@ -57,7 +57,8 @@ private:
         float speed;
     };
 
-    //! \brief A bird circles over an island, flapping, then gliding.
+    //! \brief A gull circles along the coast of an island, low over the
+    //! ground or the sea, flapping, then gliding.
     struct Bird
     {
         compages::world::Entity root;
@@ -68,6 +69,10 @@ private:
         float angle;
         float speed;
         float phase;
+        //! \brief Metres above what is under it, and its height now (it
+        //! follows the relief smoothly; negative before its first flight).
+        float altitude;
+        float height;
     };
 
     //! \brief A fish swims in circles in a lagoon; sometimes it jumps.
@@ -97,7 +102,11 @@ private:
                      float p_dt,
                      float p_time,
                      compages::Vector3f p_eye);
-    static void fly(Bird& p_bird, float p_time, compages::Vector3f p_eye);
+    static void fly(Bird& p_bird,
+                    Patch const& p_base,
+                    float p_dt,
+                    float p_time,
+                    compages::Vector3f p_eye);
     static void swim(Fish& p_fish, float p_dt, compages::Vector3f p_eye);
 
     std::vector<Boat> m_boats;

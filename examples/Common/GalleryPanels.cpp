@@ -412,8 +412,8 @@ void Gallery::drawViewport()
         ImGui::TextColored(ORANGE, "PAUSED  (F6 resumes, F7 one frame)");
     }
     drawHud(at.x, at.y, size.x, size.y);
-    ImGui::End();
     drawOverlay(at.x, at.y, size.x, size.y);
+    ImGui::End();
 }
 
 // ----------------------------------------------------------------------------

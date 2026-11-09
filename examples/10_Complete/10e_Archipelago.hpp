@@ -12,10 +12,11 @@
 #include "10_Complete/Archipelago/Highlight.hpp"
 #include "10_Complete/Archipelago/Job.hpp"
 #include "10_Complete/Archipelago/Knowledge.hpp"
-#include "10_Complete/Archipelago/Labels.hpp"
 #include "10_Complete/Archipelago/Land.hpp"
 #include "10_Complete/Archipelago/Panels.hpp"
+#include "10_Complete/Archipelago/Pins.hpp"
 #include "10_Complete/Archipelago/Sea.hpp"
+#include "10_Complete/Archipelago/Signs.hpp"
 #include "10_Complete/Archipelago/Wildlife.hpp"
 #include "Common/Example.hpp"
 
@@ -44,7 +45,8 @@ namespace examples
 //!   whose corners move with Gerstner waves;
 //! - FineTiles: near the camera, finer tiles made in the background;
 //! - Wildlife: boats, birds and fish, a few lines each;
-//! - Labels, Highlight: the names, the pins, the region under the mouse;
+//! - Pins, Highlight: the pins of the links, the region under the mouse;
+//! - Signs: the names over the picture, the links round their region;
 //! - Panels: over the picture, the interface of IslandedBrowser (a tooltip,
 //!   the details of the choice, a search, a status bar, a help on H);
 //! - Browser: the links open in the web browser.
@@ -146,7 +148,8 @@ private:
     archipelago::FineTiles m_fine;
     archipelago::Wildlife m_wildlife;
     archipelago::Highlight m_highlight;
-    archipelago::Labels m_labels;
+    archipelago::Pins m_pins;
+    archipelago::Signs m_signs;
     archipelago::Browser m_browser;
     archipelago::Panels m_panels;
 

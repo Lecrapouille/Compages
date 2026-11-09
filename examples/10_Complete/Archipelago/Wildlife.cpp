@@ -29,7 +29,26 @@ static constexpr float HALF_TURN = std::numbers::pi_v<float>;
 //! would be smaller than a pixel. They are drawn at least this part of
 //! their distance to the camera long.
 static constexpr float BOAT_SEEN = 1.0f / 1100.0f;
-static constexpr float BIRD_SEEN = 1.0f / 300.0f;
+//! \brief A gull (2 m across) life size is 2 or 3 pixels from the camera.
+//! It is drawn larger, by (distance / BIRD_NEAR)^BIRD_GROWTH: less than
+//! the distance, so on the screen it still gets larger when the camera
+//! comes closer and smaller when it goes away, like the rest of the map,
+//! only slower: each time the camera goes 2.5 times farther, it looks
+//! about 1.4 times smaller. Life size closer than BIRD_NEAR. (Grown as
+//! much as the distance, it kept the same size on the screen and looked
+//! larger and larger next to the islands as the camera went away.)
+static constexpr float BIRD_NEAR = 6.0f;
+static constexpr float BIRD_GROWTH = 0.62f;
+//! \brief But a gull never looks larger than a boat drawn at the same
+//! distance (a boat is 11 m long, a gull 2.2 m across): from afar it is
+//! drawn at most as long as a boat, so it stays visible without looking
+//! bigger than the boats. (Two fifths of a boat made it a dot again.)
+static constexpr float BOAT_LENGTH = 11.0f;
+static constexpr float GULL_SPAN = 2.2f;
+static constexpr float GULL_TO_BOAT = 1.0f;
+//! \brief Gulls around each island: a small flock.
+static constexpr std::size_t GULLS_PER_ISLAND = 4u;
+static constexpr std::size_t GULLS = 48u;
 static constexpr float FISH_SEEN = 1.0f / 600.0f;
 
 //! \brief A loop round an island: one radius per 1/64 turn.
@@ -54,6 +73,17 @@ static Quatf about(float p_radians, Vector3f const& p_axis)
 static float seen(Vector3f const& p_at, Vector3f const& p_eye, float p_part)
 {
     return std::max(1.0f, compages::vector::norm(p_at - p_eye) * p_part);
+}
+
+//! \brief How much larger than life a gull is drawn (see BIRD_NEAR and
+//! GULL_TO_BOAT).
+static float birdScale(Vector3f const& p_at, Vector3f const& p_eye)
+{
+    const float grown = std::pow(
+        compages::vector::norm(p_at - p_eye) / BIRD_NEAR, BIRD_GROWTH);
+    const float boat = seen(p_at, p_eye, BOAT_SEEN) * BOAT_LENGTH;
+    return std::max(1.0f,
+                    std::min(grown, GULL_TO_BOAT * boat / GULL_SPAN));
 }
 
 //! \brief Water at least \p p_depth deep, well inside the map.
@@ -98,15 +128,20 @@ void Wildlife::makeBoats(compages::renderer::Scene& p_scene)
 // ----------------------------------------------------------------------------
 void Wildlife::makeBirds(compages::renderer::Scene& p_scene)
 {
+    // A gull: a white body, grey wings, black tips. Seen from above, a grey
+    // and black shape stands out over the sea and over the land, where an
+    // all white bird was only a white dot.
+    const compages::renderer::Look body =
+        compages::renderer::color(0.95f, 0.95f, 0.97f);
     const compages::renderer::Look feathers =
-        compages::renderer::color(0.93f, 0.93f, 0.95f);
+        compages::renderer::color(0.58f, 0.61f, 0.66f);
     const compages::renderer::Look tips =
-        compages::renderer::color(0.35f, 0.36f, 0.40f);
-    for (int k = 0; k < 15; ++k)
+        compages::renderer::color(0.08f, 0.08f, 0.10f);
+    for (std::size_t k = 0u; k < GULLS; ++k)
     {
         Bird bird{};
         bird.root = p_scene.world().entity("Gull");
-        p_scene.box("Body", feathers)
+        p_scene.box("Body", body)
             .parent(bird.root)
             .scale(0.25f, 0.22f, 0.8f);
         bird.left = p_scene.world()
@@ -123,11 +158,11 @@ void Wildlife::makeBirds(compages::renderer::Scene& p_scene)
             p_scene.box("Wing", feathers)
                 .parent(wing)
                 .position(0.35f * side, 0.0f, 0.0f)
-                .scale(0.7f, 0.04f, 0.3f);
+                .scale(0.7f, 0.07f, 0.3f);
             p_scene.box("Tip", tips)
                 .parent(wing)
                 .position(0.85f * side, 0.0f, 0.0f)
-                .scale(0.3f, 0.04f, 0.22f);
+                .scale(0.3f, 0.07f, 0.22f);
         }
         m_birds.push_back(bird);
     }
@@ -230,12 +265,17 @@ void Wildlife::placeBirds(Land const& p_land, Random& p_random)
     for (std::size_t k = 0u; k < m_birds.size(); ++k)
     {
         Bird& bird = m_birds[k];
-        Island const& island = p_land.islands[(k / 3u) % p_land.islands.size()];
+        Island const& island =
+            p_land.islands[(k / GULLS_PER_ISLAND) % p_land.islands.size()];
+        // Along the coast: the circle goes over the shore, the beaches and
+        // the sea near them, where gulls are.
         bird.centre =
-            Vector3f(island.centre.x + (300.0f * (unit(p_random) - 0.5f)),
-                     island.peak.y + 120.0f + (120.0f * unit(p_random)),
-                     island.centre.y + (300.0f * (unit(p_random) - 0.5f)));
-        bird.radius = (0.35f + (0.3f * unit(p_random))) * island.radius;
+            Vector3f(island.centre.x + (200.0f * (unit(p_random) - 0.5f)),
+                     0.0f,
+                     island.centre.y + (200.0f * (unit(p_random) - 0.5f)));
+        bird.radius = (0.6f + (0.4f * unit(p_random))) * island.radius;
+        bird.altitude = 30.0f + (50.0f * unit(p_random));
+        bird.height = -1.0f;
         bird.angle = TURN * unit(p_random);
         bird.speed = 11.0f + (4.0f * unit(p_random)); // m/s, a gull
         bird.phase = TURN * unit(p_random);
@@ -340,21 +380,37 @@ void Wildlife::sail(Boat& p_boat,
 //! Along the circle (it goes toward (-sin, cos) of its angle), leaning into
 //! the turn; flaps for a while, then glides with the wings held a little up.
 // ----------------------------------------------------------------------------
-void Wildlife::fly(Bird& p_bird, float p_time, Vector3f p_eye)
+void Wildlife::fly(Bird& p_bird,
+                   Patch const& p_base,
+                   float p_dt,
+                   float p_time,
+                   Vector3f p_eye)
 {
-    const Vector3f at =
-        p_bird.centre +
-        Vector3f(p_bird.radius * std::cos(p_bird.angle),
-                 8.0f * std::sin((0.7f * p_time) + p_bird.phase),
-                 p_bird.radius * std::sin(p_bird.angle));
+    const float x = p_bird.centre.x + (p_bird.radius * std::cos(p_bird.angle));
+    const float z = p_bird.centre.z + (p_bird.radius * std::sin(p_bird.angle));
+    // Low over what is under it: it rises over a hill and comes down over
+    // the sea smoothly, but never closer than 10 m to the ground.
+    const float under = std::max(0.0f, p_base.heightAt(x, z));
+    const float wanted = under + p_bird.altitude +
+                         (6.0f * std::sin((0.7f * p_time) + p_bird.phase));
+    p_bird.height = (p_bird.height < 0.0f)
+                        ? wanted
+                        : p_bird.height + ((wanted - p_bird.height) *
+                                           (1.0f - std::exp(-1.5f * p_dt)));
+    p_bird.height = std::max(p_bird.height, under + 10.0f);
+    const Vector3f at(x, p_bird.height, z);
     p_bird.root.position(at)
         .rotation(heading(HALF_TURN - p_bird.angle) *
                   about(0.35f, Vector3f(0.0f, 0.0f, 1.0f)))
-        .scale(seen(at, p_eye, BIRD_SEEN));
+        .scale(birdScale(at, p_eye));
     const float beat = std::sin((7.0f * p_time) + p_bird.phase);
     const float flapping =
         std::clamp(2.0f * std::sin((0.4f * p_time) + p_bird.phase), 0.0f, 1.0f);
-    const float lift = 0.1f + (0.55f * flapping * beat);
+    // Gliding, the wings stay raised (a gull's shallow V): from a camera low
+    // over the sea, flat wings would only be a line.
+    // The lean of the turn, the V and the beat add up on the high wing:
+    // kept under about 60 degrees, or the gull looks like a post.
+    const float lift = 0.25f + (0.45f * flapping * beat);
     p_bird.left.rotation(-lift, Vector3f(0.0f, 0.0f, 1.0f));
     p_bird.right.rotation(lift, Vector3f(0.0f, 0.0f, 1.0f));
 }
@@ -411,7 +467,7 @@ void Wildlife::animate(Patch const& p_base,
     {
         bird.angle =
             std::fmod(bird.angle + ((bird.speed * p_dt) / bird.radius), TURN);
-        fly(bird, p_time, p_eye);
+        fly(bird, p_base, p_dt, p_time, p_eye);
     }
     for (Fish& fish : m_fish)
     {

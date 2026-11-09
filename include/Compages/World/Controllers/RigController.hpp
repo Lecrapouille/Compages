@@ -12,6 +12,7 @@
 #include "Compages/World/Controllers/Input.hpp"
 #include "Compages/World/EntityId.hpp"
 
+#include <functional>
 #include <optional>
 
 namespace compages::world
@@ -134,6 +135,13 @@ public:
     //! \brief Seconds of a flight per unit of its path: a path unit is a
     //! zoom by e (2.7 times) or a pan of one view width.
     float flight_pace = 0.8f;
+    //! \brief Optional: the height of the ground (relief, sea) under a point
+    //! (x, z). When set, the camera never goes lower than this height plus
+    //! \c clearance: it rises and still looks at its target, so it cannot
+    //! enter a hill. Empty (the default): only the plane \c ground counts.
+    std::function<float(float, float)> height_at;
+    //! \brief The least height of the camera above \c height_at.
+    float clearance = 1.0f;
 
     // ------------------------------------------------------------------------
     //! \brief Consume one frame of input, glide and write the camera pose.

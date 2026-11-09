@@ -64,6 +64,32 @@ static Vector2f mouthOf(Making const& p_making, int p_last)
 }
 
 // ----------------------------------------------------------------------------
+//! \brief Where a tributary meets the river it joins: the point of the
+//! rivers already traced nearest the centre of the cell it flows into. The
+//! rivers meander away from the centres of their cells (by up to about two
+//! widths), so a tributary ending on the centre itself would stop short of
+//! the water.
+// ----------------------------------------------------------------------------
+static Vector2f confluence(std::vector<River> const& p_rivers, Vector2f p_point)
+{
+    Vector2f best = p_point;
+    float nearest = 1.0e30f;
+    for (River const& river : p_rivers)
+    {
+        for (const Vector2f q : river.points)
+        {
+            const Vector2f d = q - p_point;
+            if (const float d2 = (d.x * d.x) + (d.y * d.y); d2 < nearest)
+            {
+                nearest = d2;
+                best = q;
+            }
+        }
+    }
+    return best;
+}
+
+// ----------------------------------------------------------------------------
 //! \brief The coast cell of an island that drains most, -1 for none.
 // ----------------------------------------------------------------------------
 static int mouthCell(Making const& p_making, std::size_t p_island)
@@ -172,7 +198,8 @@ static void traceTributary(Making& p_making, std::size_t p_region, int p_source)
     p_making.paths[p_region].assign(down.rbegin(), down.rend());
     addRiver(p_making,
              p_making.paths[p_region],
-             joins ? p_making.land.sites[std::size_t(into)]
+             joins ? confluence(p_making.land.rivers,
+                                p_making.land.sites[std::size_t(into)])
                    : mouthOf(p_making, last));
 }
 

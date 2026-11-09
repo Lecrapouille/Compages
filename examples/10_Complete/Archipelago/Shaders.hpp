@@ -19,11 +19,13 @@ namespace examples::archipelago
 
 // The main() of the map: the PBR shader of the Renderer (its lights, its
 // shadow, its fog and its tone curve are kept) with water where the alpha
-// of the picture says: the sea from 0 (the shore) to 0.9 (90 m deep), a
+// of the picture says: the sea from 0.9 (the shore) down to 0 (90 m deep), a
 // river at 0.94, the land at 1.
 //
-// The land: near the camera, pictures of grass, sand and rock give it its
-// grain. Each is read at two scales (6 m and 23 m: no visible tiling) and
+// The land: matte, lit as shade() does but without its glint (which made
+// the slopes facing the sun shine like wet stone) and with less of the
+// light that follows the camera. Near the camera, pictures of grass, sand
+// and rock give it its grain. Each is read at two scales (6 m and 23 m: no visible tiling) and
 // divided by its mean colour (its smallest mipmap), so the colours of the
 // map stay; sand on the beaches, rock on the steep slopes, grass elsewhere.
 //
@@ -41,6 +43,20 @@ uniform vec2 surfaceCentre;
 uniform float surfaceRadius;
 
 out vec4 oColor;
+
+vec3 matte(vec3 p_base, vec3 p_n, vec3 p_world)
+{
+    vec3 toLight = normalize(-lightDir);
+    vec3 toEye = normalize(cameraPos - p_world);
+    if (dot(p_n, toEye) < 0.0)
+    {
+        p_n = -p_n;
+    }
+    vec3 ambientLight = ambient * mix(0.45, 1.3, 0.5 + 0.5 * p_n.y);
+    float diffuse = max(dot(p_n, toLight), 0.0) * sunVisibility(p_n, toLight, p_world);
+    float fill = 0.1 * max(dot(p_n, toEye), 0.0);
+    return p_base * (ambientLight + lightColor * (0.8 * diffuse + fill) + pointLightsContribution(p_n, p_world));
+}
 
 vec3 grain(sampler2D p_map, vec2 p_at)
 {
@@ -64,11 +80,11 @@ void main()
         float grass = max(1.0 - sand - rock, 0.0);
         vec3 ground = (grain(grassMap, p) * grass) + (grain(sandMap, p) * sand) + (grain(rockMap, p) * rock);
         base *= mix(vec3(1.0), ground, 0.9 * near);
-        oColor = vec4(present(applyFog(shade(base, n, vWorldPos), vWorldPos)), opacity);
+        oColor = vec4(present(applyFog(matte(base, n, vWorldPos), vWorldPos)), opacity);
         return;
     }
     bool river = texel.a > 0.915;
-    float depth = river ? 0.5 : texel.a / 0.9;
+    float depth = river ? 0.5 : clamp(1.0 - texel.a / 0.9, 0.0, 1.0);
     vec3 up = vec3(0.0, 1.0, 0.0);
     // The sea bed: sand in the shallows.
     base *= mix(vec3(1.0), grain(sandMap, p), 0.6 * near * (1.0 - smoothstep(0.0, 0.3, depth)));
@@ -80,10 +96,11 @@ void main()
         float k = 2.0 * PI / SWELLS[i].z;
         float phase = k * dot(d, p) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
         float fade = 1.0 - smoothstep(0.3, 1.2, fwidth(phase));
-        slope += d * (SWELLS[i].w * cos(phase) * fade);
+        slope += d * (SWELLS[i].w * swellGroup(i, p, time) * cos(phase) * fade);
     }
-    // Gusts: patches where the wind ruffles the water more, drifting.
-    slope *= 0.6 + 0.4 * sin(p.x * 0.0021 + time * 0.05) * sin(p.y * 0.0017 - time * 0.04);
+    // Gusts: patches where the wind ruffles the water more, drifting with
+    // the wind; a noise, not a grid of sines.
+    slope *= 0.55 + 0.9 * swellNoise((p - vec2(8.0, 6.0) * time) / 700.0, 300u);
     vec3 n = normalize(vec3(-slope.x, 1.0, -slope.y));
     vec3 toEye = normalize(cameraPos - vWorldPos);
     vec3 toLight = normalize(-lightDir);
@@ -95,7 +112,7 @@ void main()
     {
         float shallow = 1.0 - smoothstep(0.0, 0.07, depth);
         float bands = sin(depth * 260.0 + time * 1.4);
-        float broken = 0.5 + 0.5 * sin(p.x * 0.031 + time * 0.21) * sin(p.y * 0.027 - time * 0.17);
+        float broken = swellNoise((p + vec2(0.0, 3.0) * time) / 40.0, 301u);
         float foam = shallow * smoothstep(0.55, 0.95, bands) * broken + (1.0 - smoothstep(0.0, 0.015, depth)) * 0.7;
         water = mix(water, vec3(0.85, 0.9, 0.9) * (0.6 + 0.4 * sun), clamp(foam, 0.0, 1.0) * 0.75);
     }
@@ -111,8 +128,10 @@ void main()
 // moved by Gerstner waves (GPU Gems 1, chapter 1): a point of the water goes
 // round a small circle, up and forward on the crest, so the crests are
 // sharp and the troughs wide. The waves die in the shallows; on land the
-// surface goes under the ground. Swells shorter than three quads are left
-// to the normals of the fragment shader.
+// surface stays flat at the level of the sea, under the ground, and the
+// fragment shader drops it there. (It used to dive 8 m under the land: the
+// triangles across a coast then leaned, in teeth along the shore.) Swells
+// shorter than three quads are left to the normals of the fragment shader.
 inline constexpr char const* SURFACE_WAVES = R"(
 uniform float time;
 uniform sampler2D baseColorMap;
@@ -125,7 +144,7 @@ vec3 gWaveNormal;
 vec4 displace(vec4 p_world)
 {
     float water = textureLod(baseColorMap, p_world.xz / MAP_SIZE + 0.5, 0.0).a;
-    float calm = (water > 0.91) ? 0.0 : smoothstep(0.0, 0.08, water / 0.9);
+    float calm = (water > 0.91) ? 0.0 : smoothstep(0.0, 0.08, 1.0 - water / 0.9);
     vec3 offset = vec3(0.0);
     vec3 normal = vec3(0.0, 1.0, 0.0);
     vCrest = 0.0;
@@ -133,18 +152,15 @@ vec4 displace(vec4 p_world)
     {
         vec2 d = normalize(SWELLS[i].xy);
         float k = 2.0 * PI / SWELLS[i].z;
-        float amplitude = calm * smoothstep(3.0, 6.0, SWELLS[i].z / gridStep) * SWELLS[i].w / k;
+        float amplitude = calm * smoothstep(3.0, 6.0, SWELLS[i].z / gridStep) * SWELLS[i].w / k
+                          * swellGroup(i, p_world.xz, time);
         float phase = k * dot(d, p_world.xz) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
-        const float Q = 0.6;
+        const float Q = 0.75;
         offset.xz += Q * amplitude * d * cos(phase);
         offset.y += amplitude * sin(phase);
         normal.xz -= d * (k * amplitude * cos(phase));
         normal.y -= Q * k * amplitude * sin(phase);
         vCrest += k * amplitude * sin(phase);
-    }
-    if (water > 0.91)
-    {
-        offset.y = -8.0;
     }
     gWaveNormal = normalize(normal);
     return vec4(p_world.xyz + offset, 1.0);
@@ -172,7 +188,7 @@ void main()
     {
         discard;
     }
-    float depth = texel.a / 0.9;
+    float depth = clamp(1.0 - texel.a / 0.9, 0.0, 1.0);
     vec3 up = vec3(0.0, 1.0, 0.0);
     // Ripples smaller than the quads, in the normal.
     vec2 slope = vec2(0.0);
@@ -181,7 +197,8 @@ void main()
         vec2 d = normalize(SWELLS[i].xy);
         float k = 2.0 * PI / SWELLS[i].z;
         float phase = k * dot(d, p) - sqrt(GRAVITY * k) * time + float(i) * 1.7;
-        slope += d * (SWELLS[i].w * cos(phase) * (1.0 - smoothstep(0.3, 1.2, fwidth(phase))));
+        slope += d * (SWELLS[i].w * swellGroup(i, p, time) * cos(phase) *
+                      (1.0 - smoothstep(0.3, 1.2, fwidth(phase))));
     }
     vec3 n = normalize(normalize(vNormal) + vec3(-slope.x, 0.0, -slope.y));
     vec3 toEye = normalize(cameraPos - vWorldPos);
@@ -194,7 +211,7 @@ void main()
     water += lightColor * (3.0 * sun * pow(max(dot(reflect(-toLight, n), toEye), 0.0), 200.0));
     float shallow = 1.0 - smoothstep(0.0, 0.07, depth);
     float bands = sin(depth * 260.0 + time * 1.4);
-    float broken = 0.5 + 0.5 * sin(p.x * 0.031 + time * 0.21) * sin(p.y * 0.027 - time * 0.17);
+    float broken = swellNoise((p + vec2(0.0, 3.0) * time) / 40.0, 301u);
     float foam = clamp(shallow * smoothstep(0.55, 0.95, bands) * broken + smoothstep(0.16, 0.24, vCrest) * 0.6, 0.0, 1.0);
     water = mix(water, vec3(0.9, 0.95, 0.95) * (0.6 + 0.4 * sun), foam);
     float alpha = mix(0.3, 0.92, smoothstep(0.0, 0.35, depth));

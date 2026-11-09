@@ -190,7 +190,7 @@ static void paint(Land const& p_land,
     if (p_height <= 0.0f)
     {
         colour = seaColour(-p_height, p_slope, p_pixel);
-        alpha = SEA_ALPHA * std::min(1.0f, -p_height / SEABED);
+        alpha = SEA_ALPHA * (1.0f - std::min(1.0f, -p_height / SEABED));
     }
     else
     {

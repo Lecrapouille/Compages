@@ -51,11 +51,51 @@ void FineTiles::drop()
         detail.job.wait();
         detail.tile = -1;
         detail.ready = false;
+        detail.shown = false;
+        m_shown_mask = 0u;
         if (detail.entity)
         {
             detail.entity.enable(false);
         }
     }
+}
+
+// ----------------------------------------------------------------------------
+float FineTiles::step()
+{
+    return TILE / float(DETAIL_CELLS);
+}
+
+// ----------------------------------------------------------------------------
+std::uint64_t FineTiles::bitAt(float p_x, float p_z)
+{
+    const int i = int(std::floor((p_x + (0.5f * MAP)) / TILE));
+    const int j = int(std::floor((p_z + (0.5f * MAP)) / TILE));
+    if ((i < 0) || (j < 0) || (i >= TILES) || (j >= TILES))
+    {
+        return 0u;
+    }
+    return std::uint64_t(1u) << unsigned((j * TILES) + i);
+}
+
+// ----------------------------------------------------------------------------
+float FineTiles::groundAt(Patch const& p_base, float p_x, float p_z) const
+{
+    const int i = int(std::floor((p_x + (0.5f * MAP)) / TILE));
+    const int j = int(std::floor((p_z + (0.5f * MAP)) / TILE));
+    if ((i >= 0) && (j >= 0) && (i < TILES) && (j < TILES) &&
+        ((m_shown_mask & bitAt(p_x, p_z)) != 0u))
+    {
+        const int tile = (j * TILES) + i;
+        for (Detail const& detail : m_details)
+        {
+            if (detail.shown && (detail.tile == tile))
+            {
+                return detail.ground.heightAt(p_x, p_z);
+            }
+        }
+    }
+    return p_base.heightAt(p_x, p_z);
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +183,7 @@ void FineTiles::receive(compages::renderer::Scene& p_scene,
         {
             continue;
         }
-        const Patch patch = m_details[k].job.take();
+        Patch patch = m_details[k].job.take();
         if (const compages::Status sent = send(p_scene, p_material, k, patch);
             !sent)
         {
@@ -152,6 +192,10 @@ void FineTiles::receive(compages::renderer::Scene& p_scene,
             continue;
         }
         m_details[k].ready = true;
+        // The heights stay for groundAt(); the picture is on the GPU now.
+        patch.picture.clear();
+        patch.picture.shrink_to_fit();
+        m_details[k].ground = std::move(patch);
     }
 }
 
@@ -238,15 +282,21 @@ void FineTiles::update(compages::renderer::Scene& p_scene,
         {
             detail.entity.enable(shown);
         }
+        detail.shown = shown;
         if (shown)
         {
             detail.used = m_clock;
             fine[std::size_t(detail.tile)] = 1;
         }
     }
+    m_shown_mask = 0u;
     for (std::size_t tile = 0u; tile < p_coarse.size(); ++tile)
     {
         p_coarse[tile].enable(fine[tile] == 0);
+        if (fine[tile] != 0)
+        {
+            m_shown_mask |= std::uint64_t(1u) << unsigned(tile);
+        }
     }
 }
 

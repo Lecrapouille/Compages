@@ -145,8 +145,11 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Dear ImGui windows over the picture, panels shown or not: the
     //! details of what is chosen, a search box, a help. Called every frame
-    //! once the set-up is done. The pointer over one of these windows does not reach
-    //! draw(), nor do the keys typed into a text field. Nothing by default.
+    //! once the set-up is done, inside the window of the picture:
+    //! ImGui::GetWindowDrawList() draws on the picture, under the windows
+    //! the example opens. The pointer over one of these windows does not
+    //! reach draw(), nor do the keys typed into a text field. Nothing by
+    //! default.
     // ------------------------------------------------------------------------
     virtual void overlay(Overlay const& p_view)
     {

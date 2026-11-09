@@ -152,6 +152,37 @@ TEST(RigController, GlidesTheSameWayAtAnyFrameRate)
     ASSERT_LE(run(1, 10.0f), 1.0f);
 }
 
+TEST(RigController, StaysAboveTheReliefAndKeepsLookingAtTheTarget)
+{
+    compages::world::World world;
+    const compages::world::EntityId camera = world.create("cam");
+    compages::world::RigController rig;
+    rig.pitch = -0.2f;
+    rig.distance = 10.0f;
+    rig.snap(world, camera);
+    // Without a relief, the eye is 10 * sin(0.2) = 2 high.
+    ASSERT_NEAR(world.transform(camera).position.y, 10.0f * std::sin(0.2f), 1.0e-4f);
+
+    // A hill 5 high everywhere: the eye rises to 5 + clearance.
+    rig.height_at = [](float, float) { return 5.0f; };
+    rig.clearance = 0.5f;
+    rig.snap(world, camera);
+    const compages::Vector3f eye = world.transform(camera).position;
+    ASSERT_NEAR(eye.y, 5.5f, 1.0e-4f);
+    // Same place seen from above: the yaw is kept, the eye only rose.
+    ASSERT_NEAR(eye.x, 0.0f, 1.0e-4f);
+    ASSERT_NEAR(eye.z, 10.0f * std::cos(0.2f), 1.0e-3f);
+    // It still looks at the target: forward points from the eye to it.
+    const compages::Vector3f forward =
+        world.transform(camera).rotation * compages::Vector3f(0.0f, 0.0f, -1.0f);
+    const compages::Vector3f to_target = compages::Vector3f(0.0f, 0.0f, 0.0f) - eye;
+    ASSERT_NEAR(compages::vector::dot(forward, to_target) / compages::vector::norm(to_target),
+                1.0f, 1.0e-4f);
+    // The wanted pose did not change: the camera comes back down by itself.
+    ASSERT_NEAR(rig.pitch, -0.2f, 1.0e-6f);
+    ASSERT_NEAR(rig.distance, 10.0f, 1.0e-6f);
+}
+
 TEST(RigController, PanKeepsTheGrabbedGroundUnderTheMouse)
 {
     compages::world::World world;

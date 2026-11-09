@@ -44,8 +44,9 @@ struct River
 // ----------------------------------------------------------------------------
 //! \brief A river through points (from upstream): a Catmull-Rom spline that
 //! passes through each one (two rivers still meet at a cell), then its
-//! meanders. The swing fades at both ends, so that a river still meets the
-//! one it joins.
+//! meanders. The swing fades at both ends, so that a river still ends on
+//! the point it was given: a tributary ends on the meandering river it
+//! joins (Strands.cpp gives it a point of that river, not of its axis).
 //! \param[in] p_widths The width at each point.
 // ----------------------------------------------------------------------------
 [[nodiscard]] River makeRiver(std::vector<compages::Vector2f> const& p_points,

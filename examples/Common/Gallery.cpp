@@ -734,7 +734,15 @@ compages::Status Gallery::run(Options const& p_options)
             {
                 ImGuiIO const& io = ImGui::GetIO();
                 drawHud(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
+                // A window over the whole picture, for Example::overlay().
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                ImGui::SetNextWindowSize(io.DisplaySize);
+                ImGui::Begin("##picture", nullptr,
+                             ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav);
                 drawOverlay(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
+                ImGui::End();
             }
             runExample();
 

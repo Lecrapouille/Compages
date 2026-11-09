@@ -7,7 +7,6 @@
 
 #include "10_Complete/Archipelago/Panels.hpp"
 #include "10_Complete/Archipelago/Browser.hpp"
-#include "10_Complete/Archipelago/Labels.hpp"
 
 #include "Common/Gui.hpp"
 

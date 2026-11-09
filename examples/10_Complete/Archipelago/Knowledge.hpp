@@ -16,7 +16,7 @@
 //! (github.com/Lecrapouille/IslandedBrowser): organize.py groups the
 //! bookmarks of Firefox into islands and communities, then a force directed
 //! layout (springs between similar pages) gives every node a position,
-//! written by `IslandedBrowser organization.json --layout layout.json`. The
+//! written in DIR/layout.json by `IslandedBrowser -d DIR --layout`. The
 //! land is then built around this graph (Land.hpp): related pages end up on
 //! the same island, side by side.
 // ****************************************************************************
@@ -79,6 +79,10 @@ struct Knowledge
 // ----------------------------------------------------------------------------
 [[nodiscard]] compages::Result<Knowledge>
 loadKnowledge(std::filesystem::path const& p_path);
+
+//! \brief A title short enough for a label: at most 40 bytes, cut between
+//! two UTF-8 characters.
+[[nodiscard]] std::string shortTitle(std::string const& p_title);
 
 // ----------------------------------------------------------------------------
 //! \brief Five themes, twenty five topics, three Wikipedia pages each, laid
