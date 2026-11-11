@@ -10,6 +10,7 @@
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Components/FieldView.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
+#include "Compages/Renderer/Visualization/Chart.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
 #include "Compages/World/World.hpp"
 
@@ -197,4 +198,23 @@ TEST_F(FieldShowTest, DrawsVectorsAsArrows)
     wind.fill(compages::Vector2f(0.0f, 0.0f));
     ASSERT_TRUE(bool(m_scene->show(arrows, wind, look)));
     EXPECT_EQ(centre(), 0);
+}
+
+// A curve at the middle of the range is drawn at the middle of the picture.
+TEST_F(FieldShowTest, ChartsAValueOverTime)
+{
+    compages::renderer::Chart chart;
+    ASSERT_TRUE(bool(chart.create(*m_scene, { .width = 64u, .height = 32u, .seconds = 10.0f, .low = 0.0f, .high = 2.0f },
+                                  "Chart")));
+    const std::size_t curve = chart.series(compages::renderer::CanvasTexture::Color::rgb(255, 0, 0));
+    for (int k = 0; k <= 20; ++k)
+    {
+        chart.add(curve, float(k), 1.0f);
+    }
+    ASSERT_TRUE(bool(chart.draw()));
+    auto pixels = m_scene->assets().texture(chart.texture())->texture.read();
+    ASSERT_TRUE(bool(pixels)) << pixels.error();
+    auto red = [&pixels](int p_x, int p_y) { return int(pixels.value()[((std::size_t(p_y) * 64u) + std::size_t(p_x)) * 4u]); };
+    EXPECT_EQ(red(40, 15), 255); // y = 0.5 * 31
+    EXPECT_LT(red(40, 3), 100);  // the background
 }

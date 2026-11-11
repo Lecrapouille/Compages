@@ -262,6 +262,47 @@ void CanvasTexture::paintWorld(compages::Vector3f p_world_point,
                p_brush_radius_world);
 }
 
+void CanvasTexture::paintPixelLine(compages::Vector2f p_from,
+                                   compages::Vector2f p_to,
+                                   Color p_color,
+                                   int p_pixel_radius)
+{
+    const float span = std::hypot(p_to.x - p_from.x, p_to.y - p_from.y);
+    const int steps = std::max(1, int(std::ceil(span)));
+    for (int i = 0; i <= steps; ++i)
+    {
+        const float t = float(i) / float(steps);
+        stampDisk(int(std::lround(p_from.x + ((p_to.x - p_from.x) * t))),
+                  int(std::lround(p_from.y + ((p_to.y - p_from.y) * t))),
+                  std::max(p_pixel_radius, 0),
+                  p_color);
+    }
+}
+
+void CanvasTexture::fillPixels(int p_x0, int p_y0, int p_x1, int p_y1, Color p_color)
+{
+    const int x0 = std::max(0, std::min(p_x0, p_x1));
+    const int x1 = std::min(int(m_width) - 1, std::max(p_x0, p_x1));
+    const int y0 = std::max(0, std::min(p_y0, p_y1));
+    const int y1 = std::min(int(m_height) - 1, std::max(p_y0, p_y1));
+    if ((x0 > x1) || (y0 > y1) || m_pixels.empty())
+    {
+        return;
+    }
+    for (int y = y0; y <= y1; ++y)
+    {
+        for (int x = x0; x <= x1; ++x)
+        {
+            const std::size_t offset = ((std::size_t(y) * std::size_t(m_width)) + std::size_t(x)) * 4u;
+            m_pixels[offset + 0u] = p_color.r;
+            m_pixels[offset + 1u] = p_color.g;
+            m_pixels[offset + 2u] = p_color.b;
+            m_pixels[offset + 3u] = p_color.a;
+        }
+    }
+    markDirty(std::uint32_t(x0), std::uint32_t(y0), std::uint32_t(x1), std::uint32_t(y1));
+}
+
 void CanvasTexture::paintLineWorld(compages::Vector3f p_from,
                                    compages::Vector3f p_to,
                                    compages::Matrix44f const& p_canvas_world,

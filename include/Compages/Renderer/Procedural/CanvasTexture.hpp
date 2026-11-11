@@ -130,6 +130,21 @@ public:
                     float p_brush_radius_world);
 
     //! \brief Interpolate stamps so fast motion stays continuous.
+    // ------------------------------------------------------------------------
+    //! \brief A line in pixels: x to the right, y up from the bottom row,
+    //! \p p_pixel_radius pixels thick (0: one pixel). For charts and marks
+    //! that are not on a mesh.
+    // ------------------------------------------------------------------------
+    void paintPixelLine(compages::Vector2f p_from,
+                        compages::Vector2f p_to,
+                        Color p_color,
+                        int p_pixel_radius);
+
+    // ------------------------------------------------------------------------
+    //! \brief Fill a rectangle of pixels, corners included (clamped).
+    // ------------------------------------------------------------------------
+    void fillPixels(int p_x0, int p_y0, int p_x1, int p_y1, Color p_color);
+
     void paintLineWorld(compages::Vector3f p_from,
                         compages::Vector3f p_to,
                         compages::Matrix44f const& p_canvas_world,

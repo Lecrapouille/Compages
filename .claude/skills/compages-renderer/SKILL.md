@@ -49,7 +49,9 @@ scene.draw(frame);                       // = update(frame) + render()
   look, name)` (box + ray marching a 3D texture, see-through, no shadow), `compages::slice()`
   (`Fields/Slice.hpp`) for cuts; demos `11e_Smoke`, `11f_Volume`. Vectors: `scene.show(Field<Vector2f>,
   ArrowLook{ .colors, .low, .high, .scale, .every }, name)` (CPU mesh), `compages::streamline()`
-  (`Fields/Streamline.hpp`); demo `11g_FlowAroundCylinder`.
+  (`Fields/Streamline.hpp`); demo `11g_FlowAroundCylinder`. Curves over time: `Chart`
+  (`Visualization/Chart.hpp`: create(scene, {width, height, seconds, low, high}, name), series, add,
+  draw, applyLook) on a CanvasTexture (`paintPixelLine`, `fillPixels`); demo `11h_Thermometers`.
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
   (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),

@@ -120,8 +120,10 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] Vector fields drawn as arrows (`scene.show(Field<Vector2f>, ArrowLook)`)
       and streamlines (`compages::streamline()`), demo `11g_FlowAroundCylinder`
 - [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
-- [ ] Inspection: follow a point over time (a curve), slices
-- [ ] 2D plots (time series, histograms) on a `CanvasTexture`
+- [x] Inspection: follow a point over time (`Chart`, demo `11h_Thermometers`),
+      slices (`compages::slice()`)
+- [x] Time series on a `CanvasTexture` (`Chart`)
+- [ ] Histograms, axes with numbers on a `Chart`
 - [x] Hooks in the shadow of the sun: a material whose `deform` is replaced
       draws its own shadow (`Material::casts_shadow`)
 - [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes

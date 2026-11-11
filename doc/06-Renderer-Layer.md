@@ -153,6 +153,20 @@ m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compage
 
 The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `11g_FlowAroundCylinder` shows the wind around a turning column this way.
 
+**Curves over time.** A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`; put it on any mesh, a board in the scene:
+
+```cpp
+COMPAGES_TRY(m_chart.create(m_scene, { .width = 512u, .height = 256u, .seconds = 120.0f,
+                                       .low = 0.0f, .high = 300.0f }, "Thermometers"));
+const std::size_t curve = m_chart.series(CanvasTexture::Color::rgb(255, 140, 0));
+m_chart.applyLook(m_scene, board.id());
+// each frame:
+m_chart.add(curve, time, temperature.sample(spot));
+COMPAGES_TRY(m_chart.draw());
+```
+
+`11h_Thermometers` follows two points of a heated plate this way. `CanvasTexture::paintPixelLine()` and `fillPixels()` draw in pixels for your own pictures.
+
 ### Helpers
 
 Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.
@@ -445,6 +459,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `11e_Smoke` | a 2D fluid computed on the GPU |
 | `11f_Volume` | a volume seen through and cut |
 | `11g_FlowAroundCylinder` | a field of vectors: arrows and streamlines |
+| `11h_Thermometers` | values followed over time, curves on a `Chart` |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 
