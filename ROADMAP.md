@@ -132,7 +132,8 @@ In rough order. Each item should make a demo shorter or possible.
       equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
       `deform` hook reading a storage buffer)
 - [x] Demos of fields: `11a_HeatPlate`, `11b_RippleTank`, `11c_FieldProbe`
-- [ ] Demo: smoke (stable fluids in 2D with `PingPong`)
+- [x] Demo: smoke (`11e_Smoke`: Stable Fluids in 2D, five compute kernels
+      from one GLSL text chosen by `ShaderSource::define`)
 
 ## Earlier decisions (audit of 2026-11-06)
 
