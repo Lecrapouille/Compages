@@ -63,16 +63,17 @@ again at any step.
 - [x] `Program::load(ShaderSource, ShaderSource)`,
       `ComputeProgram::load(ShaderSource)`; compiler logs name the file and
       line; `loadFiles()` understands `#include`
-- [ ] PBR, lit, unlit and shadow shaders cut into shared includes
+- [x] PBR, lit, unlit and shadow shaders cut into shared includes
       (`compages/skinning.glsl`, `compages/lights.glsl`, `compages/fog.glsl`,
       `compages/present.glsl`)
-- [ ] Hooks `deform` (PBR vertex) and `main` (PBR fragment);
-      `renderer::shaders::pbr()` returns the two sources
-- [ ] `Sea.cpp` uses them: no more `find` / `substr` / `replace`
+- [x] Hooks `deform` (PBR vertex) and `main` (PBR fragment);
+      `renderer::shaders::pbr()` returns the two sources (`ShaderPair`)
+- [x] `Sea.cpp` and `10c_SweatAndDecals` use them: no more `find` / `substr`
+      / `replace`
 
 ### P2: materials
 
-- [ ] `Material::create(name, MaterialDesc)`
+- [x] `Material::create(name, MaterialDesc)`
 - [ ] Textures of a material by sampler name, bound by the Renderer
 - [ ] `replaceMesh` and `wear` of Archipelago moved into the Renderer
 - [ ] Shared uniforms of Sea in a `TypedUniformBlock` (only if it is shorter)

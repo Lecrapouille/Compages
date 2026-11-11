@@ -7,42 +7,113 @@
 
 #pragma once
 
+#include "Compages/GPU/ShaderSource.hpp"
+
+#include <utility>
+
 namespace compages::renderer::shaders
 {
 
 // ****************************************************************************
 //! \file
-//! \brief GLSL sources grouped by feature, not by backend.
+//! \brief The GLSL of the materials of the Renderer, grouped by feature.
 //!
-//! ShaderLib only returns source strings. Primitives and loaders turn them
-//! into \c compages::gpu::Program and \c compages::gpu::Pipeline through the AssetManager.
+//! Each function returns the two stages of a shader as gpu::ShaderSource. They
+//! share pieces that any shader of the program may include too:
+//!
+//! | Include                      | What it gives                              |
+//! | ---------------------------- | ------------------------------------------ |
+//! | <compages/skinning.glsl>     | joints, weights, skinMatrix()              |
+//! | <compages/scene.glsl>        | lightDir, lightColor, ambient, cameraPos, fog uniforms |
+//! | <compages/fog.glsl>          | applyFog(colour, worldPos)                 |
+//! | <compages/sun.glsl>          | sunVisibility(n, toLight, worldPos)        |
+//! | <compages/lamps.glsl>        | pointLightsContribution(n, worldPos)       |
+//! | <compages/shade.glsl>        | shade(base, n, worldPos): sun, sky, lamps  |
+//! | <compages/present.glsl>      | opacity, present(linear): tone curve, sRGB |
+//!
+//! The PBR shader leaves two hooks open:
+//! - \c deform (vertex): \c void \c deform(inout \c vec4 \c world, inout \c vec3
+//!   \c normal), called on the world position and normal before they are
+//!   projected. By default it changes nothing.
+//! - \c main (fragment): the whole main() writing \c oColor, which is declared
+//!   before it, as are the uniforms the Renderer sets (baseColorFactor,
+//!   baseColorMap, hasBaseColorMap) and every include above.
+//!
+//! \code
+//! auto pbr = compages::renderer::shaders::pbr();
+//! pbr.vertex().include("waves.glsl", wavesGlsl()).hook("deform", DEFORM);
+//! pbr.fragment().include("waves.glsl", wavesGlsl()).hook("main", WATER);
+//! \endcode
 // ****************************************************************************
 
 inline constexpr int MAX_POINT_LIGHTS = 4;
 //! \brief Joint palette uploaded each draw. Mixamo Soldier sits under 60.
 inline constexpr int MAX_JOINTS = 64;
 
-[[nodiscard]] char const* litVertex();
-[[nodiscard]] char const* litFragment();
+// ****************************************************************************
+//! \brief The vertex and the fragment stages of one shader, to change before
+//! they are compiled.
+// ****************************************************************************
+class ShaderPair
+{
+public:
 
-[[nodiscard]] char const* pbrVertex();
-[[nodiscard]] char const* pbrFragment();
+    ShaderPair(compages::gpu::ShaderSource p_vertex,
+               compages::gpu::ShaderSource p_fragment)
+        : m_vertex(std::move(p_vertex)), m_fragment(std::move(p_fragment))
+    {
+    }
+
+    //! \brief The vertex stage.
+    [[nodiscard]] compages::gpu::ShaderSource& vertex()
+    {
+        return m_vertex;
+    }
+
+    //! \brief The vertex stage.
+    [[nodiscard]] compages::gpu::ShaderSource const& vertex() const
+    {
+        return m_vertex;
+    }
+
+    //! \brief The fragment stage.
+    [[nodiscard]] compages::gpu::ShaderSource& fragment()
+    {
+        return m_fragment;
+    }
+
+    //! \brief The fragment stage.
+    [[nodiscard]] compages::gpu::ShaderSource const& fragment() const
+    {
+        return m_fragment;
+    }
+
+private:
+
+    compages::gpu::ShaderSource m_vertex;
+    compages::gpu::ShaderSource m_fragment;
+};
+
+//! \brief One sun, a flat \c color uniform.
+[[nodiscard]] ShaderPair lit();
+
+//! \brief glTF-style base colour factor and albedo map; hooks \c deform and
+//! \c main.
+[[nodiscard]] ShaderPair pbr();
+
+//! \brief A flat colour, no light: helpers, bulbs, labels.
+[[nodiscard]] ShaderPair unlit();
+
+//! \brief Linearised eye-space depth as greyscale.
+[[nodiscard]] ShaderPair depth();
+
+//! \brief The normal seen from the camera, as RGB.
+[[nodiscard]] ShaderPair normals();
 
 //! \brief Depth seen from the sun: the shadow map of the lit materials.
-[[nodiscard]] char const* shadowVertex();
-[[nodiscard]] char const* shadowFragment();
+[[nodiscard]] ShaderPair shadow();
 
 //! \brief Distance to a lamp: one face of the shadow cube of a lamp.
-[[nodiscard]] char const* lampShadowVertex();
-[[nodiscard]] char const* lampShadowFragment();
-
-[[nodiscard]] char const* depthVertex();
-[[nodiscard]] char const* depthFragment();
-
-[[nodiscard]] char const* normalsVertex();
-[[nodiscard]] char const* normalsFragment();
-//! \brief A flat colour, no light: helpers, bulbs, labels.
-[[nodiscard]] char const* unlitVertex();
-[[nodiscard]] char const* unlitFragment();
+[[nodiscard]] ShaderPair lampShadow();
 
 } // namespace compages::renderer::shaders

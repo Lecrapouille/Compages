@@ -15,8 +15,78 @@ namespace compages::renderer::shaders
 namespace
 {
 
-constexpr char const* POINT_LIGHT_UNIFORMS = R"(
-uniform int pointLightCount;
+// ============================================================================
+// The pieces, given to every shader of the library as virtual includes.
+// ============================================================================
+
+constexpr char const* SKINNING = R"(in ivec4 joints;
+in vec4 weights;
+uniform int uJointCount;
+uniform mat4 uJoints[64];
+
+mat4 skinMatrix()
+{
+    if (uJointCount <= 0) { return mat4(1.0); }
+    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
+           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
+}
+)";
+
+//! \brief The uniforms of the scene that the Renderer sets on lit materials.
+constexpr char const* SCENE = R"(uniform vec3 lightDir;
+uniform vec3 lightColor;
+uniform vec3 ambient;
+uniform vec3 cameraPos;
+uniform vec3 fogColor;
+uniform float fogDensity;
+)";
+
+constexpr char const* FOG = R"(#include <compages/scene.glsl>
+
+vec3 applyFog(vec3 shaded, vec3 worldPos)
+{
+    float d = fogDensity * length(worldPos - cameraPos);
+    return mix(shaded, fogColor, 1.0 - exp(-d * d));
+}
+)";
+
+constexpr char const* SUN = R"(// Shadow of the sun: the depth seen from the sun (shadow map), read with a
+// 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
+uniform int shadowEnabled;
+uniform mat4 lightViewProj;
+uniform sampler2D shadowMap;
+uniform float shadowTexel;
+uniform float shadowBias;
+
+float sunVisibility(vec3 n, vec3 toLight, vec3 worldPos)
+{
+    if (shadowEnabled == 0)
+    {
+        return 1.0;
+    }
+    // Pushed along the normal by a texel: no acne on lit faces.
+    vec4 clip = lightViewProj * vec4(worldPos + n * (shadowTexel * 1.5), 1.0);
+    vec3 at = clip.xyz / clip.w * 0.5 + 0.5;
+    if (at.x <= 0.0 || at.x >= 1.0 || at.y <= 0.0 || at.y >= 1.0 || at.z >= 1.0)
+    {
+        return 1.0;
+    }
+    float bias = shadowBias * (1.0 + 2.0 * (1.0 - max(dot(n, toLight), 0.0)));
+    vec2 step = 1.0 / vec2(textureSize(shadowMap, 0));
+    float lit = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float nearest = texture(shadowMap, at.xy + vec2(x, y) * step).r;
+            lit += (at.z - bias <= nearest) ? 1.0 : 0.0;
+        }
+    }
+    return lit / 9.0;
+}
+)";
+
+constexpr char const* LAMPS = R"(uniform int pointLightCount;
 uniform vec3 pointLightPos0;
 uniform vec3 pointLightPos1;
 uniform vec3 pointLightPos2;
@@ -114,61 +184,7 @@ vec3 pointLightsContribution(vec3 n, vec3 worldPos)
 }
 )";
 
-constexpr char const* LIT_VERTEX = R"(#version 450 core
-in vec3 position;
-in vec3 normal;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-out vec3 vNormal;
-out vec3 vWorldPos;
-
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
-
-void main()
-{
-    mat4 skin = skinMatrix();
-    vec4 local = skin * vec4(position, 1.0);
-    vec4 world = model * local;
-    vWorldPos = world.xyz;
-    vNormal = mat3(transpose(inverse(model * skin))) * normal;
-    gl_Position = projection * view * world;
-}
-)";
-
-constexpr char const* LIT_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec3 vWorldPos;
-
-uniform vec3 lightDir;
-uniform vec3 ambient;
-uniform vec3 color;
-
-uniform vec3 lightColor;
-uniform vec3 cameraPos;
-uniform vec3 fogColor;
-uniform float fogDensity;
-
-vec3 applyFog(vec3 shaded, vec3 worldPos)
-{
-    float d = fogDensity * length(worldPos - cameraPos);
-    return mix(shaded, fogColor, 1.0 - exp(-d * d));
-}
-)";
-
-constexpr char const* LIT_FRAGMENT_TAIL = R"(
-
-// Shading shared by the lit and PBR materials. One sun gives form; the rest
+constexpr char const* SHADE = R"(// Shading shared by the lit and PBR materials. One sun gives form; the rest
 // keeps every face readable:
 // - a hemisphere ambient: faces turned up get more sky than faces turned
 //   down, so the sides of a box differ even in the shadow of the sun;
@@ -179,40 +195,9 @@ constexpr char const* LIT_FRAGMENT_TAIL = R"(
 // - two-sided normals (open meshes, inverted STL faces).
 // Everything is linear light; present() turns it into screen colours.
 
-// Shadow of the sun: the depth seen from the sun (shadow map), read with a
-// 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
-uniform int shadowEnabled;
-uniform mat4 lightViewProj;
-uniform sampler2D shadowMap;
-uniform float shadowTexel;
-uniform float shadowBias;
-
-float sunVisibility(vec3 n, vec3 toLight, vec3 worldPos)
-{
-    if (shadowEnabled == 0)
-    {
-        return 1.0;
-    }
-    // Pushed along the normal by a texel: no acne on lit faces.
-    vec4 clip = lightViewProj * vec4(worldPos + n * (shadowTexel * 1.5), 1.0);
-    vec3 at = clip.xyz / clip.w * 0.5 + 0.5;
-    if (at.x <= 0.0 || at.x >= 1.0 || at.y <= 0.0 || at.y >= 1.0 || at.z >= 1.0)
-    {
-        return 1.0;
-    }
-    float bias = shadowBias * (1.0 + 2.0 * (1.0 - max(dot(n, toLight), 0.0)));
-    vec2 step = 1.0 / vec2(textureSize(shadowMap, 0));
-    float lit = 0.0;
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float nearest = texture(shadowMap, at.xy + vec2(x, y) * step).r;
-            lit += (at.z - bias <= nearest) ? 1.0 : 0.0;
-        }
-    }
-    return lit / 9.0;
-}
+#include <compages/scene.glsl>
+#include <compages/sun.glsl>
+#include <compages/lamps.glsl>
 
 vec3 shade(vec3 base, vec3 n, vec3 worldPos)
 {
@@ -231,6 +216,18 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
     return base * light + lightColor * specular;
 }
+)";
+
+constexpr char const* SRGB = R"(// A linear colour from 0 to 1, encoded as the screen expects (sRGB).
+vec3 toSrgb(vec3 c)
+{
+    c = clamp(c, 0.0, 1.0);
+    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
+               step(0.0031308, c));
+}
+)";
+
+constexpr char const* PRESENT = R"(#include <compages/srgb.glsl>
 
 // From the light computed in linear units to the colour of the screen:
 // exposure, then a tone curve that brings any brightness under 1 without
@@ -252,10 +249,42 @@ vec3 present(vec3 linear)
         // ACES filmic, Narkowicz's fit.
         c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
     }
-    c = clamp(c, 0.0, 1.0);
-    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
-               step(0.0031308, c));
+    return toSrgb(c);
 }
+)";
+
+// ============================================================================
+// The shaders.
+// ============================================================================
+
+constexpr char const* LIT_VERTEX = R"(#version 450 core
+in vec3 position;
+in vec3 normal;
+#include <compages/skinning.glsl>
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+out vec3 vNormal;
+out vec3 vWorldPos;
+
+void main()
+{
+    mat4 skin = skinMatrix();
+    vec4 world = model * (skin * vec4(position, 1.0));
+    vWorldPos = world.xyz;
+    vNormal = mat3(transpose(inverse(model * skin))) * normal;
+    gl_Position = projection * view * world;
+}
+)";
+
+constexpr char const* LIT_FRAGMENT = R"(#version 450 core
+in vec3 vNormal;
+in vec3 vWorldPos;
+uniform vec3 color;
+#include <compages/fog.glsl>
+#include <compages/shade.glsl>
+#include <compages/present.glsl>
 
 out vec4 oColor;
 
@@ -270,10 +299,7 @@ constexpr char const* PBR_VERTEX = R"(#version 450 core
 in vec3 position;
 in vec3 normal;
 in vec2 uv;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
@@ -282,22 +308,23 @@ out vec3 vNormal;
 out vec2 vUv;
 out vec3 vWorldPos;
 
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
+#include <hook/deform>
 
 void main()
 {
     mat4 skin = skinMatrix();
-    vec4 local = skin * vec4(position, 1.0);
-    vec4 world = model * local;
+    vec4 world = model * (skin * vec4(position, 1.0));
+    vec3 n = mat3(transpose(inverse(model * skin))) * normal;
+    deform(world, n);
     vWorldPos = world.xyz;
-    vNormal = mat3(transpose(inverse(model * skin))) * normal;
+    vNormal = n;
     vUv = uv;
     gl_Position = projection * view * world;
+}
+)";
+
+constexpr char const* PBR_DEFORM = R"(void deform(inout vec4 world, inout vec3 normal)
+{
 }
 )";
 
@@ -305,119 +332,19 @@ constexpr char const* PBR_FRAGMENT = R"(#version 450 core
 in vec3 vNormal;
 in vec2 vUv;
 in vec3 vWorldPos;
-
-uniform vec3 lightDir;
-uniform vec3 ambient;
 uniform vec3 baseColorFactor;
 uniform sampler2D baseColorMap;
 uniform bool hasBaseColorMap;
-
-uniform vec3 lightColor;
-uniform vec3 cameraPos;
-uniform vec3 fogColor;
-uniform float fogDensity;
-
-vec3 applyFog(vec3 shaded, vec3 worldPos)
-{
-    float d = fogDensity * length(worldPos - cameraPos);
-    return mix(shaded, fogColor, 1.0 - exp(-d * d));
-}
-)";
-
-constexpr char const* PBR_FRAGMENT_TAIL = R"(
-
-// Shading shared by the lit and PBR materials. One sun gives form; the rest
-// keeps every face readable:
-// - a hemisphere ambient: faces turned up get more sky than faces turned
-//   down, so the sides of a box differ even in the shadow of the sun;
-// - a soft fill light from the eye: faces away from the sun keep their
-//   shape instead of one flat colour;
-// - a small highlight (Blinn-Phong) that shows the curvature;
-// - the shadow of the sun (sunVisibility), on the sun light only;
-// - two-sided normals (open meshes, inverted STL faces).
-// Everything is linear light; present() turns it into screen colours.
-
-// Shadow of the sun: the depth seen from the sun (shadow map), read with a
-// 3 x 3 filter so the edges are soft. Off when shadowEnabled is 0.
-uniform int shadowEnabled;
-uniform mat4 lightViewProj;
-uniform sampler2D shadowMap;
-uniform float shadowTexel;
-uniform float shadowBias;
-
-float sunVisibility(vec3 n, vec3 toLight, vec3 worldPos)
-{
-    if (shadowEnabled == 0)
-    {
-        return 1.0;
-    }
-    // Pushed along the normal by a texel: no acne on lit faces.
-    vec4 clip = lightViewProj * vec4(worldPos + n * (shadowTexel * 1.5), 1.0);
-    vec3 at = clip.xyz / clip.w * 0.5 + 0.5;
-    if (at.x <= 0.0 || at.x >= 1.0 || at.y <= 0.0 || at.y >= 1.0 || at.z >= 1.0)
-    {
-        return 1.0;
-    }
-    float bias = shadowBias * (1.0 + 2.0 * (1.0 - max(dot(n, toLight), 0.0)));
-    vec2 step = 1.0 / vec2(textureSize(shadowMap, 0));
-    float lit = 0.0;
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float nearest = texture(shadowMap, at.xy + vec2(x, y) * step).r;
-            lit += (at.z - bias <= nearest) ? 1.0 : 0.0;
-        }
-    }
-    return lit / 9.0;
-}
-
-vec3 shade(vec3 base, vec3 n, vec3 worldPos)
-{
-    vec3 toLight = normalize(-lightDir);
-    vec3 toEye = normalize(cameraPos - worldPos);
-    if (dot(n, toEye) < 0.0)
-    {
-        n = -n;
-    }
-    float sky = 0.5 + 0.5 * n.y;
-    vec3 ambientLight = ambient * mix(0.45, 1.3, sky);
-    float diffuse = max(dot(n, toLight), 0.0) * sunVisibility(n, toLight, worldPos);
-    float fill = 0.22 * max(dot(n, toEye), 0.0);
-    vec3 halfway = normalize(toLight + toEye);
-    float specular = diffuse > 0.0 ? 0.18 * pow(max(dot(n, halfway), 0.0), 40.0) : 0.0;
-    vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
-    return base * light + lightColor * specular;
-}
-
-// From the light computed in linear units to the colour of the screen:
-// exposure, then a tone curve that brings any brightness under 1 without
-// burning the hue (Environment::tone_mapping), then the sRGB encoding the
-// screen expects. A custom main() calls it too.
-uniform float exposure;
-uniform int toneMapping;   // 0 none (clamp), 1 Reinhard, 2 ACES
-uniform float opacity;
-
-vec3 present(vec3 linear)
-{
-    vec3 c = max(linear * exposure, 0.0);
-    if (toneMapping == 1)
-    {
-        c = c / (1.0 + c);
-    }
-    else if (toneMapping == 2)
-    {
-        // ACES filmic, Narkowicz's fit.
-        c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
-    }
-    c = clamp(c, 0.0, 1.0);
-    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
-               step(0.0031308, c));
-}
+#include <compages/fog.glsl>
+#include <compages/shade.glsl>
+#include <compages/present.glsl>
 
 out vec4 oColor;
 
-void main()
+#include <hook/main>
+)";
+
+constexpr char const* PBR_MAIN = R"(void main()
 {
     vec3 albedo = baseColorFactor;
     if (hasBaseColorMap)
@@ -431,19 +358,9 @@ void main()
 
 constexpr char const* SHADOW_VERTEX = R"(#version 450 core
 in vec3 position;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 lightViewProj;
-
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
 
 void main()
 {
@@ -461,20 +378,10 @@ void main()
 // range, is what the depth picture keeps.
 constexpr char const* LAMP_SHADOW_VERTEX = R"(#version 450 core
 in vec3 position;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 lightViewProj;
 out vec3 vWorldPos;
-
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
 
 void main()
 {
@@ -495,55 +402,14 @@ void main()
 }
 )";
 
-std::string concat3(char const* a, char const* b, char const* c)
-{
-    return std::string(a) + b + c;
-}
-
-} // namespace
-
-char const* litVertex() { return LIT_VERTEX; }
-
-char const* litFragment()
-{
-    static std::string const source =
-        concat3(LIT_FRAGMENT, POINT_LIGHT_UNIFORMS, LIT_FRAGMENT_TAIL);
-    return source.c_str();
-}
-
-char const* shadowVertex() { return SHADOW_VERTEX; }
-
-char const* shadowFragment() { return SHADOW_FRAGMENT; }
-
-char const* lampShadowVertex() { return LAMP_SHADOW_VERTEX; }
-
-char const* lampShadowFragment() { return LAMP_SHADOW_FRAGMENT; }
-
-char const* pbrVertex() { return PBR_VERTEX; }
-
-char const* pbrFragment()
-{
-    static std::string const source =
-        concat3(PBR_FRAGMENT, POINT_LIGHT_UNIFORMS, PBR_FRAGMENT_TAIL);
-    return source.c_str();
-}
-
 constexpr char const* DEPTH_VERTEX = R"(#version 450 core
 in vec3 position;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 out float vEyeDepth;
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
+
 void main()
 {
     vec4 world = model * (skinMatrix() * vec4(position, 1.0));
@@ -559,6 +425,7 @@ uniform float near;
 uniform float far;
 uniform float opacity;
 out vec4 oColor;
+
 void main()
 {
     float shade = 1.0 - smoothstep(near, far, vEyeDepth);
@@ -569,20 +436,12 @@ void main()
 constexpr char const* NORMALS_VERTEX = R"(#version 450 core
 in vec3 position;
 in vec3 normal;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 out vec3 vNormal;
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
+
 void main()
 {
     mat4 skin = skinMatrix();
@@ -596,6 +455,7 @@ constexpr char const* NORMALS_FRAGMENT = R"(#version 450 core
 in vec3 vNormal;
 uniform float opacity;
 out vec4 oColor;
+
 void main()
 {
     oColor = vec4(0.5 * normalize(vNormal) + 0.5, opacity);
@@ -604,19 +464,11 @@ void main()
 
 constexpr char const* UNLIT_VERTEX = R"(#version 450 core
 in vec3 position;
-in ivec4 joints;
-in vec4 weights;
-uniform int uJointCount;
-uniform mat4 uJoints[64];
+#include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-mat4 skinMatrix()
-{
-    if (uJointCount <= 0) { return mat4(1.0); }
-    return (uJoints[joints.x] * weights.x) + (uJoints[joints.y] * weights.y) +
-           (uJoints[joints.z] * weights.z) + (uJoints[joints.w] * weights.w);
-}
+
 void main()
 {
     gl_Position = projection * view * model * (skinMatrix() * vec4(position, 1.0));
@@ -628,26 +480,77 @@ void main()
 constexpr char const* UNLIT_FRAGMENT = R"(#version 450 core
 uniform vec3 color;
 uniform float opacity;
+#include <compages/srgb.glsl>
 out vec4 oColor;
+
 void main()
 {
-    vec3 c = clamp(color, 0.0, 1.0);
-    vec3 srgb = mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
-                    step(0.0031308, c));
-    oColor = vec4(srgb, opacity);
+    oColor = vec4(toSrgb(color), opacity);
 }
 )";
 
-char const* depthVertex() { return DEPTH_VERTEX; }
+// ----------------------------------------------------------------------------
+//! \brief A shader of the library: its text, and every piece it may include.
+// ----------------------------------------------------------------------------
+compages::gpu::ShaderSource piece(char const* p_name, char const* p_text)
+{
+    compages::gpu::ShaderSource source =
+        compages::gpu::ShaderSource::fromText(p_name, p_text);
+    source.include("compages/skinning.glsl", SKINNING)
+        .include("compages/scene.glsl", SCENE)
+        .include("compages/fog.glsl", FOG)
+        .include("compages/sun.glsl", SUN)
+        .include("compages/lamps.glsl", LAMPS)
+        .include("compages/shade.glsl", SHADE)
+        .include("compages/srgb.glsl", SRGB)
+        .include("compages/present.glsl", PRESENT);
+    return source;
+}
 
-char const* depthFragment() { return DEPTH_FRAGMENT; }
+} // namespace
 
-char const* normalsVertex() { return NORMALS_VERTEX; }
+ShaderPair lit()
+{
+    return { piece("lit.vert", LIT_VERTEX), piece("lit.frag", LIT_FRAGMENT) };
+}
 
-char const* normalsFragment() { return NORMALS_FRAGMENT; }
+ShaderPair pbr()
+{
+    ShaderPair pair{ piece("pbr.vert", PBR_VERTEX),
+                     piece("pbr.frag", PBR_FRAGMENT) };
+    pair.vertex().declareHook("deform", PBR_DEFORM);
+    pair.fragment().declareHook("main", PBR_MAIN);
+    return pair;
+}
 
-char const* unlitVertex() { return UNLIT_VERTEX; }
+ShaderPair unlit()
+{
+    return { piece("unlit.vert", UNLIT_VERTEX),
+             piece("unlit.frag", UNLIT_FRAGMENT) };
+}
 
-char const* unlitFragment() { return UNLIT_FRAGMENT; }
+ShaderPair depth()
+{
+    return { piece("depth.vert", DEPTH_VERTEX),
+             piece("depth.frag", DEPTH_FRAGMENT) };
+}
+
+ShaderPair normals()
+{
+    return { piece("normals.vert", NORMALS_VERTEX),
+             piece("normals.frag", NORMALS_FRAGMENT) };
+}
+
+ShaderPair shadow()
+{
+    return { piece("shadow.vert", SHADOW_VERTEX),
+             piece("shadow.frag", SHADOW_FRAGMENT) };
+}
+
+ShaderPair lampShadow()
+{
+    return { piece("lamp_shadow.vert", LAMP_SHADOW_VERTEX),
+             piece("lamp_shadow.frag", LAMP_SHADOW_FRAGMENT) };
+}
 
 } // namespace compages::renderer::shaders

@@ -13,7 +13,7 @@
 #include "Common/DataPath.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
-#include "Compages/Renderer/Procedural/ShaderLib.hpp"
+#include "Compages/Renderer/Assets/Material.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -30,45 +30,6 @@ using units::literals::operator""_km;
 //! distance of the camera (1.2 to 7 km), shown within 6 km.
 static constexpr int SURFACE_CELLS = 160;
 static constexpr float SURFACE_WITHIN = compages::toMetres(6.0_km);
-
-// ----------------------------------------------------------------------------
-//! \brief A pipeline of the PBR vertex layout for a program.
-// ----------------------------------------------------------------------------
-static compages::Result<compages::gpu::Pipeline>
-pipelineOf(compages::gpu::Program& p_program,
-           compages::gpu::RenderState const& p_state)
-{
-    return compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
-        p_program, p_state);
-}
-
-// ----------------------------------------------------------------------------
-//! \brief The vertex shader of the PBR material, with the waves moving its
-//! corners before they are projected.
-// ----------------------------------------------------------------------------
-static compages::Result<std::string> surfaceVertex()
-{
-    std::string vertex = compages::renderer::shaders::pbrVertex();
-    const std::size_t main = vertex.find("void main()");
-    vertex = vertex.substr(0u, main) + swellsGlsl() + SURFACE_WAVES +
-             vertex.substr(main);
-    for (auto const& [from, to] :
-         { std::pair<std::string_view, std::string_view>{
-               "vWorldPos = world.xyz;",
-               "world = displace(world);\n    vWorldPos = world.xyz;" },
-           std::pair<std::string_view, std::string_view>{
-               "vUv = uv;", "vUv = uv;\n    vNormal = gWaveNormal;" } })
-    {
-        const std::size_t at = vertex.find(from);
-        if (at == std::string::npos)
-        {
-            return compages::failure("The PBR vertex shader has no '" +
-                                     std::string(from) + "'");
-        }
-        vertex.replace(at, from.size(), to);
-    }
-    return vertex;
-}
 
 // ----------------------------------------------------------------------------
 compages::Status Sea::create(compages::renderer::Scene& p_scene)
@@ -98,46 +59,59 @@ compages::Status Sea::create(compages::renderer::Scene& p_scene)
 }
 
 // ----------------------------------------------------------------------------
-//! The PBR shader of the Renderer up to its main(), then ours: the renderer
-//! still sets every uniform it knows (lights, shadow, fog).
+//! The PBR shader of the Renderer with our main(), and for the surface the
+//! waves in its hook "deform": the renderer still sets every uniform it knows
+//! (lights, shadow, fog).
 // ----------------------------------------------------------------------------
 compages::Status Sea::makeMaterials(compages::renderer::Scene& p_scene)
 {
-    const std::string pbr = compages::renderer::shaders::pbrFragment();
-    const std::string head =
-        pbr.substr(0u, pbr.find("out vec4 oColor;")) + swellsGlsl();
     const compages::gpu::RenderState opaque{
         .depth_test = true, .cull = compages::gpu::CullMode::Back
     };
+    const std::string swells = swellsGlsl();
 
+    compages::renderer::shaders::ShaderPair ground =
+        compages::renderer::shaders::pbr();
+    ground.fragment()
+        .include("archipelago/swells.glsl", swells)
+        .hook("main", MAP_MAIN);
     compages::renderer::Material map;
-    map.name = "ArchipelagoMap";
-    map.family = compages::renderer::ShaderFamily::PbrMinimal;
-    COMPAGES_TRY(map.program.loadSources(
-        compages::renderer::shaders::pbrVertex(), head + MAP_MAIN));
-    COMPAGES_TRY_ASSIGN(map.pipeline, pipelineOf(map.program, opaque));
+    COMPAGES_TRY_ASSIGN(
+        map,
+        compages::renderer::Material::create(
+            "ArchipelagoMap",
+            { .family = compages::renderer::ShaderFamily::PbrMinimal,
+              .shaders = std::move(ground),
+              .state = opaque,
+              .see_through = std::nullopt }));
     map.program.set("grassMap", 2);
     map.program.set("sandMap", 3);
     map.program.set("rockMap", 4);
     COMPAGES_TRY_ASSIGN(m_map,
                         p_scene.assets().addMaterial(map.name, std::move(map)));
 
+    compages::renderer::shaders::ShaderPair water =
+        compages::renderer::shaders::pbr();
+    water.vertex()
+        .include("archipelago/swells.glsl", swells)
+        .hook("deform", SURFACE_WAVES);
+    water.fragment()
+        .include("archipelago/swells.glsl", swells)
+        .hook("main", SURFACE_MAIN);
     compages::renderer::Material surface;
-    surface.name = "ArchipelagoSurface";
-    surface.family = compages::renderer::ShaderFamily::PbrMinimal;
-    std::string vertex;
-    COMPAGES_TRY_ASSIGN(vertex, surfaceVertex());
-    COMPAGES_TRY(surface.program.loadSources(vertex, head + SURFACE_MAIN));
-    COMPAGES_TRY_ASSIGN(surface.pipeline, pipelineOf(surface.program, opaque));
-    // Over the sea bed, blended, without writing the depth.
     COMPAGES_TRY_ASSIGN(
-        surface.see_through,
-        pipelineOf(surface.program,
-                   compages::gpu::RenderState{
-                       .depth_test = true,
-                       .depth_write = false,
-                       .blend = compages::gpu::Blend::alpha(),
-                       .cull = compages::gpu::CullMode::Back }));
+        surface,
+        compages::renderer::Material::create(
+            "ArchipelagoSurface",
+            { .family = compages::renderer::ShaderFamily::PbrMinimal,
+              .shaders = std::move(water),
+              .state = opaque,
+              // Over the sea bed, blended, without writing the depth.
+              .see_through = compages::gpu::RenderState{
+                  .depth_test = true,
+                  .depth_write = false,
+                  .blend = compages::gpu::Blend::alpha(),
+                  .cull = compages::gpu::CullMode::Back } }));
     COMPAGES_TRY_ASSIGN(
         m_surface_material,
         p_scene.assets().addMaterial(surface.name, std::move(surface)));

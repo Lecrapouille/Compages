@@ -9,9 +9,9 @@
 
 // ****************************************************************************
 //! \file
-//! \brief The GLSL of the map and of the sea of 10e_Archipelago: pieces put
-//! after the PBR shaders of the Renderer (see Sea.cpp), with the swells of
-//! swellsGlsl() before them.
+//! \brief The GLSL of the map and of the sea of 10e_Archipelago: the hooks
+//! "main" and "deform" of the PBR shaders of the Renderer (see Sea.cpp). Each
+//! includes the swells of swellsGlsl(), given as archipelago/swells.glsl.
 // ****************************************************************************
 
 namespace examples::archipelago
@@ -34,15 +34,13 @@ namespace examples::archipelago
 // (Schlick's Fresnel), the glint of the sun, bands of surf running to the
 // shore. Where the surface of the sea is drawn (near the camera), these
 // fade out: the surface makes them, and the ground shows the sea bed.
-inline constexpr char const* MAP_MAIN = R"(
+inline constexpr char const* MAP_MAIN = R"(#include <archipelago/swells.glsl>
 uniform float time;
 uniform sampler2D grassMap;
 uniform sampler2D sandMap;
 uniform sampler2D rockMap;
 uniform vec2 surfaceCentre;
 uniform float surfaceRadius;
-
-out vec4 oColor;
 
 vec3 matte(vec3 p_base, vec3 p_n, vec3 p_world)
 {
@@ -132,7 +130,7 @@ void main()
 // fragment shader drops it there. (It used to dive 8 m under the land: the
 // triangles across a coast then leaned, in teeth along the shore.) Swells
 // shorter than three quads are left to the normals of the fragment shader.
-inline constexpr char const* SURFACE_WAVES = R"(
+inline constexpr char const* SURFACE_WAVES = R"(#include <archipelago/swells.glsl>
 uniform float time;
 uniform sampler2D baseColorMap;
 uniform float gridStep;
@@ -165,20 +163,24 @@ vec4 displace(vec4 p_world)
     gWaveNormal = normalize(normal);
     return vec4(p_world.xyz + offset, 1.0);
 }
+
+void deform(inout vec4 world, inout vec3 normal)
+{
+    world = displace(world);
+    normal = gWaveNormal;
+}
 )";
 
 // The surface of the sea, its fragment shader: the sea bed shows through
 // the shallows, the deep water is darker and more opaque; the sky, the
 // glint, foam on the steepest crests and in the surf; the surface fades at
 // its edge into the waves of the ground.
-inline constexpr char const* SURFACE_MAIN = R"(
+inline constexpr char const* SURFACE_MAIN = R"(#include <archipelago/swells.glsl>
 uniform float time;
 uniform vec2 surfaceCentre;
 uniform float surfaceRadius;
 
 in float vCrest;
-
-out vec4 oColor;
 
 void main()
 {

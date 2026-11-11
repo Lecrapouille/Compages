@@ -361,7 +361,6 @@ vec3 bend(vec3 n, vec3 tangentNormal)
     return normalize(mat3(t * scale, b * scale, n) * tangentNormal);
 }
 
-out vec4 oColor;
 
 void main()
 {
@@ -524,20 +523,19 @@ SweatAndDecals::makeSkinMaterial(compages::world::Entity p_mesh)
         p_mesh.id(),
         compages::renderer::texture(dataPath("LeePerrySmith/Map-COL.jpg")));
 
-    std::string source = compages::renderer::shaders::pbrFragment();
-    source = source.substr(0u, source.find("out vec4 oColor;")) + SKIN_MAIN;
-
+    compages::renderer::shaders::ShaderPair skin =
+        compages::renderer::shaders::pbr();
+    skin.fragment().hook("main", SKIN_MAIN);
     compages::renderer::Material material;
-    material.name = "SweatySkin";
-    material.family = compages::renderer::ShaderFamily::PbrMinimal;
-    COMPAGES_TRY(material.program.loadSources(
-        compages::renderer::shaders::pbrVertex(), source));
     COMPAGES_TRY_ASSIGN(
-        material.pipeline,
-        compages::gpu::Pipeline::create<compages::renderer::MeshVertex>(
-            material.program,
-            compages::gpu::RenderState{
-                .depth_test = true, .cull = compages::gpu::CullMode::Back }));
+        material,
+        compages::renderer::Material::create(
+            "SweatySkin",
+            { .family = compages::renderer::ShaderFamily::PbrMinimal,
+              .shaders = std::move(skin),
+              .state = { .depth_test = true,
+                         .cull = compages::gpu::CullMode::Back },
+              .see_through = std::nullopt }));
     material.program.set("normalMap", 2);
     material.program.set("decalMap", 3);
     material.program.set("fluidMap", 4);

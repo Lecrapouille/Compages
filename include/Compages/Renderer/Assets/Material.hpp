@@ -7,20 +7,20 @@
 
 #pragma once
 
+#include "Compages/Core/Result.hpp"
+#include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Pipeline.hpp"
+#include "Compages/GPU/RenderState.hpp"
+#include "Compages/GPU/Shader.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/Renderer/Assets/TextureAsset.hpp"
-#include "Compages/GPU/Pipeline.hpp"
-#include "Compages/GPU/Shader.hpp"
-#include "Compages/Core/Vector.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
+#include <optional>
 #include <string>
 
-#include "Compages/Core/Quaternion.hpp"
-#include "Compages/Core/Transformation.hpp"
 namespace compages::renderer
 {
-
-
 
 // ****************************************************************************
 //! \brief Which built-in shader family a Material was built from.
@@ -37,6 +37,33 @@ enum class ShaderFamily
     Normals,
     //! \brief A flat colour that no light changes: a bulb, a marker.
     Unlit,
+};
+
+// ****************************************************************************
+//! \brief What Material::create() builds a material from.
+//!
+//! \code
+//! auto pbr = compages::renderer::shaders::pbr();
+//! pbr.fragment().hook("main", WATER);
+//! COMPAGES_TRY_ASSIGN(material, compages::renderer::Material::create(
+//!     "Water", { .family = compages::renderer::ShaderFamily::PbrMinimal,
+//!                .shaders = std::move(pbr),
+//!                .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
+//!                .see_through = std::nullopt }));
+//! \endcode
+// ****************************************************************************
+struct MaterialDesc
+{
+    //! \brief Which uniforms the Renderer sets for each draw: the family the
+    //! shaders were made from.
+    ShaderFamily family;
+    //! \brief The two stages, with their includes and hooks.
+    shaders::ShaderPair shaders;
+    //! \brief How solid instances are drawn.
+    compages::gpu::RenderState state;
+    //! \brief How see-through instances (opacity below one) are drawn; none:
+    //! they are drawn solid.
+    std::optional<compages::gpu::RenderState> see_through;
 };
 
 // ****************************************************************************
@@ -62,6 +89,16 @@ struct Material
     //! one): blended over what is behind, without writing the depth. Empty
     //! for a material made by hand, whose instances are then drawn solid.
     compages::gpu::Pipeline see_through;
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile the shaders and make the pipelines, for vertices of
+    //! MeshVertex: the only layout the Renderer draws.
+    //! \param[in] p_name A short label, used in logs.
+    //! \param[in] p_desc The family, the shaders, the render states.
+    //! \return The material, or the log of the stage that failed.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Material> create(std::string p_name,
+                                                 MaterialDesc const& p_desc);
 };
 
 // ****************************************************************************

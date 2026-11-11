@@ -179,47 +179,24 @@ Result<MeshAsset> uploadMesh(std::vector<MeshVertex> p_corners,
     return mesh;
 }
 
+//! \brief A material of the library: solid, and see-through blended over
+//! what is behind without writing the depth, so that a second glass behind
+//! the first still shows.
 Result<Material> makeMaterial(std::string_view p_name,
                               ShaderFamily p_family,
-                              std::string_view p_vertex,
-                              std::string_view p_fragment,
-                              bool p_with_uv)
+                              shaders::ShaderPair p_shaders)
 {
-    compages::gpu::Program program;
-    COMPAGES_TRY(program.loadSources(p_vertex, p_fragment));
-    // A shader that reads no uv is fine: a field the shader does not read is
-    // simply not sent.
-    (void)p_with_uv;
-    const compages::gpu::VertexLayout layout =
-        compages::gpu::VertexLayout::of<MeshVertex>();
-    compages::gpu::RenderState state;
-    state.depth_test = true;
-    state.cull = compages::gpu::CullMode::Back;
-    auto pipeline_result =
-        compages::gpu::Pipeline::create<MeshVertex>(program, layout, state);
-    if (!pipeline_result)
-    {
-        return failure(pipeline_result.error());
-    }
-    auto pipeline = pipeline_result.take();
-    // See-through: blended over what is behind, and drawn without writing
-    // the depth, so that a second glass behind the first still shows.
-    state.blend = compages::gpu::Blend::alpha();
-    state.depth_write = false;
-    auto see_through_result =
-        compages::gpu::Pipeline::create<MeshVertex>(program, layout, state);
-    if (!see_through_result)
-    {
-        return failure(see_through_result.error());
-    }
-
-    Material material;
-    material.name = std::string(p_name);
-    material.family = p_family;
-    material.program = std::move(program);
-    material.pipeline = std::move(pipeline);
-    material.see_through = see_through_result.take();
-    return material;
+    const compages::gpu::RenderState solid{
+        .depth_test = true, .cull = compages::gpu::CullMode::Back
+    };
+    compages::gpu::RenderState see_through = solid;
+    see_through.blend = compages::gpu::Blend::alpha();
+    see_through.depth_write = false;
+    return Material::create(std::string(p_name),
+                            { .family = p_family,
+                              .shaders = std::move(p_shaders),
+                              .state = solid,
+                              .see_through = see_through });
 }
 
 } // namespace
@@ -526,47 +503,27 @@ Result<MeshAsset> makePyramid(float p_radius, float p_height)
 
 Result<Material> makeLitMaterial()
 {
-    return makeMaterial("Lit",
-                        ShaderFamily::Lit,
-                        shaders::litVertex(),
-                        shaders::litFragment(),
-                        false);
+    return makeMaterial("Lit", ShaderFamily::Lit, shaders::lit());
 }
 
 Result<Material> makePbrMaterial()
 {
-    return makeMaterial("PBR",
-                        ShaderFamily::PbrMinimal,
-                        shaders::pbrVertex(),
-                        shaders::pbrFragment(),
-                        true);
+    return makeMaterial("PBR", ShaderFamily::PbrMinimal, shaders::pbr());
 }
 
 Result<Material> makeDepthMaterial()
 {
-    return makeMaterial("Depth",
-                        ShaderFamily::Depth,
-                        shaders::depthVertex(),
-                        shaders::depthFragment(),
-                        false);
+    return makeMaterial("Depth", ShaderFamily::Depth, shaders::depth());
 }
 
 Result<Material> makeUnlitMaterial()
 {
-    return makeMaterial("Unlit",
-                        ShaderFamily::Unlit,
-                        shaders::unlitVertex(),
-                        shaders::unlitFragment(),
-                        false);
+    return makeMaterial("Unlit", ShaderFamily::Unlit, shaders::unlit());
 }
 
 Result<Material> makeNormalsMaterial()
 {
-    return makeMaterial("Normals",
-                        ShaderFamily::Normals,
-                        shaders::normalsVertex(),
-                        shaders::normalsFragment(),
-                        false);
+    return makeMaterial("Normals", ShaderFamily::Normals, shaders::normals());
 }
 
 } // namespace compages::renderer
