@@ -76,6 +76,9 @@ private:
     {
     }
 
+    [[nodiscard]] static Result<ComputeProgram>
+    fromLinked(Result<Program> p_program);
+
     // ------------------------------------------------------------------------
     //! \brief Compile and link a program whose only stage is a compute shader.
     //!
@@ -99,6 +102,15 @@ private:
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<ComputeProgram>
     fromFile(std::filesystem::path const& p_path);
+
+    // ------------------------------------------------------------------------
+    //! \brief Same as fromSource(), from a ShaderSource with its includes.
+    //!
+    //! \param[in] p_source the main text or file, with its includes.
+    //! \return the program, or why it could not be resolved or built.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<ComputeProgram>
+    fromSource(ShaderSource const& p_source);
 
 public:
 
@@ -139,6 +151,19 @@ public:
     [[nodiscard]] Status loadFile(std::filesystem::path const& p_path)
     {
         COMPAGES_TRY_ASSIGN(*this, fromFile(p_path));
+        return success();
+    }
+
+    // ------------------------------------------------------------------------
+    //! \brief Build in place from a ShaderSource: a text or a file, with its
+    //! includes. Like loadSource(), a failure keeps the previous program.
+    //!
+    //! \param[in] p_source the main text or file, with its includes.
+    //! \return the log, naming the piece and line of each error.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status load(ShaderSource const& p_source)
+    {
+        COMPAGES_TRY_ASSIGN(*this, fromSource(p_source));
         return success();
     }
 

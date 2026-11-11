@@ -58,41 +58,6 @@ std::string shaderExtension(std::filesystem::path const& p_path)
     return ext;
 }
 
-// ------------------------------------------------------------------------
-//! \brief Read the whole file into \c p_buffer.
-// ------------------------------------------------------------------------
-bool readShaderSource(std::filesystem::path const& p_path,
-                      std::string& p_buffer)
-{
-    std::ifstream infile(p_path, std::ifstream::in);
-    if (!infile.is_open())
-    {
-        std::cerr << "Failed open file '" << p_path.string()
-                  << "': " << std::strerror(errno) << '\n';
-        return false;
-    }
-
-    infile.seekg(0, std::ios::end);
-    std::streampos const pos = infile.tellg();
-    if (pos <= 0)
-    {
-        p_buffer.clear();
-        return pos == 0;
-    }
-
-    p_buffer.resize(static_cast<std::size_t>(pos));
-    infile.seekg(0, std::ios::beg);
-    infile.read(p_buffer.data(), static_cast<std::streamsize>(p_buffer.size()));
-    if (!infile.good())
-    {
-        std::cerr << "Failed reading the whole file '" << p_path.string()
-                  << "': " << std::strerror(errno) << '\n';
-        p_buffer.clear();
-        return false;
-    }
-    return true;
-}
-
 //! \brief Which stage a file holds, going by its extension.
 //!
 //! The extensions are the ones the Khronos reference compiler established, plus
@@ -130,20 +95,6 @@ Result<ShaderStage> stageOfFile(std::filesystem::path const& p_path)
                    "' is meant to be: its extension is '" + extension +
                    "' and none of .vert, .frag, .geom, .comp, .tesc or .tese. "
                    "Say the stage explicitly instead");
-}
-
-Result<std::string> readSource(std::filesystem::path const& p_path)
-{
-    std::string source;
-    if (!readShaderSource(p_path, source))
-    {
-        return failure("cannot read the shader '" + p_path.string() + "'");
-    }
-    if (source.empty())
-    {
-        return failure("the shader '" + p_path.string() + "' is empty");
-    }
-    return source;
 }
 
 //! \brief Say what is wrong when a uniform is written with the wrong type.
@@ -211,12 +162,20 @@ Result<Shader> Shader::fromFile(std::filesystem::path const& p_path)
 Result<Shader> Shader::fromFile(ShaderStage p_stage,
                                 std::filesystem::path const& p_path)
 {
-    auto source = readSource(p_path);
-    if (!source)
+    return fromSource(p_stage, ShaderSource::fromFile(p_path));
+}
+
+Result<Shader> Shader::fromSource(ShaderStage p_stage,
+                                  ShaderSource const& p_source)
+{
+    ResolvedSource resolved;
+    COMPAGES_TRY_ASSIGN(resolved, p_source.resolve());
+    auto shader = fromSource(p_stage, resolved.text, p_source.name());
+    if (!shader)
     {
-        return failure(source.error());
+        return failure(resolved.explain(shader.error()));
     }
-    return fromSource(p_stage, source.value(), p_path.string());
+    return shader;
 }
 
 Shader::Shader(Shader&& p_other) noexcept : m_handle(p_other.m_handle)
@@ -375,6 +334,29 @@ Result<Program> Program::fromComputeFile(std::filesystem::path const& p_path)
     COMPAGES_TRY_ASSIGN(compute,
                         Shader::fromFile(ShaderStage::Compute, p_path));
     return link({ &compute });
+}
+
+Result<Program> Program::fromComputeSource(ShaderSource const& p_source)
+{
+    Shader compute;
+    COMPAGES_TRY_ASSIGN(compute,
+                        Shader::fromSource(ShaderStage::Compute, p_source));
+    return link({ &compute });
+}
+
+Status Program::load(ShaderSource const& p_vertex,
+                     ShaderSource const& p_fragment)
+{
+    Shader vertex;
+    Shader fragment;
+    COMPAGES_TRY_ASSIGN(vertex,
+                        Shader::fromSource(ShaderStage::Vertex, p_vertex));
+    COMPAGES_TRY_ASSIGN(fragment,
+                        Shader::fromSource(ShaderStage::Fragment, p_fragment));
+    Program program;
+    COMPAGES_TRY_ASSIGN(program, link({ &vertex, &fragment }));
+    *this = std::move(program);
+    return success();
 }
 
 Status Program::loadSources(std::string_view p_vertex,

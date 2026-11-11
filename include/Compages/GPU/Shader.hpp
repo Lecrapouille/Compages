@@ -32,6 +32,7 @@
 #include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/ShaderSource.hpp"
 #include "Compages/GPU/Enums.hpp"
 #include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/ProgramReflection.hpp"
@@ -122,6 +123,18 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Shader>
     fromFile(ShaderStage p_stage, std::filesystem::path const& p_path);
+
+    // ------------------------------------------------------------------------
+    //! \brief Put the includes of a source in and compile it. The compiler
+    //! log names the piece and the line of each error.
+    //!
+    //! \param[in] p_stage which stage this is.
+    //! \param[in] p_source the main text or file, with its includes.
+    //! \return the compiled stage, or why it could not be resolved or
+    //! compiled.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Shader> fromSource(ShaderStage p_stage,
+                                                   ShaderSource const& p_source);
 
     //! \brief Take over the stage of p_other, which is left not valid().
     //! \param[in,out] p_other the shader to empty.
@@ -247,6 +260,23 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] Status loadFiles(std::filesystem::path const& p_vertex,
                                    std::filesystem::path const& p_fragment);
+
+    // ------------------------------------------------------------------------
+    //! \brief Same as loadSources(), from two ShaderSource: texts or files
+    //! with includes and hooks. A failure keeps the previous program.
+    //!
+    //! \code
+    //! auto pbr = compages::renderer::shaders::pbr();
+    //! pbr.vertex().hook("deform", WAVES);
+    //! COMPAGES_TRY(m_program.load(pbr.vertex(), pbr.fragment()));
+    //! \endcode
+    //!
+    //! \param[in] p_vertex the source of the vertex stage.
+    //! \param[in] p_fragment the source of the fragment stage.
+    //! \return the log, naming the piece and line of each error.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status load(ShaderSource const& p_vertex,
+                              ShaderSource const& p_fragment);
 
     //! \brief Take over the program of p_other, which is left not valid().
     //! \param[in,out] p_other the program to empty.
@@ -446,6 +476,15 @@ private:
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Program>
     fromComputeFile(std::filesystem::path const& p_path);
+
+    // ------------------------------------------------------------------------
+    //! \brief Compile and link a compute program from a ShaderSource.
+    //!
+    //! \param[in] p_source the main text or file, with its includes.
+    //! \return the program, or why it could not be resolved or compiled.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] static Result<Program>
+    fromComputeSource(ShaderSource const& p_source);
 
 
     //! \brief Find a uniform and check its declared type before writing to it.

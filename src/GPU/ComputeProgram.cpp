@@ -39,14 +39,15 @@ Status ensureCompute(Program const& p_program)
 
 } // namespace
 
-Result<ComputeProgram> ComputeProgram::fromSource(std::string_view p_source)
+//! \brief A compute program from a linked one, refused without a work
+//! group size.
+Result<ComputeProgram> ComputeProgram::fromLinked(Result<Program> p_program)
 {
-    auto program_result = Program::fromComputeSource(p_source);
-    if (!program_result)
+    if (!p_program)
     {
-        return failure(program_result.error());
+        return failure(p_program.error());
     }
-    auto program = program_result.take();
+    auto program = p_program.take();
     if (program.reflection().work_group_size[0] == 0)
     {
         return failure(
@@ -57,23 +58,20 @@ Result<ComputeProgram> ComputeProgram::fromSource(std::string_view p_source)
     return ComputeProgram(std::move(program));
 }
 
+Result<ComputeProgram> ComputeProgram::fromSource(std::string_view p_source)
+{
+    return fromLinked(Program::fromComputeSource(p_source));
+}
+
 Result<ComputeProgram>
 ComputeProgram::fromFile(std::filesystem::path const& p_path)
 {
-    auto program_result = Program::fromComputeFile(p_path);
-    if (!program_result)
-    {
-        return failure(program_result.error());
-    }
-    auto program = program_result.take();
-    if (program.reflection().work_group_size[0] == 0)
-    {
-        return failure(
-            "the shader linked but declared no work group size. A compute "
-            "shader needs layout(local_size_x = ...) so the dispatch knows how "
-            "many invocations one group is");
-    }
-    return ComputeProgram(std::move(program));
+    return fromLinked(Program::fromComputeFile(p_path));
+}
+
+Result<ComputeProgram> ComputeProgram::fromSource(ShaderSource const& p_source)
+{
+    return fromLinked(Program::fromComputeSource(p_source));
 }
 
 Status ComputeProgram::bind(std::string_view p_block, BufferHandle p_buffer)

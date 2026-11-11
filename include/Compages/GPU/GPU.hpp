@@ -66,6 +66,7 @@
 #include "Compages/GPU/RenderPass.hpp"
 #include "Compages/GPU/RenderState.hpp"
 #include "Compages/GPU/Shader.hpp"
+#include "Compages/GPU/ShaderSource.hpp"
 #include "Compages/GPU/Statistics.hpp"
 #include "Compages/GPU/Std140.hpp"
 #include "Compages/GPU/Texture.hpp"
