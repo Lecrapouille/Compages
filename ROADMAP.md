@@ -131,7 +131,8 @@ In rough order. Each item should make a demo shorter or possible.
 - [ ] Shadows of what the camera does not see (the snapshot is culled by
       the camera before the shadow pass)
 - [ ] Custom per-instance parameters of a material (typed block)
-- [ ] Hot reload: watch the files listed by `ShaderSource`
+- [x] Hot reload: `gpu::ShaderWatch` watches the files listed by
+      `ShaderSource` and calls the load of the user
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
 - [x] Demo: a bimetal beam bending with heat (`11d_BimetalBeam`: heat
       equation on a `Field<float>`, Timoshenko curvature, the strip bent by a

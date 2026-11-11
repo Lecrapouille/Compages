@@ -47,6 +47,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | clear | `clear({ r, g, b })` |
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
+| hot reload | `ShaderWatch::watch(vertex, fragment, load)`, `poll()` each frame, `reloads()` |
 | storage buffer in a draw | `program.bind("Block", buffer.handle())`: any program, a vertex shader can read what a compute shader wrote |
 | shader in pieces | `ShaderSource::fromText(name, glsl)` or `fromFile(path)`; `.include(name, glsl)` `.directory(path)` `.define(name, value)` `.hook(name, glsl)`; `program.load(vertex, fragment)`, `computeProgram.load(source)`; `resolve()` → text, `pieces`, `files` |
 | compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |

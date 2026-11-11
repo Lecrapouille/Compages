@@ -256,7 +256,21 @@ out vec4 oColor;
 void main() { oColor = vec4(wave(0.5), 1.0); }
 ```
 
-The driver only knows these numbers, so Compages rewrites its log with the names of the pieces: `1:1(28): error` becomes `waves.glsl:1(28): error`. `loadFiles()` and `ComputeProgram::loadFile()` read their files through a `ShaderSource` too, so `#include` works there without changing your code. `resolved.files` lists every file read: what a hot reload should watch (a file watcher is future work).
+The driver only knows these numbers, so Compages rewrites its log with the names of the pieces: `1:1(28): error` becomes `waves.glsl:1(28): error`. `loadFiles()` and `ComputeProgram::loadFile()` read their files through a `ShaderSource` too, so `#include` works there without changing your code. `resolved.files` lists every file read: what a hot reload watches.
+
+**Hot reload.** `gpu::ShaderWatch` watches the files of two stages (their includes too) and calls your load again when one is saved. Your load does what is needed: a `Program` alone, or with the `Pipeline` made from it (a new program has a new handle). A load that fails keeps what was there and `poll()` returns the log, so a typo while editing does not break the picture:
+
+```cpp
+auto load = [this](ShaderSource const& p_vertex, ShaderSource const& p_fragment) -> compages::Status
+{
+    COMPAGES_TRY(m_program.load(p_vertex, p_fragment));
+    COMPAGES_TRY_ASSIGN(m_pipeline, compages::gpu::Pipeline::create<Vertex>(m_program, m_state));
+    return compages::success();
+};
+COMPAGES_TRY(m_watch.watch(ShaderSource::fromFile("water.vert"), ShaderSource::fromFile("water.frag"), load));
+// each frame:
+if (compages::Status reloaded = m_watch.poll(); !reloaded) { std::cerr << reloaded.error(); }
+```
 
 A **hook** is a named place that a shader of a library leaves open, with a default text: `#include <hook/deform>`. The library declares it with `declareHook(name, text)`; you replace it with `hook(name, text)`. A name that the shader does not declare is an error, not a silence:
 

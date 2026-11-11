@@ -44,6 +44,8 @@ mesh.draw();
 - `program.bind("Block", handle)` works for drawing programs too (a vertex shader reading a
   storage buffer a compute shader wrote; `barrier(Barrier::Storage)` between). Blocks without a
   `binding =` all share point 0: give explicit bindings when one program has several.
+- Hot reload: `ShaderWatch::watch(vertex, fragment, load)` then `poll()` each frame; `load` reloads
+  what depends on the program (a new Program has a new handle: rebuild its Pipelines).
 - Shaders in pieces (`GPU/ShaderSource.hpp`): `ShaderSource::fromText(name, glsl)` / `fromFile(path)`,
   `.include(name, glsl)` (virtual include, wins over files; also for GLSL generated from C++),
   `.directory(path)`, `.define(name, value)` (after `#version`), `.declareHook(name, default)` /

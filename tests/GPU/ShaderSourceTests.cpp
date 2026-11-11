@@ -9,6 +9,7 @@
 
 #include "Compages/GPU/GPU.hpp"
 
+#include <chrono>
 #include <fstream>
 
 using namespace tests;
@@ -244,4 +245,51 @@ void main() { gl_Position = vec4(position, 1.0); }
     auto loaded = program.load(vertex, fragment);
     ASSERT_TRUE(bool(loaded)) << loaded.error();
     EXPECT_TRUE(program.valid());
+}
+
+// Hot reload: a change of an included file loads again; a typo keeps the
+// program that was there and says where it is.
+TEST_F(ShaderSourceGpuTest, WatchesTheFilesAndLoadsThemAgain)
+{
+    const std::filesystem::path folder = freshFolder("shader-watch");
+    write(folder / "main.vert", "#version 450 core\nin vec3 position;\nvoid main() { gl_Position = vec4(position, 1.0); }\n");
+    write(folder / "main.frag", "#version 450 core\n#include \"colour.glsl\"\nout vec4 oColor;\nvoid main() { oColor = vec4(colour(), 1.0); }\n");
+    write(folder / "colour.glsl", "vec3 colour() { return vec3(1.0); }\n");
+
+    compages::gpu::Program program;
+    int loads = 0;
+    compages::gpu::ShaderWatch watch;
+    auto load = [&program, &loads](ShaderSource const& p_vertex, ShaderSource const& p_fragment)
+    {
+        ++loads;
+        return program.load(p_vertex, p_fragment);
+    };
+    ASSERT_TRUE(bool(watch.watch(ShaderSource::fromFile(folder / "main.vert"),
+                                 ShaderSource::fromFile(folder / "main.frag"), load)));
+    EXPECT_EQ(loads, 1);
+    EXPECT_TRUE(bool(watch.poll()));
+    EXPECT_EQ(loads, 1); // nothing changed
+
+    auto touch = [](std::filesystem::path const& p_file, std::string const& p_text, int p_seconds)
+    {
+        write(p_file, p_text);
+        std::filesystem::last_write_time(p_file, std::filesystem::file_time_type::clock::now() +
+                                                     std::chrono::seconds(p_seconds));
+    };
+    touch(folder / "colour.glsl", "vec3 colour() { return vec3(0.5); }\n", 1);
+    EXPECT_TRUE(bool(watch.poll()));
+    EXPECT_EQ(watch.reloads(), 1u);
+    const compages::gpu::ProgramHandle good = program.handle();
+
+    touch(folder / "colour.glsl", "vec3 colour() { return oops; }\n", 2);
+    auto broken = watch.poll();
+    ASSERT_FALSE(bool(broken));
+    EXPECT_THAT(broken.error(), HasSubstr("colour.glsl:1"));
+    EXPECT_TRUE(program.handle() == good); // the old program stays
+    EXPECT_TRUE(bool(watch.poll()));       // not loaded again until saved again
+
+    touch(folder / "colour.glsl", "vec3 colour() { return vec3(0.2); }\n", 3);
+    EXPECT_TRUE(bool(watch.poll()));
+    EXPECT_EQ(watch.reloads(), 2u);
+    std::filesystem::remove_all(folder);
 }
