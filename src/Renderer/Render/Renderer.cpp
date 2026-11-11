@@ -7,6 +7,7 @@
 
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "Renderer/Render/Offer.hpp"
+#include "Renderer/Render/MaterialResources.hpp"
 
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/Renderer/Assets/AssetManager.hpp"
@@ -122,40 +123,6 @@ Status bindMaterialFrame(compages::renderer::Material& p_material,
     }
 }
 
-//! \brief Bind the textures of a material, set their samplers, bind its
-//! storage buffers.
-Status bindMaterialTextures(compages::renderer::Material& p_material,
-                            compages::renderer::AssetManager& p_assets)
-{
-    if (p_material.textures.size() > compages::renderer::Material::MAX_TEXTURES)
-    {
-        return failure("the material '" + p_material.name + "' has " +
-                       std::to_string(p_material.textures.size()) +
-                       " textures, more than the " +
-                       std::to_string(compages::renderer::Material::MAX_TEXTURES) +
-                       " units the Renderer leaves free");
-    }
-    std::uint32_t unit = compages::renderer::Material::FIRST_TEXTURE_UNIT;
-    for (compages::renderer::MaterialTexture const& texture : p_material.textures)
-    {
-        COMPAGES_TRY(p_assets.prepare(texture.texture));
-        compages::renderer::TextureAsset const* asset =
-            p_assets.texture(texture.texture);
-        if (asset == nullptr)
-        {
-            return failure("the material '" + p_material.name +
-                           "' lost its texture '" + texture.sampler + "'");
-        }
-        asset->texture.bind(unit);
-        offer(p_material.program, texture.sampler, int(unit));
-        ++unit;
-    }
-    for (compages::renderer::MaterialBuffer const& buffer : p_material.buffers)
-    {
-        COMPAGES_TRY(p_material.program.bind(buffer.block, buffer.buffer));
-    }
-    return success();
-}
 
 } // namespace
 
@@ -200,7 +167,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
             }
             bound_material = instance->material;
             COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadows));
-            COMPAGES_TRY(bindMaterialTextures(*material, p_assets));
+            COMPAGES_TRY(bindMaterialResources(*material, p_assets));
         }
 
         if (material == nullptr)

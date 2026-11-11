@@ -7,6 +7,7 @@
 
 #include "Compages/Renderer/Render/ShadowPass.hpp"
 #include "Renderer/Render/Offer.hpp"
+#include "Renderer/Render/MaterialResources.hpp"
 
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/GPU/VertexLayout.hpp"
@@ -58,6 +59,37 @@ Status drawCaster(compages::gpu::Program& p_program,
     compages::gpu::drawIndexed(p_pipeline, mesh->vertices.handle(), mesh->indexBuffer(),
                                mesh->index_type, mesh->index_count);
     return success();
+}
+
+//! \brief The material of an item when it draws its own shadow (its hook
+//! "deform" moves the corners), else nullptr.
+compages::renderer::Material* ownShadow(RenderItem const& p_item, AssetManager& p_assets)
+{
+    compages::renderer::MaterialInstance const* instance =
+        p_assets.materialInstance(p_item.material_instance);
+    if (instance == nullptr)
+    {
+        return nullptr;
+    }
+    compages::renderer::Material* material = p_assets.material(instance->material);
+    return ((material != nullptr) && material->casts_shadow.valid()) ? material : nullptr;
+}
+
+//! \brief Draw an item whose material draws its own shadow: its own program,
+//! seen from the sun (no view, the projection of the sun), its textures and
+//! buffers, without the shadows it would read (the picture being drawn).
+Status drawOwnCaster(compages::renderer::Material& p_material,
+                     compages::Matrix44f const& p_light_view_projection,
+                     RenderItem const& p_item,
+                     RenderSnapshot const& p_snapshot,
+                     AssetManager& p_assets)
+{
+    offer(p_material.program, "view", compages::Matrix44f(compages::matrix::Identity));
+    offer(p_material.program, "projection", p_light_view_projection);
+    offer(p_material.program, "shadowEnabled", 0);
+    offer(p_material.program, "lampShadows", compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+    COMPAGES_TRY(bindMaterialResources(p_material, p_assets));
+    return drawCaster(p_material.program, p_material.casts_shadow, p_item, p_snapshot, p_assets);
 }
 
 } // namespace
@@ -169,6 +201,11 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
         {
             continue;
         }
+        if (compages::renderer::Material* own = ownShadow(item, p_assets); own != nullptr)
+        {
+            COMPAGES_TRY(drawOwnCaster(*own, m_sun.light_view_projection, item, p_snapshot, p_assets));
+            continue;
+        }
         COMPAGES_TRY(drawCaster(m_sun_program, m_sun_pipeline, item, p_snapshot, p_assets));
     }
     m_sun.enabled = true;
@@ -252,7 +289,10 @@ Status ShadowPass::renderLamps(RenderSnapshot const& p_snapshot,
             m_lamp_program.set("lightViewProj", view_projection);
             for (RenderItem const& item : p_snapshot.items)
             {
-                if (has(item.flags, RenderFlags::NoShadowCaster) || has(item.flags, RenderFlags::Overlay))
+                // A material that bends its mesh casts no shadow of a lamp:
+                // the lamp program would draw the mesh unbent.
+                if (has(item.flags, RenderFlags::NoShadowCaster) || has(item.flags, RenderFlags::Overlay) ||
+                    (ownShadow(item, p_assets) != nullptr))
                 {
                     continue;
                 }

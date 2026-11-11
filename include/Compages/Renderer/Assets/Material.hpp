@@ -122,6 +122,11 @@ struct Material
     std::vector<MaterialTexture> textures;
     //! \brief Storage buffers the Renderer binds for this material.
     std::vector<MaterialBuffer> buffers;
+    //! \brief The program of the material drawing the shadow of the sun, depth
+    //! only: made by create() when the hook "deform" moves the corners, so
+    //! that the shadow has the shape the picture has. Empty: the shadow pass
+    //! draws the mesh as it is. Such a material casts no shadow of a lamp.
+    compages::gpu::Pipeline casts_shadow;
 
     //! \brief The first texture unit of textures: 0 is the albedo map, 1 and 7
     //! the shadows.

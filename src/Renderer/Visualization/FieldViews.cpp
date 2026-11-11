@@ -335,8 +335,6 @@ compages::world::Entity FieldViews::grid(Scene& p_scene,
         return entity;
     }
     p_scene.look(entity, added.value());
-    // The shadow pass draws the mesh flat (it has no hooks yet): no shadow.
-    entity.get<MeshRenderer>().flags = RenderFlags::NoShadowCaster;
     entity.set(FieldView{ .material = added.value(),
                           .columns = p_grid.columns,
                           .rows = p_grid.rows });

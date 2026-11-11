@@ -122,6 +122,16 @@ public:
     ShaderSource& hook(std::string p_name, std::string p_text);
 
     // ------------------------------------------------------------------------
+    //! \brief Was the text of this hook replaced by hook()?
+    //! \param[in] p_name The hook, without "hook/".
+    //! \return true after hook(p_name, ...).
+    // ------------------------------------------------------------------------
+    [[nodiscard]] bool replaces(std::string_view p_name) const
+    {
+        return m_replaced.find(p_name) != m_replaced.end();
+    }
+
+    // ------------------------------------------------------------------------
     //! \brief Add "#define name value" just after the \#version.
     //! \param[in] p_name The macro.
     //! \param[in] p_value Its value (may be empty).

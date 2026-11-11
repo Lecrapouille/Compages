@@ -23,6 +23,14 @@ Result<Material> Material::create(std::string p_name,
     COMPAGES_TRY_ASSIGN(material.pipeline,
                         compages::gpu::Pipeline::create<MeshVertex>(
                             material.program, p_desc.state));
+    if (p_desc.shaders.vertex().replaces("deform"))
+    {
+        COMPAGES_TRY_ASSIGN(material.casts_shadow,
+                            compages::gpu::Pipeline::create<MeshVertex>(
+                                material.program,
+                                compages::gpu::RenderState{ .depth_test = true,
+                                                            .cull = compages::gpu::CullMode::None }));
+    }
     if (p_desc.see_through)
     {
         COMPAGES_TRY_ASSIGN(material.see_through,

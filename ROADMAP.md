@@ -119,7 +119,12 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
 - [ ] Inspection: follow a point over time (a curve), slices
 - [ ] 2D plots (time series, histograms) on a `CanvasTexture`
-- [ ] Hooks in the shadow and depth passes
+- [x] Hooks in the shadow of the sun: a material whose `deform` is replaced
+      draws its own shadow (`Material::casts_shadow`)
+- [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes
+      the distance)
+- [ ] Shadows of what the camera does not see (the snapshot is culled by
+      the camera before the shadow pass)
 - [ ] Custom per-instance parameters of a material (typed block)
 - [ ] Hot reload: watch the files listed by `ShaderSource`
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it

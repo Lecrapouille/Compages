@@ -192,3 +192,33 @@ TEST_F(MaterialTest, ReshapeGivesNewGeometry)
     const compages::world::Entity camera = m_scene->activeCamera();
     EXPECT_FALSE(bool(m_scene->reshape(camera, compages::renderer::MeshAsset{})));
 }
+
+// The shadow has the shape of the picture: a box moved away by its hook
+// "deform" leaves no shadow where it was. Sun straight above a floor.
+TEST_F(MaterialTest, TheShadowFollowsTheHookDeform)
+{
+    m_scene->environment().shadows = true;
+    // Above and in front: the box is in the picture (what the camera does not
+    // see casts no shadow), its centre is the floor under the box.
+    m_scene->activeCamera().position(0.0f, 8.0f, 6.0f).lookAt(0.0f, -1.0f, 0.0f);
+    m_scene->sun("Sun", { 1.0f, 1.0f, 1.0f }, 1.0f).position(0.5f, 10.0f, 0.3f).lookAt(0.0f, 0.0f, 0.0f);
+    m_scene->plane("Floor", compages::renderer::color(1.0f, 1.0f, 1.0f))
+        .position(0.0f, -1.0f, 0.0f)
+        .scale(20.0f, 1.0f, 20.0f);
+    // The box flat above the floor, between the sun and the floor.
+    m_box.position(0.0f, 2.0f, 0.0f).scale(1.5f, 0.1f, 1.5f);
+    m_scene->look(m_box, compages::renderer::color(1.0f, 1.0f, 1.0f));
+    const int shaded = centre()[0];
+
+    const compages::renderer::MaterialId away = material(
+        [](compages::renderer::shaders::ShaderPair& p_shaders)
+        { p_shaders.vertex().hook("deform", AWAY); });
+    m_scene->look(m_box, away);
+    const int moved = centre()[0];
+    m_scene->environment().shadows = false;
+    const int unshaded = centre()[0];
+    // The plain box shades the floor; the moved one leaves it as without
+    // any shadow.
+    EXPECT_LT(shaded, unshaded - 5) << "shadow " << shaded << ", no shadow " << unshaded;
+    EXPECT_NEAR(moved, unshaded, 2) << "moved " << moved << ", no shadow " << unshaded;
+}

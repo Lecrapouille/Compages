@@ -94,7 +94,7 @@ and the ground reads three pictures by name: `map.textures = { { .sampler = "gra
 
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
-- The shadow pass does not run the `deform` hook yet: an object moved by it casts the shadow of its first shape (the sea casts none).
+- The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see casts no shadow either: the snapshot keeps only what is in view.
 - A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
 
 ### Show a field: heat maps and coloured reliefs
@@ -111,7 +111,7 @@ compages::world::Entity plate = scene.show(temperature, look, "Plate");
 COMPAGES_TRY(scene.show(plate, temperature, look));
 ```
 
-The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field does not cast a shadow yet: the shadow pass does not run the hooks. `11a_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field casts the shadow of its relief in the sun (not of the lamps). `11a_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
 
 **Values computed on the GPU.** When a compute shader makes the values, give its storage buffer instead of a `Field`: nothing comes back to the CPU. The buffer holds one float per point, row after row, and must live as long as the entity draws.
 

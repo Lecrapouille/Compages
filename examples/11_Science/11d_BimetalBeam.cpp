@@ -189,11 +189,9 @@ compages::Status BimetalBeam::setUp()
     compages::renderer::MaterialId id;
     COMPAGES_TRY_ASSIGN(id, m_scene.assets().addMaterial("Bimetal", std::move(material)));
 
+    // The material bends the strip in its shadow too (its hook "deform").
     compages::world::Entity strip = m_scene.mesh(stripMesh(), "Strip");
     m_scene.look(strip, id);
-    // The hook is not in the shadow pass yet: no shadow of a straight strip.
-    strip.get<compages::renderer::MeshRenderer>().flags =
-        compages::renderer::RenderFlags::NoShadowCaster;
 
     // The clamp on the right, the flame on the left.
     m_scene.box("Clamp", compages::renderer::color(0.25f, 0.25f, 0.28f))
@@ -209,7 +207,9 @@ compages::Status BimetalBeam::setUp()
     m_scene.camera().position(0.5f, 0.3f, 1.6f).add<compages::world::Orbit>(
         compages::Vector3f(0.5f, 0.0f, 0.0f));
     m_scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.1f);
-    m_scene.grid(3.0f, 30u).position(0.5f, -0.25f, 0.0f);
+    m_scene.plane("Bench", compages::renderer::color(0.75f, 0.75f, 0.72f))
+        .position(0.5f, -0.25f, 0.0f)
+        .scale(3.0f, 1.0f, 2.0f);
     return m_scene.prepare();
 }
 
