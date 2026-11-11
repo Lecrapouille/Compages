@@ -41,6 +41,13 @@ mesh.draw();
   lower: `Pipeline::create<Vertex>(program, state)` per shader (checks the
   layout; a dropped attribute is fine, a type mismatch fails), `10c_SweatAndDecals`.
 - All the vertex syntaxes side by side: `01f_VertexSyntax`.
+- Shaders in pieces (`GPU/ShaderSource.hpp`): `ShaderSource::fromText(name, glsl)` / `fromFile(path)`,
+  `.include(name, glsl)` (virtual include, wins over files; also for GLSL generated from C++),
+  `.directory(path)`, `.define(name, value)` (after `#version`), `.declareHook(name, default)` /
+  `.hook(name, glsl)` (`#include <hook/name>`; unknown hook = error); `program.load(vs, fs)`,
+  `ComputeProgram::load(src)`. `#line` numbers each piece, compiler logs are rewritten as
+  `piece:line`; `loadFiles()` goes through it, so files may `#include`. Never cut GLSL text with
+  `find`/`substr`: use a hook.
 - Off-screen: `Framebuffer`, `RenderPass` (viewport, clear, target), `Texture` (`04d`, `04e`);
   `PassDesc::reversed_depth` (1 near, 0 far; compares mirrored for you; needs a reversed projection).
 - Compute: `ComputeProgram` `loadSource(src)` / `loadFile(path)`, `dispatchItems(n)`, then

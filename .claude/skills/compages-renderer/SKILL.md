@@ -28,6 +28,17 @@ scene.draw(frame);                       // = update(frame) + render()
 - Colours given to a Scene (looks, lights, ambient, fog) are sRGB; MaterialInstance and the
   snapshot hold linear (`srgbToLinear`, done in Looks and the extractor). Shaders end with
   `present()` = exposure + tone curve (`environment().tone_mapping`, `.exposure`) + sRGB encode.
+- Own material: `auto pbr = shaders::pbr();` (`ShaderPair`, `Procedural/ShaderLib.hpp`; also `lit()`,
+  `unlit()`, `depth()`, `normals()`, `shadow()`, `lampShadow()`), hooks `pbr.vertex().hook("deform",
+  "void deform(inout vec4 world, inout vec3 normal) {...}")` and `pbr.fragment().hook("main", ...)`
+  (writes `oColor`; `shade`, `applyFog`, `present`... included; library pieces `<compages/*.glsl>`).
+  `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures =
+  { { .sampler, .texture } }` (units 2-6, bound by the Renderer), `assets().addMaterial`, then
+  `scene.look(entity, materialId)`; `scene.reshape(entity, mesh)` replaces a mesh in place. The
+  Renderer sets family uniforms only if the shader reads them (`src/Renderer/Render/Offer.hpp`).
+  Demos: `10e_Archipelago` (Sea.cpp), `10c_SweatAndDecals`.
+- Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
+  (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),
   `scene.showBounds(id, bool)`; components in `Renderer/Components/Helpers.hpp`, drawn as
   DebugDraw lines at each render.

@@ -221,6 +221,50 @@ To see the numbers on the CPU, read the current copy back: `m_stars.current().re
 
 Beneath the `Drawable`, the same is written with a `Program` and `Pipeline::create<Vertex>(program, state)`, which checks the struct against the shader, then `gpu::drawIndexed(pipeline, vertices, indices)` (`10c_SweatAndDecals`).
 
+### Shaders made of pieces: `ShaderSource`
+
+A long shader is easier to read, and to share, in pieces. A `ShaderSource` is the GLSL of one stage: a main text (a string or a file) that says `#include "name"` or `#include <name>`. A name is looked for in this order:
+
+1. the texts given in C++ with `include(name, text)`: GLSL kept in a string, or **made from C++ data** (the constants of a simulation, written once for the CPU and the GPU);
+2. for `"name"` only, the folder of the file that includes it;
+3. each folder given with `directory(path)`.
+
+Each name is put in once, even if several pieces include it. A piece that includes itself, even through others, is an error that shows the circle (`a -> b -> a`). `define(name, value)` adds a `#define` just after the `#version`, which stays the first line.
+
+```cpp
+auto source = compages::gpu::ShaderSource::fromText("water.frag", R"(#version 450 core
+#include <waves.glsl>
+out vec4 oColor;
+void main() { oColor = vec4(wave(0.5), 1.0); }
+)");
+source.include("waves.glsl", "float wave(float x) { return sin(x * PI); }\n")
+      .define("PI", "3.14159");
+COMPAGES_TRY(program.load(vertex, source));     // Program; ComputeProgram::load(source) too
+```
+
+`resolve()` returns the text the driver compiles. Each piece gets a number, given by `#line`:
+
+```text
+#version 450 core
+#define PI 3.14159
+#line 2 0
+#line 1 1
+float wave(float x) { return sin(x * PI); }
+#line 3 0
+out vec4 oColor;
+void main() { oColor = vec4(wave(0.5), 1.0); }
+```
+
+The driver only knows these numbers, so Compages rewrites its log with the names of the pieces: `1:1(28): error` becomes `waves.glsl:1(28): error`. `loadFiles()` and `ComputeProgram::loadFile()` read their files through a `ShaderSource` too, so `#include` works there without changing your code. `resolved.files` lists every file read: what a hot reload should watch (a file watcher is future work).
+
+A **hook** is a named place that a shader of a library leaves open, with a default text: `#include <hook/deform>`. The library declares it with `declareHook(name, text)`; you replace it with `hook(name, text)`. A name that the shader does not declare is an error, not a silence:
+
+```text
+'pbr.vert' has no hook 'deforme' (known: deform)
+```
+
+The Renderer uses hooks for its PBR shader: see [Your own material](06-Renderer-Layer.md#your-own-material-hooks-of-the-pbr-shader).
+
 ---
 
 ## 🎚 7. Passes and state

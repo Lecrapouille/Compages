@@ -11,6 +11,7 @@ Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, m
 ```cpp
 #include <Compages/Compages.hpp>         // the whole stack
 #include <Compages/GPU/GPU.hpp>
+#include <Compages/Fields/HeightField.hpp> // Grid2D, Field<T>, intersect
 #include <Compages/World/Entity.hpp>     // includes World
 #include <Compages/Renderer/Scene/Scene.hpp>
 ```
@@ -46,6 +47,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | clear | `clear({ r, g, b })` |
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
+| shader in pieces | `ShaderSource::fromText(name, glsl)` or `fromFile(path)`; `.include(name, glsl)` `.directory(path)` `.define(name, value)` `.hook(name, glsl)`; `program.load(vertex, fragment)`, `computeProgram.load(source)`; `resolve()` → text, `pieces`, `files` |
 | compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
 | ping-pong | `PingPong<T>::from(data)`: `current()`, `next()`, `swap()`; `dispatch(program, state, { .read = "In", .write = "Out" })`; `TexturePingPong::create(desc)`: `current()` (texture), `next()` / `currentTarget()` (framebuffers), `swap()` |
 | read back | `buffer.download()` after the right barrier; `texture.read()` |
@@ -92,6 +94,8 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | shadows | `environment().shadows` (sun), `PointLight::shadows` (one lamp), `environment().shadow_resolution`, `environment().lamp_shadow_resolution` |
 | primitives | `scene.box(name, look)` `sphere` `plane` `cylinder` `cone` `pyramid` |
 | looks | `color(r, g, b)` `texture("a.jpg")` `unlit(r, g, b)` `normals()` `depth(near, far)` `seeThrough(look, opacity)` |
+| own material | `auto pbr = shaders::pbr(); pbr.vertex().hook("deform", glsl); pbr.fragment().hook("main", glsl);` then `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures = { { .sampler, .texture } }`, `assets().addMaterial(name, material)`, `scene.look(entity, materialId)` |
+| new geometry | `scene.reshape(entity, mesh)` (in place: its copies change too) |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |
@@ -110,7 +114,21 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ---
 
-## ⏰ 6. Time
+## 🗺 6. Fields
+
+Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.hpp>` gives the three).
+
+| Action | Call |
+|--------|------|
+| a grid | `Grid2D{ .columns, .rows, .origin, .spacing }`; `count()` `index(i, j)` `column(n)` `row(n)` `contains(i, j)` `point(i, j)` `coordinates(place)` `nearest(place)` |
+| neighbours | `for (std::size_t n : grid.neighbours4(index))`, `neighbours8(index)` |
+| values on it | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
+| between the points | `field.sample(place)`: bilinear, the edge value outside |
+| ray and ground | `intersect(ray, heights)` → `std::optional<Vector3f>`; `intersectHeight(ray, height(x, z), from, to, step)` → distance along the ray |
+
+---
+
+## ⏰ 7. Time
 
 | Type | Holds |
 |------|-------|
@@ -126,7 +144,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ---
 
-## 📷 7. Gallery
+## 📷 8. Gallery
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples

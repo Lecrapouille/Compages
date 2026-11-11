@@ -55,19 +55,23 @@ flowchart TB
 
 `Core/` (vectors, matrices, `Result`, `Frame`, files) is the shared vocabulary, directly in the `compages` namespace. It is not a fourth layer: no simulation and no drawing starts there.
 
+`Fields/` (`Grid2D`, `Field<T>`, `intersect` with a height field) holds structured data: one value per point of a grid, a height, a temperature, a wind. It is also directly in the `compages` namespace and includes only `Core`, so every layer can use it: a headless simulation in `world`, a buffer sent to the GPU in `gpu`, a picture of the data in `renderer`. A field of a million points is one object, never a million entities.
+
 ---
 
 ## 🚧 2. Who may include whom
 
 | Layer | Entry point | May include | Never includes |
 |-------|-------------|-------------|----------------|
-| `compages::gpu` | `Drawable` | `Core` | `World`, `Renderer`, any `gl*` in public headers |
-| `compages::world` | `World`, `Entity` | `Core` | `GPU`, `Renderer` |
-| `compages::renderer` | `Scene` | `World`, `GPU`, `Core` | window code |
+| `Fields` (in `compages`) | `Field<T>` | `Core` | `GPU`, `World`, `Renderer` |
+| `compages::gpu` | `Drawable` | `Core`, `Fields` | `World`, `Renderer`, any `gl*` in public headers |
+| `compages::world` | `World`, `Entity` | `Core`, `Fields` | `GPU`, `Renderer` |
+| `compages::renderer` | `Scene` | `World`, `GPU`, `Fields`, `Core` | window code |
 
 ```cpp
 #include <Compages/Compages.hpp>       // the whole stack
 #include <Compages/GPU/GPU.hpp>        // layer 1
+#include <Compages/Fields/Field.hpp>   // Grid2D, Field<T>
 #include <Compages/World/World.hpp>    // ids, each, update
 #include <Compages/World/Entity.hpp>   // chaining
 #include <Compages/Renderer/Scene/Scene.hpp> // layer 3
@@ -82,7 +86,8 @@ The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` 
 ```text
 include/Compages/          the public interface, installed
   Core/                    vectors, matrices, Result, Frame, AABB, units
-  GPU/                     Drawable, Buffer, Compute, Texture, Pipeline...
+  Fields/                  Grid2D, Field<T>, intersect (ray and height field), header only
+  GPU/                     Drawable, Buffer, Compute, Texture, Pipeline, ShaderSource...
   World/                   World, Entity, EntityId, Routine
     Components/            Camera, Light, SkinInstance, PoseDriver
     Spatial/               SpatialGraph, TransformStore, TransformSystem
@@ -93,7 +98,7 @@ include/Compages/          the public interface, installed
     Scene/                 Scene (the facade), Looks, Environment, RenderSettings
     Assets/                AssetManager, meshes, materials, textures, skins, prefabs
     Import/                glTF, STL, URDF visuals, prefab instantiation
-    Procedural/            primitives, shader library, CanvasTexture
+    Procedural/            primitives, shader library (pieces and hooks), CanvasTexture
     Animation/             clips, Animator, AnimationSystem
     Render/                extraction, snapshot, queue, Renderer, ShadowPass, picking
     Components/            MeshRenderer, PrefabInstance
@@ -102,7 +107,7 @@ src/                       the same folders as include/, plus GPU/Backends/GL45/
                            and the private helpers of a folder (Renderer/Import/GltfConvert.hpp,
                            Renderer/Render/Skybox.hpp); Scene keeps its drawing parts in Scene::Impl
 examples/                  the gallery, one binary; Common/ holds the window and the manifest
-tests/                     GPU, World, Renderer
+tests/                     Core, Fields, GPU, World, Renderer
 external/external.mk       the third-party repositories, locked in external/versions.lock
 ```
 

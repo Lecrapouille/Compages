@@ -53,6 +53,49 @@ compages::renderer::seeThrough(look, 0.35f); // any look, see-through (1 solid, 
 
 **See-through objects.** A look with an opacity below one is drawn after all the solid objects, sorted from the farthest to the nearest, and blended over what is already drawn. It does not write the depth, so a second glass behind the first still shows. The sorting is per object (by the centre of its box): two see-through objects that cross each other can still be drawn in the wrong order.
 
+### Your own material: hooks of the PBR shader
+
+A look is enough for most objects. When you want your own shader (water, a skin, a heat map) but keep what the Renderer gives (the sun and its shadow, the lamps, the fog, the tone curve), start from its PBR shader and change only what you need. `shaders::pbr()` returns its two stages, as `gpu::ShaderSource` ([shaders made of pieces](04-GPU-Layer.md#shaders-made-of-pieces-shadersource)), with two hooks:
+
+| Hook | Stage | What you write | Default |
+|------|-------|----------------|---------|
+| `deform` | vertex | `void deform(inout vec4 world, inout vec3 normal)`: move a corner and turn its normal, in world space, before the projection | changes nothing |
+| `main` | fragment | the whole `void main()`, which writes `oColor` | the PBR colour |
+
+Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
+
+`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
+
+```cpp
+compages::renderer::shaders::ShaderPair water =
+    compages::renderer::shaders::pbr();
+water.vertex()
+    .include("archipelago/swells.glsl", swells)   // GLSL written from the C++ swells
+    .hook("deform", SURFACE_WAVES);               // Gerstner waves move the corners
+water.fragment()
+    .include("archipelago/swells.glsl", swells)
+    .hook("main", SURFACE_MAIN);
+compages::renderer::Material surface;
+COMPAGES_TRY_ASSIGN(
+    surface,
+    compages::renderer::Material::create(
+        "ArchipelagoSurface",
+        { .family = compages::renderer::ShaderFamily::PbrMinimal,
+          .shaders = std::move(water),
+          .state = opaque,
+          .see_through = compages::gpu::RenderState{
+              .depth_test = true,
+              .depth_write = false,
+              .blend = compages::gpu::Blend::alpha(),
+              .cull = compages::gpu::CullMode::Back } }));
+```
+
+and the ground reads three pictures by name: `map.textures = { { .sampler = "grassMap", .texture = grass }, … }`. The Renderer binds them on the units it leaves free (2 to 6: five at most).
+
+- The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
+- `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
+- The shadow pass does not run the `deform` hook yet: an object moved by it casts the shadow of its first shape (the sea casts none).
+
 ### Helpers
 
 Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.

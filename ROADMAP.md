@@ -96,7 +96,7 @@ again at any step.
 
 ### Documentation
 
-- [ ] doc/04 (ShaderSource), doc/06 (hooks, materials), doc/07 (Fields
+- [x] doc/04 (ShaderSource), doc/06 (hooks, materials), doc/07 (Fields
       layer), doc/08 (API), skills
 
 ## TODO: scientific computing
