@@ -94,7 +94,7 @@ and the ground reads three pictures by name: `map.textures = { { .sampler = "gra
 
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
-- The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see casts no shadow either: the snapshot keeps only what is in view.
+- The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see still casts its shadow of the sun into the picture: the snapshot keeps it for the shadow pass only.
 - A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
 
 ### Show a field: heat maps and coloured reliefs

@@ -129,8 +129,8 @@ In rough order. Each item should make a demo shorter or possible.
       draws its own shadow (`Material::casts_shadow`)
 - [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes
       the distance)
-- [ ] Shadows of what the camera does not see (the snapshot is culled by
-      the camera before the shadow pass)
+- [x] Shadows of what the camera does not see: the snapshot keeps the
+      casters out of view (`RenderItem::in_view`), the sun stands beyond them
 - [ ] Custom per-instance parameters of a material (typed block)
 - [x] Hot reload: `gpu::ShaderWatch` watches the files listed by
       `ShaderSource` and calls the load of the user

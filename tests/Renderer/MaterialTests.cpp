@@ -18,6 +18,7 @@
 
 #include <array>
 #include <filesystem>
+#include <numbers>
 
 using namespace tests;
 
@@ -202,9 +203,11 @@ TEST_F(MaterialTest, TheShadowFollowsTheHookDeform)
     // see casts no shadow), its centre is the floor under the box.
     m_scene->activeCamera().position(0.0f, 8.0f, 6.0f).lookAt(0.0f, -1.0f, 0.0f);
     m_scene->sun("Sun", { 1.0f, 1.0f, 1.0f }, 1.0f).position(0.5f, 10.0f, 0.3f).lookAt(0.0f, 0.0f, 0.0f);
+    // A plane stands in x, y: laid down, facing up.
     m_scene->plane("Floor", compages::renderer::color(1.0f, 1.0f, 1.0f))
         .position(0.0f, -1.0f, 0.0f)
-        .scale(20.0f, 1.0f, 20.0f);
+        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .scale(20.0f, 20.0f, 1.0f);
     // The box flat above the floor, between the sun and the floor.
     m_box.position(0.0f, 2.0f, 0.0f).scale(1.5f, 0.1f, 1.5f);
     m_scene->look(m_box, compages::renderer::color(1.0f, 1.0f, 1.0f));
@@ -221,4 +224,24 @@ TEST_F(MaterialTest, TheShadowFollowsTheHookDeform)
     // any shadow.
     EXPECT_LT(shaded, unshaded - 5) << "shadow " << shaded << ", no shadow " << unshaded;
     EXPECT_NEAR(moved, unshaded, 2) << "moved " << moved << ", no shadow " << unshaded;
+}
+
+// What the camera does not see still casts its shadow into the picture.
+TEST_F(MaterialTest, AnObjectOutOfViewCastsItsShadow)
+{
+    m_scene->environment().shadows = true;
+    // Under the box, looking at the floor: the box is over the camera.
+    m_scene->activeCamera().position(0.0f, 1.0f, 5.0f).lookAt(0.0f, -1.0f, 0.0f);
+    m_scene->sun("Sun", { 1.0f, 1.0f, 1.0f }, 1.0f).position(0.5f, 10.0f, 0.3f).lookAt(0.0f, 0.0f, 0.0f);
+    // A plane stands in x, y: laid down, facing up.
+    m_scene->plane("Floor", compages::renderer::color(1.0f, 1.0f, 1.0f))
+        .position(0.0f, -1.0f, 0.0f)
+        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .scale(20.0f, 20.0f, 1.0f);
+    m_box.position(0.0f, 2.0f, 0.0f).scale(1.5f, 0.1f, 1.5f);
+    m_scene->look(m_box, compages::renderer::color(1.0f, 1.0f, 1.0f));
+    const int shaded = centre()[0];
+    m_box.enable(false);
+    const int open = centre()[0];
+    EXPECT_LT(shaded, open - 5) << "with the box " << shaded << ", without " << open;
 }

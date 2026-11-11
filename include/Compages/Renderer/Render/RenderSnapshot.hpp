@@ -42,6 +42,9 @@ struct RenderItem
     compages::Matrix44f world_matrix{ compages::matrix::Identity };
     compages::AABB world_bounds;
     compages::renderer::RenderFlags flags = compages::renderer::RenderFlags::None;
+    //! \brief False for an item the camera does not see, kept only for the
+    //! shadow it casts into the picture: the main pass skips it.
+    bool in_view = true;
     //! \brief Offset into \c RenderSnapshot::joint_palette. Zero and a
     //! \c joint_count of zero means a rigid mesh.
     std::uint32_t joint_offset = 0u;

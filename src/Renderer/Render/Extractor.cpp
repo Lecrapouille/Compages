@@ -211,7 +211,13 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
 
             if (cull && !snapshot.camera.frustum.contains(item.world_bounds))
             {
-                return;
+                // Out of the picture, it may still cast a shadow into it.
+                if (has(item.flags, compages::renderer::RenderFlags::NoShadowCaster) ||
+                    has(item.flags, compages::renderer::RenderFlags::Overlay))
+                {
+                    return;
+                }
+                item.in_view = false;
             }
 
             compages::world::SkinInstance const* skin =

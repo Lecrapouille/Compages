@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace examples
 {
@@ -207,9 +208,11 @@ compages::Status BimetalBeam::setUp()
     m_scene.camera().position(0.5f, 0.3f, 1.6f).add<compages::world::Orbit>(
         compages::Vector3f(0.5f, 0.0f, 0.0f));
     m_scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.1f);
+    // A plane stands in x, y: laid down, facing up.
     m_scene.plane("Bench", compages::renderer::color(0.75f, 0.75f, 0.72f))
         .position(0.5f, -0.25f, 0.0f)
-        .scale(3.0f, 1.0f, 2.0f);
+        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .scale(3.0f, 2.0f, 1.0f);
     return m_scene.prepare();
 }
 

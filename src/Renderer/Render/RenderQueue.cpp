@@ -24,6 +24,10 @@ void RenderQueue::build(RenderSnapshot const& p_snapshot,
     for (std::size_t i = 0u; i < p_snapshot.items.size(); ++i)
     {
         RenderItem const& item = p_snapshot.items[i];
+        if (!item.in_view)
+        {
+            continue; // kept for its shadow only
+        }
 
         compages::renderer::MaterialInstance const* instance =
             p_assets.materialInstance(item.material_instance);

@@ -134,12 +134,13 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
         return success();
     }
 
-    // What casts a shadow, and how big it is: the box of the sun fits it.
+    // What casts a shadow in the picture, and how big it is: the box of the
+    // sun fits it. Casters out of the picture only push the sun back.
     compages::AABB casters;
     for (RenderItem const& item : p_snapshot.items)
     {
-        if (!has(item.flags, RenderFlags::NoShadowCaster) && !has(item.flags, RenderFlags::Overlay) &&
-            !item.world_bounds.empty())
+        if (item.in_view && !has(item.flags, RenderFlags::NoShadowCaster) &&
+            !has(item.flags, RenderFlags::Overlay) && !item.world_bounds.empty())
         {
             casters = casters.merged(item.world_bounds);
         }
@@ -185,13 +186,32 @@ Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,
     travel = compages::vector::normalize(travel);
     const compages::Vector3f up =
         std::abs(travel.y) > 0.99f ? compages::Vector3f(1.0f, 0.0f, 0.0f) : compages::Vector3f(0.0f, 1.0f, 0.0f);
-    const compages::Matrix44f view = compages::lookAt(center - (travel * (2.0f * radius)), center, up);
+    // How far toward the sun a caster out of the picture is: the sun stands
+    // beyond it, so that it is drawn into the shadow picture.
+    float back = 2.0f * radius;
+    for (RenderItem const& item : p_snapshot.items)
+    {
+        if (item.in_view || item.world_bounds.empty())
+        {
+            continue;
+        }
+        compages::AABB const& b = item.world_bounds;
+        for (int corner = 0; corner < 8; ++corner)
+        {
+            const compages::Vector3f p((corner & 1) ? b.max.x : b.min.x,
+                                       (corner & 2) ? b.max.y : b.min.y,
+                                       (corner & 4) ? b.max.z : b.min.z);
+            const compages::Vector3f d = p - center;
+            back = std::max(back, -((d.x * travel.x) + (d.y * travel.y) + (d.z * travel.z)) + (0.05f * radius));
+        }
+    }
+    const compages::Matrix44f view = compages::lookAt(center - (travel * back), center, up);
     const compages::Matrix44f projection =
-        compages::ortho(-radius, radius, -radius, radius, 0.01f * radius, 4.0f * radius);
+        compages::ortho(-radius, radius, -radius, radius, 0.01f * radius, back + (2.0f * radius));
     m_sun.light_view_projection = projection * view;
     m_sun.texel = (2.0f * radius) / static_cast<float>(size);
     // About one texel of depth, in the [0, 1] depth of the picture.
-    m_sun.bias = (m_sun.texel / (4.0f * radius)) * 1.5f;
+    m_sun.bias = (m_sun.texel / (back + (2.0f * radius))) * 1.5f;
 
     compages::gpu::RenderPass const pass(m_sun_target, compages::gpu::PassDesc{ .clear_color = false });
     m_sun_program.set("lightViewProj", m_sun.light_view_projection);
