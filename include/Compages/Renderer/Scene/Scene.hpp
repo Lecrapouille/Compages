@@ -16,7 +16,7 @@
 #include "Compages/Renderer/Components/Text.hpp"
 #include "Compages/Fields/Field.hpp"
 #include "Compages/Renderer/Scene/Environment.hpp"
-#include "Compages/Renderer/Scene/FieldLook.hpp"
+#include "Compages/Renderer/Visualization/FieldLook.hpp"
 #include "Compages/Renderer/Render/Raycast.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 #include "Compages/Renderer/Render/DebugDraw.hpp"
@@ -453,23 +453,6 @@ private:
 
     compages::world::Entity
     drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look);
-
-    //! \brief The storage buffer of a field shown from the CPU, written with
-    //! these values (made the first time).
-    [[nodiscard]] Result<compages::gpu::BufferHandle>
-    fieldValues(compages::world::EntityId p_entity,
-                std::span<const float> p_values);
-
-    //! \brief The entity, the mesh and the material of a field.
-    compages::world::Entity showGrid(compages::Grid2D const& p_grid,
-                                     FieldLook const& p_look,
-                                     std::string p_name);
-
-    //! \brief The look and the values of a field on its material.
-    [[nodiscard]] Status showValues(compages::world::EntityId p_entity,
-                                    compages::gpu::BufferHandle p_values,
-                                    std::size_t p_count,
-                                    FieldLook const& p_look);
 
 private:
 

@@ -10,6 +10,7 @@
 #include "Compages/Renderer/Components/FieldView.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/Renderer/Procedural/ShaderLib.hpp"
+#include "Renderer/Visualization/FieldViews.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 
 #include <algorithm>
@@ -23,7 +24,7 @@
 
 // ****************************************************************************
 //! \file
-//! \brief Scene::show(): a field drawn with the hooks of the PBR shader. The
+//! \brief FieldViews (Scene::show()): a field drawn with the hooks of the PBR shader. The
 //! values are a storage buffer (written from a Field, or by a compute shader),
 //! read by the index of each corner; the vertex hook raises the corner by its
 //! value, the fragment hook reads a colour map.
@@ -289,13 +290,33 @@ Status applyLook(AssetManager& p_assets,
 } // namespace
 
 // ----------------------------------------------------------------------------
-compages::world::Entity Scene::showGrid(compages::Grid2D const& p_grid,
-                                        FieldLook const& p_look,
-                                        std::string p_name)
+Result<compages::gpu::BufferHandle>
+FieldViews::values(compages::world::EntityId p_entity, std::span<const float> p_values)
+{
+    auto found = m_values.find(p_entity);
+    if ((found != m_values.end()) && (found->second.count() == p_values.size()))
+    {
+        found->second.write(p_values);
+        return found->second.handle();
+    }
+    compages::gpu::StorageBuffer<float> buffer;
+    COMPAGES_TRY_ASSIGN(buffer,
+                        compages::gpu::StorageBuffer<float>::from(
+                            p_values, compages::gpu::BufferUsage::Stream));
+    const compages::gpu::BufferHandle handle = buffer.handle();
+    m_values.insert_or_assign(p_entity, std::move(buffer));
+    return handle;
+}
+
+// ----------------------------------------------------------------------------
+compages::world::Entity FieldViews::grid(Scene& p_scene,
+                                         compages::Grid2D const& p_grid,
+                                         FieldLook const& p_look,
+                                         std::string p_name)
 {
     MeshAsset grid = gridMesh(p_grid);
     grid.local_bounds = boundsOf(p_grid, p_look);
-    compages::world::Entity entity = mesh(std::move(grid), p_name);
+    compages::world::Entity entity = p_scene.mesh(std::move(grid), p_name);
 
     shaders::ShaderPair pbr = shaders::pbr();
     pbr.vertex().hook("deform", FIELD_DEFORM);
@@ -306,14 +327,14 @@ compages::world::Entity Scene::showGrid(compages::Grid2D const& p_grid,
           .shaders = std::move(pbr),
           .state = { .depth_test = true, .cull = compages::gpu::CullMode::None },
           .see_through = std::nullopt });
-    Result<MaterialId> added = made ? m_assets->addMaterial({}, made.take())
+    Result<MaterialId> added = made ? p_scene.assets().addMaterial({}, made.take())
                                     : Result<MaterialId>(failure(made.error()));
     if (!added)
     {
         compages::gpu::reportError(added.error());
         return entity;
     }
-    look(entity, added.value());
+    p_scene.look(entity, added.value());
     // The shadow pass draws the mesh flat (it has no hooks yet): no shadow.
     entity.get<MeshRenderer>().flags = RenderFlags::NoShadowCaster;
     entity.set(FieldView{ .material = added.value(),
@@ -323,20 +344,21 @@ compages::world::Entity Scene::showGrid(compages::Grid2D const& p_grid,
 }
 
 // ----------------------------------------------------------------------------
-Status Scene::showValues(compages::world::EntityId p_entity,
+Status FieldViews::apply(Scene& p_scene,
+                        compages::world::EntityId p_entity,
                          compages::gpu::BufferHandle p_values,
                          std::size_t p_count,
                          FieldLook const& p_look)
 {
-    FieldView const* view = m_world.tryGet<FieldView>(p_entity);
+    FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
     if (view == nullptr)
     {
         return failure("show(entity, ...) on an entity not made by show()");
     }
     const compages::Grid2D grid{ .columns = view->columns, .rows = view->rows };
-    MeshRenderer const* renderer = m_world.tryGet<MeshRenderer>(p_entity);
-    MeshAsset* mesh = (renderer == nullptr) ? nullptr : m_assets->mesh(renderer->mesh);
-    Material* material = m_assets->material(view->material);
+    MeshRenderer const* renderer = p_scene.world().tryGet<MeshRenderer>(p_entity);
+    MeshAsset* mesh = (renderer == nullptr) ? nullptr : p_scene.assets().mesh(renderer->mesh);
+    Material* material = p_scene.assets().material(view->material);
     if ((mesh == nullptr) || (material == nullptr))
     {
         return failure("show(entity, ...): the entity lost its field");
@@ -351,7 +373,7 @@ Status Scene::showValues(compages::world::EntityId p_entity,
         compages::Vector3f(low.x, std::min({ a, b, 0.0f }), low.z),
         compages::Vector3f(high.x, std::max({ a, b, 0.0f }), high.z));
     const float spacing = (high.x - low.x) / float(std::max(view->columns - 1, 1));
-    COMPAGES_TRY(applyLook(*m_assets,
+    COMPAGES_TRY(applyLook(p_scene.assets(),
                            *material,
                            p_values,
                            p_count,
@@ -361,17 +383,18 @@ Status Scene::showValues(compages::world::EntityId p_entity,
 }
 
 // ----------------------------------------------------------------------------
-compages::world::Entity Scene::show(compages::Field<float> const& p_field,
+compages::world::Entity FieldViews::show(Scene& p_scene,
+                                         compages::Field<float> const& p_field,
                                     FieldLook const& p_look,
                                     std::string p_name)
 {
     if (const Status valid = checkField(p_field.grid(), p_look); !valid)
     {
         compages::gpu::reportError(valid.error());
-        return m_world.entity(std::move(p_name));
+        return p_scene.world().entity(std::move(p_name));
     }
-    compages::world::Entity entity = showGrid(p_field.grid(), p_look, std::move(p_name));
-    if (const Status shown = show(entity, p_field, p_look); !shown)
+    compages::world::Entity entity = grid(p_scene, p_field.grid(), p_look, std::move(p_name));
+    if (const Status shown = show(p_scene, entity, p_field, p_look); !shown)
     {
         compages::gpu::reportError(shown.error());
     }
@@ -379,11 +402,12 @@ compages::world::Entity Scene::show(compages::Field<float> const& p_field,
 }
 
 // ----------------------------------------------------------------------------
-Status Scene::show(compages::world::EntityId p_entity,
+Status FieldViews::show(Scene& p_scene,
+                        compages::world::EntityId p_entity,
                    compages::Field<float> const& p_field,
                    FieldLook const& p_look)
 {
-    FieldView const* view = m_world.tryGet<FieldView>(p_entity);
+    FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
     if ((view != nullptr) &&
         ((view->columns != p_field.grid().columns) || (view->rows != p_field.grid().rows)))
     {
@@ -395,13 +419,14 @@ Status Scene::show(compages::world::EntityId p_entity,
     {
         return failure("show(entity, field) on an entity not made by show()");
     }
-    compages::gpu::BufferHandle values;
-    COMPAGES_TRY_ASSIGN(values, fieldValues(p_entity, p_field.values()));
-    return showValues(p_entity, values, p_field.size(), p_look);
+    compages::gpu::BufferHandle buffer;
+    COMPAGES_TRY_ASSIGN(buffer, values(p_entity, p_field.values()));
+    return apply(p_scene, p_entity, buffer, p_field.size(), p_look);
 }
 
 // ----------------------------------------------------------------------------
-compages::world::Entity Scene::show(compages::Grid2D const& p_grid,
+compages::world::Entity FieldViews::show(Scene& p_scene,
+                                         compages::Grid2D const& p_grid,
                                     compages::gpu::StorageBuffer<float> const& p_values,
                                     FieldLook const& p_look,
                                     std::string p_name)
@@ -409,10 +434,10 @@ compages::world::Entity Scene::show(compages::Grid2D const& p_grid,
     if (const Status valid = checkField(p_grid, p_look); !valid)
     {
         compages::gpu::reportError(valid.error());
-        return m_world.entity(std::move(p_name));
+        return p_scene.world().entity(std::move(p_name));
     }
-    compages::world::Entity entity = showGrid(p_grid, p_look, std::move(p_name));
-    if (const Status shown = showValues(entity, p_values.handle(), p_values.count(), p_look);
+    compages::world::Entity entity = grid(p_scene, p_grid, p_look, std::move(p_name));
+    if (const Status shown = apply(p_scene, entity, p_values.handle(), p_values.count(), p_look);
         !shown)
     {
         compages::gpu::reportError(shown.error());
@@ -421,19 +446,21 @@ compages::world::Entity Scene::show(compages::Grid2D const& p_grid,
 }
 
 // ----------------------------------------------------------------------------
-Status Scene::show(compages::world::EntityId p_entity,
+Status FieldViews::show(Scene& p_scene,
+                        compages::world::EntityId p_entity,
                    compages::gpu::StorageBuffer<float> const& p_values,
                    FieldLook const& p_look)
 {
-    return showValues(p_entity, p_values.handle(), p_values.count(), p_look);
+    return apply(p_scene, p_entity, p_values.handle(), p_values.count(), p_look);
 }
 
 // ----------------------------------------------------------------------------
-std::optional<FieldProbe> Scene::probe(compages::Field<float> const& p_field,
-                                       FieldLook const& p_look,
-                                       compages::Vector2f p_pixel) const
+std::optional<FieldProbe> probeField(Scene const& p_scene,
+                                     compages::Field<float> const& p_field,
+                                     FieldLook const& p_look,
+                                     compages::Vector2f p_pixel)
 {
-    CameraFrame const& camera = lastCamera();
+    CameraFrame const& camera = p_scene.lastCamera();
     compages::Grid2D const& grid = p_field.grid();
     if ((camera.viewport_width == 0u) || (camera.viewport_height == 0u) ||
         (grid.columns < 2) || (grid.rows < 2))

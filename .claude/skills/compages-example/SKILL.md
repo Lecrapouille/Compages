@@ -9,7 +9,8 @@ One binary, `build/linux-gcc-debug/bin/Compages-examples`, runs every demo. The 
 progressive tutorial: one folder = one chapter = one question, read in order; inside a
 folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
 `01_FirstSteps` `02_ChangingData` `03_Images` `04_Passes` `05_Simulation` (GPU),
-`06_Scene` (Renderer, Three.js-like), `07_World`, `08_Assets`, `09_Performance`, `10_Complete`.
+`06_Scene` (Renderer, Three.js-like), `07_World`, `08_Assets`, `09_Performance`, `10_Complete`,
+`11_Science` (fields: computed on the CPU or GPU, shown by `scene.show`, read by `scene.probe`).
 
 ## Add a demo
 

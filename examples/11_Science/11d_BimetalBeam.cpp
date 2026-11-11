@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "06_Scene/06p_BimetalBeam.hpp"
+#include "11_Science/11d_BimetalBeam.hpp"
 
 #include "Common/Gui.hpp"
 #include "Compages/GPU/Errors.hpp"

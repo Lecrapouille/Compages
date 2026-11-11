@@ -105,26 +105,26 @@ In rough order. Each item should make a demo shorter or possible.
 
 - [x] `scene.show(field, look)` with a colour map and a range (heat map,
       coloured terrain): values in a float texture, colours and relief made
-      by the PBR hooks; demo `06m_HeatPlate`
+      by the PBR hooks; demo `11a_HeatPlate`
 - [x] A field on the GPU, drawn without coming back to the CPU:
       `scene.show(grid, StorageBuffer<float>, look)`; a `Field` shown from
       the CPU goes through a storage buffer too (partial update: later, with
       `DirtyRange`)
-- [x] Compute shaders reading and writing fields: `06n_RippleTank` (three
+- [x] Compute shaders reading and writing fields: `11b_RippleTank` (three
       turning buffers; a `PingPong` of a `Field` type is not needed so far)
 - [ ] `Grid3D` and `Field3D`, then volume rendering, slices, isosurfaces
 - [ ] Vector fields drawn as arrows; streamlines
-- [x] Inspection: `scene.probe(field, look, pixel)`, demo `06o_FieldProbe`
+- [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
 - [ ] Inspection: follow a point over time (a curve), slices
 - [ ] 2D plots (time series, histograms) on a `CanvasTexture`
 - [ ] Hooks in the shadow and depth passes
 - [ ] Custom per-instance parameters of a material (typed block)
 - [ ] Hot reload: watch the files listed by `ShaderSource`
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
-- [x] Demo: a bimetal beam bending with heat (`06p_BimetalBeam`: heat
+- [x] Demo: a bimetal beam bending with heat (`11d_BimetalBeam`: heat
       equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
       `deform` hook reading a storage buffer)
-- [x] Demos of fields: `06m_HeatPlate`, `06n_RippleTank`, `06o_FieldProbe`
+- [x] Demos of fields: `11a_HeatPlate`, `11b_RippleTank`, `11c_FieldProbe`
 - [ ] Demo: smoke (stable fluids in 2D with `PingPong`)
 
 ## Earlier decisions (audit of 2026-11-06)

@@ -67,6 +67,7 @@ Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) d
 | `08_Assets/` | Load files (glTF, URDF, prefabs) | 🟩 Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
 | `09_Performance/` | Draw a lot | GPU, then Renderer | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
 | `10_Complete/` | Everything together, up to a game | the three layers | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
+| `11_Science/` | Fields: compute them, show them, read them | Fields, then GPU and Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
 
 `07a_HeadlessWorld` ends before any `Scene` code.
 
@@ -162,10 +163,6 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06j_SplitViews` | one world, two cameras, one update | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png" alt="06j_SplitViews" width="200"> |
 | `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
-| `06m_HeatPlate` | a field in one call: heat on a `Field<float>`, `scene.show(field, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_HeatPlate.png" alt="06m_HeatPlate" width="200"> |
-| `06n_RippleTank` | waves computed and drawn on the GPU: a compute shader, `scene.show(grid, buffer, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_RippleTank.png" alt="06n_RippleTank" width="200"> |
-| `06o_FieldProbe` | the altitude under the mouse: `scene.probe(field, look, pixel)`, a `Tooltip` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_FieldProbe.png" alt="06o_FieldProbe" width="200"> |
-| `06p_BimetalBeam` | a CPU model bends a mesh on the GPU: a bimetal strip heated by a flame, the hook `deform` reads a storage buffer | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06p_BimetalBeam.png" alt="06p_BimetalBeam" width="200"> |
 
 ---
 
@@ -238,7 +235,20 @@ The skin material is the PBR shader of the Renderer (`shaders::pbr()`) with anot
 
 The camera is a `Rig`: left drag moves the map, right drag turns it, the wheel zooms toward the mouse. Over the picture, the names are written as Chréage writes them (`Archipelago/Signs`): an island or a region on a rounded sign, a tab of the colour of its island on its left, raised on a thin stem over its place (higher, or left out, when it would cover another one; the islands from afar, the nearest regions closer); the links of the region under the mouse or chosen on a circle around it, each joined to its pin by a dotted line, in the order of the pins round the circle so that the lines hardly cross. Also over the picture, `Example::overlay()` lets the demo draw Dear ImGui windows (the pointer over them and the keys typed into them do not reach `draw()`); `Signs` draws with `ImGui::GetWindowDrawList()` on the picture, and `Archipelago/Panels` opens the windows of the interface of IslandedBrowser: a tooltip next to the pointer (the title, the URL, where it is, what a click does), the details of the choice on the right (its links: a click goes there, Ctrl + click opens), a search of the titles and URLs (`/` or Ctrl + F), a status bar with the keys of the moment, short notifications, and a help (`H`). A click selects, a double click opens a link or flies to a region (`RigController::flyTo`), a middle or Ctrl click opens in the web browser (`$BROWSER`, else firefox; a region: its first 20 links); Enter opens the selection, Z flies to it, Home to the whole map, N, B and Space show the names, the borders, the animals.
 
-## 🪟 13. Window, ImGui and physics
+## 🔬 13. 11 — Science: fields, computed and shown
+
+Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](06-Renderer-Layer.md#show-a-field-heat-maps-and-coloured-reliefs)).
+
+| Demo | Idea | Picture |
+|------|------|---------|
+| `11a_HeatPlate` | a field in one call: heat on a `Field<float>`, `scene.show(field, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11a_HeatPlate.png" alt="11a_HeatPlate" width="200"> |
+| `11b_RippleTank` | waves computed and drawn on the GPU: a compute shader, `scene.show(grid, buffer, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11b_RippleTank.png" alt="11b_RippleTank" width="200"> |
+| `11c_FieldProbe` | the altitude under the mouse: `scene.probe(field, look, pixel)`, a `Tooltip` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11c_FieldProbe.png" alt="11c_FieldProbe" width="200"> |
+| `11d_BimetalBeam` | a CPU model bends a mesh on the GPU: a bimetal strip heated by a flame, the hook `deform` reads a storage buffer | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11d_BimetalBeam.png" alt="11d_BimetalBeam" width="200"> |
+
+---
+
+## 🪟 14. Window, ImGui and physics
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.

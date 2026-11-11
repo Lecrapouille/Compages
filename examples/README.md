@@ -24,6 +24,7 @@ Read the folders in order: each folder answers one question, and each demo adds 
 | `08_Assets/` | Load files (glTF, URDF, prefabs) | 🟩 Renderer | [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
 | `09_Performance/` | Draw a lot | GPU, then Renderer | [doc/04-GPU-Layer.md](../doc/04-GPU-Layer.md) |
 | `10_Complete/` | Everything together, up to a game | the three layers | [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
+| `11_Science/` | Fields: compute them, show them, read them | Fields, then GPU and Renderer | [doc/06-Renderer-Layer.md](../doc/06-Renderer-Layer.md) |
 
 Textures, glTF and URDF files come from the repository `Compages-data`, fetched by `make` with the other third parties ([doc/02-Getting-Started.md](../doc/02-Getting-Started.md)).
 

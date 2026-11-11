@@ -34,7 +34,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "06n_RippleTank";
+        return "11b_RippleTank";
     }
 
     [[nodiscard]] std::string description() const override;

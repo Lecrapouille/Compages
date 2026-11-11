@@ -41,10 +41,10 @@ scene.draw(frame);                       // = update(frame) + render()
   Terrain|Grey, .low, .high, .relief, .lit }, name)` → entity with a `FieldView` component;
   `scene.show(entity, field, look)` writes new values (same grid size); GPU values:
   `scene.show(grid, StorageBuffer<float>, look, name)` / `show(entity, buffer, look)` (borrowed).
-  Values in a storage buffer read by `gl_VertexID` + PBR hooks (`src/Renderer/Scene/FieldShow.cpp`),
+  Values in a storage buffer read by `gl_VertexID` + PBR hooks (`src/Renderer/Visualization/FieldViews.cpp`),
   relief clamped to the range, no shadow. `scene.probe(field, look, pixel)` → point + value.
-  `Material::buffers` = storage buffers bound by the Renderer. Demos `06m_HeatPlate`,
-  `06n_RippleTank` (compute), `06o_FieldProbe` (Tooltip).
+  `Material::buffers` = storage buffers bound by the Renderer. Demos `11a_HeatPlate`,
+  `11b_RippleTank` (compute), `11c_FieldProbe` (Tooltip).
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
   (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),

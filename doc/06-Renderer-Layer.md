@@ -95,7 +95,7 @@ and the ground reads three pictures by name: `map.textures = { { .sampler = "gra
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
 - The shadow pass does not run the `deform` hook yet: an object moved by it casts the shadow of its first shape (the sea casts none).
-- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `06p_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
+- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
 
 ### Show a field: heat maps and coloured reliefs
 
@@ -111,7 +111,7 @@ compages::world::Entity plate = scene.show(temperature, look, "Plate");
 COMPAGES_TRY(scene.show(plate, temperature, look));
 ```
 
-The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field does not cast a shadow yet: the shadow pass does not run the hooks. `06m_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field does not cast a shadow yet: the shadow pass does not run the hooks. `11a_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
 
 **Values computed on the GPU.** When a compute shader makes the values, give its storage buffer instead of a `Field`: nothing comes back to the CPU. The buffer holds one float per point, row after row, and must live as long as the entity draws.
 
@@ -121,7 +121,7 @@ m_surface = m_scene.show(m_grid, m_heights[m_now], m_look, "Water");   // setUp(
 COMPAGES_TRY(m_scene.show(m_surface, m_heights[m_now], m_look));
 ```
 
-`06n_RippleTank` steps the wave equation this way, on three buffers (before, now, next) that turn.
+`11b_RippleTank` steps the wave equation this way, on three buffers (before, now, next) that turn.
 
 **Read a value under the mouse.** `scene.probe(field, look, pixel)` follows the ray of a pixel of the last picture down to the field as it is drawn (with its relief) and returns the point and the value there, or nothing:
 
@@ -132,7 +132,7 @@ if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
 }
 ```
 
-`06o_FieldProbe` writes the altitude of an island next to the mouse.
+`11c_FieldProbe` writes the altitude of an island next to the mouse.
 
 ### Helpers
 
@@ -419,10 +419,10 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `06j_SplitViews` | one world, two cameras |
 | `09b_ManyCubes` | sorting and culling |
 | `06l_CanvasPaint` | painting on a live texture |
-| `06m_HeatPlate` | a field shown as colours and relief |
-| `06n_RippleTank` | a field computed and drawn on the GPU |
-| `06o_FieldProbe` | the value of a field under the mouse |
-| `06p_BimetalBeam` | a CPU model bends a mesh with the hook `deform` |
+| `11a_HeatPlate` | a field shown as colours and relief |
+| `11b_RippleTank` | a field computed and drawn on the GPU |
+| `11c_FieldProbe` | the value of a field under the mouse |
+| `11d_BimetalBeam` | a CPU model bends a mesh with the hook `deform` |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

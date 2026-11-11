@@ -9,6 +9,7 @@
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "../Render/TextDraw.hpp"
 #include "../Render/Skybox.hpp"
+#include "../Visualization/FieldViews.hpp"
 #include "Compages/World/Entity.hpp"
 
 #include "Compages/Core/AABB.hpp"
@@ -173,10 +174,8 @@ struct Scene::Impl
     Environment environment{};
     CameraFrame last_camera{};
     Skybox sky;
-    //! \brief The values of the fields shown from the CPU, by entity.
-    std::unordered_map<compages::world::EntityId,
-                       compages::gpu::StorageBuffer<float>>
-        field_values;
+    //! \brief The fields shown (show()), with the values given from the CPU.
+    FieldViews fields;
 };
 
 Scene::Scene(compages::world::World& p_world)
@@ -196,24 +195,40 @@ Scene::Scene(compages::world::World& p_world, AssetManager& p_assets)
 
 Scene::~Scene() = default;
 
-Result<compages::gpu::BufferHandle>
-Scene::fieldValues(compages::world::EntityId p_entity,
-                   std::span<const float> p_values)
+compages::world::Entity Scene::show(compages::Field<float> const& p_field,
+                                    FieldLook const& p_look,
+                                    std::string p_name)
 {
-    auto found = m_impl->field_values.find(p_entity);
-    if ((found != m_impl->field_values.end()) &&
-        (found->second.count() == p_values.size()))
-    {
-        found->second.write(p_values);
-        return found->second.handle();
-    }
-    compages::gpu::StorageBuffer<float> buffer;
-    COMPAGES_TRY_ASSIGN(buffer,
-                        compages::gpu::StorageBuffer<float>::from(
-                            p_values, compages::gpu::BufferUsage::Stream));
-    const compages::gpu::BufferHandle handle = buffer.handle();
-    m_impl->field_values.insert_or_assign(p_entity, std::move(buffer));
-    return handle;
+    return m_impl->fields.show(*this, p_field, p_look, std::move(p_name));
+}
+
+Status Scene::show(compages::world::EntityId p_entity,
+                   compages::Field<float> const& p_field,
+                   FieldLook const& p_look)
+{
+    return m_impl->fields.show(*this, p_entity, p_field, p_look);
+}
+
+compages::world::Entity Scene::show(compages::Grid2D const& p_grid,
+                                    compages::gpu::StorageBuffer<float> const& p_values,
+                                    FieldLook const& p_look,
+                                    std::string p_name)
+{
+    return m_impl->fields.show(*this, p_grid, p_values, p_look, std::move(p_name));
+}
+
+Status Scene::show(compages::world::EntityId p_entity,
+                   compages::gpu::StorageBuffer<float> const& p_values,
+                   FieldLook const& p_look)
+{
+    return m_impl->fields.show(*this, p_entity, p_values, p_look);
+}
+
+std::optional<FieldProbe> Scene::probe(compages::Field<float> const& p_field,
+                                       FieldLook const& p_look,
+                                       compages::Vector2f p_pixel) const
+{
+    return probeField(*this, p_field, p_look, p_pixel);
 }
 
 MeshAssetId Scene::shapeMesh(Shape p_shape)

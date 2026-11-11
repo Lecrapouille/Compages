@@ -48,10 +48,6 @@
 #include "06_Scene/06j_SplitViews.hpp"
 #include "06_Scene/06k_MiscLookAt.hpp"
 #include "06_Scene/06l_CanvasPaint.hpp"
-#include "06_Scene/06m_HeatPlate.hpp"
-#include "06_Scene/06n_RippleTank.hpp"
-#include "06_Scene/06o_FieldProbe.hpp"
-#include "06_Scene/06p_BimetalBeam.hpp"
 #include "07_World/07a_HeadlessWorld.hpp"
 #include "07_World/07b_Routines.hpp"
 #include "07_World/07c_MovingRobot.hpp"
@@ -69,6 +65,10 @@
 #include "10_Complete/10c_SweatAndDecals.hpp"
 #include "10_Complete/10d_EarthMoon.hpp"
 #include "10_Complete/10e_Archipelago.hpp"
+#include "11_Science/11a_HeatPlate.hpp"
+#include "11_Science/11b_RippleTank.hpp"
+#include "11_Science/11c_FieldProbe.hpp"
+#include "11_Science/11d_BimetalBeam.hpp"
 
 // One record per active source, in gallery order:
 // type, runtime name, chapter folder, source, former demos covered,
@@ -113,10 +113,6 @@
     X(SplitViews, "06j_SplitViews", "06_Scene", "06_Scene/06j_SplitViews.cpp", "19_SplitViews", 0, "-") \
     X(MiscLookAt, "06k_MiscLookAt", "06_Scene", "06_Scene/06k_MiscLookAt.cpp", "25_MiscLookAt", 0, "-") \
     X(CanvasPaint, "06l_CanvasPaint", "06_Scene", "06_Scene/06l_CanvasPaint.cpp", "-", 0, "-") \
-    X(HeatPlate, "06m_HeatPlate", "06_Scene", "06_Scene/06m_HeatPlate.cpp", "-", 0, "-") \
-    X(RippleTank, "06n_RippleTank", "06_Scene", "06_Scene/06n_RippleTank.cpp", "-", 0, "-") \
-    X(FieldProbe, "06o_FieldProbe", "06_Scene", "06_Scene/06o_FieldProbe.cpp", "-", 0, "-") \
-    X(BimetalBeam, "06p_BimetalBeam", "06_Scene", "06_Scene/06p_BimetalBeam.cpp", "-", 0, "-") \
     X(HeadlessWorld, "07a_HeadlessWorld", "07_World", "07_World/07a_HeadlessWorld.cpp", "-", 0, "-") \
     X(Routines, "07b_Routines", "07_World", "07_World/07b_Routines.cpp", "17_MovingRobot", 0, "-") \
     X(MovingRobot, "07c_MovingRobot", "07_World", "07_World/07c_MovingRobot.cpp", "17_MovingRobot", 0, "-") \
@@ -133,7 +129,11 @@
     X(DoomLike, "10b_DoomLike", "10_Complete", "10_Complete/10b_DoomLike.cpp", "-", 0, "-") \
     X(SweatAndDecals, "10c_SweatAndDecals", "10_Complete", "10_Complete/10c_SweatAndDecals.cpp", "-", 0, "-") \
     X(EarthMoon, "10d_EarthMoon", "10_Complete", "10_Complete/10d_EarthMoon.cpp", "-", 0, "-") \
-    X(Archipelago, "10e_Archipelago", "10_Complete", "10_Complete/10e_Archipelago.cpp", "-", 0, "-")
+    X(Archipelago, "10e_Archipelago", "10_Complete", "10_Complete/10e_Archipelago.cpp", "-", 0, "-") \
+    X(HeatPlate, "11a_HeatPlate", "11_Science", "11_Science/11a_HeatPlate.cpp", "-", 0, "-") \
+    X(RippleTank, "11b_RippleTank", "11_Science", "11_Science/11b_RippleTank.cpp", "-", 0, "-") \
+    X(FieldProbe, "11c_FieldProbe", "11_Science", "11_Science/11c_FieldProbe.cpp", "-", 0, "-") \
+    X(BimetalBeam, "11d_BimetalBeam", "11_Science", "11_Science/11d_BimetalBeam.cpp", "-", 0, "-")
 
 namespace examples
 {

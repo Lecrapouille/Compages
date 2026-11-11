@@ -29,7 +29,7 @@ include/Compages/   public, installed: Core/ Fields/ GPU/ World/ Renderer/ + Com
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
-                    01_FirstSteps/ … 10_Complete/ = chapters, read in order;
+                    01_FirstSteps/ … 11_Science/ = chapters, read in order;
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
                     Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
 tests/              GoogleTest: Core/ Fields/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)

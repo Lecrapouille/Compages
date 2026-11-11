@@ -32,7 +32,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "06m_HeatPlate";
+        return "11a_HeatPlate";
     }
 
     [[nodiscard]] std::string description() const override;

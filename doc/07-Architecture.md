@@ -99,6 +99,7 @@ include/Compages/          the public interface, installed
     Assets/                AssetManager, meshes, materials, textures, skins, prefabs
     Import/                glTF, STL, URDF visuals, prefab instantiation
     Procedural/            primitives, shader library (pieces and hooks), CanvasTexture
+    Visualization/         FieldLook, ColorMap, FieldProbe: fields drawn by Scene::show()
     Animation/             clips, Animator, AnimationSystem
     Render/                extraction, snapshot, queue, Renderer, ShadowPass, picking
     Components/            MeshRenderer, PrefabInstance

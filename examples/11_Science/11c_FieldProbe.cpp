@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "06_Scene/06o_FieldProbe.hpp"
+#include "11_Science/11c_FieldProbe.hpp"
 
 #include "Common/DataPath.hpp"
 #include "Common/Gui.hpp"

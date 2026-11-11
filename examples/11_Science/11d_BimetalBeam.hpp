@@ -36,7 +36,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "06p_BimetalBeam";
+        return "11d_BimetalBeam";
     }
 
     [[nodiscard]] std::string description() const override;

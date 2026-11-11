@@ -32,7 +32,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "06o_FieldProbe";
+        return "11c_FieldProbe";
     }
 
     [[nodiscard]] std::string description() const override;
