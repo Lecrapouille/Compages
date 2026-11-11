@@ -100,6 +100,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | show a field | `scene.show(field, FieldLook{ .colors, .low, .high, .relief, .lit }, name)` → entity; `scene.show(entity, field, look)` for new values; `ColorMap::Viridis` `Inferno` `Coolwarm` `Terrain` `Grey` |
 | field on the GPU | `scene.show(grid, storageBuffer, look, name)`, `scene.show(entity, storageBuffer, look)`: a `StorageBuffer<float>` a compute shader writes |
 | read a field | `scene.probe(field, look, pixel)` → `std::optional<FieldProbe>{ .point, .value }` |
+| show vectors | `scene.show(Field<Vector2f>, ArrowLook{ .colors, .low, .high, .scale, .every }, name)`, `scene.show(entity, field, look)` |
 | show a volume | `scene.show(Field<float, Grid3D>, look, name)`, `scene.show(entity, volume, look)` |
 | material buffers | `material.buffers = { { .block, .buffer } }`: storage buffers bound by the Renderer |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
@@ -131,6 +132,7 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 | values on it | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
 | between the points | `field.sample(place)`: bilinear, the edge value outside |
 | a volume | `Grid3D{ .columns, .rows, .layers, .origin, .spacing }`, `index(i, j, k)`, `layer(n)`, `neighbours6(index)`; `Field<T, Grid3D> volume(grid, value)`, `volume(i, j, k)`, `volume.sample(Vector3f)` (trilinear) |
+| streamline | `compages::streamline(field, start, step, steps)` → points (`<Compages/Fields/Streamline.hpp>`) |
 | a cut of a volume | `compages::slice(volume, Axis::X / Y / Z, layer)` → `Field<T>` (`<Compages/Fields/Slice.hpp>`) |
 | field to the GPU | `gpu::Texture::fromField(field)`: 2D or 3D, R32F / RG32F / RGBA32F; the points are in the order of the texels |
 | ray and ground | `intersect(ray, heights)` → `std::optional<Vector3f>`; `intersectHeight(ray, height(x, z), from, to, step)` → distance along the ray |

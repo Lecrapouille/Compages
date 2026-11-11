@@ -144,6 +144,15 @@ m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
 
 `11f_Volume` shows the warm air of a room this way.
 
+**Vectors.** A `Field<Vector2f>` (a wind, a speed: x and y of each vector go along x and z) is shown as arrows coloured by their length, one point in `every`:
+
+```cpp
+m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compages::renderer::ColorMap::Viridis,
+    .low = 0.0f, .high = 2.0f, .scale = 0.12f, .every = 4 }, "Wind");
+```
+
+The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `11g_FlowAroundCylinder` shows the wind around a turning column this way.
+
 ### Helpers
 
 Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.
@@ -435,6 +444,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `11d_BimetalBeam` | a CPU model bends a mesh with the hook `deform` |
 | `11e_Smoke` | a 2D fluid computed on the GPU |
 | `11f_Volume` | a volume seen through and cut |
+| `11g_FlowAroundCylinder` | a field of vectors: arrows and streamlines |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

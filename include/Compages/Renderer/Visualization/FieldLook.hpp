@@ -57,6 +57,30 @@ struct FieldLook
 };
 
 // ****************************************************************************
+//! \brief How Scene::show() draws a field of vectors (Field<Vector2f>, x and
+//! z on the ground): an arrow from some of its points, as long as the vector
+//! times \c scale, coloured by its length.
+//!
+//! \code
+//! scene.show(wind, { .colors = compages::renderer::ColorMap::Viridis,
+//!                    .low = 0.0f, .high = 5.0f,     // lengths, first and last colour
+//!                    .scale = 0.1f,                 // metres of arrow per unit
+//!                    .every = 4 }, "Wind");         // one point in 4, each way
+//! \endcode
+// ****************************************************************************
+struct ArrowLook
+{
+    //! \brief The colours of the lengths, from low to high.
+    ColorMap colors;
+    float low;
+    float high;
+    //! \brief Metres of arrow per unit of the vector.
+    float scale;
+    //! \brief One arrow every \c every points along each axis (1: all).
+    int every;
+};
+
+// ****************************************************************************
 //! \brief What Scene::probe() finds under a pixel: where the ray meets the
 //! field as it is drawn, and the value there.
 // ****************************************************************************

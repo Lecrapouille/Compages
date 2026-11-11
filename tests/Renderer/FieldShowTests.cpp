@@ -183,3 +183,18 @@ TEST_F(FieldShowTest, DrawsAVolume)
     const compages::Grid3D other{ .columns = 4, .rows = 8, .layers = 8, .origin = { 0.0f, 0.0f, 0.0f }, .spacing = 1.0f };
     EXPECT_FALSE(bool(m_scene->show(box, compages::Field<float, compages::Grid3D>(other, 0.0f), m_grey)));
 }
+
+// Arrows: a wind along x drawn where the camera looks; none when it is still.
+TEST_F(FieldShowTest, DrawsVectorsAsArrows)
+{
+    const compages::Grid2D grid{ .columns = 3, .rows = 3, .origin = { -1.0f, -1.0f }, .spacing = 1.0f };
+    compages::Field<compages::Vector2f> wind(grid, compages::Vector2f(1.0f, 0.0f));
+    const compages::renderer::ArrowLook look{ .colors = compages::renderer::ColorMap::Grey,
+                                              .low = 0.0f, .high = 1.0f, .scale = 1.0f, .every = 1 };
+    // The middle arrow goes from (0, 0) to (1, 0): the centre pixel is on it.
+    compages::world::Entity arrows = m_scene->show(wind, look, "Wind");
+    EXPECT_EQ(centre(), 255);
+    wind.fill(compages::Vector2f(0.0f, 0.0f));
+    ASSERT_TRUE(bool(m_scene->show(arrows, wind, look)));
+    EXPECT_EQ(centre(), 0);
+}

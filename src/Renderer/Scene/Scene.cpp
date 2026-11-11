@@ -238,6 +238,20 @@ Status Scene::show(compages::world::EntityId p_entity,
     return m_impl->fields.show(*this, p_entity, p_volume, p_look);
 }
 
+compages::world::Entity Scene::show(compages::Field<compages::Vector2f> const& p_field,
+                                    ArrowLook const& p_look,
+                                    std::string p_name)
+{
+    return m_impl->fields.show(*this, p_field, p_look, std::move(p_name));
+}
+
+Status Scene::show(compages::world::EntityId p_entity,
+                   compages::Field<compages::Vector2f> const& p_field,
+                   ArrowLook const& p_look)
+{
+    return m_impl->fields.show(*this, p_entity, p_field, p_look);
+}
+
 std::optional<FieldProbe> Scene::probe(compages::Field<float> const& p_field,
                                        FieldLook const& p_look,
                                        compages::Vector2f p_pixel) const

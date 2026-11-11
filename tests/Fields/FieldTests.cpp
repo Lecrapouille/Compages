@@ -9,6 +9,7 @@
 #include "Compages/Fields/Grid2D.hpp"
 #include "Compages/Fields/HeightField.hpp"
 #include "Compages/Fields/Slice.hpp"
+#include "Compages/Fields/Streamline.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -196,4 +197,27 @@ TEST(Slice, CutsALayerOfAVolume)
     EXPECT_FLOAT_EQ(across_x(2, 1), volume(1, 2, 1));
     const Field<float> across_z = compages::slice(volume, compages::Axis::Z, 9); // clamped to 1
     EXPECT_FLOAT_EQ(across_z(3, 2), volume(3, 2, 1));
+}
+
+TEST(Streamline, FollowsTheFieldAndStopsAtItsEdge)
+{
+    const compages::Grid2D grid{ .columns = 11, .rows = 11, .origin = { 0.0f, 0.0f }, .spacing = 1.0f };
+    // A turn around the centre: the line stays on its circle.
+    Field<Vector2f> turn(grid, Vector2f(0.0f, 0.0f));
+    for (std::size_t k = 0u; k < turn.size(); ++k)
+    {
+        const Vector2f p = grid.point(k) - Vector2f(5.0f, 5.0f);
+        turn[k] = Vector2f(-p.y, p.x);
+    }
+    const std::vector<Vector2f> circle = compages::streamline(turn, Vector2f(8.0f, 5.0f), 0.05f, 300);
+    ASSERT_EQ(circle.size(), 301u);
+    for (Vector2f p : circle)
+    {
+        EXPECT_NEAR(std::hypot(p.x - 5.0f, p.y - 5.0f), 3.0f, 0.05f);
+    }
+    // A wind along x: the line leaves by the right edge.
+    Field<Vector2f> wind(grid, Vector2f(2.0f, 0.0f));
+    const std::vector<Vector2f> out = compages::streamline(wind, Vector2f(1.0f, 4.0f), 1.0f, 100);
+    EXPECT_EQ(out.size(), 10u);
+    EXPECT_TRUE(compages::streamline(wind, Vector2f(-5.0f, 0.0f), 1.0f, 100).empty());
 }

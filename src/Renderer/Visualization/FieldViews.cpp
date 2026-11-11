@@ -155,6 +155,19 @@ void main()
 }
 )";
 
+// ----------------------------------------------------------------------------
+//! Arrows: each corner carries the place of its length in the range (uv.x).
+// ----------------------------------------------------------------------------
+constexpr char const* ARROW_MAIN = R"(uniform sampler2D fieldColors;
+
+void main()
+{
+    float width = float(textureSize(fieldColors, 0).x);
+    vec3 colour = texture(fieldColors, vec2((clamp(vUv.x, 0.0, 1.0) * (width - 1.0) + 0.5) / width, 0.5)).rgb;
+    oColor = vec4(toSrgb(colour), opacity);
+}
+)";
+
 //! \brief A colour of a map at a place from 0 to 1, in sRGB bytes.
 struct Stop
 {
@@ -333,6 +346,69 @@ Status applyLook(AssetManager& p_assets,
     return success();
 }
 
+// ----------------------------------------------------------------------------
+//! \brief The arrows of a field of vectors: a shaft and a head, flat on the
+//! ground, from one point in \c every.
+// ----------------------------------------------------------------------------
+MeshAsset arrowsMesh(compages::Field<compages::Vector2f> const& p_field, ArrowLook const& p_look)
+{
+    compages::Grid2D const& grid = p_field.grid();
+    const int every = std::max(p_look.every, 1);
+    const float width = 0.12f * grid.spacing * float(every);
+    MeshAsset mesh;
+    auto corner = [&mesh](compages::Vector2f p_at, float p_t)
+    {
+        MeshVertex v;
+        v.position = compages::Vector3f(p_at.x, 0.0f, p_at.y);
+        v.normal = compages::Vector3f(0.0f, 1.0f, 0.0f);
+        v.uv = compages::Vector2f(p_t, 0.0f);
+        mesh.source_vertices.push_back(v);
+        return std::uint32_t(mesh.source_vertices.size() - 1u);
+    };
+    for (int j = 0; j < grid.rows; j += every)
+    {
+        for (int i = 0; i < grid.columns; i += every)
+        {
+            const compages::Vector2f v = p_field(i, j);
+            const float length = std::hypot(v.x, v.y);
+            if (length * p_look.scale < 1.0e-6f)
+            {
+                continue;
+            }
+            const float t = (length - p_look.low) / (p_look.high - p_look.low);
+            const compages::Vector2f along = v * (1.0f / length);
+            const compages::Vector2f side(-along.y, along.x);
+            const compages::Vector2f from = grid.point(i, j);
+            const float full = length * p_look.scale;
+            const float head = std::min(0.35f * full, 3.0f * width);
+            const compages::Vector2f neck = from + (along * (full - head));
+            const compages::Vector2f tip = from + (along * full);
+            const std::uint32_t a = corner(from + (side * (0.5f * width)), t);
+            const std::uint32_t b = corner(from - (side * (0.5f * width)), t);
+            const std::uint32_t c = corner(neck + (side * (0.5f * width)), t);
+            const std::uint32_t d = corner(neck - (side * (0.5f * width)), t);
+            const std::uint32_t e = corner(neck + (side * (1.5f * width)), t);
+            const std::uint32_t f = corner(neck - (side * (1.5f * width)), t);
+            const std::uint32_t g = corner(tip, t);
+            mesh.source_indices.insert(mesh.source_indices.end(), { a, b, c, b, d, c, e, f, g });
+        }
+    }
+    if (mesh.source_indices.empty())
+    {
+        // Nothing to show: one triangle of no size, so that the mesh exists.
+        const std::uint32_t a = corner(grid.point(0, 0), 0.0f);
+        mesh.source_indices = { a, a, a };
+    }
+    mesh.index_count = mesh.source_indices.size();
+    const compages::Vector2f first = grid.point(0, 0);
+    const compages::Vector2f last = grid.point(grid.columns - 1, grid.rows - 1);
+    const float reach = (std::abs(p_look.high) + std::abs(p_look.low)) * p_look.scale + width;
+    mesh.local_bounds = compages::AABB::fromCorners(
+        compages::Vector3f(std::min(first.x, last.x) - reach, -0.01f, std::min(first.y, last.y) - reach),
+        compages::Vector3f(std::max(first.x, last.x) + reach, 0.01f, std::max(first.y, last.y) + reach));
+    return mesh;
+}
+
 //! \brief The corners of the box of a volume.
 std::pair<compages::Vector3f, compages::Vector3f> boxOf(compages::Grid3D const& p_grid)
 {
@@ -470,6 +546,71 @@ Status FieldViews::show(Scene& p_scene,
     }
     COMPAGES_TRY(values->texture.write(std::as_bytes(p_volume.values())));
     return applyVolumeLook(p_scene.assets(), *material, view->volume, grid, p_look);
+}
+
+// ----------------------------------------------------------------------------
+compages::world::Entity FieldViews::show(Scene& p_scene,
+                                         compages::Field<compages::Vector2f> const& p_field,
+                                         ArrowLook const& p_look,
+                                         std::string p_name)
+{
+    auto made = [&]() -> Result<MaterialId>
+    {
+        COMPAGES_TRY(checkField(p_field.grid(),
+                                FieldLook{ .colors = p_look.colors, .low = p_look.low, .high = p_look.high,
+                                           .relief = 0.0f, .lit = false }));
+        shaders::ShaderPair pbr = shaders::pbr();
+        pbr.fragment().hook("main", ARROW_MAIN);
+        Material material;
+        COMPAGES_TRY_ASSIGN(
+            material,
+            Material::create(p_name + " arrows",
+                             { .family = ShaderFamily::PbrMinimal,
+                               .shaders = std::move(pbr),
+                               .state = { .depth_test = true, .cull = compages::gpu::CullMode::None },
+                               .see_through = std::nullopt }));
+        TextureAssetId colors;
+        COMPAGES_TRY_ASSIGN(colors, colorMapTexture(p_scene.assets(), p_look.colors));
+        material.textures = { { .sampler = "fieldColors", .texture = colors } };
+        return p_scene.assets().addMaterial({}, std::move(material));
+    }();
+    if (!made)
+    {
+        compages::gpu::reportError(made.error());
+        return p_scene.world().entity(std::move(p_name));
+    }
+    compages::world::Entity entity = p_scene.mesh(arrowsMesh(p_field, p_look), std::move(p_name));
+    p_scene.look(entity, made.value());
+    entity.get<MeshRenderer>().flags = RenderFlags::NoShadowCaster;
+    entity.set(FieldView{ .material = made.value(),
+                          .columns = p_field.grid().columns,
+                          .rows = p_field.grid().rows });
+    return entity;
+}
+
+// ----------------------------------------------------------------------------
+Status FieldViews::show(Scene& p_scene,
+                        compages::world::EntityId p_entity,
+                        compages::Field<compages::Vector2f> const& p_field,
+                        ArrowLook const& p_look)
+{
+    FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
+    if (view == nullptr)
+    {
+        return failure("show(entity, vectors) on an entity not made by show(vectors)");
+    }
+    COMPAGES_TRY(checkField(p_field.grid(),
+                            FieldLook{ .colors = p_look.colors, .low = p_look.low, .high = p_look.high,
+                                       .relief = 0.0f, .lit = false }));
+    Material* material = p_scene.assets().material(view->material);
+    if (material == nullptr)
+    {
+        return failure("show(entity, vectors): the entity lost its material");
+    }
+    TextureAssetId colors;
+    COMPAGES_TRY_ASSIGN(colors, colorMapTexture(p_scene.assets(), p_look.colors));
+    material->textures = { { .sampler = "fieldColors", .texture = colors } };
+    return p_scene.reshape(p_entity, arrowsMesh(p_field, p_look));
 }
 
 // ----------------------------------------------------------------------------

@@ -224,6 +224,22 @@ public:
                               FieldLook const& p_look);
 
     // ------------------------------------------------------------------------
+    //! \brief Draw a field of vectors as arrows on the ground of its grid (the
+    //! x and y of each vector go along x and z), coloured by their length.
+    //! The arrows are a mesh made on the CPU, made again by each new show().
+    // ------------------------------------------------------------------------
+    compages::world::Entity show(compages::Field<compages::Vector2f> const& p_field,
+                                 ArrowLook const& p_look,
+                                 std::string p_name);
+
+    // ------------------------------------------------------------------------
+    //! \brief New vectors, or another look, for arrows made by show().
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::Field<compages::Vector2f> const& p_field,
+                              ArrowLook const& p_look);
+
+    // ------------------------------------------------------------------------
     //! \brief Draw a volume: a box around its grid, see-through, whose
     //! colours add up along each ray (the colour map of the look; a value at
     //! the top of the range lets 5 % of the light through across the box).
