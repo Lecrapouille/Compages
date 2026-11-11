@@ -96,6 +96,22 @@ and the ground reads three pictures by name: `map.textures = { { .sampler = "gra
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
 - The shadow pass does not run the `deform` hook yet: an object moved by it casts the shadow of its first shape (the sea casts none).
 
+### Show a field: heat maps and coloured reliefs
+
+A `compages::Field<float>` (one value per point of a `Grid2D`, see [Fields](07-Architecture.md#-1-overview)) is drawn in one call. Each value becomes a colour of a **colour map**, and maybe a height:
+
+```cpp
+compages::renderer::FieldLook look{ .colors = compages::renderer::ColorMap::Inferno,
+                                    .low = 0.0f, .high = 300.0f,   // first and last colour
+                                    .relief = 0.0015f,             // metres per unit; 0 = flat
+                                    .lit = true };                 // false: exact colours, like a chart
+compages::world::Entity plate = scene.show(temperature, look, "Plate");
+// later, new values or another look, same grid size:
+COMPAGES_TRY(scene.show(plate, temperature, look));
+```
+
+The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a float picture, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. A field does not cast a shadow yet: the shadow pass does not run the hooks. `06m_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+
 ### Helpers
 
 Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.
@@ -381,6 +397,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `06j_SplitViews` | one world, two cameras |
 | `09b_ManyCubes` | sorting and culling |
 | `06l_CanvasPaint` | painting on a live texture |
+| `06m_HeatPlate` | a field shown as colours and relief |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

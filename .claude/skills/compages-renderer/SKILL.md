@@ -37,6 +37,10 @@ scene.draw(frame);                       // = update(frame) + render()
   `scene.look(entity, materialId)`; `scene.reshape(entity, mesh)` replaces a mesh in place. The
   Renderer sets family uniforms only if the shader reads them (`src/Renderer/Render/Offer.hpp`).
   Demos: `10e_Archipelago` (Sea.cpp), `10c_SweatAndDecals`.
+- Show a field: `scene.show(Field<float>, FieldLook{ .colors = ColorMap::Viridis|Inferno|Coolwarm|
+  Terrain|Grey, .low, .high, .relief, .lit }, name)` → entity with a `FieldView` component;
+  `scene.show(entity, field, look)` writes new values (same grid size). R32F texture + PBR hooks
+  (`src/Renderer/Scene/FieldShow.cpp`), no shadow. Demo `06m_HeatPlate`.
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
   (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),

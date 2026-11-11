@@ -96,6 +96,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | looks | `color(r, g, b)` `texture("a.jpg")` `unlit(r, g, b)` `normals()` `depth(near, far)` `seeThrough(look, opacity)` |
 | own material | `auto pbr = shaders::pbr(); pbr.vertex().hook("deform", glsl); pbr.fragment().hook("main", glsl);` then `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures = { { .sampler, .texture } }`, `assets().addMaterial(name, material)`, `scene.look(entity, materialId)` |
 | new geometry | `scene.reshape(entity, mesh)` (in place: its copies change too) |
+| show a field | `scene.show(field, FieldLook{ .colors, .low, .high, .relief, .lit }, name)` → entity; `scene.show(entity, field, look)` for new values; `ColorMap::Viridis` `Inferno` `Coolwarm` `Terrain` `Grey` |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |

@@ -14,7 +14,9 @@
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
 #include "Compages/Renderer/Components/Text.hpp"
+#include "Compages/Fields/Field.hpp"
 #include "Compages/Renderer/Scene/Environment.hpp"
+#include "Compages/Renderer/Scene/FieldLook.hpp"
 #include "Compages/Renderer/Render/Raycast.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 #include "Compages/Renderer/Render/DebugDraw.hpp"
@@ -173,6 +175,31 @@ public:
     //! copies keep the material they had.
     // ------------------------------------------------------------------------
     void look(compages::world::EntityId p_entity, MaterialId p_material);
+
+    // ------------------------------------------------------------------------
+    //! \brief Draw a field: one coloured point per value, on the ground of its
+    //! grid (x, z), raised by its value when the look has a relief.
+    //!
+    //! The values go to the GPU as they are; the colours and the heights are
+    //! made there, so a new range or new values cost no new mesh.
+    //! \param[in] p_field The values.
+    //! \param[in] p_look The colours, the range, the relief, the light.
+    //! \param[in] p_name The name of the entity.
+    //! \return The entity; an error (a range of zero, an empty field) is
+    //! returned by prepare().
+    // ------------------------------------------------------------------------
+    compages::world::Entity show(compages::Field<float> const& p_field,
+                                 FieldLook const& p_look,
+                                 std::string p_name);
+
+    // ------------------------------------------------------------------------
+    //! \brief Show new values, or the same with another look, on an entity
+    //! made by show(): the grid must keep its size.
+    //! \return Why it could not: not a field, another size, a range of zero.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::Field<float> const& p_field,
+                              FieldLook const& p_look);
 
     // ------------------------------------------------------------------------
     //! \brief Give an entity drawn by this Scene new geometry, in place: its

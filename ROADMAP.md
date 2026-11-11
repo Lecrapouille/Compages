@@ -103,8 +103,9 @@ again at any step.
 
 In rough order. Each item should make a demo shorter or possible.
 
-- [ ] `scene.show(field)` with a colour map and a range (heat map, coloured
-      terrain)
+- [x] `scene.show(field, look)` with a colour map and a range (heat map,
+      coloured terrain): values in a float texture, colours and relief made
+      by the PBR hooks; demo `06m_HeatPlate`
 - [ ] A field on the GPU: upload, partial update (`DirtyRange` exists), drawn
       without coming back to the CPU
 - [ ] Compute shaders reading and writing fields (`PingPong` of fields)
