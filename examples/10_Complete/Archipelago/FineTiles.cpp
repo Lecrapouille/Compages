@@ -159,7 +159,7 @@ compages::Status FineTiles::send(compages::renderer::Scene& p_scene,
             p_scene.assets().addTexture(name, pictureOf(name, p_patch)));
         detail.entity = p_scene.mesh(std::move(mesh), "Detail tile");
         p_scene.look(detail.entity, detail.texture);
-        COMPAGES_TRY(wear(p_scene, detail.entity, p_material));
+        p_scene.look(detail.entity, p_material);
         return p_scene.prepare();
     }
     compages::renderer::TextureAsset* picture =
@@ -168,7 +168,7 @@ compages::Status FineTiles::send(compages::renderer::Scene& p_scene,
     {
         return compages::failure("A fine tile lost its picture");
     }
-    COMPAGES_TRY(replaceMesh(p_scene, detail.entity, std::move(mesh)));
+    COMPAGES_TRY(p_scene.reshape(detail.entity, std::move(mesh)));
     COMPAGES_TRY(picture->texture.write(p_patch.picture));
     return picture->texture.generateMipmaps();
 }

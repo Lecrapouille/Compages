@@ -410,7 +410,7 @@ static void send(compages::renderer::Scene& p_scene,
     p_entity.enable(true);
     finish(p_mesh);
     if (const compages::Status sent =
-            replaceMesh(p_scene, p_entity, std::move(p_mesh));
+            p_scene.reshape(p_entity, std::move(p_mesh));
         !sent)
     {
         compages::gpu::reportError(sent.error());

@@ -336,6 +336,33 @@ void Scene::look(compages::world::EntityId p_entity, TextureAssetId p_albedo)
     m_impl->looks.wear(m_world, p_entity, instance);
 }
 
+void Scene::look(compages::world::EntityId p_entity, MaterialId p_material)
+{
+    MeshRenderer const* renderer = m_world.tryGet<MeshRenderer>(p_entity);
+    MaterialInstance const* current =
+        (renderer == nullptr)
+            ? nullptr
+            : m_assets->materialInstance(renderer->material_instance);
+    MaterialInstance instance =
+        (current == nullptr) ? m_impl->looks.instanceOf({}) : *current;
+    instance.material = p_material;
+    m_impl->looks.wear(m_world, p_entity, instance);
+}
+
+Status Scene::reshape(compages::world::EntityId p_entity, MeshAsset p_mesh)
+{
+    MeshRenderer const* renderer = m_world.tryGet<MeshRenderer>(p_entity);
+    MeshAsset* mesh =
+        (renderer == nullptr) ? nullptr : m_assets->mesh(renderer->mesh);
+    if (mesh == nullptr)
+    {
+        return failure("reshape() on an entity that is not drawn: make it "
+                       "with box(), sphere(), mesh()...");
+    }
+    *mesh = std::move(p_mesh);
+    return mesh->upload();
+}
+
 compages::world::Entity Scene::camera(std::string p_name)
 {
     compages::world::Entity camera =

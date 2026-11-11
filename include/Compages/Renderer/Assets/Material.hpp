@@ -16,8 +16,10 @@
 #include "Compages/Renderer/Assets/TextureAsset.hpp"
 #include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace compages::renderer
 {
@@ -37,6 +39,18 @@ enum class ShaderFamily
     Normals,
     //! \brief A flat colour that no light changes: a bulb, a marker.
     Unlit,
+};
+
+// ****************************************************************************
+//! \brief A texture that every object of a material reads, by the name of its
+//! sampler in the shader.
+// ****************************************************************************
+struct MaterialTexture
+{
+    //! \brief The \c uniform \c sampler2D of the shader.
+    std::string sampler;
+    //! \brief The picture.
+    TextureAssetId texture;
 };
 
 // ****************************************************************************
@@ -89,6 +103,16 @@ struct Material
     //! one): blended over what is behind, without writing the depth. Empty
     //! for a material made by hand, whose instances are then drawn solid.
     compages::gpu::Pipeline see_through;
+    //! \brief Pictures the Renderer binds for this material, on the units it
+    //! leaves free (FIRST_TEXTURE_UNIT on, MAX_TEXTURES of them), and whose
+    //! sampler it sets.
+    std::vector<MaterialTexture> textures;
+
+    //! \brief The first texture unit of textures: 0 is the albedo map, 1 and 7
+    //! the shadows.
+    static constexpr std::uint32_t FIRST_TEXTURE_UNIT = 2u;
+    //! \brief How many textures a material may have.
+    static constexpr std::size_t MAX_TEXTURES = 5u;
 
     // ------------------------------------------------------------------------
     //! \brief Compile the shaders and make the pipelines, for vertices of

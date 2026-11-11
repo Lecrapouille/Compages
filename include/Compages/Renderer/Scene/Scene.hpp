@@ -167,6 +167,22 @@ public:
     // ------------------------------------------------------------------------
     void look(compages::world::EntityId p_entity, TextureAssetId p_albedo);
 
+    // ------------------------------------------------------------------------
+    //! \brief Draw an entity with a material of the catalog (made with
+    //! Material::create()), keeping its colour, picture and opacity. Its
+    //! copies keep the material they had.
+    // ------------------------------------------------------------------------
+    void look(compages::world::EntityId p_entity, MaterialId p_material);
+
+    // ------------------------------------------------------------------------
+    //! \brief Give an entity drawn by this Scene new geometry, in place: its
+    //! copies, which share its mesh, change with it.
+    //! \return Why the mesh could not be uploaded, or that the entity is not
+    //! drawn.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status reshape(compages::world::EntityId p_entity,
+                                 MeshAsset p_mesh);
+
     // --- Cameras and lights --------------------------------------------------
 
     // ------------------------------------------------------------------------

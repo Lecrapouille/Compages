@@ -61,16 +61,4 @@ meshOf(Patch const& p_patch, Square const& p_square, float p_skirt);
 //! made later.
 [[nodiscard]] compages::renderer::MeshAsset hiddenMesh();
 
-//! \brief Give the entity a new mesh, sent to the GPU now.
-[[nodiscard]] compages::Status
-replaceMesh(compages::renderer::Scene const& p_scene,
-            compages::world::Entity p_entity,
-            compages::renderer::MeshAsset p_mesh);
-
-//! \brief Draw the entity with another material (its instance keeps its
-//! picture and its colour).
-[[nodiscard]] compages::Status wear(compages::renderer::Scene const& p_scene,
-                                    compages::world::Entity p_entity,
-                                    compages::renderer::MaterialId p_material);
-
 } // namespace examples::archipelago

@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Render/ShadowPass.hpp"
+#include "Renderer/Render/Offer.hpp"
 
 #include "Compages/Core/Transformation.hpp"
 #include "Compages/GPU/VertexLayout.hpp"
@@ -71,24 +72,24 @@ Status ShadowPass::render(RenderSnapshot const& p_snapshot, AssetManager& p_asse
 //! atlas of the lamps on LAMP_SHADOW_UNIT.
 void ShadowPass::bind(compages::renderer::Material& p_material) const
 {
-    p_material.program.set("lampShadows", m_lamps.enabled);
-    p_material.program.set("lampFaces",
+    offer(p_material.program, "lampShadows", m_lamps.enabled);
+    offer(p_material.program, "lampFaces",
                            std::span<const compages::Matrix44f>(m_lamps.faces.data(), m_lamps.faces.size()));
     if (m_lamps.any)
     {
         m_lamp_depth.bind(LAMP_SHADOW_UNIT);
     }
-    p_material.program.set("lampShadowMap", int(LAMP_SHADOW_UNIT));
+    offer(p_material.program, "lampShadowMap", int(LAMP_SHADOW_UNIT));
 
-    p_material.program.set("shadowEnabled", m_sun.enabled ? 1 : 0);
-    p_material.program.set("lightViewProj", m_sun.light_view_projection);
-    p_material.program.set("shadowTexel", m_sun.texel);
-    p_material.program.set("shadowBias", m_sun.bias);
+    offer(p_material.program, "shadowEnabled", m_sun.enabled ? 1 : 0);
+    offer(p_material.program, "lightViewProj", m_sun.light_view_projection);
+    offer(p_material.program, "shadowTexel", m_sun.texel);
+    offer(p_material.program, "shadowBias", m_sun.bias);
     if (m_sun.enabled)
     {
         m_sun_depth.bind(1u);
     }
-    p_material.program.set("shadowMap", 1);
+    offer(p_material.program, "shadowMap", 1);
 }
 
 Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,

@@ -35,25 +35,32 @@ static constexpr float SURFACE_WITHIN = compages::toMetres(6.0_km);
 compages::Status Sea::create(compages::renderer::Scene& p_scene)
 {
     // The pictures of the ground (ambientCG, CC0): sRGB, repeated, with
-    // mipmaps; on the units the Renderer leaves free (0: the albedo, 1 and
-    // 7: the shadows).
-    const std::array<char const*, 3> grounds = { "terrain/grass.jpg",
-                                                 "terrain/sand.jpg",
-                                                 "terrain/rock.jpg" };
-    for (std::size_t k = 0u; k < grounds.size(); ++k)
+    // mipmaps; the map material reads them by the names of its samplers.
+    const std::array<std::pair<char const*, char const*>, 3> grounds = {
+        std::pair{ "grassMap", "terrain/grass.jpg" },
+        std::pair{ "sandMap", "terrain/sand.jpg" },
+        std::pair{ "rockMap", "terrain/rock.jpg" }
+    };
+    m_grounds.clear();
+    for (auto const& [sampler, name] : grounds)
     {
-        const std::filesystem::path file = dataPath(grounds[k]);
+        const std::filesystem::path file = dataPath(name);
         if (file.empty())
         {
-            return compages::failure(
-                std::string(grounds[k]) +
-                " is missing from external/Compages-data/");
+            return compages::failure(std::string(name) +
+                                     " is missing from external/Compages-data/");
         }
         compages::gpu::LoadOptions options;
         options.srgb = true;
         options.wrap = compages::gpu::Wrap::Repeat;
-        COMPAGES_TRY_ASSIGN(m_grounds[k],
+        compages::renderer::TextureAsset picture;
+        picture.name = name;
+        COMPAGES_TRY_ASSIGN(picture.texture,
                             compages::gpu::Texture::fromFile(file, options));
+        compages::renderer::TextureAssetId id;
+        COMPAGES_TRY_ASSIGN(
+            id, p_scene.assets().addTexture(name, std::move(picture)));
+        m_grounds.push_back({ .sampler = sampler, .texture = id });
     }
     return makeMaterials(p_scene);
 }
@@ -84,9 +91,7 @@ compages::Status Sea::makeMaterials(compages::renderer::Scene& p_scene)
               .shaders = std::move(ground),
               .state = opaque,
               .see_through = std::nullopt }));
-    map.program.set("grassMap", 2);
-    map.program.set("sandMap", 3);
-    map.program.set("rockMap", 4);
+    map.textures = m_grounds;
     COMPAGES_TRY_ASSIGN(m_map,
                         p_scene.assets().addMaterial(map.name, std::move(map)));
 
@@ -158,14 +163,14 @@ compages::Status Sea::show(compages::renderer::Scene& p_scene,
             {
                 compages::world::Entity tile =
                     m_tiles[std::size_t((tz * TILES) + tx)];
-                COMPAGES_TRY(replaceMesh(p_scene, tile, std::move(mesh)));
+                COMPAGES_TRY(p_scene.reshape(tile, std::move(mesh)));
                 tile.enable(true);
                 continue;
             }
             compages::world::Entity tile =
                 p_scene.mesh(std::move(mesh), "Map tile");
             p_scene.look(tile, m_picture);
-            COMPAGES_TRY(wear(p_scene, tile, m_map));
+            p_scene.look(tile, m_map);
             m_tiles.push_back(tile);
         }
     }
@@ -181,7 +186,7 @@ compages::Status Sea::makeOceanAndSurface(compages::renderer::Scene& p_scene)
 {
     m_ocean = p_scene.mesh(oceanMesh(), "Ocean");
     p_scene.look(m_ocean, m_picture);
-    COMPAGES_TRY(wear(p_scene, m_ocean, m_map));
+    p_scene.look(m_ocean, m_map);
     m_ocean.get<compages::renderer::MeshRenderer>().flags =
         compages::renderer::RenderFlags::NoShadowCaster;
 
@@ -189,7 +194,7 @@ compages::Status Sea::makeOceanAndSurface(compages::renderer::Scene& p_scene)
     p_scene.look(m_surface, m_picture);
     m_surface.get<compages::renderer::MeshRenderer>().flags =
         compages::renderer::RenderFlags::NoShadowCaster;
-    COMPAGES_TRY(wear(p_scene, m_surface, m_surface_material));
+    p_scene.look(m_surface, m_surface_material);
     if (compages::renderer::MaterialInstance* instance =
             p_scene.assets().materialInstance(
                 m_surface.get<compages::renderer::MeshRenderer>()
@@ -246,10 +251,6 @@ void Sea::update(compages::renderer::Scene& p_scene,
             p_scene.assets().material(m_surface_material))
     {
         surface->program.set("gridStep", step);
-    }
-    for (std::size_t k = 0u; k < m_grounds.size(); ++k)
-    {
-        m_grounds[k].bind(std::uint32_t(2u + k));
     }
 }
 

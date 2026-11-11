@@ -235,40 +235,4 @@ MeshAsset hiddenMesh()
     return mesh;
 }
 
-// ----------------------------------------------------------------------------
-compages::Status replaceMesh(compages::renderer::Scene const& p_scene,
-                             compages::world::Entity p_entity,
-                             compages::renderer::MeshAsset p_mesh)
-{
-    MeshAsset* current = p_scene.assets().mesh(
-        p_entity.get<compages::renderer::MeshRenderer>().mesh);
-    if (current == nullptr)
-    {
-        return compages::failure("An entity of the archipelago lost its mesh");
-    }
-    current->source_vertices = std::move(p_mesh.source_vertices);
-    current->source_indices = std::move(p_mesh.source_indices);
-    current->index_count = p_mesh.index_count;
-    current->local_bounds = p_mesh.local_bounds;
-    current->releaseGpu();
-    return current->upload();
-}
-
-// ----------------------------------------------------------------------------
-compages::Status wear(compages::renderer::Scene const& p_scene,
-                      compages::world::Entity p_entity,
-                      compages::renderer::MaterialId p_material)
-{
-    compages::renderer::MaterialInstance* instance =
-        p_scene.assets().materialInstance(
-            p_entity.get<compages::renderer::MeshRenderer>().material_instance);
-    if (instance == nullptr)
-    {
-        return compages::failure(
-            "An entity of the archipelago has no material instance");
-    }
-    instance->material = p_material;
-    return compages::success();
-}
-
 } // namespace examples::archipelago

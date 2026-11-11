@@ -11,6 +11,7 @@
 
 #include "Compages/Core/Result.hpp"
 #include "Compages/GPU/Texture.hpp"
+#include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 
@@ -52,8 +53,7 @@ public:
                                         Patch const& p_base);
 
     //! \brief Each frame: the surface under the camera (sized to what it
-    //! sees, hidden from afar), the clock of the waves, the pictures of the
-    //! ground on their units.
+    //! sees, hidden from afar), the clock of the waves.
     void update(compages::renderer::Scene& p_scene,
                 compages::world::RigController const& p_rig,
                 float p_time);
@@ -81,7 +81,7 @@ private:
     compages::renderer::MaterialId m_surface_material{};
     compages::renderer::TextureAssetId m_picture{};
     //! \brief The pictures of the ground: grass, sand, rock.
-    std::array<compages::gpu::Texture, 3> m_grounds;
+    std::vector<compages::renderer::MaterialTexture> m_grounds;
     std::vector<compages::world::Entity> m_tiles;
     compages::world::Entity m_ocean;
     compages::world::Entity m_surface;

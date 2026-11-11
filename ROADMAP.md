@@ -74,8 +74,12 @@ again at any step.
 ### P2: materials
 
 - [x] `Material::create(name, MaterialDesc)`
-- [ ] Textures of a material by sampler name, bound by the Renderer
-- [ ] `replaceMesh` and `wear` of Archipelago moved into the Renderer
+- [x] Textures of a material by sampler name, bound by the Renderer
+      (`Material::textures`, units 2 to 6)
+- [x] `replaceMesh` and `wear` of Archipelago moved into the Renderer:
+      `Scene::reshape(entity, mesh)`, `Scene::look(entity, MaterialId)`
+- [x] The Renderer sets the uniforms of a family only when the shader reads
+      them, so a `main` hook may leave the lights out
 - [ ] Shared uniforms of Sea in a `TypedUniformBlock` (only if it is shorter)
 
 ### P3: fields

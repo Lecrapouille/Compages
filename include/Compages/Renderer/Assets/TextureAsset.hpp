@@ -46,7 +46,8 @@ struct TextureAsset
         COMPAGES_TRY_ASSIGN(texture,
                             compages::gpu::Texture::create(description));
         COMPAGES_TRY(texture.write(pixels));
-        return texture.generateMipmaps();
+        // A picture of one pixel, or made with one level, has none to build.
+        return (texture.levels() > 1u) ? texture.generateMipmaps() : success();
     }
 };
 
