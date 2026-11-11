@@ -95,6 +95,7 @@ and the ground reads three pictures by name: `map.textures = { { .sampler = "gra
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
 - The shadow pass does not run the `deform` hook yet: an object moved by it casts the shadow of its first shape (the sea casts none).
+- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `06p_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
 
 ### Show a field: heat maps and coloured reliefs
 
@@ -421,6 +422,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `06m_HeatPlate` | a field shown as colours and relief |
 | `06n_RippleTank` | a field computed and drawn on the GPU |
 | `06o_FieldProbe` | the value of a field under the mouse |
+| `06p_BimetalBeam` | a CPU model bends a mesh with the hook `deform` |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

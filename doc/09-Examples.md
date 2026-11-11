@@ -165,6 +165,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06m_HeatPlate` | a field in one call: heat on a `Field<float>`, `scene.show(field, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_HeatPlate.png" alt="06m_HeatPlate" width="200"> |
 | `06n_RippleTank` | waves computed and drawn on the GPU: a compute shader, `scene.show(grid, buffer, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_RippleTank.png" alt="06n_RippleTank" width="200"> |
 | `06o_FieldProbe` | the altitude under the mouse: `scene.probe(field, look, pixel)`, a `Tooltip` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_FieldProbe.png" alt="06o_FieldProbe" width="200"> |
+| `06p_BimetalBeam` | a CPU model bends a mesh on the GPU: a bimetal strip heated by a flame, the hook `deform` reads a storage buffer | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06p_BimetalBeam.png" alt="06p_BimetalBeam" width="200"> |
 
 ---
 

@@ -121,9 +121,11 @@ In rough order. Each item should make a demo shorter or possible.
 - [ ] Custom per-instance parameters of a material (typed block)
 - [ ] Hot reload: watch the files listed by `ShaderSource`
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
-- [ ] Demos: a bimetal beam bending with heat (heat equation on a
-      `Field<float>`, the beam bent by a `deform` hook); smoke (stable fluids
-      in 2D with `PingPong`)
+- [x] Demo: a bimetal beam bending with heat (`06p_BimetalBeam`: heat
+      equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
+      `deform` hook reading a storage buffer)
+- [x] Demos of fields: `06m_HeatPlate`, `06n_RippleTank`, `06o_FieldProbe`
+- [ ] Demo: smoke (stable fluids in 2D with `PingPong`)
 
 ## Earlier decisions (audit of 2026-11-06)
 
