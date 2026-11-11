@@ -9,7 +9,9 @@
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/Renderer/Components/FieldView.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/Renderer/Procedural/ShaderLib.hpp"
+#include "Compages/GPU/Texture.hpp"
 #include "Renderer/Visualization/FieldViews.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 
@@ -106,6 +108,50 @@ void main()
     {
         oColor = vec4(toSrgb(colour), opacity);
     }
+}
+)";
+
+// ----------------------------------------------------------------------------
+//! A volume: from where the ray enters the box (this fragment) to where it
+//! leaves it, steps through the 3D picture of the values; each step adds its
+//! colour and hides what is behind by 1 - exp(-k t dl) (emission and
+//! absorption), k chosen so that the top of the range lets 5 % of the light
+//! through across the box.
+// ----------------------------------------------------------------------------
+constexpr char const* VOLUME_MAIN = R"(uniform sampler3D fieldVolume;
+uniform sampler2D fieldColors;
+uniform float fieldLow;
+uniform float fieldHigh;
+uniform vec3 volumeMin;
+uniform vec3 volumeMax;
+
+const int STEPS = 160;
+
+void main()
+{
+    vec3 dir = normalize(vWorldPos - cameraPos);
+    vec3 inverse = 1.0 / dir;
+    vec3 far = max((volumeMin - vWorldPos) * inverse, (volumeMax - vWorldPos) * inverse);
+    float through = max(min(min(far.x, far.y), far.z), 0.0);
+    float dl = through / float(STEPS);
+    vec3 size = volumeMax - volumeMin;
+    vec3 texels = vec3(textureSize(fieldVolume, 0));
+    float k = 3.0 / max(length(size), 1e-6);
+    float width = float(textureSize(fieldColors, 0).x);
+    vec3 colour = vec3(0.0);
+    float alpha = 0.0;
+    for (int s = 0; (s < STEPS) && (alpha < 0.99); ++s)
+    {
+        vec3 p = vWorldPos + dir * (dl * (float(s) + 0.5));
+        // The grid points are the centres of the texels.
+        vec3 at = (((p - volumeMin) / size) * (texels - 1.0) + 0.5) / texels;
+        float t = clamp((texture(fieldVolume, at).r - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
+        float a = 1.0 - exp(-k * t * dl);
+        vec3 c = texture(fieldColors, vec2((t * (width - 1.0) + 0.5) / width, 0.5)).rgb;
+        colour += (1.0 - alpha) * a * c;
+        alpha += (1.0 - alpha) * a;
+    }
+    oColor = vec4(toSrgb(colour / max(alpha, 1e-4)), alpha * opacity);
 }
 )";
 
@@ -287,7 +333,144 @@ Status applyLook(AssetManager& p_assets,
     return success();
 }
 
+//! \brief The corners of the box of a volume.
+std::pair<compages::Vector3f, compages::Vector3f> boxOf(compages::Grid3D const& p_grid)
+{
+    const compages::Vector3f a = p_grid.point(0, 0, 0);
+    const compages::Vector3f b = p_grid.point(p_grid.columns - 1, p_grid.rows - 1, p_grid.layers - 1);
+    return { compages::Vector3f(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z)),
+             compages::Vector3f(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z)) };
+}
+
+//! \brief The range, the colours and the box of a volume.
+Status applyVolumeLook(AssetManager& p_assets,
+                       Material& p_material,
+                       TextureAssetId p_volume,
+                       compages::Grid3D const& p_grid,
+                       FieldLook const& p_look)
+{
+    TextureAssetId colors;
+    COMPAGES_TRY_ASSIGN(colors, colorMapTexture(p_assets, p_look.colors));
+    p_material.textures = { { .sampler = "fieldVolume", .texture = p_volume },
+                            { .sampler = "fieldColors", .texture = colors } };
+    const auto [low, high] = boxOf(p_grid);
+    p_material.program.set("volumeMin", low);
+    p_material.program.set("volumeMax", high);
+    p_material.program.set("fieldLow", p_look.low);
+    p_material.program.set("fieldHigh", p_look.high);
+    return success();
+}
+
+Status checkVolume(compages::Grid3D const& p_grid, FieldLook const& p_look)
+{
+    if ((p_grid.columns < 2) || (p_grid.rows < 2) || (p_grid.layers < 2))
+    {
+        return failure("show() needs a volume of at least 2 x 2 x 2 points");
+    }
+    return checkField(compages::Grid2D{ .columns = 2, .rows = 2 }, p_look);
+}
+
 } // namespace
+
+// ----------------------------------------------------------------------------
+compages::world::Entity FieldViews::show(Scene& p_scene,
+                                         compages::Field<float, compages::Grid3D> const& p_volume,
+                                         FieldLook const& p_look,
+                                         std::string p_name)
+{
+    compages::Grid3D const& grid = p_volume.grid();
+    if (const Status valid = checkVolume(grid, p_look); !valid)
+    {
+        compages::gpu::reportError(valid.error());
+        return p_scene.world().entity(std::move(p_name));
+    }
+    const auto [low, high] = boxOf(grid);
+    auto made = [&]() -> Result<std::pair<MeshAsset, FieldView>>
+    {
+        MeshAsset box;
+        COMPAGES_TRY_ASSIGN(box, makeBox(high.x - low.x, high.y - low.y, high.z - low.z));
+        const compages::Vector3f centre = (low + high) * 0.5f;
+        for (MeshVertex& corner : box.source_vertices)
+        {
+            corner.position = corner.position + centre;
+        }
+        box.releaseGpu();
+        box.local_bounds = compages::AABB::fromCorners(low, high);
+
+        TextureAsset values;
+        values.name = p_name + " volume";
+        COMPAGES_TRY_ASSIGN(values.texture, compages::gpu::Texture::fromField(p_volume));
+        FieldView view{ .material = {},
+                        .columns = grid.columns,
+                        .rows = grid.rows,
+                        .layers = grid.layers,
+                        .volume = {} };
+        COMPAGES_TRY_ASSIGN(view.volume, p_scene.assets().addTexture({}, std::move(values)));
+
+        shaders::ShaderPair pbr = shaders::pbr();
+        pbr.fragment().hook("main", VOLUME_MAIN);
+        const compages::gpu::RenderState front{ .depth_test = true, .cull = compages::gpu::CullMode::Back };
+        Material material;
+        COMPAGES_TRY_ASSIGN(
+            material,
+            Material::create(p_name + " volume",
+                             { .family = ShaderFamily::PbrMinimal,
+                               .shaders = std::move(pbr),
+                               .state = front,
+                               .see_through = compages::gpu::RenderState{
+                                   .depth_test = true,
+                                   .depth_write = false,
+                                   .blend = compages::gpu::Blend::alpha(),
+                                   .cull = compages::gpu::CullMode::Back } }));
+        COMPAGES_TRY(applyVolumeLook(p_scene.assets(), material, view.volume, grid, p_look));
+        COMPAGES_TRY_ASSIGN(view.material, p_scene.assets().addMaterial({}, std::move(material)));
+        return std::pair{ std::move(box), view };
+    }();
+    if (!made)
+    {
+        compages::gpu::reportError(made.error());
+        return p_scene.world().entity(std::move(p_name));
+    }
+    auto [box, view] = made.take();
+    compages::world::Entity entity = p_scene.mesh(std::move(box), std::move(p_name));
+    p_scene.look(entity, view.material);
+    MeshRenderer& renderer = entity.get<MeshRenderer>();
+    // See-through, drawn after the solid ones, and casting no shadow.
+    renderer.flags = RenderFlags::NoShadowCaster;
+    if (MaterialInstance* instance = p_scene.assets().materialInstance(renderer.material_instance))
+    {
+        instance->opacity = 0.999f;
+    }
+    entity.set(view);
+    return entity;
+}
+
+// ----------------------------------------------------------------------------
+Status FieldViews::show(Scene& p_scene,
+                        compages::world::EntityId p_entity,
+                        compages::Field<float, compages::Grid3D> const& p_volume,
+                        FieldLook const& p_look)
+{
+    FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
+    compages::Grid3D const& grid = p_volume.grid();
+    if ((view == nullptr) || !view->volume.valid())
+    {
+        return failure("show(entity, volume) on an entity not made by show(volume)");
+    }
+    if ((view->columns != grid.columns) || (view->rows != grid.rows) || (view->layers != grid.layers))
+    {
+        return failure("show(entity, volume) with another size of grid");
+    }
+    COMPAGES_TRY(checkVolume(grid, p_look));
+    TextureAsset* values = p_scene.assets().texture(view->volume);
+    Material* material = p_scene.assets().material(view->material);
+    if ((values == nullptr) || (material == nullptr))
+    {
+        return failure("show(entity, volume): the entity lost its volume");
+    }
+    COMPAGES_TRY(values->texture.write(std::as_bytes(p_volume.values())));
+    return applyVolumeLook(p_scene.assets(), *material, view->volume, grid, p_look);
+}
 
 // ----------------------------------------------------------------------------
 Result<compages::gpu::BufferHandle>

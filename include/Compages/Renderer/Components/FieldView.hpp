@@ -23,6 +23,9 @@ struct FieldView
     //! \brief The size of the grid; new values must have the same.
     int columns = 0;
     int rows = 0;
+    //! \brief For a volume: its layers, and the 3D picture of its values.
+    int layers = 0;
+    TextureAssetId volume{};
 };
 
 } // namespace compages::renderer

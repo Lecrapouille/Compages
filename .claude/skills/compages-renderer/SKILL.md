@@ -45,7 +45,9 @@ scene.draw(frame);                       // = update(frame) + render()
   relief clamped to the range; sun shadow from its own program (`Material::casts_shadow`, made by
   `Material::create` when the vertex replaces "deform"; no lamp shadow). `scene.probe(field, look, pixel)` → point + value.
   `Material::buffers` = storage buffers bound by the Renderer. Demos `11a_HeatPlate`,
-  `11b_RippleTank` (compute), `11c_FieldProbe` (Tooltip).
+  `11b_RippleTank` (compute), `11c_FieldProbe` (Tooltip). Volumes: `scene.show(Field<float, Grid3D>,
+  look, name)` (box + ray marching a 3D texture, see-through, no shadow), `compages::slice()`
+  (`Fields/Slice.hpp`) for cuts; demos `11e_Smoke`, `11f_Volume`.
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
   (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),

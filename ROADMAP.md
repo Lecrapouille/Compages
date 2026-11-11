@@ -114,7 +114,9 @@ In rough order. Each item should make a demo shorter or possible.
       turning buffers; a `PingPong` of a `Field` type is not needed so far)
 - [x] `Grid3D` and `Field<T, Grid3D>` (one `Field` template on its grid; same
       order as the texels of a 3D texture: `gpu::Texture::fromField()`)
-- [ ] Volume rendering, slices, isosurfaces
+- [x] Volume rendering (`scene.show(Field<float, Grid3D>)`, ray marching a 3D
+      texture) and slices (`compages::slice()`), demo `11f_Volume`
+- [ ] Isosurfaces (marching cubes)
 - [ ] Vector fields drawn as arrows; streamlines
 - [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
 - [ ] Inspection: follow a point over time (a curve), slices

@@ -49,6 +49,15 @@ public:
                               compages::gpu::StorageBuffer<float> const& p_values,
                               FieldLook const& p_look);
 
+    compages::world::Entity show(Scene& p_scene,
+                                 compages::Field<float, compages::Grid3D> const& p_volume,
+                                 FieldLook const& p_look,
+                                 std::string p_name);
+    [[nodiscard]] Status show(Scene& p_scene,
+                              compages::world::EntityId p_entity,
+                              compages::Field<float, compages::Grid3D> const& p_volume,
+                              FieldLook const& p_look);
+
 private:
 
     //! \brief The buffer of a field given from the CPU, written with these

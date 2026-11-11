@@ -246,6 +246,7 @@ Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on 
 | `11c_FieldProbe` | the altitude under the mouse: `scene.probe(field, look, pixel)`, a `Tooltip` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11c_FieldProbe.png" alt="11c_FieldProbe" width="200"> |
 | `11d_BimetalBeam` | a CPU model bends a mesh on the GPU: a bimetal strip heated by a flame, the hook `deform` reads a storage buffer | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11d_BimetalBeam.png" alt="11d_BimetalBeam" width="200"> |
 | `11e_Smoke` | smoke rising from a burner: a 2D fluid on the GPU (Stable Fluids), five kernels from one GLSL text with `ShaderSource::define` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11e_Smoke.png" alt="11e_Smoke" width="200"> |
+| `11f_Volume` | the warm air of a room: a `Field<float, Grid3D>` seen through (`scene.show(volume, look)`) and cut (`compages::slice()`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11f_Volume.png" alt="11f_Volume" width="200"> |
 
 ---
 

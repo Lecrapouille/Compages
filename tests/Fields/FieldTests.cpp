@@ -8,6 +8,7 @@
 #include "Compages/Fields/Field.hpp"
 #include "Compages/Fields/Grid2D.hpp"
 #include "Compages/Fields/HeightField.hpp"
+#include "Compages/Fields/Slice.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -176,4 +177,23 @@ TEST(Grid3D, CarriesAFieldSampledTrilinearly)
     EXPECT_FLOAT_EQ(field.sample(Vector3f(0.5f, 0.5f, 0.5f)), 1.0f);
     EXPECT_FLOAT_EQ(field.sample(Vector3f(5.0f, 5.0f, 5.0f)), 8.0f);
     EXPECT_FLOAT_EQ(field[grid.index(1, 1, 1)], 8.0f);
+}
+
+TEST(Slice, CutsALayerOfAVolume)
+{
+    const compages::Grid3D grid{ .columns = 4, .rows = 3, .layers = 2, .origin = { 1.0f, 2.0f, 3.0f }, .spacing = 0.5f };
+    Field<float, compages::Grid3D> volume(grid, 0.0f);
+    for (std::size_t k = 0u; k < volume.size(); ++k)
+    {
+        volume[k] = float(k);
+    }
+    const Field<float> across_y = compages::slice(volume, compages::Axis::Y, 2);
+    EXPECT_EQ(across_y.grid().columns, 4);
+    EXPECT_EQ(across_y.grid().rows, 2);
+    EXPECT_FLOAT_EQ(across_y.grid().origin.y, 3.0f); // z
+    EXPECT_FLOAT_EQ(across_y(3, 1), volume(3, 2, 1));
+    const Field<float> across_x = compages::slice(volume, compages::Axis::X, 1);
+    EXPECT_FLOAT_EQ(across_x(2, 1), volume(1, 2, 1));
+    const Field<float> across_z = compages::slice(volume, compages::Axis::Z, 9); // clamped to 1
+    EXPECT_FLOAT_EQ(across_z(3, 2), volume(3, 2, 1));
 }

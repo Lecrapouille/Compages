@@ -70,6 +70,7 @@
 #include "11_Science/11c_FieldProbe.hpp"
 #include "11_Science/11d_BimetalBeam.hpp"
 #include "11_Science/11e_Smoke.hpp"
+#include "11_Science/11f_Volume.hpp"
 
 // One record per active source, in gallery order:
 // type, runtime name, chapter folder, source, former demos covered,
@@ -135,7 +136,8 @@
     X(RippleTank, "11b_RippleTank", "11_Science", "11_Science/11b_RippleTank.cpp", "-", 0, "-") \
     X(FieldProbe, "11c_FieldProbe", "11_Science", "11_Science/11c_FieldProbe.cpp", "-", 0, "-") \
     X(BimetalBeam, "11d_BimetalBeam", "11_Science", "11_Science/11d_BimetalBeam.cpp", "-", 0, "-") \
-    X(Smoke, "11e_Smoke", "11_Science", "11_Science/11e_Smoke.cpp", "-", 0, "-")
+    X(Smoke, "11e_Smoke", "11_Science", "11_Science/11e_Smoke.cpp", "-", 0, "-") \
+    X(Volume, "11f_Volume", "11_Science", "11_Science/11f_Volume.cpp", "-", 0, "-")
 
 namespace examples
 {

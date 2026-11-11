@@ -224,6 +224,27 @@ public:
                               FieldLook const& p_look);
 
     // ------------------------------------------------------------------------
+    //! \brief Draw a volume: a box around its grid, see-through, whose
+    //! colours add up along each ray (the colour map of the look; a value at
+    //! the top of the range lets 5 % of the light through across the box).
+    //! The relief and the light of the look are not used. The values go to
+    //! the GPU as a 3D texture.
+    //! \return The entity; an error (a range of zero, fewer than 2 points
+    //! along an axis) is returned by prepare().
+    // ------------------------------------------------------------------------
+    compages::world::Entity show(compages::Field<float, compages::Grid3D> const& p_volume,
+                                 FieldLook const& p_look,
+                                 std::string p_name);
+
+    // ------------------------------------------------------------------------
+    //! \brief New values, or another look, for a volume made by show(): the
+    //! grid must keep its size.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::Field<float, compages::Grid3D> const& p_volume,
+                              FieldLook const& p_look);
+
+    // ------------------------------------------------------------------------
     //! \brief Read a field under a pixel of the last picture: the point the
     //! ray of the pixel meets on the field drawn with this look, and the value
     //! there. For a field on the ground of its grid, as show() draws it.

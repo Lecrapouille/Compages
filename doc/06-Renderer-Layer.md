@@ -134,6 +134,16 @@ if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
 
 `11c_FieldProbe` writes the altitude of an island next to the mouse.
 
+**Volumes.** A `Field<float, Grid3D>` is shown as a see-through box: along each ray of the picture, the colours of the values add up (a value at the top of the range lets 5 % of the light through across the box; the relief and the light of the look are not used). The values go to the GPU as a 3D texture. `compages::slice(volume, Axis::Y, layer)` takes one layer as a 2D field, which `show()` lays on the ground: move its entity to the height of the layer.
+
+```cpp
+m_room = m_scene.show(m_heat, m_look, "Room");   // a Field<float, Grid3D>
+m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, layer), m_cut_look, "Cut");
+m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
+```
+
+`11f_Volume` shows the warm air of a room this way.
+
 ### Helpers
 
 Lines that help to read a scene, one line each. They are entities or components like any other: move them, hang them from a parent, remove them.
@@ -423,6 +433,8 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `11b_RippleTank` | a field computed and drawn on the GPU |
 | `11c_FieldProbe` | the value of a field under the mouse |
 | `11d_BimetalBeam` | a CPU model bends a mesh with the hook `deform` |
+| `11e_Smoke` | a 2D fluid computed on the GPU |
+| `11f_Volume` | a volume seen through and cut |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

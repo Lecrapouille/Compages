@@ -167,3 +167,19 @@ TEST_F(FieldShowTest, ProbesTheValueUnderAPixel)
     EXPECT_FALSE(m_scene->probe(compages::Field<float>(far, 0.25f), m_grey,
                                 compages::Vector2f(16.0f, 16.0f)).has_value());
 }
+
+// A volume: bright where its values are high, see-through where they are low.
+TEST_F(FieldShowTest, DrawsAVolume)
+{
+    const compages::Grid3D grid{ .columns = 8, .rows = 8, .layers = 8, .origin = { -1.0f, -1.0f, -1.0f }, .spacing = 2.0f / 7.0f };
+    compages::Field<float, compages::Grid3D> cloud(grid, 1.0f);
+    compages::world::Entity box = m_scene->show(cloud, m_grey, "Cloud");
+    EXPECT_GT(centre(), 150);
+
+    cloud.fill(0.0f);
+    ASSERT_TRUE(bool(m_scene->show(box, cloud, m_grey)));
+    EXPECT_LT(centre(), 10);
+
+    const compages::Grid3D other{ .columns = 4, .rows = 8, .layers = 8, .origin = { 0.0f, 0.0f, 0.0f }, .spacing = 1.0f };
+    EXPECT_FALSE(bool(m_scene->show(box, compages::Field<float, compages::Grid3D>(other, 0.0f), m_grey)));
+}
