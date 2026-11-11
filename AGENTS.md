@@ -5,7 +5,8 @@ one above: **GPU** (`compages::gpu`, shader-named data, `Drawable`, compute),
 **World** (`compages::world`, scene graph + EnTT ECS, routines, joints,
 headless), **Renderer** (`compages::renderer`, `Scene`, assets, snapshot,
 drawing). Shared vocabulary directly in `compages` (vectors, matrices,
-`Frame`, `Result`), from `Core/`. OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
+`Frame`, `Result`), from `Core/`; structured data (`Grid2D`, `Field<T>`,
+`intersect` with a height field) directly in `compages`, from `Fields/`. OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
 `.makefile/`, no CMake). Dual license GPL-3.0-or-later / commercial.
 
 Read only what the task needs. Load a skill instead of reading the docs:
@@ -23,7 +24,7 @@ Read only what the task needs. Load a skill instead of reading the docs:
 ## Layout
 
 ```text
-include/Compages/   public, installed: Core/ GPU/ World/ Renderer/ + Compages.hpp
+include/Compages/   public, installed: Core/ Fields/ GPU/ World/ Renderer/ + Compages.hpp
                     World/: Components/ Spatial/ Kinematics/ Import/ Controllers/
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
@@ -31,7 +32,7 @@ examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-e
                     01_FirstSteps/ … 10_Complete/ = chapters, read in order;
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
                     Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
-tests/              GoogleTest: Core/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
+tests/              GoogleTest: Core/ Fields/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
 external/           external.mk declares the third parties, versions.lock their commits;
                     external/Compages-data/ = demo assets
 ```
@@ -48,8 +49,9 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
 
 ## Rules that are easy to break
 
-- Include direction: `gpu` and `world` include only `Core`; `renderer`
-  includes `world`, `gpu`, `Core`. `world` never sees a `gpu::` type; public
+- Include direction: `Fields` includes only `Core`; `gpu` and `world`
+  include only `Core` and `Fields`; `renderer` includes `world`, `gpu`,
+  `Fields`, `Core`. `world` never sees a `gpu::` type; public
   headers never contain `GLenum`/`gl*`; only `src/GPU/Backends/GL45/` includes
   glad.
 - The library never opens a window or calls GLFW: `gpu::init(loader)`

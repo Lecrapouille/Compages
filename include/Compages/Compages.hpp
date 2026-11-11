@@ -12,6 +12,7 @@
 #include "Compages/Renderer/Import/GltfLoader.hpp"
 #include "Compages/Renderer/Import/StlLoader.hpp"
 #include "Compages/Renderer/Import/UrdfLoader.hpp"
+#include "Compages/Fields/HeightField.hpp"
 #include "Compages/GPU/GPU.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
 #include "Compages/Renderer/Render/Renderer.hpp"

@@ -80,14 +80,16 @@ again at any step.
       `Scene::reshape(entity, mesh)`, `Scene::look(entity, MaterialId)`
 - [x] The Renderer sets the uniforms of a family only when the shader reads
       them, so a `main` hook may leave the lights out
-- [ ] Shared uniforms of Sea in a `TypedUniformBlock` (only if it is shorter)
+- [-] Shared uniforms of Sea in a `TypedUniformBlock`: not done, it is
+      longer (a struct, a std140 block in two shaders, a bind) than three
+      `program.set()`
 
 ### P3: fields
 
-- [ ] `Grid2D`: columns, rows, origin, spacing, index, neighbours
-- [ ] `Field<T>`: values on a grid, bilinear sampling
-- [ ] `HeightField::intersect(Ray)`
-- [ ] Unit tests
+- [x] `Grid2D`: columns, rows, origin, spacing, index, neighbours
+- [x] `Field<T>`: values on a grid, bilinear sampling
+- [x] `intersect(Ray, Field<float>)` and `intersectHeight(Ray, height, …)`
+- [x] Unit tests
 - [ ] Archipelago uses them (cells of `Land` and `Making`, `Patch`,
       `placeUnder`)
 
