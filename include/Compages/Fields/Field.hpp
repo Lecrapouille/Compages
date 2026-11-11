@@ -97,22 +97,22 @@ public:
         return m_values;
     }
 
-    [[nodiscard]] auto begin()
+    [[nodiscard]] auto begin() noexcept
     {
         return m_values.begin();
     }
 
-    [[nodiscard]] auto end()
+    [[nodiscard]] auto end() noexcept
     {
         return m_values.end();
     }
 
-    [[nodiscard]] auto begin() const
+    [[nodiscard]] auto begin() const noexcept
     {
         return m_values.begin();
     }
 
-    [[nodiscard]] auto end() const
+    [[nodiscard]] auto end() const noexcept
     {
         return m_values.end();
     }

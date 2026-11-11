@@ -9,6 +9,7 @@
 
 #include "Common/DataPath.hpp"
 #include "Common/Gui.hpp"
+#include "Compages/Fields/HeightField.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
@@ -253,33 +254,17 @@ Place Archipelago::placeUnder(Vector2f p_mouse) const
         return {}; // toward the sky
     }
     archipelago::Patch const& base = m_map.base;
-    auto below = [&ray, &base](float p_t)
-    {
-        const Vector3f p = ray.pointAt(p_t);
-        return p.y <= std::max(0.0f, base.heightAt(p.x, p.z));
-    };
+    auto ground = [&base](float p_x, float p_z)
+    { return std::max(0.0f, base.heightAt(p_x, p_z)); };
     const float quad = MAP / float(archipelago::BASE_CELLS);
     const float begin = std::max(
         0.0f, ((1.2f * archipelago::PEAK) - ray.origin.y) / ray.direction.y);
     const float end = -ray.origin.y / ray.direction.y;
     const float step = 0.5f * quad / std::max(std::abs(ray.direction.y), 0.05f);
-    const int steps = std::min(8000, int((end - begin) / step) + 1);
-    float hit = end;
-    for (int k = 0; k <= steps; ++k)
-    {
-        if (const float t = std::min(begin + (float(k) * step), end); below(t))
-        {
-            float low = std::max(begin, t - step);
-            float high = t;
-            for (int halve = 0; halve < 8; ++halve)
-            {
-                const float middle = 0.5f * (low + high);
-                (below(middle) ? high : low) = middle;
-            }
-            hit = high;
-            break;
-        }
-    }
+    const float hit =
+        compages::intersectHeight(
+            ray, ground, begin, std::min(end, begin + (8000.0f * step)), step)
+            .value_or(end);
     const Vector3f point = ray.pointAt(hit);
     if (const bool outside = (std::abs(point.x) >= 0.5f * MAP) ||
                              (std::abs(point.z) >= 0.5f * MAP);

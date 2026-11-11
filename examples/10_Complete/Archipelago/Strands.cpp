@@ -207,12 +207,12 @@ static void traceTributary(Making& p_making, std::size_t p_region, int p_source)
 void traceRivers(Making& p_making)
 {
     p_making.progress(0.6f, "Rivers");
-    p_making.on_river.assign(CELL_COUNT, 0);
+    p_making.on_river = compages::Field<char>(CELL_GRID, char(0));
     p_making.paths.assign(p_making.land.regions.size(), {});
     traceMainRivers(p_making);
 
     // The source of each region: its highest cell off the rivers.
-    std::vector<float> const& ground = p_making.ground;
+    compages::Field<float> const& ground = p_making.ground;
     std::vector<int> sources(p_making.land.regions.size(), -1);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
@@ -252,10 +252,10 @@ void traceRivers(Making& p_making)
 //! \brief Per cell of a region, its steps of cells from the strand, inside
 //! the region; a large number where the strand is not reached.
 // ----------------------------------------------------------------------------
-static std::vector<int>
+static compages::Field<int>
 stepsFrom(Land const& p_land, std::vector<int> const& p_strand, int p_region)
 {
-    std::vector<int> steps(CELL_COUNT, int(CELL_COUNT));
+    compages::Field<int> steps(CELL_GRID, int(CELL_COUNT));
     std::vector<int> queue(p_strand);
     for (const int c : p_strand)
     {
@@ -264,13 +264,13 @@ stepsFrom(Land const& p_land, std::vector<int> const& p_strand, int p_region)
     for (std::size_t head = 0u; head < queue.size(); ++head)
     {
         const int c = queue[head];
-        for (const int n : neighbours(c))
+        for (const std::size_t n : CELL_GRID.neighbours8(std::size_t(c)))
         {
-            if ((p_land.regions_of[std::size_t(n)] == p_region) &&
-                (steps[std::size_t(n)] > steps[std::size_t(c)] + 1))
+            if ((p_land.regions_of[n] == p_region) &&
+                (steps[n] > steps[std::size_t(c)] + 1))
             {
-                steps[std::size_t(n)] = steps[std::size_t(c)] + 1;
-                queue.push_back(n);
+                steps[n] = steps[std::size_t(c)] + 1;
+                queue.push_back(int(n));
             }
         }
     }
@@ -328,7 +328,7 @@ static void placeRegionLinks(Making& p_making, std::size_t p_region)
         strand.push_back(cells.front());
     }
     // As many cells as links, the nearest to the strand; both sorted along it.
-    const std::vector<int> steps = stepsFrom(land, strand, r);
+    const compages::Field<int> steps = stepsFrom(land, strand, r);
     std::ranges::stable_sort(
         cells, {}, [&](int p_c) { return steps[std::size_t(p_c)]; });
     std::vector<Vector2f> const& links = p_making.placement.links[p_region];

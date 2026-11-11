@@ -18,6 +18,7 @@
 #include "10_Complete/Archipelago/Map.hpp"
 
 #include "Compages/Core/Vector.hpp"
+#include "Compages/Fields/Field.hpp"
 
 #include <array>
 #include <cstddef>
@@ -31,37 +32,22 @@ namespace examples::archipelago
 inline constexpr std::size_t CELL_COUNT =
     std::size_t(CELLS) * std::size_t(CELLS);
 
-//! \brief The cell of grid square (i, j).
-[[nodiscard]] constexpr int cellAt(int p_i, int p_j)
-{
-    return (p_j * CELLS) + p_i;
-}
+//! \brief The squares of the map, one cell each: point (i, j) is the centre
+//! of square (i, j), the site of its cell is near it.
+inline const compages::Grid2D CELL_GRID{
+    .columns = CELLS,
+    .rows = CELLS,
+    .origin = compages::Vector2f((-0.5f * MAP) + (0.5f * CELL_SIZE),
+                                 (-0.5f * MAP) + (0.5f * CELL_SIZE)),
+    .spacing = CELL_SIZE
+};
 
 //! \brief The grid square a coordinate falls in.
 [[nodiscard]] int squareOf(float p_coordinate);
 
-//! \brief The cells around a cell, up to eight: `for (int n : neighbours(c))`.
-struct Around
-{
-    std::array<int, 8> cells{};
-    std::size_t size = 0u;
-
-    [[nodiscard]] int const* begin() const
-    {
-        return cells.data();
-    }
-
-    [[nodiscard]] int const* end() const
-    {
-        return cells.data() + size;
-    }
-};
-
-[[nodiscard]] Around neighbours(int p_cell);
-
 //! \brief The sites: one per grid square, moved from its centre by up to
 //! 0.3 square, from the seed.
-[[nodiscard]] std::vector<compages::Vector2f>
+[[nodiscard]] compages::Field<compages::Vector2f>
 scatterSites(std::uint32_t p_seed);
 
 //! \brief The distance from a point to the bisector of the sites of two
@@ -79,19 +65,19 @@ struct CellHit
     float edge = 1.0e9f;
 };
 
-[[nodiscard]] CellHit hitCell(std::vector<compages::Vector2f> const& p_sites,
+[[nodiscard]] CellHit hitCell(compages::Field<compages::Vector2f> const& p_sites,
                               compages::Vector2f p_point);
 
 //! \brief The corners of a cell, clockwise seen from above (+Y): a square
 //! around its site cut by the bisectors with the sites around it.
 [[nodiscard]] std::vector<compages::Vector2f>
-cellPolygon(std::vector<compages::Vector2f> const& p_sites, int p_cell);
+cellPolygon(compages::Field<compages::Vector2f> const& p_sites, int p_cell);
 
 //! \brief The distance from the border of a group of cells, positive inside:
 //! where the outline of the group is zero.
 //! \param[in] p_member Tells if a cell is in the group.
 template <typename Member>
-[[nodiscard]] float groupField(std::vector<compages::Vector2f> const& p_sites,
+[[nodiscard]] float groupField(compages::Field<compages::Vector2f> const& p_sites,
                                compages::Vector2f p_point,
                                Member const& p_member)
 {
@@ -99,12 +85,11 @@ template <typename Member>
     const bool inside = p_member(hit.cell);
     const compages::Vector2f own = p_sites[std::size_t(hit.cell)];
     float nearest = CELL_SIZE;
-    for (const int other : neighbours(hit.cell))
+    for (const std::size_t other : CELL_GRID.neighbours8(std::size_t(hit.cell)))
     {
-        if (p_member(other) != inside)
+        if (p_member(int(other)) != inside)
         {
-            nearest = std::min(
-                nearest, bisector(own, p_sites[std::size_t(other)], p_point));
+            nearest = std::min(nearest, bisector(own, p_sites[other], p_point));
         }
     }
     return inside ? nearest : -nearest;

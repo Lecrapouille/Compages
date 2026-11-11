@@ -90,8 +90,9 @@ again at any step.
 - [x] `Field<T>`: values on a grid, bilinear sampling
 - [x] `intersect(Ray, Field<float>)` and `intersectHeight(Ray, height, …)`
 - [x] Unit tests
-- [ ] Archipelago uses them (cells of `Land` and `Making`, `Patch`,
-      `placeUnder`)
+- [x] Archipelago uses them: the cells of `Land` and `Making` are
+      `Field<T>` on `CELL_GRID`, `Patch::heights` a `Field<float>`, `placeUnder`
+      calls `intersectHeight`
 
 ### Documentation
 

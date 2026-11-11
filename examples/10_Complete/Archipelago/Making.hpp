@@ -34,16 +34,16 @@ struct Making
     Land land;
     //! \brief Per cell: how its coordinates are bent (-1 to 1 on each
     //! axis), for the coasts and the borders.
-    std::vector<compages::Vector2f> bends;
+    compages::Field<compages::Vector2f> bends;
     //! \brief Per cell: land where positive, deeper sea where more negative.
-    std::vector<float> shape;
+    compages::Field<float> shape;
     //! \brief Per cell: the water leaves the land there (sea, edge of the map).
-    std::vector<char> outlet;
+    compages::Field<char> outlet;
     //! \brief Per cell: the relief the erosion made (its own scale).
-    std::vector<float> ground;
+    compages::Field<float> ground;
     Drainage drainage;
     //! \brief Per cell: a river flows through it.
-    std::vector<char> on_river;
+    compages::Field<char> on_river;
     //! \brief Per region: its tributary, from its mouth to its source.
     std::vector<std::vector<int>> paths;
 };

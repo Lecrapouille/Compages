@@ -118,7 +118,7 @@ void shapeIslands(Making& p_making)
                                        p_making.placement.radii[k],
                                        Vector3f(0.0f, 0.0f, 0.0f) });
     }
-    p_making.bends.resize(CELL_COUNT);
+    p_making.bends = compages::Field<compages::Vector2f>(CELL_GRID, compages::Vector2f(0.0f, 0.0f));
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         const Vector2f p = land.sites[c];
@@ -129,7 +129,7 @@ void shapeIslands(Making& p_making)
 
     // Each shape covers the cells of its box; a cell keeps the highest cover.
     std::vector<float> bumps(CELL_COUNT, 0.0f);
-    land.islands_of.assign(CELL_COUNT, std::int8_t(-1));
+    land.islands_of = compages::Field<std::int8_t>(CELL_GRID, std::int8_t(-1));
     for (Shape const& shape : shapesOf(p_making.recipe, p_making.placement))
     {
         const float bend =
@@ -143,7 +143,7 @@ void shapeIslands(Making& p_making)
         {
             for (int i = i0; i <= i1; ++i)
             {
-                const auto c = std::size_t(cellAt(i, j));
+                const auto c = CELL_GRID.index(i, j);
                 if (const float f = cover(
                         shape, land.sites[c] + (p_making.bends[c] * bend));
                     f > bumps[c])
@@ -155,7 +155,7 @@ void shapeIslands(Making& p_making)
         }
     }
     // Rough coasts; deep sea along the edges of the map.
-    p_making.shape.resize(CELL_COUNT);
+    p_making.shape = compages::Field<float>(CELL_GRID, 0.0f);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         const Vector2f p = land.sites[c];
@@ -184,7 +184,7 @@ void floodSea(Making& p_making)
         {
             return;
         }
-        const int c = cellAt(p_i, p_j);
+        const auto c = int(CELL_GRID.index(p_i, p_j));
         if ((sea[std::size_t(c)] == 0) &&
             (p_making.shape[std::size_t(c)] <= 0.0f))
         {
@@ -210,7 +210,7 @@ void floodSea(Making& p_making)
         reach(ci, cj + 1);
         reach(ci, cj - 1);
     }
-    p_making.outlet.resize(CELL_COUNT);
+    p_making.outlet = compages::Field<char>(CELL_GRID, char(0));
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         const auto i = int(c) % CELLS;
@@ -247,8 +247,8 @@ void divideRegions(Making& p_making)
                 Node{ link, int(r) });
         }
     }
-    land.regions_of.assign(CELL_COUNT, -1);
-    land.parts_of.assign(CELL_COUNT, -1);
+    land.regions_of = compages::Field<int>(CELL_GRID, -1);
+    land.parts_of = compages::Field<int>(CELL_GRID, -1);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         if ((p_making.outlet[c] != 0) || (land.islands_of[c] < 0))

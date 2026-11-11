@@ -31,39 +31,19 @@ int squareOf(float p_coordinate)
 }
 
 // ----------------------------------------------------------------------------
-Around neighbours(int p_cell)
-{
-    Around around;
-    const int ci = p_cell % CELLS;
-    const int cj = p_cell / CELLS;
-    for (int j = std::max(0, cj - 1); j <= std::min(CELLS - 1, cj + 1); ++j)
-    {
-        for (int i = std::max(0, ci - 1); i <= std::min(CELLS - 1, ci + 1); ++i)
-        {
-            if ((i != ci) || (j != cj))
-            {
-                around.cells[around.size] = cellAt(i, j);
-                ++around.size;
-            }
-        }
-    }
-    return around;
-}
-
-// ----------------------------------------------------------------------------
-std::vector<Vector2f> scatterSites(std::uint32_t p_seed)
+compages::Field<Vector2f> scatterSites(std::uint32_t p_seed)
 {
     // A procedural map, not a secret: any generator that repeats will do.
     std::mt19937 random(p_seed); // NOSONAR
     std::uniform_real_distribution<float> unit(-JITTER, JITTER);
-    std::vector sites(CELL_COUNT, Vector2f(0.0f, 0.0f));
+    compages::Field<Vector2f> sites(CELL_GRID, Vector2f(0.0f, 0.0f));
     for (int j = 0; j < CELLS; ++j)
     {
         for (int i = 0; i < CELLS; ++i)
         {
             const float x = float(i) + 0.5f + unit(random);
             const float z = float(j) + 0.5f + unit(random);
-            sites[std::size_t(cellAt(i, j))] =
+            sites(i, j) =
                 Vector2f((-0.5f * MAP) + (x * CELL_SIZE),
                          (-0.5f * MAP) + (z * CELL_SIZE));
         }
@@ -82,7 +62,7 @@ float bisector(Vector2f p_own, Vector2f p_other, Vector2f p_point)
 }
 
 // ----------------------------------------------------------------------------
-CellHit hitCell(std::vector<Vector2f> const& p_sites, Vector2f p_point)
+CellHit hitCell(compages::Field<Vector2f> const& p_sites, Vector2f p_point)
 {
     const int gi = squareOf(p_point.x);
     const int gj = squareOf(p_point.y);
@@ -92,23 +72,22 @@ CellHit hitCell(std::vector<Vector2f> const& p_sites, Vector2f p_point)
     {
         for (int i = std::max(0, gi - 1); i <= std::min(CELLS - 1, gi + 1); ++i)
         {
-            const Vector2f d = p_point - p_sites[std::size_t(cellAt(i, j))];
+            const Vector2f d = p_point - p_sites(i, j);
             if (const float d2 = (d.x * d.x) + (d.y * d.y); d2 < best)
             {
                 best = d2;
-                hit.cell = cellAt(i, j);
+                hit.cell = int(CELL_GRID.index(i, j));
             }
         }
     }
     const Vector2f own = p_sites[std::size_t(hit.cell)];
-    for (const int other : neighbours(hit.cell))
+    for (const std::size_t other : CELL_GRID.neighbours8(std::size_t(hit.cell)))
     {
-        if (const float edge =
-                bisector(own, p_sites[std::size_t(other)], p_point);
+        if (const float edge = bisector(own, p_sites[other], p_point);
             edge < hit.edge)
         {
             hit.edge = edge;
-            hit.across = other;
+            hit.across = int(other);
         }
     }
     return hit;
@@ -118,7 +97,7 @@ CellHit hitCell(std::vector<Vector2f> const& p_sites, Vector2f p_point)
 //! Sutherland-Hodgman: each bisector keeps the side of the own site. The
 //! sites two squares away can still cut a corner.
 // ----------------------------------------------------------------------------
-std::vector<Vector2f> cellPolygon(std::vector<Vector2f> const& p_sites,
+std::vector<Vector2f> cellPolygon(compages::Field<Vector2f> const& p_sites,
                                   int p_cell)
 {
     const Vector2f own = p_sites[std::size_t(p_cell)];
@@ -147,15 +126,15 @@ std::vector<Vector2f> cellPolygon(std::vector<Vector2f> const& p_sites,
         }
         polygon = std::move(kept);
     };
-    const int ci = p_cell % CELLS;
-    const int cj = p_cell / CELLS;
+    const int ci = CELL_GRID.column(std::size_t(p_cell));
+    const int cj = CELL_GRID.row(std::size_t(p_cell));
     for (int j = std::max(0, cj - 2); j <= std::min(CELLS - 1, cj + 2); ++j)
     {
         for (int i = std::max(0, ci - 2); i <= std::min(CELLS - 1, ci + 2); ++i)
         {
-            if (cellAt(i, j) != p_cell)
+            if (CELL_GRID.index(i, j) != std::size_t(p_cell))
             {
-                cut(p_sites[std::size_t(cellAt(i, j))]);
+                cut(p_sites(i, j));
             }
         }
     }

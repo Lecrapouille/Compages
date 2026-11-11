@@ -36,9 +36,9 @@ static constexpr float SEA_FLOOR = compages::toMetres(6.0_m);
 // ----------------------------------------------------------------------------
 //! \brief Per cell, its steps of cells from the nearest outlet.
 // ----------------------------------------------------------------------------
-static std::vector<int> stepsInland(std::vector<char> const& p_outlet)
+static compages::Field<int> stepsInland(compages::Field<char> const& p_outlet)
 {
-    std::vector<int> inland(CELL_COUNT, -1);
+    compages::Field<int> inland(CELL_GRID, -1);
     std::vector<int> queue;
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
@@ -51,12 +51,12 @@ static std::vector<int> stepsInland(std::vector<char> const& p_outlet)
     for (std::size_t head = 0u; head < queue.size(); ++head)
     {
         const int c = queue[head];
-        for (const int n : neighbours(c))
+        for (const std::size_t n : CELL_GRID.neighbours8(std::size_t(c)))
         {
-            if (inland[std::size_t(n)] < 0)
+            if (inland[n] < 0)
             {
-                inland[std::size_t(n)] = inland[std::size_t(c)] + 1;
-                queue.push_back(n);
+                inland[n] = inland[std::size_t(c)] + 1;
+                queue.push_back(int(n));
             }
         }
     }
@@ -67,19 +67,20 @@ static std::vector<int> stepsInland(std::vector<char> const& p_outlet)
 //! \brief Per cell, 1 on a border between two regions, fading over two
 //! cells around.
 // ----------------------------------------------------------------------------
-static std::vector<float> ridgesOf(std::vector<int> const& p_regions_of)
+static compages::Field<float>
+ridgesOf(compages::Field<int> const& p_regions_of)
 {
-    std::vector<float> ridge(CELL_COUNT, 0.0f);
+    compages::Field<float> ridge(CELL_GRID, 0.0f);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         const int region = p_regions_of[c];
-        const Around around = neighbours(int(c));
+        const compages::Grid2D::Neighbours around = CELL_GRID.neighbours8(c);
         if ((region >= 0) &&
             std::any_of(around.begin(),
                         around.end(),
-                        [&](int p_n)
+                        [&](std::size_t p_n)
                         {
-                            const int other = p_regions_of[std::size_t(p_n)];
+                            const int other = p_regions_of[p_n];
                             return (other >= 0) && (other != region);
                         }))
         {
@@ -88,12 +89,12 @@ static std::vector<float> ridgesOf(std::vector<int> const& p_regions_of)
     }
     for (int pass = 0; pass < 2; ++pass)
     {
-        std::vector<float> wider(ridge);
+        compages::Field<float> wider(ridge);
         for (std::size_t c = 0u; c < CELL_COUNT; ++c)
         {
-            for (const int n : neighbours(int(c)))
+            for (const std::size_t n : CELL_GRID.neighbours8(c))
             {
-                wider[c] = std::max(wider[c], 0.5f * ridge[std::size_t(n)]);
+                wider[c] = std::max(wider[c], 0.5f * ridge[n]);
             }
         }
         ridge = std::move(wider);
@@ -105,9 +106,9 @@ static std::vector<float> ridgesOf(std::vector<int> const& p_regions_of)
 void raiseRelief(Making& p_making)
 {
     Land& land = p_making.land;
-    std::vector<char> const& outlet = p_making.outlet;
+    compages::Field<char> const& outlet = p_making.outlet;
     const std::uint32_t seed = p_making.recipe.seed;
-    const std::vector<int> inland = stepsInland(outlet);
+    const compages::Field<int> inland = stepsInland(outlet);
     std::vector<int> deepest(land.islands.size(), 1);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
@@ -117,9 +118,9 @@ void raiseRelief(Making& p_making)
             island = std::max(island, inland[c]);
         }
     }
-    const std::vector<float> ridge = ridgesOf(land.regions_of);
-    p_making.ground.assign(CELL_COUNT, 0.0f);
-    std::vector<float> uplift(CELL_COUNT, 0.0f);
+    const compages::Field<float> ridge = ridgesOf(land.regions_of);
+    p_making.ground = compages::Field<float>(CELL_GRID, 0.0f);
+    compages::Field<float> uplift(CELL_GRID, 0.0f);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         if (outlet[c] != 0)
@@ -150,7 +151,7 @@ void raiseRelief(Making& p_making)
     // The shape of the relief is the model's; its height is the map's.
     const float tallest =
         std::max(1.0f, *std::ranges::max_element(p_making.ground));
-    land.elevations.resize(CELL_COUNT);
+    land.elevations = compages::Field<float>(CELL_GRID, 0.0f);
     for (std::size_t c = 0u; c < CELL_COUNT; ++c)
     {
         if (outlet[c] == 0)

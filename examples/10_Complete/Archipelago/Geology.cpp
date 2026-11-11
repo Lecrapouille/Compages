@@ -25,14 +25,14 @@ static constexpr float CREEP = 0.05f;
 static constexpr float YEARS = 4.0e4f;
 
 // ----------------------------------------------------------------------------
-Drainage drain(std::vector<float> const& p_heights,
-               std::vector<char> const& p_outlet)
+Drainage drain(compages::Field<float> const& p_heights,
+               compages::Field<char> const& p_outlet)
 {
     const std::size_t count = p_heights.size();
     Drainage result;
     result.receivers.assign(count, -1);
     result.order.reserve(count);
-    std::vector level(p_heights);
+    std::vector<float> level(p_heights.begin(), p_heights.end());
     std::vector<char> reached(count, 0);
     using Entry = std::pair<float, int>;
     std::priority_queue<Entry, std::vector<Entry>, std::greater<>> open;
@@ -49,15 +49,14 @@ Drainage drain(std::vector<float> const& p_heights,
         const int c = open.top().second;
         open.pop();
         result.order.push_back(c);
-        for (const int n : neighbours(c))
+        for (const std::size_t n : CELL_GRID.neighbours8(std::size_t(c)))
         {
-            if (reached[std::size_t(n)] == 0)
+            if (reached[n] == 0)
             {
-                reached[std::size_t(n)] = 1;
-                level[std::size_t(n)] =
-                    std::max(p_heights[std::size_t(n)], level[std::size_t(c)]);
-                result.receivers[std::size_t(n)] = c;
-                open.emplace(level[std::size_t(n)], n);
+                reached[n] = 1;
+                level[n] = std::max(p_heights[n], level[std::size_t(c)]);
+                result.receivers[n] = c;
+                open.emplace(level[n], int(n));
             }
         }
     }
@@ -79,10 +78,10 @@ Drainage drain(std::vector<float> const& p_heights,
 //! From the sea upward: the receiver already has its new height,
 //!   h = (h + U dt + F h_receiver) / (1 + F),  F = K dt sqrt(A) / distance.
 // ----------------------------------------------------------------------------
-static void incise(std::vector<Vector2f> const& p_sites,
-                   std::vector<float>& p_heights,
-                   std::vector<float> const& p_uplift,
-                   std::vector<char> const& p_outlet,
+static void incise(compages::Field<Vector2f> const& p_sites,
+                   compages::Field<float>& p_heights,
+                   compages::Field<float> const& p_uplift,
+                   compages::Field<char> const& p_outlet,
                    Drainage const& p_drainage)
 {
     for (const int c : p_drainage.order)
@@ -111,8 +110,8 @@ static void incise(std::vector<Vector2f> const& p_sites,
 // ----------------------------------------------------------------------------
 //! The slopes creep: D dt times the Laplacian of the 4 neighbours.
 // ----------------------------------------------------------------------------
-static void creep(std::vector<float>& p_heights,
-                  std::vector<char> const& p_outlet)
+static void creep(compages::Field<float>& p_heights,
+                  compages::Field<char> const& p_outlet)
 {
     constexpr float RATE = CREEP * YEARS / (CELL_SIZE * CELL_SIZE);
     std::vector change(p_heights.size(), 0.0f);
@@ -120,12 +119,11 @@ static void creep(std::vector<float>& p_heights,
     {
         for (int i = 1; i < CELLS - 1; ++i)
         {
-            const auto c = std::size_t(cellAt(i, j));
+            const auto c = CELL_GRID.index(i, j);
             if (p_outlet[c] == 0)
             {
-                change[c] = RATE * (p_heights[c - 1u] + p_heights[c + 1u] +
-                                    p_heights[c - std::size_t(CELLS)] +
-                                    p_heights[c + std::size_t(CELLS)] -
+                change[c] = RATE * (p_heights(i - 1, j) + p_heights(i + 1, j) +
+                                    p_heights(i, j - 1) + p_heights(i, j + 1) -
                                     (4.0f * p_heights[c]));
             }
         }
@@ -137,10 +135,10 @@ static void creep(std::vector<float>& p_heights,
 }
 
 // ----------------------------------------------------------------------------
-Drainage erode(std::vector<Vector2f> const& p_sites,
-               std::vector<float>& p_heights,
-               std::vector<float> const& p_uplift,
-               std::vector<char> const& p_outlet,
+Drainage erode(compages::Field<Vector2f> const& p_sites,
+               compages::Field<float>& p_heights,
+               compages::Field<float> const& p_uplift,
+               compages::Field<char> const& p_outlet,
                int p_steps,
                Progress const& p_progress)
 {

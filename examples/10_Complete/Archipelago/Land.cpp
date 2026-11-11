@@ -33,7 +33,7 @@ static float cellHeight(Land const& p_land, float p_x, float p_z)
     {
         for (int i = std::max(0, gi - 1); i <= std::min(CELLS - 1, gi + 1); ++i)
         {
-            const auto c = std::size_t(cellAt(i, j));
+            const auto c = CELL_GRID.index(i, j);
             const Vector2f d = Vector2f(p_x, p_z) - p_land.sites[c];
             const float w = std::exp(-((d.x * d.x) + (d.y * d.y)) * SPREAD);
             sum += w * p_land.elevations[c];

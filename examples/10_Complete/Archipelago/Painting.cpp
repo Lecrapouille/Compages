@@ -226,22 +226,6 @@ static void paint(Land const& p_land,
 }
 
 // ----------------------------------------------------------------------------
-float Patch::heightAt(float p_x, float p_z) const
-{
-    const float step = size / float(cells);
-    const float gx = std::clamp((p_x - x) / step, -1.0f, float(cells) + 0.999f);
-    const float gz = std::clamp((p_z - z) / step, -1.0f, float(cells) + 0.999f);
-    const auto i = int(std::floor(gx));
-    const auto j = int(std::floor(gz));
-    const float tx = gx - float(i);
-    const float tz = gz - float(j);
-    return (height(i, j) * (1.0f - tx) * (1.0f - tz)) +
-           (height(i + 1, j) * tx * (1.0f - tz)) +
-           (height(i, j + 1) * (1.0f - tx) * tz) +
-           (height(i + 1, j + 1) * tx * tz);
-}
-
-// ----------------------------------------------------------------------------
 Patch makePatch(Land const& p_land,
                 float p_x,
                 float p_z,
@@ -265,17 +249,21 @@ Patch makePatch(Land const& p_land,
                  .pixels = p_pixels,
                  .picture = {} };
     const float step = p_size / float(p_cells);
-    const int side = p_cells + 3;
-    patch.heights.resize(std::size_t(side) * std::size_t(side));
-    for (int j = -1; j <= p_cells + 1; ++j)
+    // One more ring of corners around the patch: point (0, 0) is corner
+    // (-1, -1).
+    const compages::Grid2D corners{ .columns = p_cells + 3,
+                                    .rows = p_cells + 3,
+                                    .origin = Vector2f(p_x - step, p_z - step),
+                                    .spacing = step };
+    patch.heights = compages::Field<float>(corners, 0.0f);
+    for (int j = 0; j < corners.rows; ++j)
     {
-        for (int i = -1; i <= p_cells + 1; ++i)
+        for (int i = 0; i < corners.columns; ++i)
         {
-            patch.heights[std::size_t(((j + 1) * side) + i + 1)] =
-                p_land.heightAt(p_x + (float(i) * step),
-                                p_z + (float(j) * step));
+            const Vector2f at = corners.point(i, j);
+            patch.heights(i, j) = p_land.heightAt(at.x, at.y);
         }
-        tell(0.3f * float(j + 1) / float(p_cells + 2), "Relief");
+        tell(0.3f * float(j) / float(p_cells + 2), "Relief");
     }
     // The picture reads the heights between the corners: the mesh shows no
     // more.

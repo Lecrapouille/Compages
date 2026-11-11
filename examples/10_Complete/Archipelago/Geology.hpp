@@ -29,6 +29,7 @@
 #include "10_Complete/Archipelago/Map.hpp"
 
 #include "Compages/Core/Vector.hpp"
+#include "Compages/Fields/Field.hpp"
 
 #include <vector>
 
@@ -50,8 +51,8 @@ struct Drainage
 //! neighbour it was reached from, which becomes its receiver.
 //! \param[in] p_outlet The cells the water leaves the land by (the sea).
 // ----------------------------------------------------------------------------
-[[nodiscard]] Drainage drain(std::vector<float> const& p_heights,
-                             std::vector<char> const& p_outlet);
+[[nodiscard]] Drainage drain(compages::Field<float> const& p_heights,
+                             compages::Field<char> const& p_outlet);
 
 // ----------------------------------------------------------------------------
 //! \brief Grow the relief of the cells: uplift, river erosion, creep.
@@ -60,10 +61,10 @@ struct Drainage
 //! \param[in] p_steps Steps of 40 000 years.
 //! \return The drainage of the final relief.
 // ----------------------------------------------------------------------------
-[[nodiscard]] Drainage erode(std::vector<compages::Vector2f> const& p_sites,
-                             std::vector<float>& p_heights,
-                             std::vector<float> const& p_uplift,
-                             std::vector<char> const& p_outlet,
+[[nodiscard]] Drainage erode(compages::Field<compages::Vector2f> const& p_sites,
+                             compages::Field<float>& p_heights,
+                             compages::Field<float> const& p_uplift,
+                             compages::Field<char> const& p_outlet,
                              int p_steps,
                              Progress const& p_progress);
 

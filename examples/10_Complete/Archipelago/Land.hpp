@@ -42,6 +42,7 @@
 #include "10_Complete/Archipelago/Rivers.hpp"
 
 #include "Compages/Core/Vector.hpp"
+#include "Compages/Fields/Field.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -117,10 +118,10 @@ struct Patch
     float x;
     float z;
     float size;
-    //! \brief Quads along a side. The heights are (cells + 3)^2: one more
-    //! ring of corners around it, for the normals of its edges.
+    //! \brief Quads along a side. The heights are on (cells + 3)^2 corners:
+    //! one more ring around it, for the normals of its edges.
     int cells;
-    std::vector<float> heights;
+    compages::Field<float> heights;
     //! \brief Pixels along a side, and the picture: sRGB, first row at the
     //! smallest z, alpha as SEA_ALPHA and RIVER_ALPHA say.
     int pixels;
@@ -130,12 +131,15 @@ struct Patch
     //! cells + 1.
     [[nodiscard]] float height(int p_i, int p_j) const
     {
-        return heights[std::size_t(((p_j + 1) * (cells + 3)) + p_i + 1)];
+        return heights(p_i + 1, p_j + 1);
     }
 
     //! \brief The height between the corners (bilinear), as its mesh shows
     //! it; clamped to the patch and its ring.
-    [[nodiscard]] float heightAt(float p_x, float p_z) const;
+    [[nodiscard]] float heightAt(float p_x, float p_z) const
+    {
+        return heights.sample(compages::Vector2f(p_x, p_z));
+    }
 };
 
 // ****************************************************************************
@@ -146,11 +150,11 @@ struct Land
     std::uint32_t seed = 0u;
     //! \brief Per cell (CELLS x CELLS, row after row along +Z): its site, its
     //! height, its island (-1: none), its region and its link (-1: none).
-    std::vector<compages::Vector2f> sites;
-    std::vector<float> elevations;
-    std::vector<std::int8_t> islands_of;
-    std::vector<int> regions_of;
-    std::vector<int> parts_of;
+    compages::Field<compages::Vector2f> sites;
+    compages::Field<float> elevations;
+    compages::Field<std::int8_t> islands_of;
+    compages::Field<int> regions_of;
+    compages::Field<int> parts_of;
     std::vector<Island> islands;
     std::vector<Region> regions;
     //! \brief The main river of each island and the tributary of each
