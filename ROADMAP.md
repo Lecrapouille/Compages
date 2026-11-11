@@ -116,7 +116,8 @@ In rough order. Each item should make a demo shorter or possible.
       order as the texels of a 3D texture: `gpu::Texture::fromField()`)
 - [x] Volume rendering (`scene.show(Field<float, Grid3D>)`, ray marching a 3D
       texture) and slices (`compages::slice()`), demo `11f_Volume`
-- [ ] Isosurfaces (marching cubes)
+- [x] Isosurfaces (`compages::isosurface()`, marching tetrahedra;
+      `renderer::meshOf()`), in `11f_Volume`
 - [x] Vector fields drawn as arrows (`scene.show(Field<Vector2f>, ArrowLook)`)
       and streamlines (`compages::streamline()`), demo `11g_FlowAroundCylinder`
 - [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`

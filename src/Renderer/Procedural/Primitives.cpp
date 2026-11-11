@@ -201,6 +201,30 @@ Result<Material> makeMaterial(std::string_view p_name,
 
 } // namespace
 
+Result<MeshAsset> meshOf(compages::Surface const& p_surface)
+{
+    if (p_surface.positions.empty() || (p_surface.positions.size() != p_surface.normals.size()))
+    {
+        return failure("meshOf() of a surface with no triangle");
+    }
+    MeshAsset mesh;
+    compages::AABB bounds;
+    mesh.source_vertices.reserve(p_surface.positions.size());
+    for (std::size_t k = 0u; k < p_surface.positions.size(); ++k)
+    {
+        MeshVertex corner;
+        corner.position = p_surface.positions[k];
+        corner.normal = p_surface.normals[k];
+        mesh.source_vertices.push_back(corner);
+        bounds.expand(corner.position);
+        mesh.source_indices.push_back(std::uint32_t(k));
+    }
+    mesh.index_count = mesh.source_indices.size();
+    mesh.local_bounds = bounds;
+    COMPAGES_TRY(mesh.upload());
+    return mesh;
+}
+
 Result<MeshAsset> makeCube()
 {
     return makeBox(1.0f, 1.0f, 1.0f);

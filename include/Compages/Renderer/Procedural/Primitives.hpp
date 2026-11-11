@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "Compages/Fields/Isosurface.hpp"
+
 #include "Compages/Core/Result.hpp"
 #include "Compages/Renderer/Assets/Material.hpp"
 #include "Compages/Renderer/Assets/MeshAsset.hpp"
@@ -38,6 +40,10 @@ enum class PrimitiveShape
 //! compages::world::World, because a mesh is data on the device and does not
 //! know which entity draws it.
 // ****************************************************************************
+
+//! \brief A mesh of the triangles of a Surface (compages::isosurface()):
+//! three corners each, with their normals. Fails when it has no triangle.
+[[nodiscard]] Result<MeshAsset> meshOf(compages::Surface const& p_surface);
 
 [[nodiscard]] Result<MeshAsset> makeCube();
 

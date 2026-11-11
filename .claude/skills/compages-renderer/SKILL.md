@@ -47,7 +47,8 @@ scene.draw(frame);                       // = update(frame) + render()
   `Material::buffers` = storage buffers bound by the Renderer. Demos `11a_HeatPlate`,
   `11b_RippleTank` (compute), `11c_FieldProbe` (Tooltip). Volumes: `scene.show(Field<float, Grid3D>,
   look, name)` (box + ray marching a 3D texture, see-through, no shadow), `compages::slice()`
-  (`Fields/Slice.hpp`) for cuts; demos `11e_Smoke`, `11f_Volume`. Vectors: `scene.show(Field<Vector2f>,
+  (`Fields/Slice.hpp`) for cuts, `compages::isosurface()` (`Fields/Isosurface.hpp`) +
+  `renderer::meshOf(surface)` for the surface of a level; demos `11e_Smoke`, `11f_Volume`. Vectors: `scene.show(Field<Vector2f>,
   ArrowLook{ .colors, .low, .high, .scale, .every }, name)` (CPU mesh), `compages::streamline()`
   (`Fields/Streamline.hpp`); demo `11g_FlowAroundCylinder`. Curves over time: `Chart`
   (`Visualization/Chart.hpp`: create(scene, {width, height, seconds, low, high}, name), series, add,

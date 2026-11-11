@@ -22,6 +22,7 @@ namespace examples
 //! \code
 //! m_room = m_scene.show(m_heat, m_look, "Room");          // a Field<float, Grid3D>
 //! m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, layer), m_cut_look, "Cut");
+//! m_scene.reshape(m_surface, compages::renderer::meshOf(compages::isosurface(m_heat, 30.0f)).take());
 //! \endcode
 // ****************************************************************************
 class Volume final: public Example
@@ -42,6 +43,8 @@ private:
 
     //! \brief The temperature of the room at a time.
     void warm(float p_time);
+    //! \brief The surface of the air at m_level degrees, made again.
+    void surface();
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
@@ -58,6 +61,11 @@ private:
                                               .lit = false };
     compages::world::Entity m_room;
     compages::world::Entity m_cut;
+    //! \brief The surface of the air at one temperature (isosurface()).
+    compages::world::Entity m_surface;
+    bool m_show_surface = true;
+    float m_level = 30.0f;
+    int m_frames = 0;
     int m_layer = 6;
     bool m_moving = true;
     float m_time = 0.0f;

@@ -10,6 +10,7 @@
 #include "Compages/Fields/HeightField.hpp"
 #include "Compages/Fields/Slice.hpp"
 #include "Compages/Fields/Streamline.hpp"
+#include "Compages/Fields/Isosurface.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -220,4 +221,30 @@ TEST(Streamline, FollowsTheFieldAndStopsAtItsEdge)
     const std::vector<Vector2f> out = compages::streamline(wind, Vector2f(1.0f, 4.0f), 1.0f, 100);
     EXPECT_EQ(out.size(), 10u);
     EXPECT_TRUE(compages::streamline(wind, Vector2f(-5.0f, 0.0f), 1.0f, 100).empty());
+}
+
+// A ball: the distance to the centre; the surface at 1 is a sphere of radius 1.
+TEST(Isosurface, FindsTheSurfaceOfALevel)
+{
+    const compages::Grid3D grid{ .columns = 21, .rows = 21, .layers = 21, .origin = { -2.0f, -2.0f, -2.0f }, .spacing = 0.2f };
+    Field<float, compages::Grid3D> distance(grid, 0.0f);
+    for (std::size_t k = 0u; k < distance.size(); ++k)
+    {
+        const Vector3f p = grid.point(k);
+        distance[k] = std::sqrt((p.x * p.x) + (p.y * p.y) + (p.z * p.z));
+    }
+    const compages::Surface sphere = compages::isosurface(distance, 1.0f);
+    ASSERT_FALSE(sphere.positions.empty());
+    EXPECT_EQ(sphere.positions.size() % 3u, 0u);
+    for (std::size_t k = 0u; k < sphere.positions.size(); ++k)
+    {
+        const Vector3f p = sphere.positions[k];
+        const float r = std::sqrt((p.x * p.x) + (p.y * p.y) + (p.z * p.z));
+        EXPECT_NEAR(r, 1.0f, 0.03f);
+        // The normals point toward the values under 1: inward... the
+        // values grow outward, so the normal points to the centre.
+        const Vector3f n = sphere.normals[k];
+        EXPECT_LT((n.x * p.x) + (n.y * p.y) + (n.z * p.z), 0.0f);
+    }
+    EXPECT_TRUE(compages::isosurface(distance, 10.0f).positions.empty());
 }

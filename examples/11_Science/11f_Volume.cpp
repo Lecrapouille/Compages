@@ -9,6 +9,8 @@
 
 #include "Common/Gui.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "Compages/Fields/Isosurface.hpp"
+#include "Compages/Renderer/Procedural/Primitives.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 
 #include <cmath>
@@ -31,7 +33,9 @@ std::string Volume::description() const
            "one horizontal layer as a 2D field, shown by scene.show() with "
            "its own colours (Viridis). The values go to the GPU as a 3D "
            "texture (gpu::Texture::fromField): same order of points and "
-           "texels. Try it: the height of the cut, the range, the heaters.";
+           "texels. compages::isosurface() gives the surface of the air at "
+           "30 degrees, shown see-through. Try it: the height of the cut, the "
+           "range, the heaters, the surface.";
 }
 
 // ----------------------------------------------------------------------------
@@ -65,6 +69,21 @@ void Volume::warm(float p_time)
 }
 
 // ----------------------------------------------------------------------------
+void Volume::surface()
+{
+    compages::Result<compages::renderer::MeshAsset> mesh =
+        compages::renderer::meshOf(compages::isosurface(m_heat, m_level));
+    m_surface.enable(m_show_surface && bool(mesh));
+    if (mesh)
+    {
+        if (const compages::Status reshaped = m_scene.reshape(m_surface, mesh.take()); !reshaped)
+        {
+            compages::gpu::reportError(reshaped.error());
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
 compages::Status Volume::setUp()
 {
     const compages::Grid3D grid{ .columns = ACROSS,
@@ -82,6 +101,10 @@ compages::Status Volume::setUp()
     m_room = m_scene.show(m_heat, m_look, "Room");
     m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, m_layer), m_cut_look, "Cut");
     m_cut.position(0.0f, grid.point(0, m_layer, 0).y, 0.0f);
+    compages::renderer::MeshAsset first;
+    COMPAGES_TRY_ASSIGN(first, compages::renderer::meshOf(compages::isosurface(m_heat, m_level)));
+    m_surface = m_scene.mesh(std::move(first), "Surface",
+                             compages::renderer::seeThrough(compages::renderer::color(1.0f, 0.55f, 0.2f), 0.45f));
     return m_scene.prepare();
 }
 
@@ -103,6 +126,11 @@ void Volume::draw(compages::world::ViewFrame const& p_frame)
         compages::gpu::reportError(shown.error());
     }
     m_cut.position(0.0f, m_heat.grid().point(0, m_layer, 0).y, 0.0f);
+    // The surface is made on the CPU: again every tenth picture.
+    if ((m_moving && ((++m_frames % 10) == 0)) || !m_show_surface)
+    {
+        surface();
+    }
     m_scene.draw(p_frame);
 }
 
@@ -113,6 +141,12 @@ void Volume::controls()
     ImGui::SliderFloat("Air: from (degrees)", &m_look.low, 20.0f, 40.0f, "%.1f");
     ImGui::SliderFloat("Air: to (degrees)", &m_look.high, 25.0f, 60.0f, "%.1f");
     ImGui::Checkbox("Heaters move", &m_moving);
+    bool changed = ImGui::Checkbox("Surface of the air at", &m_show_surface);
+    changed = ImGui::SliderFloat("degrees", &m_level, 21.0f, 45.0f, "%.1f") || changed;
+    if (changed)
+    {
+        surface();
+    }
 }
 
 } // namespace examples

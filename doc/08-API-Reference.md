@@ -135,6 +135,7 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 | between the points | `field.sample(place)`: bilinear, the edge value outside |
 | a volume | `Grid3D{ .columns, .rows, .layers, .origin, .spacing }`, `index(i, j, k)`, `layer(n)`, `neighbours6(index)`; `Field<T, Grid3D> volume(grid, value)`, `volume(i, j, k)`, `volume.sample(Vector3f)` (trilinear) |
 | streamline | `compages::streamline(field, start, step, steps)` → points (`<Compages/Fields/Streamline.hpp>`) |
+| isosurface | `compages::isosurface(volume, level)` → `Surface{ positions, normals }`; `renderer::meshOf(surface)` → `MeshAsset` |
 | a cut of a volume | `compages::slice(volume, Axis::X / Y / Z, layer)` → `Field<T>` (`<Compages/Fields/Slice.hpp>`) |
 | field to the GPU | `gpu::Texture::fromField(field)`: 2D or 3D, R32F / RG32F / RGBA32F; the points are in the order of the texels |
 | ray and ground | `intersect(ray, heights)` → `std::optional<Vector3f>`; `intersectHeight(ray, height(x, z), from, to, step)` → distance along the ray |

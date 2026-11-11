@@ -142,7 +142,7 @@ m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, layer), m_cut_lo
 m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
 ```
 
-`11f_Volume` shows the warm air of a room this way.
+`compages::isosurface(volume, level)` (`<Compages/Fields/Isosurface.hpp>`) gives the triangles of the surface where the volume crosses a level (marching tetrahedra; the normals point toward the values under the level); `compages::renderer::meshOf(surface)` makes a mesh of them, for `scene.mesh()` or `scene.reshape()`. `11f_Volume` shows the warm air of a room this way, with the surface of the air at 30 degrees.
 
 **Vectors.** A `Field<Vector2f>` (a wind, a speed: x and y of each vector go along x and z) is shown as arrows coloured by their length, one point in `every`:
 
