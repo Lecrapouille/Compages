@@ -129,6 +129,8 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 | neighbours | `for (std::size_t n : grid.neighbours4(index))`, `neighbours8(index)` |
 | values on it | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
 | between the points | `field.sample(place)`: bilinear, the edge value outside |
+| a volume | `Grid3D{ .columns, .rows, .layers, .origin, .spacing }`, `index(i, j, k)`, `layer(n)`, `neighbours6(index)`; `Field<T, Grid3D> volume(grid, value)`, `volume(i, j, k)`, `volume.sample(Vector3f)` (trilinear) |
+| field to the GPU | `gpu::Texture::fromField(field)`: 2D or 3D, R32F / RG32F / RGBA32F; the points are in the order of the texels |
 | ray and ground | `intersect(ray, heights)` → `std::optional<Vector3f>`; `intersectHeight(ray, height(x, z), from, to, step)` → distance along the ray |
 
 ---

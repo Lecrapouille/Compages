@@ -24,6 +24,7 @@
 // ****************************************************************************
 
 #include "Compages/Core/NotCopiable.hpp"
+#include "Compages/Fields/Field.hpp"
 #include "Compages/GPU/Handle.hpp"
 #include "Compages/GPU/PixelFormat.hpp"
 
@@ -33,6 +34,7 @@
 #include <filesystem>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace compages::gpu
@@ -268,6 +270,58 @@ public:
     //! as a cube map that is not square.
     // ------------------------------------------------------------------------
     [[nodiscard]] static Result<Texture> create(TextureDesc const& p_desc);
+
+    // ------------------------------------------------------------------------
+    //! \brief A texture holding the values of a field, one texel per point:
+    //! 2D for a Grid2D, 3D for a Grid3D (the field numbers its points in the
+    //! order of the texels, so the values are copied as they are). For
+    //! float (R32F), Vector2f (RG32F) and Vector4f (RGBA32F) values.
+    //!
+    //! \code
+    //! COMPAGES_TRY_ASSIGN(m_density, compages::gpu::Texture::fromField(smoke));
+    //! // later, new values of the same field:
+    //! COMPAGES_TRY(m_density.write(std::as_bytes(smoke.values())));
+    //! \endcode
+    //! \param[in] p_field The values; filtered linearly, clamped at the edges.
+    //! \return The texture, or why it could not be made.
+    // ------------------------------------------------------------------------
+    template <typename T, typename Grid>
+    [[nodiscard]] static Result<Texture> fromField(compages::Field<T, Grid> const& p_field)
+    {
+        TextureDesc desc;
+        if constexpr (std::is_same_v<T, float>)
+        {
+            desc.format = PixelFormat::R32F;
+        }
+        else if constexpr (std::is_same_v<T, compages::Vector2f>)
+        {
+            desc.format = PixelFormat::RG32F;
+        }
+        else
+        {
+            static_assert(std::is_same_v<T, compages::Vector4f>,
+                          "fromField() takes fields of float, Vector2f or Vector4f");
+            desc.format = PixelFormat::RGBA32F;
+        }
+        desc.width = std::uint32_t(p_field.grid().columns);
+        desc.height = std::uint32_t(p_field.grid().rows);
+        if constexpr (std::is_same_v<Grid, compages::Grid3D>)
+        {
+            desc.kind = TextureKind::Texture3D;
+            desc.depth = std::uint32_t(p_field.grid().layers);
+        }
+        Result<Texture> made = create(desc);
+        if (!made)
+        {
+            return made;
+        }
+        Texture texture = made.take();
+        if (Status written = texture.write(std::as_bytes(p_field.values())); !written)
+        {
+            return failure(written.error());
+        }
+        return texture;
+    }
 
     // ------------------------------------------------------------------------
     //! \brief Read an image file into a 2D texture.

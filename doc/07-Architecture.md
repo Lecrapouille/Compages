@@ -55,7 +55,7 @@ flowchart TB
 
 `Core/` (vectors, matrices, `Result`, `Frame`, files) is the shared vocabulary, directly in the `compages` namespace. It is not a fourth layer: no simulation and no drawing starts there.
 
-`Fields/` (`Grid2D`, `Field<T>`, `intersect` with a height field) holds structured data: one value per point of a grid, a height, a temperature, a wind. It is also directly in the `compages` namespace and includes only `Core`, so every layer can use it: a headless simulation in `world`, a buffer sent to the GPU in `gpu`, a picture of the data in `renderer`. A field of a million points is one object, never a million entities.
+`Fields/` (`Grid2D`, `Grid3D`, `Field<T, Grid>`, `intersect` with a height field) holds structured data: one value per point of a grid, a height, a temperature, a wind. It is also directly in the `compages` namespace and includes only `Core`, so every layer can use it: a headless simulation in `world`, a buffer sent to the GPU in `gpu`, a picture of the data in `renderer`. A field of a million points is one object, never a million entities. A field and a texture are not one type (a field is data of the CPU, used without a GPU; a texture is memory of the GPU), but they share their order: a `Field<float, Grid3D>` numbers its points x first, then y, then z, like the texels of a 3D texture, so `gpu::Texture::fromField(field)` copies it as it is.
 
 ---
 
@@ -86,7 +86,7 @@ The only code that includes glad is `src/GPU/Backends/GL45/`. The `GPU_BACKEND` 
 ```text
 include/Compages/          the public interface, installed
   Core/                    vectors, matrices, Result, Frame, AABB, units
-  Fields/                  Grid2D, Field<T>, intersect (ray and height field), header only
+  Fields/                  Grid2D, Grid3D, Field<T, Grid>, intersect (ray and height field), header only
   GPU/                     Drawable, Buffer, Compute, Texture, Pipeline, ShaderSource...
   World/                   World, Entity, EntityId, Routine
     Components/            Camera, Light, SkinInstance, PoseDriver

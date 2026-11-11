@@ -153,3 +153,27 @@ TEST(HeightField, WalksAnyGround)
     EXPECT_NEAR(*t, 6.0f, 0.01f);
     EXPECT_FALSE(compages::intersectHeight(ray, flat, 0.0f, 3.0f, 1.0f).has_value());
 }
+
+TEST(Grid3D, NumbersItsPointsLikeA3DTexture)
+{
+    const compages::Grid3D grid{ .columns = 4, .rows = 3, .layers = 2, .origin = { 1.0f, 2.0f, 3.0f }, .spacing = 0.5f };
+    EXPECT_EQ(grid.count(), 24u);
+    EXPECT_EQ(grid.index(1, 2, 1), 21u);
+    EXPECT_EQ(grid.column(21u), 1);
+    EXPECT_EQ(grid.row(21u), 2);
+    EXPECT_EQ(grid.layer(21u), 1);
+    EXPECT_FLOAT_EQ(grid.point(1, 2, 1).z, 3.5f);
+    EXPECT_FALSE(grid.contains(0, 0, 2));
+    EXPECT_EQ(grid.neighbours6(grid.index(0, 0, 0)).size, 3u);
+    EXPECT_EQ(grid.neighbours6(grid.index(1, 1, 1)).size, 5u);
+}
+
+TEST(Grid3D, CarriesAFieldSampledTrilinearly)
+{
+    const compages::Grid3D grid{ .columns = 2, .rows = 2, .layers = 2, .origin = { 0.0f, 0.0f, 0.0f }, .spacing = 1.0f };
+    Field<float, compages::Grid3D> field(grid, 0.0f);
+    field(1, 1, 1) = 8.0f;
+    EXPECT_FLOAT_EQ(field.sample(Vector3f(0.5f, 0.5f, 0.5f)), 1.0f);
+    EXPECT_FLOAT_EQ(field.sample(Vector3f(5.0f, 5.0f, 5.0f)), 8.0f);
+    EXPECT_FLOAT_EQ(field[grid.index(1, 1, 1)], 8.0f);
+}

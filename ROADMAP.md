@@ -112,7 +112,9 @@ In rough order. Each item should make a demo shorter or possible.
       `DirtyRange`)
 - [x] Compute shaders reading and writing fields: `11b_RippleTank` (three
       turning buffers; a `PingPong` of a `Field` type is not needed so far)
-- [ ] `Grid3D` and `Field3D`, then volume rendering, slices, isosurfaces
+- [x] `Grid3D` and `Field<T, Grid3D>` (one `Field` template on its grid; same
+      order as the texels of a 3D texture: `gpu::Texture::fromField()`)
+- [ ] Volume rendering, slices, isosurfaces
 - [ ] Vector fields drawn as arrows; streamlines
 - [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
 - [ ] Inspection: follow a point over time (a curve), slices

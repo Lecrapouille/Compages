@@ -734,3 +734,23 @@ TEST_F(TextureTest, RefusesToSaveFloatsOrAnotherFileType)
     ASSERT_FALSE(bool(jpeg));
     EXPECT_THAT(jpeg.error(), HasSubstr(".png"));
 }
+
+// A field goes to the GPU as it is: the same order of points and texels.
+TEST_F(TextureTest, MakesATextureFromAField)
+{
+    const compages::Grid3D grid{ .columns = 4, .rows = 3, .layers = 2, .origin = { 0.0f, 0.0f, 0.0f }, .spacing = 1.0f };
+    compages::Field<float, compages::Grid3D> field(grid, 0.0f);
+    for (std::size_t k = 0u; k < field.size(); ++k)
+    {
+        field[k] = float(k);
+    }
+    auto texture = compages::gpu::Texture::fromField(field);
+    ASSERT_TRUE(bool(texture)) << texture.error();
+    EXPECT_EQ(texture.value().description().kind, compages::gpu::TextureKind::Texture3D);
+    EXPECT_EQ(texture.value().description().depth, 2u);
+    auto bytes = texture.value().read();
+    ASSERT_TRUE(bool(bytes)) << bytes.error();
+    std::vector<float> back(field.size());
+    std::memcpy(back.data(), bytes.value().data(), back.size() * sizeof(float));
+    EXPECT_FLOAT_EQ(back[grid.index(1, 2, 1)], float(grid.index(1, 2, 1)));
+}
