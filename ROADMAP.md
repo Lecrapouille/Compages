@@ -135,6 +135,24 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] Hot reload: `gpu::ShaderWatch` watches the files listed by
       `ShaderSource` and calls the load of the user
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
+- [ ] Grids with more detail where it matters. In order:
+  - [ ] A C++20 concept of grid (`count`, `index`, `point`, `locate`), so
+        that `Field<T, Grid>` takes other grids; for a non-regular grid,
+        finding the cell of a point is a search, not a division
+  - [ ] Curvilinear grid (body-fitted, an O-grid around a shape): same
+        (i, j) neighbours, contiguous values and GPU upload, each point
+        placed freely; `show()` keeps its mesh by `gl_VertexID`. Fixes the
+        steps around the column of `11g_FlowAroundCylinder` (polar grid,
+        tight at the wall, loose far away)
+  - [ ] Stretched rectilinear grid (one array of coordinates per axis): a
+        cheap middle step
+  - [ ] Quadtree / adaptive refinement, as a domain of its own (like the
+        SimTaDyn topology), for fine zones that move (a flame front, a
+        shock): neighbours across levels, T-junctions, neighbour tables for
+        compute shaders
+  - [ ] Sparse 3D grid (dense 8^3 blocks only where there are values, like
+        OpenVDB): memory and empty space skipped by the ray marching of
+        mostly empty volumes (3D smoke, lidar)
 - [x] Demo: a bimetal beam bending with heat (`11d_BimetalBeam`: heat
       equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
       `deform` hook reading a storage buffer)
