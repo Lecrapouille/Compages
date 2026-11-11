@@ -41,6 +41,9 @@ mesh.draw();
   lower: `Pipeline::create<Vertex>(program, state)` per shader (checks the
   layout; a dropped attribute is fine, a type mismatch fails), `10c_SweatAndDecals`.
 - All the vertex syntaxes side by side: `01f_VertexSyntax`.
+- `program.bind("Block", handle)` works for drawing programs too (a vertex shader reading a
+  storage buffer a compute shader wrote; `barrier(Barrier::Storage)` between). Blocks without a
+  `binding =` all share point 0: give explicit bindings when one program has several.
 - Shaders in pieces (`GPU/ShaderSource.hpp`): `ShaderSource::fromText(name, glsl)` / `fromFile(path)`,
   `.include(name, glsl)` (virtual include, wins over files; also for GLSL generated from C++),
   `.directory(path)`, `.define(name, value)` (after `#version`), `.declareHook(name, default)` /

@@ -13,15 +13,13 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief What Scene::show() keeps on the entity that draws a field: the ids
-//! of its material and of the picture of its values, to write new values.
+//! \brief What Scene::show() keeps on the entity that draws a field: the id of
+//! its material, to give it new values or a new look.
 // ****************************************************************************
 struct FieldView
 {
     //! \brief The material made for this field: its range, its relief.
     MaterialId material;
-    //! \brief One float per point of the grid.
-    TextureAssetId values;
     //! \brief The size of the grid; new values must have the same.
     int columns = 0;
     int rows = 0;

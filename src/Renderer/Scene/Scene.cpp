@@ -33,6 +33,7 @@
 #include <cctype>
 #include <cmath>
 #include <filesystem>
+#include <unordered_map>
 
 namespace compages::renderer
 {
@@ -172,6 +173,10 @@ struct Scene::Impl
     Environment environment{};
     CameraFrame last_camera{};
     Skybox sky;
+    //! \brief The values of the fields shown from the CPU, by entity.
+    std::unordered_map<compages::world::EntityId,
+                       compages::gpu::StorageBuffer<float>>
+        field_values;
 };
 
 Scene::Scene(compages::world::World& p_world)
@@ -190,6 +195,26 @@ Scene::Scene(compages::world::World& p_world, AssetManager& p_assets)
 }
 
 Scene::~Scene() = default;
+
+Result<compages::gpu::BufferHandle>
+Scene::fieldValues(compages::world::EntityId p_entity,
+                   std::span<const float> p_values)
+{
+    auto found = m_impl->field_values.find(p_entity);
+    if ((found != m_impl->field_values.end()) &&
+        (found->second.count() == p_values.size()))
+    {
+        found->second.write(p_values);
+        return found->second.handle();
+    }
+    compages::gpu::StorageBuffer<float> buffer;
+    COMPAGES_TRY_ASSIGN(buffer,
+                        compages::gpu::StorageBuffer<float>::from(
+                            p_values, compages::gpu::BufferUsage::Stream));
+    const compages::gpu::BufferHandle handle = buffer.handle();
+    m_impl->field_values.insert_or_assign(p_entity, std::move(buffer));
+    return handle;
+}
 
 MeshAssetId Scene::shapeMesh(Shape p_shape)
 {

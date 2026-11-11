@@ -32,6 +32,7 @@
 #include "Compages/Core/NotCopiable.hpp"
 #include "Compages/Core/Matrix.hpp"
 #include "Compages/Core/Vector.hpp"
+#include "Compages/GPU/Buffer.hpp"
 #include "Compages/GPU/ShaderSource.hpp"
 #include "Compages/GPU/Enums.hpp"
 #include "Compages/GPU/Handle.hpp"
@@ -328,6 +329,22 @@ public:
     //! \return true when setting this uniform has an effect.
     // ------------------------------------------------------------------------
     [[nodiscard]] bool has(std::string_view p_name) const;
+
+    // ------------------------------------------------------------------------
+    //! \brief Give the shader a storage buffer to read (or write), by the
+    //! name of its block: "buffer Values { float values[]; }" is "Values".
+    //!
+    //! For any program, drawn or computed: a vertex shader can read values
+    //! that a compute shader wrote, without a trip to the CPU. The buffer stays
+    //! on the binding point of the block until something else is bound there,
+    //! so bind again before each draw if another program used that point.
+    //!
+    //! \param[in] p_block name of the block in GLSL, not of its array.
+    //! \param[in] p_buffer a buffer created with BufferKind::Storage.
+    //! \return an error naming the blocks the shader declares when p_block is
+    //! not one of them, or when the buffer is released or of another kind.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status bind(std::string_view p_block, BufferHandle p_buffer) const;
 
     // ------------------------------------------------------------------------
     //! \brief Set a uniform, checking that the shader declares it with a

@@ -64,7 +64,7 @@ A look is enough for most objects. When you want your own shader (water, a skin,
 
 Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
 
-`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
+`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
 
 ```cpp
 compages::renderer::shaders::ShaderPair water =
@@ -110,7 +110,28 @@ compages::world::Entity plate = scene.show(temperature, look, "Plate");
 COMPAGES_TRY(scene.show(plate, temperature, look));
 ```
 
-The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a float picture, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. A field does not cast a shadow yet: the shadow pass does not run the hooks. `06m_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field does not cast a shadow yet: the shadow pass does not run the hooks. `06m_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+
+**Values computed on the GPU.** When a compute shader makes the values, give its storage buffer instead of a `Field`: nothing comes back to the CPU. The buffer holds one float per point, row after row, and must live as long as the entity draws.
+
+```cpp
+m_surface = m_scene.show(m_grid, m_heights[m_now], m_look, "Water");   // setUp()
+// each frame, after the compute steps and their barrier(Barrier::Storage):
+COMPAGES_TRY(m_scene.show(m_surface, m_heights[m_now], m_look));
+```
+
+`06n_RippleTank` steps the wave equation this way, on three buffers (before, now, next) that turn.
+
+**Read a value under the mouse.** `scene.probe(field, look, pixel)` follows the ray of a pixel of the last picture down to the field as it is drawn (with its relief) and returns the point and the value there, or nothing:
+
+```cpp
+if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
+{
+    m_probe.position(found->point).set(Tooltip{ .title = std::format("{:.0f} m", found->value), … });
+}
+```
+
+`06o_FieldProbe` writes the altitude of an island next to the mouse.
 
 ### Helpers
 
@@ -398,6 +419,8 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `09b_ManyCubes` | sorting and culling |
 | `06l_CanvasPaint` | painting on a live texture |
 | `06m_HeatPlate` | a field shown as colours and relief |
+| `06n_RippleTank` | a field computed and drawn on the GPU |
+| `06o_FieldProbe` | the value of a field under the mouse |
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 

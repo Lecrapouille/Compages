@@ -54,6 +54,19 @@ struct MaterialTexture
 };
 
 // ****************************************************************************
+//! \brief A storage buffer that every object of a material reads, by the name
+//! of its block in the shader: values a compute shader wrote, for example.
+//! Borrowed: the buffer must live as long as the material draws.
+// ****************************************************************************
+struct MaterialBuffer
+{
+    //! \brief The block: "buffer Values { float values[]; }" is "Values".
+    std::string block;
+    //! \brief The buffer, made with BufferKind::Storage.
+    compages::gpu::BufferHandle buffer;
+};
+
+// ****************************************************************************
 //! \brief What Material::create() builds a material from.
 //!
 //! \code
@@ -107,6 +120,8 @@ struct Material
     //! leaves free (FIRST_TEXTURE_UNIT on, MAX_TEXTURES of them), and whose
     //! sampler it sets.
     std::vector<MaterialTexture> textures;
+    //! \brief Storage buffers the Renderer binds for this material.
+    std::vector<MaterialBuffer> buffers;
 
     //! \brief The first texture unit of textures: 0 is the albedo map, 1 and 7
     //! the shadows.

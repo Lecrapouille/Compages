@@ -5,6 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
+#include "Compages/Fields/HeightField.hpp"
 #include "Compages/GPU/Errors.hpp"
 #include "Compages/Renderer/Components/FieldView.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
@@ -14,14 +15,17 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
 
 // ****************************************************************************
 //! \file
-//! \brief Scene::show(): a Field<float> drawn with the hooks of the PBR shader.
-//! The values are a float picture; the vertex hook raises each corner by its
+//! \brief Scene::show(): a field drawn with the hooks of the PBR shader. The
+//! values are a storage buffer (written from a Field, or by a compute shader),
+//! read by the index of each corner; the vertex hook raises the corner by its
 //! value, the fragment hook reads a colour map.
 // ****************************************************************************
 
@@ -38,21 +42,40 @@ constexpr std::uint32_t MAP_WIDTH = 256u;
 //! The corners are raised by their value; the normal comes from the values
 //! of the neighbours (central differences), so the mesh never changes.
 // ----------------------------------------------------------------------------
-constexpr char const* FIELD_DEFORM = R"(uniform sampler2D fieldValues;
+constexpr char const* FIELD_DEFORM = R"(layout(std430) readonly buffer FieldValues
+{
+    float fieldValues[];
+};
+uniform int fieldColumns;
+uniform int fieldRows;
+uniform float fieldLow;
+uniform float fieldHigh;
 uniform float fieldRelief;
 uniform float fieldSpacing;
 
-float fieldHeight(vec2 at)
+out float vFieldValue;
+
+float fieldValue(int i, int j)
 {
-    return fieldRelief * textureLod(fieldValues, at, 0.0).r;
+    i = clamp(i, 0, fieldColumns - 1);
+    j = clamp(j, 0, fieldRows - 1);
+    return fieldValues[j * fieldColumns + i];
+}
+
+// The relief stops at the ends of the range, like the colours.
+float fieldHeight(int i, int j)
+{
+    return fieldRelief * clamp(fieldValue(i, j), min(fieldLow, fieldHigh), max(fieldLow, fieldHigh));
 }
 
 void deform(inout vec4 world, inout vec3 normal)
 {
-    vec2 texel = 1.0 / vec2(textureSize(fieldValues, 0));
-    float dx = fieldHeight(uv + vec2(texel.x, 0.0)) - fieldHeight(uv - vec2(texel.x, 0.0));
-    float dz = fieldHeight(uv + vec2(0.0, texel.y)) - fieldHeight(uv - vec2(0.0, texel.y));
-    world.y += fieldHeight(uv);
+    int i = gl_VertexID % fieldColumns;
+    int j = gl_VertexID / fieldColumns;
+    vFieldValue = fieldValue(i, j);
+    float dx = fieldHeight(i + 1, j) - fieldHeight(i - 1, j);
+    float dz = fieldHeight(i, j + 1) - fieldHeight(i, j - 1);
+    world.y += fieldHeight(i, j);
     normal = normalize(vec3(-dx, 2.0 * fieldSpacing, -dz));
 }
 )";
@@ -61,16 +84,16 @@ void deform(inout vec4 world, inout vec3 normal)
 //! The value, placed in the range, picks a colour of the map (an sRGB
 //! picture: read as linear light). Lit like a ground, or shown as it is.
 // ----------------------------------------------------------------------------
-constexpr char const* FIELD_MAIN = R"(uniform sampler2D fieldValues;
-uniform sampler2D fieldColors;
+constexpr char const* FIELD_MAIN = R"(uniform sampler2D fieldColors;
 uniform float fieldLow;
 uniform float fieldHigh;
 uniform bool fieldLit;
 
+in float vFieldValue;
+
 void main()
 {
-    float value = texture(fieldValues, vUv).r;
-    float t = clamp((value - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
+    float t = clamp((vFieldValue - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
     float width = float(textureSize(fieldColors, 0).x);
     vec3 colour = texture(fieldColors, vec2((t * (width - 1.0) + 0.5) / width, 0.5)).rgb;
     if (fieldLit)
@@ -205,26 +228,24 @@ MeshAsset gridMesh(compages::Grid2D const& p_grid)
 }
 
 // ----------------------------------------------------------------------------
-//! \brief The box of the field with its relief: the culling must see the
-//! raised corners.
+//! \brief The box of the field with its relief (which stops at the ends of
+//! the range): the culling must see the raised corners.
 // ----------------------------------------------------------------------------
-compages::AABB boundsOf(compages::Field<float> const& p_field, float p_relief)
+compages::AABB boundsOf(compages::Grid2D const& p_grid, FieldLook const& p_look)
 {
-    compages::Grid2D const& grid = p_field.grid();
-    const auto [low, high] = std::minmax_element(p_field.begin(), p_field.end());
-    const float a = p_relief * *low;
-    const float b = p_relief * *high;
-    const compages::Vector2f first = grid.point(0, 0);
-    const compages::Vector2f last = grid.point(grid.columns - 1, grid.rows - 1);
+    const float a = p_look.relief * p_look.low;
+    const float b = p_look.relief * p_look.high;
+    const compages::Vector2f first = p_grid.point(0, 0);
+    const compages::Vector2f last = p_grid.point(p_grid.columns - 1, p_grid.rows - 1);
     return compages::AABB::fromCorners(
         compages::Vector3f(std::min(first.x, last.x), std::min({ a, b, 0.0f }), std::min(first.y, last.y)),
         compages::Vector3f(std::max(first.x, last.x), std::max({ a, b, 0.0f }), std::max(first.y, last.y)));
 }
 
 // ----------------------------------------------------------------------------
-Status checkField(compages::Field<float> const& p_field, FieldLook const& p_look)
+Status checkField(compages::Grid2D const& p_grid, FieldLook const& p_look)
 {
-    if ((p_field.grid().columns < 2) || (p_field.grid().rows < 2))
+    if ((p_grid.columns < 2) || (p_grid.rows < 2))
     {
         return failure("show() needs a field of at least 2 x 2 points");
     }
@@ -237,80 +258,123 @@ Status checkField(compages::Field<float> const& p_field, FieldLook const& p_look
 }
 
 // ----------------------------------------------------------------------------
-//! \brief The range, the relief, the light and the colours of a field.
+//! \brief The values, the range, the relief, the light and the colours.
 // ----------------------------------------------------------------------------
 Status applyLook(AssetManager& p_assets,
                  Material& p_material,
-                 TextureAssetId p_values,
-                 compages::Field<float> const& p_field,
+                 compages::gpu::BufferHandle p_values,
+                 std::size_t p_count,
+                 compages::Grid2D const& p_grid,
                  FieldLook const& p_look)
 {
+    if (p_count < p_grid.count())
+    {
+        return failure("a field of " + std::to_string(p_grid.count()) +
+                       " points, and a buffer of " + std::to_string(p_count) + " values");
+    }
     TextureAssetId colors;
     COMPAGES_TRY_ASSIGN(colors, colorMapTexture(p_assets, p_look.colors));
-    p_material.textures = { { .sampler = "fieldValues", .texture = p_values },
-                            { .sampler = "fieldColors", .texture = colors } };
+    p_material.textures = { { .sampler = "fieldColors", .texture = colors } };
+    p_material.buffers = { { .block = "FieldValues", .buffer = p_values } };
+    p_material.program.set("fieldColumns", p_grid.columns);
+    p_material.program.set("fieldRows", p_grid.rows);
     p_material.program.set("fieldLow", p_look.low);
     p_material.program.set("fieldHigh", p_look.high);
     p_material.program.set("fieldLit", p_look.lit);
     p_material.program.set("fieldRelief", p_look.relief);
-    p_material.program.set("fieldSpacing", p_field.grid().spacing);
+    p_material.program.set("fieldSpacing", p_grid.spacing);
     return success();
 }
 
 } // namespace
 
 // ----------------------------------------------------------------------------
+compages::world::Entity Scene::showGrid(compages::Grid2D const& p_grid,
+                                        FieldLook const& p_look,
+                                        std::string p_name)
+{
+    MeshAsset grid = gridMesh(p_grid);
+    grid.local_bounds = boundsOf(p_grid, p_look);
+    compages::world::Entity entity = mesh(std::move(grid), p_name);
+
+    shaders::ShaderPair pbr = shaders::pbr();
+    pbr.vertex().hook("deform", FIELD_DEFORM);
+    pbr.fragment().hook("main", FIELD_MAIN);
+    auto made = Material::create(
+        p_name + " field",
+        { .family = ShaderFamily::PbrMinimal,
+          .shaders = std::move(pbr),
+          .state = { .depth_test = true, .cull = compages::gpu::CullMode::None },
+          .see_through = std::nullopt });
+    Result<MaterialId> added = made ? m_assets->addMaterial({}, made.take())
+                                    : Result<MaterialId>(failure(made.error()));
+    if (!added)
+    {
+        compages::gpu::reportError(added.error());
+        return entity;
+    }
+    look(entity, added.value());
+    // The shadow pass draws the mesh flat (it has no hooks yet): no shadow.
+    entity.get<MeshRenderer>().flags = RenderFlags::NoShadowCaster;
+    entity.set(FieldView{ .material = added.value(),
+                          .columns = p_grid.columns,
+                          .rows = p_grid.rows });
+    return entity;
+}
+
+// ----------------------------------------------------------------------------
+Status Scene::showValues(compages::world::EntityId p_entity,
+                         compages::gpu::BufferHandle p_values,
+                         std::size_t p_count,
+                         FieldLook const& p_look)
+{
+    FieldView const* view = m_world.tryGet<FieldView>(p_entity);
+    if (view == nullptr)
+    {
+        return failure("show(entity, ...) on an entity not made by show()");
+    }
+    const compages::Grid2D grid{ .columns = view->columns, .rows = view->rows };
+    MeshRenderer const* renderer = m_world.tryGet<MeshRenderer>(p_entity);
+    MeshAsset* mesh = (renderer == nullptr) ? nullptr : m_assets->mesh(renderer->mesh);
+    Material* material = m_assets->material(view->material);
+    if ((mesh == nullptr) || (material == nullptr))
+    {
+        return failure("show(entity, ...): the entity lost its field");
+    }
+    COMPAGES_TRY(checkField(grid, p_look));
+    // The grid of the mesh keeps its place and spacing; only the heights move.
+    const compages::Vector3f low = mesh->local_bounds.min;
+    const compages::Vector3f high = mesh->local_bounds.max;
+    const float a = p_look.relief * p_look.low;
+    const float b = p_look.relief * p_look.high;
+    mesh->local_bounds = compages::AABB::fromCorners(
+        compages::Vector3f(low.x, std::min({ a, b, 0.0f }), low.z),
+        compages::Vector3f(high.x, std::max({ a, b, 0.0f }), high.z));
+    const float spacing = (high.x - low.x) / float(std::max(view->columns - 1, 1));
+    COMPAGES_TRY(applyLook(*m_assets,
+                           *material,
+                           p_values,
+                           p_count,
+                           { .columns = view->columns, .rows = view->rows, .spacing = spacing },
+                           p_look));
+    return success();
+}
+
+// ----------------------------------------------------------------------------
 compages::world::Entity Scene::show(compages::Field<float> const& p_field,
                                     FieldLook const& p_look,
                                     std::string p_name)
 {
-    if (const Status valid = checkField(p_field, p_look); !valid)
+    if (const Status valid = checkField(p_field.grid(), p_look); !valid)
     {
         compages::gpu::reportError(valid.error());
         return m_world.entity(std::move(p_name));
     }
-    MeshAsset mesh = gridMesh(p_field.grid());
-    mesh.local_bounds = boundsOf(p_field, p_look.relief);
-    compages::world::Entity entity = this->mesh(std::move(mesh), p_name);
-
-    auto made = [&]() -> Result<FieldView>
+    compages::world::Entity entity = showGrid(p_field.grid(), p_look, std::move(p_name));
+    if (const Status shown = show(entity, p_field, p_look); !shown)
     {
-        FieldView view{ .material = {},
-                        .values = {},
-                        .columns = p_field.grid().columns,
-                        .rows = p_field.grid().rows };
-        TextureAsset values;
-        values.name = p_name + " values";
-        compages::gpu::TextureDesc desc = compages::gpu::TextureDesc::image(
-            std::uint32_t(view.columns), std::uint32_t(view.rows), compages::gpu::PixelFormat::R32F);
-        COMPAGES_TRY_ASSIGN(values.texture, compages::gpu::Texture::create(desc));
-        COMPAGES_TRY(values.texture.write(std::as_bytes(p_field.values())));
-        COMPAGES_TRY_ASSIGN(view.values, m_assets->addTexture({}, std::move(values)));
-
-        shaders::ShaderPair pbr = shaders::pbr();
-        pbr.vertex().hook("deform", FIELD_DEFORM);
-        pbr.fragment().hook("main", FIELD_MAIN);
-        Material material;
-        COMPAGES_TRY_ASSIGN(
-            material,
-            Material::create(p_name + " field",
-                             { .family = ShaderFamily::PbrMinimal,
-                               .shaders = std::move(pbr),
-                               .state = { .depth_test = true, .cull = compages::gpu::CullMode::None },
-                               .see_through = std::nullopt }));
-        COMPAGES_TRY(applyLook(*m_assets, material, view.values, p_field, p_look));
-        COMPAGES_TRY_ASSIGN(view.material, m_assets->addMaterial({}, std::move(material)));
-        return view;
-    }();
-    if (!made)
-    {
-        compages::gpu::reportError(made.error());
-        return entity;
+        compages::gpu::reportError(shown.error());
     }
-    look(entity, made.value().material);
-    // The shadow pass draws the mesh flat (it has no hooks yet): no shadow.
-    entity.get<MeshRenderer>().flags = RenderFlags::NoShadowCaster;
-    entity.set(made.value());
     return entity;
 }
 
@@ -320,28 +384,94 @@ Status Scene::show(compages::world::EntityId p_entity,
                    FieldLook const& p_look)
 {
     FieldView const* view = m_world.tryGet<FieldView>(p_entity);
-    if (view == nullptr)
-    {
-        return failure("show(entity, field) on an entity not made by show(field)");
-    }
-    if ((view->columns != p_field.grid().columns) || (view->rows != p_field.grid().rows))
+    if ((view != nullptr) &&
+        ((view->columns != p_field.grid().columns) || (view->rows != p_field.grid().rows)))
     {
         return failure("show(entity, field) with " + std::to_string(p_field.grid().columns) +
                        " x " + std::to_string(p_field.grid().rows) + " points, made with " +
                        std::to_string(view->columns) + " x " + std::to_string(view->rows));
     }
-    COMPAGES_TRY(checkField(p_field, p_look));
-    TextureAsset* values = m_assets->texture(view->values);
-    Material* material = m_assets->material(view->material);
-    MeshRenderer const* renderer = m_world.tryGet<MeshRenderer>(p_entity);
-    MeshAsset* mesh = (renderer == nullptr) ? nullptr : m_assets->mesh(renderer->mesh);
-    if ((values == nullptr) || (material == nullptr) || (mesh == nullptr))
+    if (view == nullptr)
     {
-        return failure("show(entity, field): the entity lost its field");
+        return failure("show(entity, field) on an entity not made by show()");
     }
-    COMPAGES_TRY(values->texture.write(std::as_bytes(p_field.values())));
-    mesh->local_bounds = boundsOf(p_field, p_look.relief);
-    return applyLook(*m_assets, *material, view->values, p_field, p_look);
+    compages::gpu::BufferHandle values;
+    COMPAGES_TRY_ASSIGN(values, fieldValues(p_entity, p_field.values()));
+    return showValues(p_entity, values, p_field.size(), p_look);
+}
+
+// ----------------------------------------------------------------------------
+compages::world::Entity Scene::show(compages::Grid2D const& p_grid,
+                                    compages::gpu::StorageBuffer<float> const& p_values,
+                                    FieldLook const& p_look,
+                                    std::string p_name)
+{
+    if (const Status valid = checkField(p_grid, p_look); !valid)
+    {
+        compages::gpu::reportError(valid.error());
+        return m_world.entity(std::move(p_name));
+    }
+    compages::world::Entity entity = showGrid(p_grid, p_look, std::move(p_name));
+    if (const Status shown = showValues(entity, p_values.handle(), p_values.count(), p_look);
+        !shown)
+    {
+        compages::gpu::reportError(shown.error());
+    }
+    return entity;
+}
+
+// ----------------------------------------------------------------------------
+Status Scene::show(compages::world::EntityId p_entity,
+                   compages::gpu::StorageBuffer<float> const& p_values,
+                   FieldLook const& p_look)
+{
+    return showValues(p_entity, p_values.handle(), p_values.count(), p_look);
+}
+
+// ----------------------------------------------------------------------------
+std::optional<FieldProbe> Scene::probe(compages::Field<float> const& p_field,
+                                       FieldLook const& p_look,
+                                       compages::Vector2f p_pixel) const
+{
+    CameraFrame const& camera = lastCamera();
+    compages::Grid2D const& grid = p_field.grid();
+    if ((camera.viewport_width == 0u) || (camera.viewport_height == 0u) ||
+        (grid.columns < 2) || (grid.rows < 2))
+    {
+        return std::nullopt;
+    }
+    const compages::Ray ray = camera.screenRay(
+        p_pixel.x, p_pixel.y, camera.viewport_width, camera.viewport_height);
+    const float low = std::min(p_look.low, p_look.high);
+    const float high = std::max(p_look.low, p_look.high);
+    // As the vertex hook draws it: the relief stops at the ends of the range;
+    // no ground outside the grid.
+    auto ground = [&](float p_x, float p_z)
+    {
+        const compages::Vector2f at = grid.coordinates(compages::Vector2f(p_x, p_z));
+        const bool inside = (at.x >= 0.0f) && (at.y >= 0.0f) &&
+                            (at.x <= float(grid.columns - 1)) && (at.y <= float(grid.rows - 1));
+        return inside ? p_look.relief * std::clamp(p_field.sample(compages::Vector2f(p_x, p_z)), low, high)
+                      : -std::numeric_limits<float>::infinity();
+    };
+    const float top = std::max({ p_look.relief * low, p_look.relief * high, 0.0f });
+    const float bottom = std::min({ p_look.relief * low, p_look.relief * high, 0.0f });
+    if (std::abs(ray.direction.y) < 1.0e-6f)
+    {
+        return std::nullopt;
+    }
+    const float a = (top - ray.origin.y) / ray.direction.y;
+    const float b = (bottom - ray.origin.y) / ray.direction.y;
+    const float step = 0.5f * grid.spacing;
+    const std::optional<float> t = compages::intersectHeight(
+        ray, ground, std::max(0.0f, std::min(a, b)), std::max(a, b) + step, step);
+    if (!t)
+    {
+        return std::nullopt;
+    }
+    const compages::Vector3f point = ray.pointAt(*t);
+    return FieldProbe{ .point = point,
+                       .value = p_field.sample(compages::Vector2f(point.x, point.z)) };
 }
 
 } // namespace compages::renderer

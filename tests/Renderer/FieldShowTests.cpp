@@ -123,3 +123,47 @@ TEST_F(FieldShowTest, RaisesTheValuesWithARelief)
     m_scene->show(field, raised, "Raised");
     EXPECT_EQ(centre(), 255);
 }
+
+// Values already on the GPU (what a compute shader writes): no Field at all.
+TEST_F(FieldShowTest, DrawsAStorageBufferOfValues)
+{
+    auto ones = compages::gpu::StorageBuffer<float>::from(std::vector<float>(16u, 1.0f),
+                                                          compages::gpu::BufferUsage::Static);
+    ASSERT_TRUE(bool(ones)) << ones.error();
+    auto zeros = compages::gpu::StorageBuffer<float>::from(std::vector<float>(16u, 0.0f),
+                                                           compages::gpu::BufferUsage::Static);
+    ASSERT_TRUE(bool(zeros)) << zeros.error();
+
+    compages::world::Entity plate = m_scene->show(m_grid, ones.value(), m_grey, "Plate");
+    EXPECT_EQ(centre(), 255);
+    ASSERT_TRUE(bool(m_scene->show(plate, zeros.value(), m_grey)));
+    EXPECT_EQ(centre(), 0);
+
+    auto few = compages::gpu::StorageBuffer<float>::from(std::vector<float>(3u, 0.0f),
+                                                         compages::gpu::BufferUsage::Static);
+    ASSERT_TRUE(bool(few)) << few.error();
+    auto refused = m_scene->show(plate, few.value(), m_grey);
+    ASSERT_FALSE(bool(refused));
+    EXPECT_THAT(refused.error(), HasSubstr("16 points"));
+}
+
+// The centre pixel looks at the middle of the plate: the probe finds it, with
+// its value; a field elsewhere is not found.
+TEST_F(FieldShowTest, ProbesTheValueUnderAPixel)
+{
+    compages::Field<float> field(m_grid, 0.25f);
+    m_scene->show(field, m_grey, "Plate");
+    (void)centre(); // a picture, for the camera of the probe
+    const std::optional<compages::renderer::FieldProbe> found =
+        m_scene->probe(field, m_grey, compages::Vector2f(16.0f, 16.0f));
+    ASSERT_TRUE(found.has_value());
+    EXPECT_FLOAT_EQ(found->value, 0.25f);
+    EXPECT_NEAR(found->point.y, 0.0f, 1.0e-3f);
+    EXPECT_LT(std::abs(found->point.x), 0.5f);
+
+    // A field far from what the camera sees: the ray misses it.
+    compages::Grid2D far = m_grid;
+    far.origin = compages::Vector2f(100.0f, 100.0f);
+    EXPECT_FALSE(m_scene->probe(compages::Field<float>(far, 0.25f), m_grey,
+                                compages::Vector2f(16.0f, 16.0f)).has_value());
+}

@@ -163,6 +163,8 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
 | `06m_HeatPlate` | a field in one call: heat on a `Field<float>`, `scene.show(field, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_HeatPlate.png" alt="06m_HeatPlate" width="200"> |
+| `06n_RippleTank` | waves computed and drawn on the GPU: a compute shader, `scene.show(grid, buffer, look)` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_RippleTank.png" alt="06n_RippleTank" width="200"> |
+| `06o_FieldProbe` | the altitude under the mouse: `scene.probe(field, look, pixel)`, a `Tooltip` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_FieldProbe.png" alt="06o_FieldProbe" width="200"> |
 
 ---
 

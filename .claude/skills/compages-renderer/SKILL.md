@@ -39,8 +39,12 @@ scene.draw(frame);                       // = update(frame) + render()
   Demos: `10e_Archipelago` (Sea.cpp), `10c_SweatAndDecals`.
 - Show a field: `scene.show(Field<float>, FieldLook{ .colors = ColorMap::Viridis|Inferno|Coolwarm|
   Terrain|Grey, .low, .high, .relief, .lit }, name)` → entity with a `FieldView` component;
-  `scene.show(entity, field, look)` writes new values (same grid size). R32F texture + PBR hooks
-  (`src/Renderer/Scene/FieldShow.cpp`), no shadow. Demo `06m_HeatPlate`.
+  `scene.show(entity, field, look)` writes new values (same grid size); GPU values:
+  `scene.show(grid, StorageBuffer<float>, look, name)` / `show(entity, buffer, look)` (borrowed).
+  Values in a storage buffer read by `gl_VertexID` + PBR hooks (`src/Renderer/Scene/FieldShow.cpp`),
+  relief clamped to the range, no shadow. `scene.probe(field, look, pixel)` → point + value.
+  `Material::buffers` = storage buffers bound by the Renderer. Demos `06m_HeatPlate`,
+  `06n_RippleTank` (compute), `06o_FieldProbe` (Tooltip).
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
   (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),

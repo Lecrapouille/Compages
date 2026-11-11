@@ -77,37 +77,7 @@ Result<ComputeProgram> ComputeProgram::fromSource(ShaderSource const& p_source)
 Status ComputeProgram::bind(std::string_view p_block, BufferHandle p_buffer)
 {
     COMPAGES_TRY(ensureCompute(m_program));
-
-    ProgramReflection const& what = m_program.reflection();
-    BlockInfo const* block = what.storageBlock(p_block);
-    if (block == nullptr)
-    {
-        return failure("there is no storage block named '" +
-                       std::string(p_block) +
-                       "'. The program declares: " + what.toString());
-    }
-
-    detail::BufferRecord const* record = detail::pools().buffers.get(p_buffer);
-    if (record == nullptr)
-    {
-        return failure(
-            "the buffer bound to '" + std::string(p_block) +
-            "' has been released, so the compute pass has nothing to read");
-    }
-    if (record->kind != BufferKind::Storage)
-    {
-        return failure(
-            "'" + std::string(p_block) +
-            "' is a storage block, and the buffer was created to "
-            "hold " +
-            std::string(toString(record->kind)) +
-            " data. Create it with BufferKind::Storage: that is also "
-            "what lets a later draw read it as vertices");
-    }
-
-    backend::bindBufferToPoint(
-        BufferKind::Storage, record->native, block->binding, 0u, 0u);
-    return success();
+    return m_program.bind(p_block, p_buffer);
 }
 
 Status ComputeProgram::dispatch(std::uint32_t p_groups_x,

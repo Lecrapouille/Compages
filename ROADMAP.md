@@ -106,12 +106,16 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] `scene.show(field, look)` with a colour map and a range (heat map,
       coloured terrain): values in a float texture, colours and relief made
       by the PBR hooks; demo `06m_HeatPlate`
-- [ ] A field on the GPU: upload, partial update (`DirtyRange` exists), drawn
-      without coming back to the CPU
-- [ ] Compute shaders reading and writing fields (`PingPong` of fields)
+- [x] A field on the GPU, drawn without coming back to the CPU:
+      `scene.show(grid, StorageBuffer<float>, look)`; a `Field` shown from
+      the CPU goes through a storage buffer too (partial update: later, with
+      `DirtyRange`)
+- [x] Compute shaders reading and writing fields: `06n_RippleTank` (three
+      turning buffers; a `PingPong` of a `Field` type is not needed so far)
 - [ ] `Grid3D` and `Field3D`, then volume rendering, slices, isosurfaces
 - [ ] Vector fields drawn as arrows; streamlines
-- [ ] Inspection: probe a value under the mouse, follow a point over time
+- [x] Inspection: `scene.probe(field, look, pixel)`, demo `06o_FieldProbe`
+- [ ] Inspection: follow a point over time (a curve), slices
 - [ ] 2D plots (time series, histograms) on a `CanvasTexture`
 - [ ] Hooks in the shadow and depth passes
 - [ ] Custom per-instance parameters of a material (typed block)

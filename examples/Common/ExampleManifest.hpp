@@ -49,6 +49,8 @@
 #include "06_Scene/06k_MiscLookAt.hpp"
 #include "06_Scene/06l_CanvasPaint.hpp"
 #include "06_Scene/06m_HeatPlate.hpp"
+#include "06_Scene/06n_RippleTank.hpp"
+#include "06_Scene/06o_FieldProbe.hpp"
 #include "07_World/07a_HeadlessWorld.hpp"
 #include "07_World/07b_Routines.hpp"
 #include "07_World/07c_MovingRobot.hpp"
@@ -111,6 +113,8 @@
     X(MiscLookAt, "06k_MiscLookAt", "06_Scene", "06_Scene/06k_MiscLookAt.cpp", "25_MiscLookAt", 0, "-") \
     X(CanvasPaint, "06l_CanvasPaint", "06_Scene", "06_Scene/06l_CanvasPaint.cpp", "-", 0, "-") \
     X(HeatPlate, "06m_HeatPlate", "06_Scene", "06_Scene/06m_HeatPlate.cpp", "-", 0, "-") \
+    X(RippleTank, "06n_RippleTank", "06_Scene", "06_Scene/06n_RippleTank.cpp", "-", 0, "-") \
+    X(FieldProbe, "06o_FieldProbe", "06_Scene", "06_Scene/06o_FieldProbe.cpp", "-", 0, "-") \
     X(HeadlessWorld, "07a_HeadlessWorld", "07_World", "07_World/07a_HeadlessWorld.cpp", "-", 0, "-") \
     X(Routines, "07b_Routines", "07_World", "07_World/07b_Routines.cpp", "17_MovingRobot", 0, "-") \
     X(MovingRobot, "07c_MovingRobot", "07_World", "07_World/07c_MovingRobot.cpp", "17_MovingRobot", 0, "-") \

@@ -8,6 +8,7 @@
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
 
 #include <algorithm>
@@ -342,6 +343,45 @@ Result<Program> Program::fromComputeSource(ShaderSource const& p_source)
     COMPAGES_TRY_ASSIGN(compute,
                         Shader::fromSource(ShaderStage::Compute, p_source));
     return link({ &compute });
+}
+
+Status Program::bind(std::string_view p_block, BufferHandle p_buffer) const
+{
+    if (!valid())
+    {
+        return failure("bind() on a program that no longer exists");
+    }
+
+    ProgramReflection const& what = reflection();
+    BlockInfo const* block = what.storageBlock(p_block);
+    if (block == nullptr)
+    {
+        return failure("there is no storage block named '" +
+                       std::string(p_block) +
+                       "'. The program declares: " + what.toString());
+    }
+
+    detail::BufferRecord const* record = detail::pools().buffers.get(p_buffer);
+    if (record == nullptr)
+    {
+        return failure(
+            "the buffer bound to '" + std::string(p_block) +
+            "' has been released, so the program has nothing to read");
+    }
+    if (record->kind != BufferKind::Storage)
+    {
+        return failure(
+            "'" + std::string(p_block) +
+            "' is a storage block, and the buffer was created to "
+            "hold " +
+            std::string(toString(record->kind)) +
+            " data. Create it with BufferKind::Storage: that is also "
+            "what lets a later draw read it as vertices");
+    }
+
+    backend::bindBufferToPoint(
+        BufferKind::Storage, record->native, block->binding, 0u, 0u);
+    return success();
 }
 
 Status Program::load(ShaderSource const& p_vertex,

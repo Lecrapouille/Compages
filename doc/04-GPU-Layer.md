@@ -214,6 +214,7 @@ To see the numbers on the CPU, read the current copy back: `m_stars.current().re
 | write an image into a file | `texture.saveFile("out.png")`, the other way of `Texture::fromFile` | `Compages-headless` |
 | cellular automaton on an image | `TexturePingPong` | `05b_GameOfLife`, `05c_GrayScott` |
 | compute writes the vertices | `ComputeProgram`, `Buffer`, `barrier` | `05d_ComputeParticles`, `05f_Galaxy` |
+| a draw reads what compute wrote | `program.bind("Block", buffer.handle())`, `barrier(Barrier::Storage)` | `06n_RippleTank` |
 | the CPU never counts the survivors | compute → indirect draw command | `09c_IndirectDraw` |
 | height field computed on the CPU | dynamic vertices, fixed indices | `02c_HeightMap`, `03e_Terrain3D` |
 

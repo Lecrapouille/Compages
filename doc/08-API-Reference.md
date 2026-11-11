@@ -47,6 +47,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 | clear | `clear({ r, g, b })` |
 | state | `d.state().depth_test = true;` `d.indices({ 0, 1, 2 });` |
 | several shaders | `Pipeline::create<Vertex>(program, state)` |
+| storage buffer in a draw | `program.bind("Block", buffer.handle())`: any program, a vertex shader can read what a compute shader wrote |
 | shader in pieces | `ShaderSource::fromText(name, glsl)` or `fromFile(path)`; `.include(name, glsl)` `.directory(path)` `.define(name, value)` `.hook(name, glsl)`; `program.load(vertex, fragment)`, `computeProgram.load(source)`; `resolve()` → text, `pieces`, `files` |
 | compute | `ComputeProgram::loadSource` or `loadFile`; `dispatchItems(n)`; `barrier(Barrier::VertexAttrib)` |
 | ping-pong | `PingPong<T>::from(data)`: `current()`, `next()`, `swap()`; `dispatch(program, state, { .read = "In", .write = "Out" })`; `TexturePingPong::create(desc)`: `current()` (texture), `next()` / `currentTarget()` (framebuffers), `swap()` |
@@ -97,6 +98,9 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | own material | `auto pbr = shaders::pbr(); pbr.vertex().hook("deform", glsl); pbr.fragment().hook("main", glsl);` then `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures = { { .sampler, .texture } }`, `assets().addMaterial(name, material)`, `scene.look(entity, materialId)` |
 | new geometry | `scene.reshape(entity, mesh)` (in place: its copies change too) |
 | show a field | `scene.show(field, FieldLook{ .colors, .low, .high, .relief, .lit }, name)` → entity; `scene.show(entity, field, look)` for new values; `ColorMap::Viridis` `Inferno` `Coolwarm` `Terrain` `Grey` |
+| field on the GPU | `scene.show(grid, storageBuffer, look, name)`, `scene.show(entity, storageBuffer, look)`: a `StorageBuffer<float>` a compute shader writes |
+| read a field | `scene.probe(field, look, pixel)` → `std::optional<FieldProbe>{ .point, .value }` |
+| material buffers | `material.buffers = { { .block, .buffer } }`: storage buffers bound by the Renderer |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |

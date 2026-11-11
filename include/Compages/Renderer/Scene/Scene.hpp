@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -200,6 +201,39 @@ public:
     [[nodiscard]] Status show(compages::world::EntityId p_entity,
                               compages::Field<float> const& p_field,
                               FieldLook const& p_look);
+
+    // ------------------------------------------------------------------------
+    //! \brief Draw a field whose values are on the GPU already: a storage
+    //! buffer of (at least) p_grid.count() floats, row after row, that a
+    //! compute shader writes. Nothing comes back to the CPU.
+    //! \param[in] p_values Borrowed: it must live as long as the entity
+    //! draws (with a PingPong, give current() again after each swap).
+    // ------------------------------------------------------------------------
+    compages::world::Entity show(compages::Grid2D const& p_grid,
+                                 compages::gpu::StorageBuffer<float> const& p_values,
+                                 FieldLook const& p_look,
+                                 std::string p_name);
+
+    // ------------------------------------------------------------------------
+    //! \brief Another buffer of values, or another look, for an entity made
+    //! by show(): the buffer must hold as many floats as the grid.
+    //! \return Why it could not: not a field, a range of zero.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::gpu::StorageBuffer<float> const& p_values,
+                              FieldLook const& p_look);
+
+    // ------------------------------------------------------------------------
+    //! \brief Read a field under a pixel of the last picture: the point the
+    //! ray of the pixel meets on the field drawn with this look, and the value
+    //! there. For a field on the ground of its grid, as show() draws it.
+    //! \param[in] p_pixel The pixel, as Input::mouse gives it.
+    //! \return The point and the value, or none when the ray misses.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] std::optional<FieldProbe>
+    probe(compages::Field<float> const& p_field,
+          FieldLook const& p_look,
+          compages::Vector2f p_pixel) const;
 
     // ------------------------------------------------------------------------
     //! \brief Give an entity drawn by this Scene new geometry, in place: its
@@ -419,6 +453,23 @@ private:
 
     compages::world::Entity
     drawn(MeshAssetId p_mesh, std::string p_name, Look const& p_look);
+
+    //! \brief The storage buffer of a field shown from the CPU, written with
+    //! these values (made the first time).
+    [[nodiscard]] Result<compages::gpu::BufferHandle>
+    fieldValues(compages::world::EntityId p_entity,
+                std::span<const float> p_values);
+
+    //! \brief The entity, the mesh and the material of a field.
+    compages::world::Entity showGrid(compages::Grid2D const& p_grid,
+                                     FieldLook const& p_look,
+                                     std::string p_name);
+
+    //! \brief The look and the values of a field on its material.
+    [[nodiscard]] Status showValues(compages::world::EntityId p_entity,
+                                    compages::gpu::BufferHandle p_values,
+                                    std::size_t p_count,
+                                    FieldLook const& p_look);
 
 private:
 

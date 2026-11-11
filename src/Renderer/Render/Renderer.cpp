@@ -122,7 +122,8 @@ Status bindMaterialFrame(compages::renderer::Material& p_material,
     }
 }
 
-//! \brief Bind the textures of a material and set their samplers.
+//! \brief Bind the textures of a material, set their samplers, bind its
+//! storage buffers.
 Status bindMaterialTextures(compages::renderer::Material& p_material,
                             compages::renderer::AssetManager& p_assets)
 {
@@ -148,6 +149,10 @@ Status bindMaterialTextures(compages::renderer::Material& p_material,
         asset->texture.bind(unit);
         offer(p_material.program, texture.sampler, int(unit));
         ++unit;
+    }
+    for (compages::renderer::MaterialBuffer const& buffer : p_material.buffers)
+    {
+        COMPAGES_TRY(p_material.program.bind(buffer.block, buffer.buffer));
     }
     return success();
 }

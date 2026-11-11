@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "Compages/Core/Vector.hpp"
+
 namespace compages::renderer
 {
 
@@ -52,6 +54,18 @@ struct FieldLook
     //! \brief True: lit by the sun and the lamps, like a ground. False: the
     //! colours exactly as the map gives them, like a chart.
     bool lit;
+};
+
+// ****************************************************************************
+//! \brief What Scene::probe() finds under a pixel: where the ray meets the
+//! field as it is drawn, and the value there.
+// ****************************************************************************
+struct FieldProbe
+{
+    //! \brief The point of the drawn field, in the world.
+    compages::Vector3f point;
+    //! \brief The value of the field there (bilinear).
+    float value;
 };
 
 } // namespace compages::renderer
