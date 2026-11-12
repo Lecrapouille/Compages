@@ -388,8 +388,9 @@ compages::Status DoomLike::placeCell(char p_cell, std::size_t p_column, std::siz
 }
 
 // ----------------------------------------------------------------------------
-//! A fixture of fluorescent tubes under the ceiling (no light of its own:
-//! the four lamps of a picture go to the wall lamps); its tube glows.
+//! A fixture of fluorescent tubes under the ceiling, its tube glowing, and a
+//! cold lamp of short range under it: one of the many lamps of a level that
+//! the Renderer sorts into clusters (the four nearest have uniforms).
 // ----------------------------------------------------------------------------
 void DoomLike::placeTubes(std::size_t p_column, std::size_t p_row)
 {
@@ -410,6 +411,8 @@ void DoomLike::placeTubes(std::size_t p_column, std::size_t p_row)
         .scale(0.86f, 0.012f, 0.022f)
         .get<compages::renderer::MeshRenderer>()
         .flags = compages::renderer::RenderFlags::NoShadowCaster;
+    m_level_scene.scene->lamp("Tube light", compages::Vector3f(0.75f, 0.9f, 1.0f), 1.3f, 6.5f)
+        .position(at.x, WALL_HEIGHT - 0.25f, at.z);
 }
 
 // ----------------------------------------------------------------------------

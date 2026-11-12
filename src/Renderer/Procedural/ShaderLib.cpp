@@ -161,9 +161,66 @@ vec3 samplePointLight(int i, vec3 n, vec3 worldPos, vec3 pos, vec3 col, float ra
     return lambert * att * col * lampVisibility(i, n, worldPos, pos, range);
 }
 
-vec3 pointLightsContribution(vec3 n, vec3 worldPos)
+// The other lamps: clustered (LightClusters). The picture is cut into
+// tiles, the depth into slices that grow with the distance; a pixel reads
+// the lamps of its cluster only. No shadows for these.
+layout(std430, binding = 9) readonly buffer ClusterLights { vec4 clusterLights[]; };
+layout(std430, binding = 10) readonly buffer ClusterCells { uint clusterCells[]; };
+layout(std430, binding = 11) readonly buffer ClusterIndices { uint clusterIndices[]; };
+uniform int clusterLightCount;
+uniform ivec2 clusterTiles;
+uniform int clusterSlices;
+uniform vec2 clusterDepth;     // near, far
+uniform vec4 clusterViewport;  // x, y, width, height in pixels
+uniform mat4 clusterView;
+
+// The first index and the count of the lamps of the cluster of a point.
+uvec2 clusterOf(vec3 worldPos)
+{
+    vec2 at = (gl_FragCoord.xy - clusterViewport.xy) / clusterViewport.zw;
+    ivec2 tile = clamp(ivec2(at * vec2(clusterTiles)), ivec2(0), clusterTiles - 1);
+    float depth = max(-(clusterView * vec4(worldPos, 1.0)).z, clusterDepth.x);
+    float t = log(depth / clusterDepth.x) / log(clusterDepth.y / clusterDepth.x);
+    int slice = clamp(int(t * float(clusterSlices)), 0, clusterSlices - 1);
+    uint cell = uint(((slice * clusterTiles.y) + tile.y) * clusterTiles.x + tile.x);
+    return uvec2(clusterCells[2u * cell], clusterCells[2u * cell + 1u]);
+}
+
+// The light a clustered lamp sends to a point, like samplePointLight()
+// without the shadow: its direction (xyz) and its strength (w) folded into
+// the colour by the caller.
+vec3 clusterLampToward(uint lamp, vec3 worldPos, out float att)
+{
+    vec4 posRange = clusterLights[2u * lamp];
+    vec3 toLight = posRange.xyz - worldPos;
+    float dist = length(toLight);
+    float ratio2 = (dist * dist) / (posRange.w * posRange.w);
+    float window = clamp(1.0 - ratio2, 0.0, 1.0);
+    att = (window * window) / (1.0 + 8.0 * ratio2);
+    return toLight / max(dist, 1e-4);
+}
+
+vec3 clusteredLampsContribution(vec3 n, vec3 worldPos)
 {
     vec3 sum = vec3(0.0);
+    if (clusterLightCount == 0)
+    {
+        return sum;
+    }
+    uvec2 cell = clusterOf(worldPos);
+    for (uint k = 0u; k < cell.y; ++k)
+    {
+        uint lamp = clusterIndices[cell.x + k];
+        float att;
+        vec3 l = clusterLampToward(lamp, worldPos, att);
+        sum += max(dot(n, l), 0.0) * att * clusterLights[2u * lamp + 1u].rgb;
+    }
+    return sum;
+}
+
+vec3 pointLightsContribution(vec3 n, vec3 worldPos)
+{
+    vec3 sum = clusteredLampsContribution(n, worldPos);
     if (pointLightCount > 0)
     {
         sum += samplePointLight(0, n, worldPos, pointLightPos0, pointLightColor0, pointLightRange0);
@@ -282,6 +339,17 @@ vec3 shadePbr(vec3 albedo, vec3 n, vec3 worldPos, float metallic, float roughnes
     if (pointLightCount > 1) colour += pbrLamp(1, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos1, pointLightColor1, pointLightRange1);
     if (pointLightCount > 2) colour += pbrLamp(2, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos2, pointLightColor2, pointLightRange2);
     if (pointLightCount > 3) colour += pbrLamp(3, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos3, pointLightColor3, pointLightRange3);
+    if (clusterLightCount > 0)
+    {
+        uvec2 cell = clusterOf(worldPos);
+        for (uint k = 0u; k < cell.y; ++k)
+        {
+            uint lamp = clusterIndices[cell.x + k];
+            float att;
+            vec3 l = clusterLampToward(lamp, worldPos, att);
+            colour += pbrLight(albedo, f0, metallic, roughness, n, v, l, att * clusterLights[2u * lamp + 1u].rgb);
+        }
+    }
     // The sky and the fill light, as in shade(): diffuse, and in the glint.
     float sky = 0.5 + 0.5 * n.y;
     vec3 around = ambient * mix(0.45, 1.3, sky) + 0.22 * lightColor * max(dot(n, v), 0.0);

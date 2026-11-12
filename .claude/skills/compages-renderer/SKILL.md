@@ -76,6 +76,11 @@ scene.draw(frame);                       // = update(frame) + render()
   with joints); `assets().loadFile(path)` → `PrefabId`, `instantiate(id)`;
   `frameAll()`; `play(model, "Walk")`, `clips(model)`; `copy(entity)` shares
   mesh and look. Assets from `external/Compages-data/` or `COMPAGES_DATA_PATH`.
+- Lighting: the 4 lamps nearest the camera get uniforms (`pointLightPos0`...) and shadows; up to 256 more
+  go through clusters (`Render/LightClusters`, 16x9 tiles x 24 log depth slices, storage bindings 9-11 of the
+  lit shaders: keep them free), read by `pointLightsContribution()` and `shadePbr()`; demo `06m_ManyLights`.
+  glTF instances use `shadePbr` (metal/rough factors + maps, normal map via `bumpNormal`, units 8 and 9;
+  uniforms prefixed `pbr`), looks keep `shade()`.
 - Environment: `ambient`, `skybox({6 faces})`, `lamp(name, color, intensity, range)`,
   `activeCamera(id)`, `pick({x, y})` (bottom-left origin, last render), `debug()`.
 - Several views: `Scene map(world, scene.assets());` then `scene.update(frame);

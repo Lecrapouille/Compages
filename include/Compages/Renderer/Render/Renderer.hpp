@@ -14,6 +14,7 @@
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Texture.hpp"
+#include "Compages/Renderer/Render/LightClusters.hpp"
 #include "Compages/Renderer/Render/RenderQueue.hpp"
 #include "Compages/Renderer/Render/RenderSnapshot.hpp"
 #include "Compages/Renderer/Render/ShadowPass.hpp"
@@ -62,6 +63,8 @@ private:
 
     RenderQueue m_queue;
     ShadowPass m_shadows;
+    //! \brief The lamps beyond the first MAX_POINT_LIGHTS, in clusters.
+    LightClusters m_clusters;
     compages::gpu::Texture m_white;
 };
 

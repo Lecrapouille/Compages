@@ -341,6 +341,14 @@ holds or surrounds a lamp (a torch bracket, a glowing flame) must not cast
 (`RenderFlags::NoShadowCaster`), or it hides the lamp from everything.
 `10a_MvpDemo` (one lamp) and `10b_DoomLike` (the torches) use them.
 
+**Many lamps.** A scene may hold hundreds of lamps (up to `LightClusters::MAX_LIGHTS`, 256, beyond the four). The four nearest the camera have uniforms of their own (`pointLightPos0`... for a hook that wants them) and their shadows. The Renderer sorts the others into **clusters** (`Renderer/Render/LightClusters.hpp`, after O. Olsson, M. Billeter and U. Assarsson, "Clustered Deferred and Forward Shading", HPG 2012): the picture is cut into 16 × 9 tiles and the depth into 24 slices whose thickness grows with the distance,
+
+```math
+s(z) = \left\lfloor 24\,\frac{\ln(z / z_{\text{near}})}{\ln(z_{\text{far}} / z_{\text{near}})} \right\rfloor
+```
+
+and a lamp goes into every cluster its sphere of light may touch. A pixel then reads the lamps of its cluster only, in `pointLightsContribution()` and `shadePbr()`: the cost follows how many lamps reach a pixel, not how many the scene holds. The clusters are three storage buffers at bindings 9, 10 and 11 of the lit shaders (keep these free in your own hooks). These lamps cast no shadows. `06m_ManyLights` flies two hundred of them over a floor; `10b_DoomLike` gives each fluorescent tube a lamp.
+
 ### Draw into a file, without a screen
 
 ```cpp
@@ -455,6 +463,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `06j_SplitViews` | one world, two cameras |
 | `09b_ManyCubes` | sorting and culling |
 | `06l_CanvasPaint` | painting on a live texture |
+| `06m_ManyLights` | two hundred lamps: clustered lighting |
 | `11a_HeatPlate` | a field shown as colours and relief |
 | `11b_RippleTank` | a field computed and drawn on the GPU |
 | `11c_FieldProbe` | the value of a field under the mouse |

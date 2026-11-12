@@ -40,6 +40,7 @@ The demos rebuild published techniques from the papers and talks below, with cod
   - every publication of Valve: [valvesoftware.com/publications](https://www.valvesoftware.com/fr/publications).
 - `10e_Archipelago` — Gerstner waves: M. Finch, "Effective Water Simulation from Physical Models", GPU Gems 1, chapter 1 (NVIDIA, 2004); erosion: G. Cordonnier et al., "Large Scale Terrain Generation from Tectonic Uplift and Fluvial Erosion" (Eurographics 2016), J. Braun and S. Willett (Geomorphology 2013), R. Barnes et al., "Priority-Flood" (Computers & Geosciences 2014); polygon maps: A. Patel ([Red Blob Games](https://www.redblobgames.com/maps/terrain-from-noise/)).
 - `10c_SweatAndDecals` — the head and the decals of the three.js `webgl_decals` example (Lee Perry-Smith head, CC BY 3.0); normal mapping without tangents: C. Schüler, "Followup: Normal Mapping Without Precomputed Tangents" (2013).
+- `06m_ManyLights` and every lit scene — clustered lighting: O. Olsson, M. Billeter and U. Assarsson, "Clustered Deferred and Forward Shading", HPG 2012. The metallic-roughness model of glTF: B. Karis, "Real Shading in Unreal Engine 4", SIGGRAPH 2013.
 - `11e_Smoke` — J. Stam, "Stable Fluids", SIGGRAPH 1999.
 - `11d_BimetalBeam` — S. Timoshenko, "Analysis of Bi-Metal Thermostats", J. Opt. Soc. Am. 11, 1925.
 - `11f_Volume` — marching tetrahedra (A. Doi and A. Koide, IEICE 1991); emission and absorption: N. Max, "Optical Models for Direct Volume Rendering" (IEEE TVCG 1995).

@@ -55,7 +55,9 @@ struct PointLight
     //! \brief Things between the lamp and a surface hide the lamp from it.
     //! Off by default: each lamp that casts shadows draws the scene six times
     //! more (once per face of a cube around it). Only the lamps the shaders
-    //! receive (the nearest few, see shaders::MAX_POINT_LIGHTS) cast them.
+    //! receive with uniforms of their own (the nearest few, see
+    //! shaders::MAX_POINT_LIGHTS) cast them; the others light through
+    //! clusters, without shadows (renderer::LightClusters).
     bool shadows = false;
 };
 
