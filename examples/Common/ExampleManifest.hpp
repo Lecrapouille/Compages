@@ -65,6 +65,7 @@
 #include "10_Complete/10c_SweatAndDecals.hpp"
 #include "10_Complete/10d_EarthMoon.hpp"
 #include "10_Complete/10e_Archipelago.hpp"
+#include "10_Complete/10f_FlowingWater.hpp"
 #include "11_Science/11a_HeatPlate.hpp"
 #include "11_Science/11b_RippleTank.hpp"
 #include "11_Science/11c_FieldProbe.hpp"
@@ -134,6 +135,7 @@
     X(SweatAndDecals, "10c_SweatAndDecals", "10_Complete", "10_Complete/10c_SweatAndDecals.cpp", "-", 0, "-") \
     X(EarthMoon, "10d_EarthMoon", "10_Complete", "10_Complete/10d_EarthMoon.cpp", "-", 0, "-") \
     X(Archipelago, "10e_Archipelago", "10_Complete", "10_Complete/10e_Archipelago.cpp", "-", 0, "-") \
+    X(FlowingWater, "10f_FlowingWater", "10_Complete", "10_Complete/10f_FlowingWater.cpp", "-", 0, "-") \
     X(HeatPlate, "11a_HeatPlate", "11_Science", "11_Science/11a_HeatPlate.cpp", "-", 0, "-") \
     X(RippleTank, "11b_RippleTank", "11_Science", "11_Science/11b_RippleTank.cpp", "-", 0, "-") \
     X(FieldProbe, "11c_FieldProbe", "11_Science", "11_Science/11c_FieldProbe.cpp", "-", 0, "-") \
