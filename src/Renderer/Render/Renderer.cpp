@@ -25,6 +25,15 @@ namespace compages::renderer
 
 namespace
 {
+//! \brief The texture units of the pictures of a PBR instance (1 is the
+//! sun shadow, 2 to 6 the pictures of the material, 7 the lamp shadows).
+constexpr std::uint32_t BASE_COLOR_UNIT = 0u;
+constexpr std::uint32_t NORMAL_UNIT = 8u;
+constexpr std::uint32_t METAL_ROUGHNESS_UNIT = 9u;
+} // namespace
+
+namespace
+{
 
 constexpr std::array<std::string_view,
                      compages::renderer::shaders::MAX_POINT_LIGHTS>
@@ -201,40 +210,50 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
             {
                 offer(material->program, "baseColorFactor",
                                       instance->base_color_factor);
-                const bool has_map = instance->base_color_texture.valid();
-                offer(material->program, "hasBaseColorMap", has_map);
-                compages::gpu::Texture const* picture = nullptr;
-                if (has_map)
+                // A picture of the instance, or one white pixel.
+                auto pictureOf = [&](TextureAssetId p_id) -> Result<compages::gpu::Texture const*>
                 {
-                    COMPAGES_TRY(
-                        p_assets.prepare(instance->base_color_texture));
-                    compages::renderer::TextureAsset const* texture =
-                        p_assets.texture(instance->base_color_texture);
-                    if (texture != nullptr)
+                    if (p_id.valid())
                     {
-                        picture = &texture->texture;
+                        COMPAGES_TRY(p_assets.prepare(p_id));
+                        if (compages::renderer::TextureAsset const* texture = p_assets.texture(p_id))
+                        {
+                            return &texture->texture;
+                        }
                     }
-                }
-                if (picture == nullptr)
-                {
                     if (!m_white.valid())
                     {
                         compages::gpu::TextureDesc white;
                         white.width = 1u;
                         white.height = 1u;
-                        COMPAGES_TRY_ASSIGN(
-                            m_white, compages::gpu::Texture::create(white));
-                        const std::array<std::byte, 4u> pixel{ std::byte{ 255 },
-                                                               std::byte{ 255 },
-                                                               std::byte{ 255 },
-                                                               std::byte{
-                                                                   255 } };
+                        COMPAGES_TRY_ASSIGN(m_white, compages::gpu::Texture::create(white));
+                        const std::array<std::byte, 4u> pixel{ std::byte{ 255 }, std::byte{ 255 },
+                                                               std::byte{ 255 }, std::byte{ 255 } };
                         COMPAGES_TRY(m_white.write(pixel));
                     }
-                    picture = &m_white;
+                    return &m_white;
+                };
+                compages::gpu::Texture const* picture = nullptr;
+                offer(material->program, "hasBaseColorMap", instance->base_color_texture.valid());
+                COMPAGES_TRY_ASSIGN(picture, pictureOf(instance->base_color_texture));
+                picture->bind(BASE_COLOR_UNIT);
+                offer(material->program, "baseColorMap", int(BASE_COLOR_UNIT));
+                // The metallic-roughness model: its factors and its two maps.
+                if (material->program.has("pbrUseMetalRoughness"))
+                {
+                    offer(material->program, "pbrUseMetalRoughness", instance->metal_roughness);
+                    offer(material->program, "pbrMetallic", instance->metallic_factor);
+                    offer(material->program, "pbrRoughness", instance->roughness_factor);
+                    offer(material->program, "pbrNormalScale", instance->normal_scale);
+                    offer(material->program, "pbrHasNormalMap", instance->normal_texture.valid());
+                    offer(material->program, "pbrHasMetalRoughnessMap", instance->metal_roughness_texture.valid());
+                    COMPAGES_TRY_ASSIGN(picture, pictureOf(instance->normal_texture));
+                    picture->bind(NORMAL_UNIT);
+                    offer(material->program, "pbrNormalMap", int(NORMAL_UNIT));
+                    COMPAGES_TRY_ASSIGN(picture, pictureOf(instance->metal_roughness_texture));
+                    picture->bind(METAL_ROUGHNESS_UNIT);
+                    offer(material->program, "pbrMetalRoughnessMap", int(METAL_ROUGHNESS_UNIT));
                 }
-                picture->bind(0u);
-                offer(material->program, "baseColorMap", 0);
                 offer(material->program, "opacity", instance->opacity);
                 break;
             }

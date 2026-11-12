@@ -310,7 +310,22 @@ TEST_F(GltfLoaderTest, ReadsPicturesThatAreFilesOfTheirOwn)
         GTEST_SKIP() << "polyhaven/models/barrel_03 is missing from external/Compages-data";
     }
     compages::renderer::AssetManager assets;
-    auto loaded = assets.loadFile(path);
+    compages::world::World world;
+    compages::renderer::Scene view(world, assets);
+    auto loaded = view.loadFile(path);
     ASSERT_TRUE(bool(loaded)) << loaded.error();
-    EXPECT_GT(assets.textureCount(), 0u);
+    // Colour, normals, metallic-roughness: three pictures, two read linear.
+    EXPECT_GE(assets.textureCount(), 3u);
+    bool checked = false;
+    world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId, compages::renderer::MeshRenderer const& p_renderer) {
+            compages::renderer::MaterialInstance const* instance = assets.materialInstance(p_renderer.material_instance);
+            ASSERT_NE(instance, nullptr);
+            EXPECT_TRUE(instance->metal_roughness);
+            EXPECT_TRUE(instance->base_color_texture.valid());
+            EXPECT_TRUE(instance->normal_texture.valid());
+            EXPECT_TRUE(instance->metal_roughness_texture.valid());
+            checked = true;
+        });
+    EXPECT_TRUE(checked);
 }

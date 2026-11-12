@@ -167,6 +167,22 @@ struct MaterialInstance
     compages::Vector3f base_color_factor{ 1.0f, 1.0f, 1.0f };
     //! \brief Optional albedo map. Empty means the factor alone is used.
     TextureAssetId base_color_texture{};
+    //! \brief Light it with the metallic-roughness model of glTF (shadePbr():
+    //! a glint as wide as the roughness, metals tinting it) rather than the
+    //! simple model of the looks (shade()). Set by the glTF loader.
+    bool metal_roughness = false;
+    //! \brief 0 a dielectric (plastic, wood, stone), 1 a metal; times the
+    //! blue channel of \c metal_roughness_texture.
+    float metallic_factor = 0.0f;
+    //! \brief 0 a mirror, 1 matte; times the green channel of
+    //! \c metal_roughness_texture.
+    float roughness_factor = 1.0f;
+    //! \brief Optional map of glTF: G the roughness, B the metallic. Linear.
+    TextureAssetId metal_roughness_texture{};
+    //! \brief Optional normal map (tangent space, +y up, as glTF). Linear.
+    TextureAssetId normal_texture{};
+    //! \brief How strong the bumps of the normal map are (glTF scale).
+    float normal_scale = 1.0f;
     //! \brief DepthMaterial near/far smoothstep range, in eye-space metres.
     float depth_near = 1.0f;
     float depth_far = 100.0f;

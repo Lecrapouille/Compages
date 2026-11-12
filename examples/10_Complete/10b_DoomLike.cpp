@@ -103,9 +103,14 @@ compages::Status DoomLike::setUp()
         {
             if (!m_content.surfaces.contains(name))
             {
-                const float tile = (std::string_view(name) == level.wall) ? 3.0f : 2.0f;
+                const std::string_view named(name);
+                const float tile = (named == level.wall) ? 3.0f : 2.0f;
+                const float metallic =
+                    (named.find("metal") != std::string_view::npos) || (named.find("iron") != std::string_view::npos)
+                        ? 0.6f
+                        : 0.0f;
                 compages::renderer::MaterialId surface;
-                COMPAGES_TRY_ASSIGN(surface, doom::makeSurface(m_content.assets, name, tile));
+                COMPAGES_TRY_ASSIGN(surface, doom::makeSurface(m_content.assets, name, tile, metallic));
                 m_content.surfaces.emplace(name, surface);
             }
         }

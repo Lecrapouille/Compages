@@ -62,7 +62,7 @@ A look is enough for most objects. When you want your own shader (water, a skin,
 | `deform` | vertex | `void deform(inout vec4 world, inout vec3 normal)`: move a corner and turn its normal, in world space, before the projection | changes nothing |
 | `main` | fragment | the whole `void main()`, which writes `oColor` | the PBR colour |
 
-Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
+Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `shadePbr(albedo, n, worldPos, metallic, roughness)` (the metallic-roughness model of glTF: GGX glint, Smith shadowing, Schlick Fresnel, the ambient light standing for the sky in the glint), `bumpNormal(n, worldPos, uv, tangentNormal)` (a normal map without tangents on the mesh), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
 
 `Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
 
@@ -263,7 +263,7 @@ map.render(top);         // a minimap
 | `scene.clips(model)` | the clip names, in file order |
 | `scene.copy(entity)` | draws another entity with the same mesh and look (cheap duplicates) |
 
-`load` reads **glTF / GLB** (a `.gltf` may keep its pictures in files next to it, as Poly Haven and Blender's "glTF Separate" write them; only the base colour map is used), saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
+`load` reads **glTF / GLB** (a `.gltf` may keep its pictures in files next to it, as Poly Haven and Blender's "glTF Separate" write them). A glTF material is lit by the metallic-roughness model (`MaterialInstance::metal_roughness`): its base colour, its metallic and roughness (factors and map), its normal map; the looks of `color()` and `texture()` keep the simpler `shade()`, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
 
 - `08a_GltfModel` loads `Duck.glb` and frames the camera.
 - `08b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).

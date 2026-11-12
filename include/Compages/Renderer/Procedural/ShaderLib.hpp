@@ -28,7 +28,10 @@ namespace compages::renderer::shaders
 //! | <compages/fog.glsl>          | applyFog(colour, worldPos)                 |
 //! | <compages/sun.glsl>          | sunVisibility(n, toLight, worldPos)        |
 //! | <compages/lamps.glsl>        | pointLightsContribution(n, worldPos)       |
-//! | <compages/shade.glsl>        | shade(base, n, worldPos): sun, sky, lamps  |
+//! | <compages/shade.glsl>        | shade(base, n, worldPos): sun, sky, lamps; |
+//! |                              | shadePbr(albedo, n, worldPos, metallic,    |
+//! |                              | roughness): GGX, Smith, Schlick (glTF);    |
+//! |                              | bumpNormal(n, worldPos, uv, tangentNormal) |
 //! | <compages/present.glsl>      | opacity, present(linear): tone curve, sRGB |
 //!
 //! The PBR shader leaves two hooks open:
@@ -37,7 +40,10 @@ namespace compages::renderer::shaders
 //!   projected. By default it changes nothing.
 //! - \c main (fragment): the whole main() writing \c oColor, which is declared
 //!   before it, as are the uniforms the Renderer sets (baseColorFactor,
-//!   baseColorMap, hasBaseColorMap) and every include above.
+//!   baseColorMap, hasBaseColorMap; for the metallic-roughness model of an
+//!   instance: pbrUseMetalRoughness, pbrMetallic, pbrRoughness,
+//!   pbrMetalRoughnessMap, pbrHasMetalRoughnessMap, pbrNormalMap,
+//!   pbrHasNormalMap, pbrNormalScale) and every include above.
 //!
 //! \code
 //! auto pbr = compages::renderer::shaders::pbr();

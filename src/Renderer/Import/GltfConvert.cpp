@@ -97,10 +97,13 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
     return result;
 }
 
+//! \param[in] p_srgb True for a colour (base colour), false for numbers
+//! (normals, metallic-roughness).
 [[nodiscard]] Result<TextureAssetId> importImage(cgltf_image* p_image,
                                                  AssetManager& p_assets,
                                                  TextureMap& p_cache,
-                                                 std::size_t& p_texture_count)
+                                                 std::size_t& p_texture_count,
+                                                 bool p_srgb)
 {
     if (p_image == nullptr)
     {
@@ -151,7 +154,7 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
         return failure("glTF image has neither a buffer view nor a URI");
     }
 
-    auto texture_result = textureFromMemory(bytes, true);
+    auto texture_result = textureFromMemory(bytes, p_srgb);
     if (!texture_result)
     {
         return failure(texture_result.error());
@@ -381,13 +384,32 @@ materialInstanceFromGltf(cgltf_material const* p_material,
                 importImage(pbr.base_color_texture.texture->image,
                             p_assets,
                             p_textures,
-                            p_texture_count);
+                            p_texture_count,
+                            true);
             if (!texture_id_result)
             {
                 return failure(texture_id_result.error());
             }
             auto texture_id = texture_id_result.take();
             instance.base_color_texture = texture_id;
+        }
+        // The metallic-roughness model: its factors, and its maps (numbers,
+        // not colours: read linear).
+        instance.metal_roughness = true;
+        instance.metallic_factor = pbr.metallic_factor;
+        instance.roughness_factor = pbr.roughness_factor;
+        if (pbr.metallic_roughness_texture.texture != nullptr)
+        {
+            COMPAGES_TRY_ASSIGN(instance.metal_roughness_texture,
+                                importImage(pbr.metallic_roughness_texture.texture->image, p_assets, p_textures,
+                                            p_texture_count, false));
+        }
+        if (p_material->normal_texture.texture != nullptr)
+        {
+            COMPAGES_TRY_ASSIGN(instance.normal_texture,
+                                importImage(p_material->normal_texture.texture->image, p_assets, p_textures,
+                                            p_texture_count, false));
+            instance.normal_scale = p_material->normal_texture.scale;
         }
     }
 

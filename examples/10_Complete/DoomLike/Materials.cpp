@@ -24,25 +24,16 @@ namespace
 
 // The hook "main" of the PBR shader. The normal map is read along each axis
 // and its bumps added to the normal of the face ("whiteout" blend, after
-// B. Golus, "Normal Mapping for a Triplanar Shader", 2017). The lamps of
-// the level glint on it, sharper and stronger where the roughness map says
-// smooth (worn metal shines, concrete does not).
+// B. Golus, "Normal Mapping for a Triplanar Shader", 2017). Then the
+// metallic-roughness model of the library (shadePbr): the lamps glint
+// sharper where the roughness map says smooth (worn metal shines, concrete
+// does not).
 constexpr char const* SURFACE_MAIN = R"(
 uniform sampler2D surfaceMap;
 uniform sampler2D normalMap;
 uniform sampler2D roughMap;
 uniform float tileMetres;
-
-vec3 glint(vec3 pos, vec3 colour, float range, vec3 n, vec3 toEye, float smoothness)
-{
-    vec3 toLamp = pos - vWorldPos;
-    float d = length(toLamp);
-    vec3 l = toLamp / max(d, 1e-4);
-    float fade = pow(max(1.0 - d / range, 0.0), 2.0);
-    float power = mix(6.0, 90.0, smoothness);
-    vec3 h = normalize(l + toEye);
-    return colour * (fade * smoothness * 0.9 * pow(max(dot(n, h), 0.0), power) * max(dot(n, l), 0.0));
-}
+uniform float metallic;
 
 void main()
 {
@@ -61,15 +52,7 @@ void main()
     ty = vec3(ty.xy + n.xz, abs(ty.z) * n.y);
     tz = vec3(tz.xy + n.xy, abs(tz.z) * n.z);
     vec3 bumped = normalize(tx.zyx * w.x + ty.xzy * w.y + tz.xyz * w.z);
-
-    vec3 toEye = normalize(cameraPos - vWorldPos);
-    float smoothness = 1.0 - rough;
-    vec3 colour = shade(base, bumped, vWorldPos);
-    if (pointLightCount > 0) colour += glint(pointLightPos0, pointLightColor0, pointLightRange0, bumped, toEye, smoothness);
-    if (pointLightCount > 1) colour += glint(pointLightPos1, pointLightColor1, pointLightRange1, bumped, toEye, smoothness);
-    if (pointLightCount > 2) colour += glint(pointLightPos2, pointLightColor2, pointLightRange2, bumped, toEye, smoothness);
-    if (pointLightCount > 3) colour += glint(pointLightPos3, pointLightColor3, pointLightRange3, bumped, toEye, smoothness);
-    oColor = vec4(present(applyFog(colour, vWorldPos)), opacity);
+    oColor = vec4(present(applyFog(shadePbr(base, bumped, vWorldPos, metallic, rough), vWorldPos)), opacity);
 }
 )";
 
@@ -95,7 +78,7 @@ picture(compages::renderer::AssetManager& p_assets, std::string const& p_file, b
 
 // ----------------------------------------------------------------------------
 compages::Result<compages::renderer::MaterialId>
-makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_name, float p_tile)
+makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_name, float p_tile, float p_metallic)
 {
     const std::string stem = p_name + "/" + p_name;
     compages::renderer::TextureAssetId colour;
@@ -118,6 +101,7 @@ makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_nam
                           { .sampler = "normalMap", .texture = normals },
                           { .sampler = "roughMap", .texture = roughness } };
     material.program.set("tileMetres", p_tile);
+    material.program.set("metallic", p_metallic);
     return p_assets.addMaterial(p_name, std::move(material));
 }
 

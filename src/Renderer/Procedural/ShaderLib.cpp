@@ -216,6 +216,99 @@ vec3 shade(vec3 base, vec3 n, vec3 worldPos)
     vec3 light = ambientLight + lightColor * (0.85 * diffuse + fill) + pointLightsContribution(n, worldPos);
     return base * light + lightColor * specular;
 }
+
+// ---------------------------------------------------------------------------
+// The metallic-roughness model of glTF (Cook-Torrance): a diffuse part, and
+// a glint whose size is the roughness (GGX distribution, Smith shadowing,
+// Schlick Fresnel; B. Karis, "Real Shading in Unreal Engine 4", 2013).
+// A metal has no diffuse part and tints its glint with its colour. Without a
+// picture of the surroundings, the ambient light stands for the sky in the
+// glint, so that metals are not black. Scaled like shade(): a light of
+// colour c on a white face turned to it gives about c.
+// ---------------------------------------------------------------------------
+const float PBR_PI = 3.14159265;
+
+vec3 pbrLight(vec3 albedo, vec3 f0, float metallic, float roughness, vec3 n, vec3 v, vec3 l, vec3 radiance)
+{
+    float nl = max(dot(n, l), 0.0);
+    if (nl <= 0.0)
+    {
+        return vec3(0.0);
+    }
+    vec3 h = normalize(v + l);
+    float nv = max(dot(n, v), 1e-4);
+    float nh = max(dot(n, h), 0.0);
+    float a = max(roughness * roughness, 0.002);
+    float a2 = a * a;
+    float d = nh * nh * (a2 - 1.0) + 1.0;
+    float distribution = a2 / (PBR_PI * d * d);
+    float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+    float shadowing = (nv / (nv * (1.0 - k) + k)) * (nl / (nl * (1.0 - k) + k));
+    vec3 fresnel = f0 + (1.0 - f0) * pow(1.0 - max(dot(h, v), 0.0), 5.0);
+    vec3 glint = distribution * shadowing * fresnel / (4.0 * nv * nl + 1e-4);
+    vec3 diffuse = (1.0 - fresnel) * (1.0 - metallic) * albedo;
+    return (diffuse + PBR_PI * glint) * nl * radiance;
+}
+
+vec3 pbrLamp(int i, vec3 albedo, vec3 f0, float metallic, float roughness, vec3 n, vec3 v, vec3 worldPos,
+             vec3 pos, vec3 col, float range)
+{
+    vec3 toLight = pos - worldPos;
+    float dist = length(toLight);
+    if (dist > range)
+    {
+        return vec3(0.0);
+    }
+    float ratio2 = (dist * dist) / (range * range);
+    float window = clamp(1.0 - ratio2, 0.0, 1.0);
+    float att = (window * window) / (1.0 + 8.0 * ratio2);
+    vec3 radiance = att * col * lampVisibility(i, n, worldPos, pos, range);
+    return pbrLight(albedo, f0, metallic, roughness, n, v, toLight / dist, radiance);
+}
+
+vec3 shadePbr(vec3 albedo, vec3 n, vec3 worldPos, float metallic, float roughness)
+{
+    vec3 v = normalize(cameraPos - worldPos);
+    if (dot(n, v) < 0.0)
+    {
+        n = -n;
+    }
+    roughness = clamp(roughness, 0.04, 1.0);
+    metallic = clamp(metallic, 0.0, 1.0);
+    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    vec3 l = normalize(-lightDir);
+    vec3 colour = pbrLight(albedo, f0, metallic, roughness, n, v, l, 0.85 * lightColor * sunVisibility(n, l, worldPos));
+    if (pointLightCount > 0) colour += pbrLamp(0, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos0, pointLightColor0, pointLightRange0);
+    if (pointLightCount > 1) colour += pbrLamp(1, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos1, pointLightColor1, pointLightRange1);
+    if (pointLightCount > 2) colour += pbrLamp(2, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos2, pointLightColor2, pointLightRange2);
+    if (pointLightCount > 3) colour += pbrLamp(3, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos3, pointLightColor3, pointLightRange3);
+    // The sky and the fill light, as in shade(): diffuse, and in the glint.
+    float sky = 0.5 + 0.5 * n.y;
+    vec3 around = ambient * mix(0.45, 1.3, sky) + 0.22 * lightColor * max(dot(n, v), 0.0);
+    vec3 fresnel = f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+    colour += around * ((1.0 - metallic) * albedo + fresnel * mix(1.0, 0.35, roughness));
+    return colour;
+}
+
+// ---------------------------------------------------------------------------
+// A normal map read without tangents on the mesh: the tangent frame comes
+// from the derivatives of the position and of the uv (C. Schuler, "Normal
+// Mapping Without Precomputed Tangents", 2013). The map holds OpenGL normals
+// (+y up), as glTF does.
+// ---------------------------------------------------------------------------
+vec3 bumpNormal(vec3 n, vec3 worldPos, vec2 uv, vec3 tangentNormal)
+{
+    vec3 dp1 = dFdx(worldPos);
+    vec3 dp2 = dFdy(worldPos);
+    vec2 duv1 = dFdx(uv);
+    vec2 duv2 = dFdy(uv);
+    vec3 dp2perp = cross(dp2, n);
+    vec3 dp1perp = cross(n, dp1);
+    vec3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+    float scale = inversesqrt(max(max(dot(t, t), dot(b, b)), 1e-20));
+    return normalize(mat3(t * scale, b * scale, n) * tangentNormal);
+}
 )";
 
 constexpr char const* SRGB = R"(// A linear colour from 0 to 1, encoded as the screen expects (sRGB).
@@ -335,6 +428,15 @@ in vec3 vWorldPos;
 uniform vec3 baseColorFactor;
 uniform sampler2D baseColorMap;
 uniform bool hasBaseColorMap;
+// The metallic-roughness model of glTF, when the instance asks for it.
+uniform bool pbrUseMetalRoughness;
+uniform float pbrMetallic;
+uniform float pbrRoughness;
+uniform sampler2D pbrMetalRoughnessMap;   // G roughness, B metallic
+uniform bool pbrHasMetalRoughnessMap;
+uniform sampler2D pbrNormalMap;
+uniform bool pbrHasNormalMap;
+uniform float pbrNormalScale;
 #include <compages/fog.glsl>
 #include <compages/shade.glsl>
 #include <compages/present.glsl>
@@ -351,8 +453,30 @@ constexpr char const* PBR_MAIN = R"(void main()
     {
         albedo *= texture(baseColorMap, vUv).rgb;
     }
-    vec3 shaded = applyFog(shade(albedo, normalize(vNormal), vWorldPos), vWorldPos);
-    oColor = vec4(present(shaded), opacity);
+    vec3 n = normalize(vNormal);
+    vec3 lit;
+    if (pbrUseMetalRoughness)
+    {
+        if (pbrHasNormalMap)
+        {
+            vec3 t = texture(pbrNormalMap, vUv).xyz * 2.0 - 1.0;
+            n = bumpNormal(n, vWorldPos, vUv, normalize(vec3(t.xy * pbrNormalScale, t.z)));
+        }
+        float metallic = pbrMetallic;
+        float roughness = pbrRoughness;
+        if (pbrHasMetalRoughnessMap)
+        {
+            vec4 mr = texture(pbrMetalRoughnessMap, vUv);
+            roughness *= mr.g;
+            metallic *= mr.b;
+        }
+        lit = shadePbr(albedo, n, vWorldPos, metallic, roughness);
+    }
+    else
+    {
+        lit = shade(albedo, n, vWorldPos);
+    }
+    oColor = vec4(present(applyFog(lit, vWorldPos)), opacity);
 }
 )";
 

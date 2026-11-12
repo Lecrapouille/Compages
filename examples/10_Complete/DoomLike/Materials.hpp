@@ -31,13 +31,14 @@ namespace examples::doom
 //! \brief A material for walls, floors, ceilings and containers: the three
 //! pictures projected along the three axes and blended by the normal
 //! (triplanar: boxes of any size need no UV), the bumps of the normal map,
-//! and the glint of the lamps sharper where the surface is smooth.
+//! lit by the metallic-roughness model of the library (shadePbr).
 //! \param[in] p_assets Where the material and its pictures go.
 //! \param[in] p_name The name of the Poly Haven texture (its folder).
 //! \param[in] p_tile How many metres one picture covers.
+//! \param[in] p_metallic 0 for stone and concrete, toward 1 for metal.
 //! \return The material, or why not: a picture is missing.
 // ----------------------------------------------------------------------------
 [[nodiscard]] compages::Result<compages::renderer::MaterialId>
-makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_name, float p_tile);
+makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_name, float p_tile, float p_metallic);
 
 } // namespace examples::doom
