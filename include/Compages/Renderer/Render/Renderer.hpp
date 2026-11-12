@@ -14,6 +14,7 @@
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/GPU/Texture.hpp"
+#include "Compages/Renderer/Render/FogVolume.hpp"
 #include "Compages/Renderer/Render/LightClusters.hpp"
 #include "Compages/Renderer/Render/RenderQueue.hpp"
 #include "Compages/Renderer/Render/RenderSnapshot.hpp"
@@ -65,6 +66,8 @@ private:
     ShadowPass m_shadows;
     //! \brief The lamps beyond the first MAX_POINT_LIGHTS, in clusters.
     LightClusters m_clusters;
+    //! \brief The volumetric fog, in froxels (Environment::volumetric).
+    FogVolume m_fog;
     compages::gpu::Texture m_white;
 };
 

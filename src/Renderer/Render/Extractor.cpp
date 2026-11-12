@@ -171,6 +171,7 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
         srgbToLinear(snapshot.environment.fog_color);
     snapshot.environment.default_light_color =
         srgbToLinear(snapshot.environment.default_light_color);
+    snapshot.environment.volumetric.color = srgbToLinear(snapshot.environment.volumetric.color);
     snapshot.camera = buildCameraFrame(
         *camera, world.worldMatrix(camera_entity), aspect, p_width, p_height);
 

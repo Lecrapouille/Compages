@@ -25,7 +25,8 @@ namespace compages::renderer::shaders
 //! | ---------------------------- | ------------------------------------------ |
 //! | <compages/skinning.glsl>     | joints, weights, skinMatrix()              |
 //! | <compages/scene.glsl>        | lightDir, lightColor, ambient, cameraPos, fog uniforms |
-//! | <compages/fog.glsl>          | applyFog(colour, worldPos)                 |
+//! | <compages/fog.glsl>          | applyFog(colour, worldPos): plain, or the  |
+//! |                              | volumetric fog (FogVolume) when it is on   |
 //! | <compages/sun.glsl>          | sunVisibility(n, toLight, worldPos)        |
 //! | <compages/lamps.glsl>        | pointLightsContribution(n, worldPos)       |
 //! | <compages/shade.glsl>        | shade(base, n, worldPos): sun, sky, lamps; |
@@ -99,6 +100,14 @@ private:
     compages::gpu::ShaderSource m_vertex;
     compages::gpu::ShaderSource m_fragment;
 };
+
+// ----------------------------------------------------------------------------
+//! \brief A compute shader that may include the pieces of the library
+//! (<compages/sun.glsl>, <compages/lamps.glsl>...). It defines
+//! COMPAGES_COMPUTE before them (in its own text, after #version): the parts
+//! that need a pixel (gl_FragCoord) are then left out.
+// ----------------------------------------------------------------------------
+[[nodiscard]] compages::gpu::ShaderSource compute(char const* p_name, char const* p_text);
 
 //! \brief One sun, a flat \c color uniform.
 [[nodiscard]] ShaderPair lit();

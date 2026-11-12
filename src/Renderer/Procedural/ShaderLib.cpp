@@ -43,8 +43,30 @@ uniform float fogDensity;
 
 constexpr char const* FOG = R"(#include <compages/scene.glsl>
 
+// Volumetric fog (VolumetricFog, Environment::volumetric): a 3D picture
+// following the camera (froxels: tiles of the picture times slices of the
+// depth), holding the light the fog sends toward the eye from the camera to
+// each slice (rgb) and what it lets through (a).
+uniform bool fogVolumeOn;
+uniform sampler3D fogVolume;
+uniform vec2 fogVolumeDepth;      // near, far of the slices
+uniform vec4 fogVolumeViewport;   // x, y, width, height in pixels
+uniform mat4 fogVolumeView;
+
 vec3 applyFog(vec3 shaded, vec3 worldPos)
 {
+#ifndef COMPAGES_COMPUTE
+    if (fogVolumeOn)
+    {
+        vec2 at = (gl_FragCoord.xy - fogVolumeViewport.xy) / fogVolumeViewport.zw;
+        float depth = max(-(fogVolumeView * vec4(worldPos, 1.0)).z, fogVolumeDepth.x);
+        float slices = float(textureSize(fogVolume, 0).z);
+        // Slice k holds the fog up to its far end: at s = k + 1.
+        float s = log(depth / fogVolumeDepth.x) / log(fogVolumeDepth.y / fogVolumeDepth.x) * slices;
+        vec4 fog = texture(fogVolume, vec3(at, (s - 0.5) / slices));
+        return shaded * fog.a + fog.rgb;
+    }
+#endif
     float d = fogDensity * length(worldPos - cameraPos);
     return mix(shaded, fogColor, 1.0 - exp(-d * d));
 }
@@ -174,12 +196,13 @@ uniform vec2 clusterDepth;     // near, far
 uniform vec4 clusterViewport;  // x, y, width, height in pixels
 uniform mat4 clusterView;
 
-// The first index and the count of the lamps of the cluster of a point.
-uvec2 clusterOf(vec3 worldPos)
+// The first index and the count of the lamps of a cluster, from a place on
+// the picture (0 to 1 across the viewport) and a distance in front of the
+// camera.
+uvec2 clusterAt(vec2 at, float depth)
 {
-    vec2 at = (gl_FragCoord.xy - clusterViewport.xy) / clusterViewport.zw;
     ivec2 tile = clamp(ivec2(at * vec2(clusterTiles)), ivec2(0), clusterTiles - 1);
-    float depth = max(-(clusterView * vec4(worldPos, 1.0)).z, clusterDepth.x);
+    depth = max(depth, clusterDepth.x);
     float t = log(depth / clusterDepth.x) / log(clusterDepth.y / clusterDepth.x);
     int slice = clamp(int(t * float(clusterSlices)), 0, clusterSlices - 1);
     uint cell = uint(((slice * clusterTiles.y) + tile.y) * clusterTiles.x + tile.x);
@@ -198,6 +221,14 @@ vec3 clusterLampToward(uint lamp, vec3 worldPos, out float att)
     float window = clamp(1.0 - ratio2, 0.0, 1.0);
     att = (window * window) / (1.0 + 8.0 * ratio2);
     return toLight / max(dist, 1e-4);
+}
+
+#ifndef COMPAGES_COMPUTE
+// The cluster of the pixel being drawn (fragment shaders only).
+uvec2 clusterOf(vec3 worldPos)
+{
+    vec2 at = (gl_FragCoord.xy - clusterViewport.xy) / clusterViewport.zw;
+    return clusterAt(at, -(clusterView * vec4(worldPos, 1.0)).z);
 }
 
 vec3 clusteredLampsContribution(vec3 n, vec3 worldPos)
@@ -239,6 +270,7 @@ vec3 pointLightsContribution(vec3 n, vec3 worldPos)
     }
     return sum;
 }
+#endif
 )";
 
 constexpr char const* SHADE = R"(// Shading shared by the lit and PBR materials. One sun gives form; the rest
@@ -700,6 +732,11 @@ compages::gpu::ShaderSource piece(char const* p_name, char const* p_text)
 }
 
 } // namespace
+
+compages::gpu::ShaderSource compute(char const* p_name, char const* p_text)
+{
+    return piece(p_name, p_text);
+}
 
 ShaderPair lit()
 {

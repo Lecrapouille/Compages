@@ -49,6 +49,7 @@
 #include "06_Scene/06k_MiscLookAt.hpp"
 #include "06_Scene/06l_CanvasPaint.hpp"
 #include "06_Scene/06m_ManyLights.hpp"
+#include "06_Scene/06n_VolumetricFog.hpp"
 #include "07_World/07a_HeadlessWorld.hpp"
 #include "07_World/07b_Routines.hpp"
 #include "07_World/07c_MovingRobot.hpp"
@@ -120,6 +121,7 @@
     X(MiscLookAt, "06k_MiscLookAt", "06_Scene", "06_Scene/06k_MiscLookAt.cpp", "25_MiscLookAt", 0, "-") \
     X(CanvasPaint, "06l_CanvasPaint", "06_Scene", "06_Scene/06l_CanvasPaint.cpp", "-", 0, "-") \
     X(ManyLights, "06m_ManyLights", "06_Scene", "06_Scene/06m_ManyLights.cpp", "-", 0, "-") \
+    X(VolumetricFogDemo, "06n_VolumetricFog", "06_Scene", "06_Scene/06n_VolumetricFog.cpp", "-", 0, "-") \
     X(HeadlessWorld, "07a_HeadlessWorld", "07_World", "07_World/07a_HeadlessWorld.cpp", "-", 0, "-") \
     X(Routines, "07b_Routines", "07_World", "07_World/07b_Routines.cpp", "17_MovingRobot", 0, "-") \
     X(MovingRobot, "07c_MovingRobot", "07_World", "07_World/07c_MovingRobot.cpp", "17_MovingRobot", 0, "-") \

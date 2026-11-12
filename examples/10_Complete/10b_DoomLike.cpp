@@ -172,6 +172,18 @@ void DoomLike::configureAtmosphere(doom::LevelData const& p_level)
         compages::Vector3f(0.0f, 0.0f, 0.0f);
     m_level_scene.scene->environment().fog_color = p_level.fog;
     m_level_scene.scene->environment().fog_density = 0.055f;
+    // Dust in the air: halos round the lamps, the light of the tubes in
+    // cones, the shadows of the enemies in the air (Environment::volumetric).
+    compages::renderer::VolumetricFog& dust = m_level_scene.scene->environment().volumetric;
+    dust.enabled = true;
+    dust.density = 0.012f;
+    dust.height = 0.0f;
+    dust.falloff = 0.1f;
+    dust.color = compages::Vector3f(0.8f, 0.8f, 0.78f);
+    dust.anisotropy = 0.45f;
+    dust.noise = 0.6f;
+    dust.wind = compages::Vector3f(0.15f, 0.02f, 0.05f);
+    dust.distance = 40.0f;
 }
 
 // ----------------------------------------------------------------------------

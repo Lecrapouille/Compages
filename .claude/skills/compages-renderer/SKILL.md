@@ -79,6 +79,8 @@ scene.draw(frame);                       // = update(frame) + render()
 - Lighting: the 4 lamps nearest the camera get uniforms (`pointLightPos0`...) and shadows; up to 256 more
   go through clusters (`Render/LightClusters`, 16x9 tiles x 24 log depth slices, storage bindings 9-11 of the
   lit shaders: keep them free), read by `pointLightsContribution()` and `shadePbr()`; demo `06m_ManyLights`.
+  Volumetric fog: `environment().volumetric` (`Render/FogVolume`: froxels 128x72x64, two compute shaders
+  from `shaders::compute(name, text)`, read by `applyFog()`, texture unit 10); demo `06n_VolumetricFog`.
   glTF instances use `shadePbr` (metal/rough factors + maps, normal map via `bumpNormal`, units 8 and 9;
   uniforms prefixed `pbr`), looks keep `shade()`.
 - Environment: `ambient`, `skybox({6 faces})`, `lamp(name, color, intensity, range)`,

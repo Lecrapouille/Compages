@@ -104,24 +104,29 @@ Status ShadowPass::render(RenderSnapshot const& p_snapshot, AssetManager& p_asse
 //! atlas of the lamps on LAMP_SHADOW_UNIT.
 void ShadowPass::bind(compages::renderer::Material& p_material) const
 {
-    offer(p_material.program, "lampShadows", m_lamps.enabled);
-    offer(p_material.program, "lampFaces",
+    bind(p_material.program);
+}
+
+void ShadowPass::bind(compages::gpu::Program& p_program) const
+{
+    offer(p_program, "lampShadows", m_lamps.enabled);
+    offer(p_program, "lampFaces",
                            std::span<const compages::Matrix44f>(m_lamps.faces.data(), m_lamps.faces.size()));
     if (m_lamps.any)
     {
         m_lamp_depth.bind(LAMP_SHADOW_UNIT);
     }
-    offer(p_material.program, "lampShadowMap", int(LAMP_SHADOW_UNIT));
+    offer(p_program, "lampShadowMap", int(LAMP_SHADOW_UNIT));
 
-    offer(p_material.program, "shadowEnabled", m_sun.enabled ? 1 : 0);
-    offer(p_material.program, "lightViewProj", m_sun.light_view_projection);
-    offer(p_material.program, "shadowTexel", m_sun.texel);
-    offer(p_material.program, "shadowBias", m_sun.bias);
+    offer(p_program, "shadowEnabled", m_sun.enabled ? 1 : 0);
+    offer(p_program, "lightViewProj", m_sun.light_view_projection);
+    offer(p_program, "shadowTexel", m_sun.texel);
+    offer(p_program, "shadowBias", m_sun.bias);
     if (m_sun.enabled)
     {
         m_sun_depth.bind(1u);
     }
-    offer(p_material.program, "shadowMap", 1);
+    offer(p_program, "shadowMap", 1);
 }
 
 Status ShadowPass::renderSun(RenderSnapshot const& p_snapshot,

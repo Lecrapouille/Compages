@@ -45,6 +45,9 @@ public:
 
     //! \brief Set the shadow uniforms of a lit material and bind its pictures.
     void bind(Material& p_material) const;
+    //! \brief The same for any program that includes <compages/sun.glsl> or
+    //! <compages/lamps.glsl> (a compute shader of the volumetric fog).
+    void bind(compages::gpu::Program& p_program) const;
 
 private:
 

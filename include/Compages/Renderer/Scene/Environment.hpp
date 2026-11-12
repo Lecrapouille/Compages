@@ -40,6 +40,37 @@ enum class ToneMapping
 //! Kept small on purpose. IBL, skybox and HDR belong here when Stage 9 is
 //! reached; the fields below are what the built-in lit material reads today.
 // ****************************************************************************
+// ****************************************************************************
+//! \brief Fog that the light crosses: shafts of the sun between pillars,
+//! halos round the lamps, shadows in the air (VolumetricFog). Off by
+//! default: the plain fog of Environment::fog_density is then used.
+// ****************************************************************************
+struct VolumetricFog
+{
+    //! \brief On: the volumetric fog replaces the plain one.
+    bool enabled = false;
+    //! \brief How much light one metre of fog takes away at the height
+    //! \c height (the extinction, per metre): 0.02 a light haze, 0.2 thick.
+    float density = 0.04f;
+    //! \brief The fog thins out above \c height:
+    //! density * exp(-falloff * (y - height)). Zero: as thick everywhere.
+    float height = 0.0f;
+    float falloff = 0.2f;
+    //! \brief The colour of the fog (sRGB): the part of the light it takes
+    //! that it sends on rather than absorbs.
+    compages::Vector3f color{ 0.9f, 0.9f, 0.95f };
+    //! \brief How the light is sent on (Henyey-Greenstein): 0 evenly, toward
+    //! 1 mostly forward (a bright halo when looking toward a light).
+    float anisotropy = 0.5f;
+    //! \brief Clumps of fog, from 0 (even) to 1, drifting with the wind
+    //! (metres per second).
+    float noise = 0.5f;
+    compages::Vector3f wind{ 0.4f, 0.0f, 0.15f };
+    //! \brief The fog is computed up to this distance; beyond, it stays as
+    //! it is at that distance.
+    float distance = 60.0f;
+};
+
 struct Environment
 {
     //! \brief A dim colour multiplied by the material colour to fake the light
@@ -76,6 +107,8 @@ struct Environment
     //! \brief Multiplies the light before the tone curve: above one is
     //! brighter, like opening the lens of a camera.
     float exposure = 1.0f;
+    //! \brief Fog that the light crosses (off by default).
+    VolumetricFog volumetric{};
 };
 
 } // namespace compages::renderer

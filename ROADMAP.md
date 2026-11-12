@@ -215,9 +215,11 @@ most complex: each step reuses what the ones before it built.
 - [ ] Ocean by FFT (Tessendorf, "Simulating Ocean Water", SIGGRAPH 2001):
       a spectrum of waves, FFT in compute shaders (ping-pong), in place of
       the Gerstner swells of `10e_Archipelago`
-- [ ] Volumetric fog in froxels (Wronski, Assassin's Creed 4, SIGGRAPH
-      2014): a `Field<float, Grid3D>` of light scattering, filled by compute
-      over the slices of the clusters, ray marched in the picture
+- [x] Volumetric fog in froxels (Wronski, Assassin's Creed 4, SIGGRAPH
+      2014): `Environment::volumetric`, `FogVolume` (128 x 72 x 64, inject
+      then integrate by compute; sun and lamp shadows, clustered lamps),
+      `06n_VolumetricFog`. Later: reprojection over frames (less noise),
+      lights that only light the fog
 - [ ] Shadows and occlusion from distance fields (Wright, UE4, SIGGRAPH
       2015): signed distance fields of the meshes, on the sparse 3D grid of
       P3

@@ -117,7 +117,8 @@ Status bindLighting(compages::renderer::Material& p_material,
 Status bindMaterialFrame(compages::renderer::Material& p_material,
                          RenderSnapshot const& p_snapshot,
                          ShadowPass const& p_shadows,
-                         LightClusters const& p_clusters)
+                         LightClusters const& p_clusters,
+                         FogVolume const& p_fog)
 {
     switch (p_material.family)
     {
@@ -125,6 +126,7 @@ Status bindMaterialFrame(compages::renderer::Material& p_material,
         case compages::renderer::ShaderFamily::PbrMinimal:
             p_shadows.bind(p_material);
             COMPAGES_TRY(p_clusters.bind(p_material.program));
+            p_fog.bind(p_material.program);
             return bindLighting(p_material, p_snapshot);
         case compages::renderer::ShaderFamily::Depth:
         case compages::renderer::ShaderFamily::Normals:
@@ -155,6 +157,8 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
     COMPAGES_TRY(m_shadows.render(p_snapshot, p_assets));
     m_clusters.build(p_snapshot, std::size_t(compages::renderer::shaders::MAX_POINT_LIGHTS));
     COMPAGES_TRY(m_clusters.upload());
+    COMPAGES_TRY(m_fog.update(p_snapshot, m_shadows, m_clusters));
+    m_fog.drawBackground(p_snapshot);
 
     compages::renderer::MaterialId bound_material;
     compages::renderer::Material* material = nullptr;
@@ -179,7 +183,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                 continue;
             }
             bound_material = instance->material;
-            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadows, m_clusters));
+            COMPAGES_TRY(bindMaterialFrame(*material, p_snapshot, m_shadows, m_clusters, m_fog));
             COMPAGES_TRY(bindMaterialResources(*material, p_assets));
         }
 
