@@ -5,7 +5,7 @@ one above: **GPU** (`compages::gpu`, shader-named data, `Drawable`, compute),
 **World** (`compages::world`, scene graph + EnTT ECS, routines, joints,
 headless), **Renderer** (`compages::renderer`, `Scene`, assets, snapshot,
 drawing). Shared vocabulary directly in `compages` (vectors, matrices,
-`Frame`, `Result`), from `Core/`; structured data (`Grid2D`, `Field<T>`,
+`Frame`, `Result`), from `Core/`; structured data (`Grid2D`, `CurvilinearGrid`, `Field<T>`,
 `intersect` with a height field) directly in `compages`, from `Fields/`. OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
 `.makefile/`, no CMake). Dual license GPL-3.0-or-later / commercial.
 

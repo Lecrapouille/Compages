@@ -23,23 +23,20 @@ namespace compages
 //! \code
 //! for (compages::Vector2f p : compages::streamline(wind, start, 0.05f, 200)) { ... }
 //! \endcode
-//! \param[in] p_field The vectors (bilinear between the points).
+//! \param[in] p_field The vectors (bilinear between the points), on any grid
+//! of the plane (Grid2D, CurvilinearGrid).
 //! \param[in] p_start Where the line starts, in the plane of the grid.
 //! \param[in] p_step The length of a step, in metres.
 //! \param[in] p_steps How many steps at most.
 //! \return The points of the line, the start first; it stops where it leaves
 //! the grid or where the field is still.
 // ----------------------------------------------------------------------------
-[[nodiscard]] inline std::vector<Vector2f>
-streamline(Field<Vector2f> const& p_field, Vector2f p_start, float p_step, int p_steps)
+template <PlanarGrid Grid>
+[[nodiscard]] std::vector<Vector2f>
+streamline(Field<Vector2f, Grid> const& p_field, Vector2f p_start, float p_step, int p_steps)
 {
-    Grid2D const& grid = p_field.grid();
-    auto inside = [&grid](Vector2f p_at)
-    {
-        const Vector2f at = grid.coordinates(p_at);
-        return (at.x >= 0.0f) && (at.y >= 0.0f) && (at.x <= float(grid.columns - 1)) &&
-               (at.y <= float(grid.rows - 1));
-    };
+    Grid const& grid = p_field.grid();
+    auto inside = [&grid](Vector2f p_at) { return grid.locate(p_at).inside; };
     auto direction = [&p_field](Vector2f p_at, Vector2f& p_out)
     {
         const Vector2f v = p_field.sample(p_at);

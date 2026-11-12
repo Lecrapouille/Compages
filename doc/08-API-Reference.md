@@ -131,8 +131,10 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 |--------|------|
 | a grid | `Grid2D{ .columns, .rows, .origin, .spacing }`; `count()` `index(i, j)` `column(n)` `row(n)` `contains(i, j)` `point(i, j)` `coordinates(place)` `nearest(place)` |
 | neighbours | `for (std::size_t n : grid.neighbours4(index))`, `neighbours8(index)` |
+| a grid fitted round a shape | `CurvilinearGrid::create(columns, rows, place(i, j))` → `Result`; same calls as `Grid2D`, plus `low()` `high()`; `Field<T, CurvilinearGrid>` (`<Compages/Fields/CurvilinearGrid.hpp>`) |
+| the cell of a place | `grid.locate(place)` → `GridCell{ i, j, s, t, inside }`; any grid of the plane is a `PlanarGrid` (`<Compages/Fields/PlanarGrid.hpp>`) |
 | values on it | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
-| between the points | `field.sample(place)`: bilinear, the edge value outside |
+| between the points | `field.sample(place)`: bilinear in its cell, the edge value outside (any `PlanarGrid`) |
 | a volume | `Grid3D{ .columns, .rows, .layers, .origin, .spacing }`, `index(i, j, k)`, `layer(n)`, `neighbours6(index)`; `Field<T, Grid3D> volume(grid, value)`, `volume(i, j, k)`, `volume.sample(Vector3f)` (trilinear) |
 | streamline | `compages::streamline(field, start, step, steps)` → points (`<Compages/Fields/Streamline.hpp>`) |
 | isosurface | `compages::isosurface(volume, level)` → `Surface{ positions, normals }`; `renderer::meshOf(surface)` → `MeshAsset` |

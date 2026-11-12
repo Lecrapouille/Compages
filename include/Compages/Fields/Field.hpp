@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include "Compages/Fields/CurvilinearGrid.hpp"
 #include "Compages/Fields/Grid2D.hpp"
 #include "Compages/Fields/Grid3D.hpp"
+#include "Compages/Fields/PlanarGrid.hpp"
 
 #include <algorithm>
 #include <concepts>
@@ -21,7 +23,8 @@ namespace compages
 
 // ****************************************************************************
 //! \brief One value per point of a grid: a height, a temperature, a wind on a
-//! Grid2D (the default), a density, a pressure in a volume on a Grid3D.
+//! Grid2D (the default) or on a CurvilinearGrid fitted round a shape, a
+//! density, a pressure in a volume on a Grid3D.
 //!
 //! The values are contiguous, row after row, like the grid numbers its
 //! points: they can be sent to the GPU as they are (values()). A field of a
@@ -134,23 +137,21 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief The value at a place of the plane, mixed from the four points
-    //! around it (bilinear). Outside the grid, the value of its edge.
+    //! \brief The value at a place of the plane, mixed from the four corners
+    //! of its cell (bilinear). Outside the grid, the value of its edge.
     //!
-    //! For values that can be added and scaled: float, Vector2f, Vector3f...
+    //! For any grid of the plane (Grid2D, CurvilinearGrid: PlanarGrid), and
+    //! values that can be added and scaled: float, Vector2f, Vector3f...
     //! \param[in] p_place Where, in the plane.
     // ------------------------------------------------------------------------
     [[nodiscard]] T sample(Vector2f p_place) const
-        requires std::same_as<Grid, Grid2D>
+        requires PlanarGrid<Grid>
     {
-        const Vector2f at = m_grid.coordinates(p_place);
-        const auto [i, s] = cell(at.x, m_grid.columns);
-        const auto [j, t] = cell(at.y, m_grid.rows);
-        const int i1 = std::min(i + 1, m_grid.columns - 1);
-        const int j1 = std::min(j + 1, m_grid.rows - 1);
-        return ((*this)(i, j) * ((1.0f - s) * (1.0f - t))) +
-               ((*this)(i1, j) * (s * (1.0f - t))) +
-               ((*this)(i, j1) * ((1.0f - s) * t)) + ((*this)(i1, j1) * (s * t));
+        const GridCell c = m_grid.locate(p_place);
+        const int i1 = std::min(c.i + 1, m_grid.columns - 1);
+        const int j1 = std::min(c.j + 1, m_grid.rows - 1);
+        return ((*this)(c.i, c.j) * ((1.0f - c.s) * (1.0f - c.t))) + ((*this)(i1, c.j) * (c.s * (1.0f - c.t))) +
+               ((*this)(c.i, j1) * ((1.0f - c.s) * c.t)) + ((*this)(i1, j1) * (c.s * c.t));
     }
 
     // ------------------------------------------------------------------------

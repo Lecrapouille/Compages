@@ -153,6 +153,8 @@ m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compage
 
 The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `11g_FlowAroundCylinder` shows the wind around a turning column this way.
 
+**Grids fitted round a shape.** `show()` takes a field on a `CurvilinearGrid` too (values and arrows): the mesh follows the points of the grid, so the edge of a column is round, not a staircase of square cells. `11g_FlowAroundCylinder` builds an O-grid round its column (i round it, j away from it, tight at the wall) and compares it with the regular grid; [chapter 12 §6](12-Going-Further.md#-6-values-on-a-grid-field) explains how.
+
 **Curves over time.** A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`; put it on any mesh, a board in the scene:
 
 ```cpp

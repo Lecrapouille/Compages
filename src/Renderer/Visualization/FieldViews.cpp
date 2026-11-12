@@ -252,9 +252,47 @@ Result<TextureAssetId> colorMapTexture(AssetManager& p_assets, ColorMap p_map)
 }
 
 // ----------------------------------------------------------------------------
+//! \brief The corners of the box round the points of a grid of the plane.
+// ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
+std::pair<compages::Vector2f, compages::Vector2f> extentOf(Grid const& p_grid)
+{
+    if constexpr (std::same_as<Grid, compages::Grid2D>)
+    {
+        const compages::Vector2f a = p_grid.point(0, 0);
+        const compages::Vector2f b = p_grid.point(p_grid.columns - 1, p_grid.rows - 1);
+        return { compages::Vector2f(std::min(a.x, b.x), std::min(a.y, b.y)),
+                 compages::Vector2f(std::max(a.x, b.x), std::max(a.y, b.y)) };
+    }
+    else
+    {
+        return { p_grid.low(), p_grid.high() };
+    }
+}
+
+// ----------------------------------------------------------------------------
+//! \brief The distance between neighbour points: exact on a Grid2D, the
+//! mean on other grids (for the normals of the relief, the width of arrows).
+// ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
+float spacingOf(Grid const& p_grid)
+{
+    if constexpr (std::same_as<Grid, compages::Grid2D>)
+    {
+        return p_grid.spacing;
+    }
+    else
+    {
+        const auto [low, high] = extentOf(p_grid);
+        return std::sqrt(std::max((high.x - low.x) * (high.y - low.y), 1.0e-12f) / float(p_grid.count()));
+    }
+}
+
+// ----------------------------------------------------------------------------
 //! \brief One corner per point of the grid, flat; each reads its own texel.
 // ----------------------------------------------------------------------------
-MeshAsset gridMesh(compages::Grid2D const& p_grid)
+template <compages::PlanarGrid Grid>
+MeshAsset gridMesh(Grid const& p_grid)
 {
     MeshAsset mesh;
     mesh.source_vertices.reserve(p_grid.count());
@@ -291,19 +329,19 @@ MeshAsset gridMesh(compages::Grid2D const& p_grid)
 //! \brief The box of the field with its relief (which stops at the ends of
 //! the range): the culling must see the raised corners.
 // ----------------------------------------------------------------------------
-compages::AABB boundsOf(compages::Grid2D const& p_grid, FieldLook const& p_look)
+template <compages::PlanarGrid Grid>
+compages::AABB boundsOf(Grid const& p_grid, FieldLook const& p_look)
 {
     const float a = p_look.relief * p_look.low;
     const float b = p_look.relief * p_look.high;
-    const compages::Vector2f first = p_grid.point(0, 0);
-    const compages::Vector2f last = p_grid.point(p_grid.columns - 1, p_grid.rows - 1);
-    return compages::AABB::fromCorners(
-        compages::Vector3f(std::min(first.x, last.x), std::min({ a, b, 0.0f }), std::min(first.y, last.y)),
-        compages::Vector3f(std::max(first.x, last.x), std::max({ a, b, 0.0f }), std::max(first.y, last.y)));
+    const auto [low, high] = extentOf(p_grid);
+    return compages::AABB::fromCorners(compages::Vector3f(low.x, std::min({ a, b, 0.0f }), low.y),
+                                       compages::Vector3f(high.x, std::max({ a, b, 0.0f }), high.y));
 }
 
 // ----------------------------------------------------------------------------
-Status checkField(compages::Grid2D const& p_grid, FieldLook const& p_look)
+template <compages::PlanarGrid Grid>
+Status checkField(Grid const& p_grid, FieldLook const& p_look)
 {
     if ((p_grid.columns < 2) || (p_grid.rows < 2))
     {
@@ -350,11 +388,12 @@ Status applyLook(AssetManager& p_assets,
 //! \brief The arrows of a field of vectors: a shaft and a head, flat on the
 //! ground, from one point in \c every.
 // ----------------------------------------------------------------------------
-MeshAsset arrowsMesh(compages::Field<compages::Vector2f> const& p_field, ArrowLook const& p_look)
+template <compages::PlanarGrid Grid>
+MeshAsset arrowsMesh(compages::Field<compages::Vector2f, Grid> const& p_field, ArrowLook const& p_look)
 {
-    compages::Grid2D const& grid = p_field.grid();
+    Grid const& grid = p_field.grid();
     const int every = std::max(p_look.every, 1);
-    const float width = 0.12f * grid.spacing * float(every);
+    const float width = 0.12f * spacingOf(grid) * float(every);
     MeshAsset mesh;
     auto corner = [&mesh](compages::Vector2f p_at, float p_t)
     {
@@ -400,12 +439,11 @@ MeshAsset arrowsMesh(compages::Field<compages::Vector2f> const& p_field, ArrowLo
         mesh.source_indices = { a, a, a };
     }
     mesh.index_count = mesh.source_indices.size();
-    const compages::Vector2f first = grid.point(0, 0);
-    const compages::Vector2f last = grid.point(grid.columns - 1, grid.rows - 1);
+    const auto [first, last] = extentOf(grid);
     const float reach = (std::abs(p_look.high) + std::abs(p_look.low)) * p_look.scale + width;
     mesh.local_bounds = compages::AABB::fromCorners(
-        compages::Vector3f(std::min(first.x, last.x) - reach, -0.01f, std::min(first.y, last.y) - reach),
-        compages::Vector3f(std::max(first.x, last.x) + reach, 0.01f, std::max(first.y, last.y) + reach));
+        compages::Vector3f(first.x - reach, -0.01f, first.y - reach),
+        compages::Vector3f(last.x + reach, 0.01f, last.y + reach));
     return mesh;
 }
 
@@ -549,8 +587,9 @@ Status FieldViews::show(Scene& p_scene,
 }
 
 // ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
 compages::world::Entity FieldViews::show(Scene& p_scene,
-                                         compages::Field<compages::Vector2f> const& p_field,
+                                         compages::Field<compages::Vector2f, Grid> const& p_field,
                                          ArrowLook const& p_look,
                                          std::string p_name)
 {
@@ -589,9 +628,10 @@ compages::world::Entity FieldViews::show(Scene& p_scene,
 }
 
 // ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
 Status FieldViews::show(Scene& p_scene,
                         compages::world::EntityId p_entity,
-                        compages::Field<compages::Vector2f> const& p_field,
+                        compages::Field<compages::Vector2f, Grid> const& p_field,
                         ArrowLook const& p_look)
 {
     FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
@@ -633,8 +673,9 @@ FieldViews::values(compages::world::EntityId p_entity, std::span<const float> p_
 }
 
 // ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
 compages::world::Entity FieldViews::grid(Scene& p_scene,
-                                         compages::Grid2D const& p_grid,
+                                         Grid const& p_grid,
                                          FieldLook const& p_look,
                                          std::string p_name)
 {
@@ -705,8 +746,9 @@ Status FieldViews::apply(Scene& p_scene,
 }
 
 // ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
 compages::world::Entity FieldViews::show(Scene& p_scene,
-                                         compages::Field<float> const& p_field,
+                                         compages::Field<float, Grid> const& p_field,
                                     FieldLook const& p_look,
                                     std::string p_name)
 {
@@ -724,9 +766,10 @@ compages::world::Entity FieldViews::show(Scene& p_scene,
 }
 
 // ----------------------------------------------------------------------------
+template <compages::PlanarGrid Grid>
 Status FieldViews::show(Scene& p_scene,
                         compages::world::EntityId p_entity,
-                   compages::Field<float> const& p_field,
+                   compages::Field<float, Grid> const& p_field,
                    FieldLook const& p_look)
 {
     FieldView const* view = p_scene.world().tryGet<FieldView>(p_entity);
@@ -775,6 +818,25 @@ Status FieldViews::show(Scene& p_scene,
 {
     return apply(p_scene, p_entity, p_values.handle(), p_values.count(), p_look);
 }
+
+// The grids of the plane a field may be shown on.
+template compages::world::Entity FieldViews::show(Scene&, compages::Field<float, compages::Grid2D> const&,
+                                                  FieldLook const&, std::string);
+template compages::world::Entity FieldViews::show(Scene&, compages::Field<float, compages::CurvilinearGrid> const&,
+                                                  FieldLook const&, std::string);
+template Status FieldViews::show(Scene&, compages::world::EntityId, compages::Field<float, compages::Grid2D> const&,
+                                 FieldLook const&);
+template Status FieldViews::show(Scene&, compages::world::EntityId,
+                                 compages::Field<float, compages::CurvilinearGrid> const&, FieldLook const&);
+template compages::world::Entity FieldViews::show(Scene&, compages::Field<compages::Vector2f, compages::Grid2D> const&,
+                                                  ArrowLook const&, std::string);
+template compages::world::Entity FieldViews::show(Scene&,
+                                                  compages::Field<compages::Vector2f, compages::CurvilinearGrid> const&,
+                                                  ArrowLook const&, std::string);
+template Status FieldViews::show(Scene&, compages::world::EntityId,
+                                 compages::Field<compages::Vector2f, compages::Grid2D> const&, ArrowLook const&);
+template Status FieldViews::show(Scene&, compages::world::EntityId,
+                                 compages::Field<compages::Vector2f, compages::CurvilinearGrid> const&, ArrowLook const&);
 
 // ----------------------------------------------------------------------------
 std::optional<FieldProbe> probeField(Scene const& p_scene,

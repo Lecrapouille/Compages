@@ -8,10 +8,13 @@
 #pragma once
 
 #include "Compages/Core/Vector.hpp"
+#include "Compages/Fields/PlanarGrid.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <utility>
 
 namespace compages
 {
@@ -111,6 +114,18 @@ struct Grid2D
                         (p_place.y - origin.y) / spacing);
     }
 
+    //! \brief The cell a place falls in (a division: the points are
+    //! regular). Outside the grid, the nearest cell of the edge.
+    [[nodiscard]] GridCell locate(Vector2f p_place) const
+    {
+        const Vector2f at = coordinates(p_place);
+        const auto [i, s] = cell(at.x, columns);
+        const auto [j, t] = cell(at.y, rows);
+        const bool inside = (at.x >= 0.0f) && (at.y >= 0.0f) &&
+                            (at.x <= float(columns - 1)) && (at.y <= float(rows - 1));
+        return GridCell{ .i = i, .j = j, .s = s, .t = t, .inside = inside };
+    }
+
     //! \brief The point nearest to a place (maybe outside the grid: check
     //! with contains()).
     [[nodiscard]] Vector2i nearest(Vector2f p_place) const
@@ -139,6 +154,15 @@ struct Grid2D
     }
 
 private:
+
+    //! \brief The point before a coordinate and how far after it, clamped.
+    [[nodiscard]] static std::pair<int, float> cell(float p_at, int p_count)
+    {
+        const float last = float(std::max(p_count - 1, 0));
+        const float at = std::clamp(p_at, 0.0f, last);
+        const int before = std::min(int(at), std::max(p_count - 2, 0));
+        return { before, at - float(before) };
+    }
 
     template <std::size_t N>
     [[nodiscard]] Neighbours

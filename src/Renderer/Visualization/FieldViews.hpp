@@ -31,13 +31,17 @@ class FieldViews
 {
 public:
 
+    //! \brief A field on a grid of the plane (Grid2D, CurvilinearGrid:
+    //! instantiated in FieldViews.cpp).
+    template <compages::PlanarGrid Grid>
     compages::world::Entity show(Scene& p_scene,
-                                 compages::Field<float> const& p_field,
+                                 compages::Field<float, Grid> const& p_field,
                                  FieldLook const& p_look,
                                  std::string p_name);
+    template <compages::PlanarGrid Grid>
     [[nodiscard]] Status show(Scene& p_scene,
                               compages::world::EntityId p_entity,
-                              compages::Field<float> const& p_field,
+                              compages::Field<float, Grid> const& p_field,
                               FieldLook const& p_look);
     compages::world::Entity show(Scene& p_scene,
                                  compages::Grid2D const& p_grid,
@@ -58,13 +62,15 @@ public:
                               compages::Field<float, compages::Grid3D> const& p_volume,
                               FieldLook const& p_look);
 
+    template <compages::PlanarGrid Grid>
     compages::world::Entity show(Scene& p_scene,
-                                 compages::Field<compages::Vector2f> const& p_field,
+                                 compages::Field<compages::Vector2f, Grid> const& p_field,
                                  ArrowLook const& p_look,
                                  std::string p_name);
+    template <compages::PlanarGrid Grid>
     [[nodiscard]] Status show(Scene& p_scene,
                               compages::world::EntityId p_entity,
-                              compages::Field<compages::Vector2f> const& p_field,
+                              compages::Field<compages::Vector2f, Grid> const& p_field,
                               ArrowLook const& p_look);
 
 private:
@@ -75,8 +81,9 @@ private:
     values(compages::world::EntityId p_entity, std::span<const float> p_values);
 
     //! \brief The entity, the mesh and the material of a field.
+    template <compages::PlanarGrid Grid>
     compages::world::Entity grid(Scene& p_scene,
-                                 compages::Grid2D const& p_grid,
+                                 Grid const& p_grid,
                                  FieldLook const& p_look,
                                  std::string p_name);
 

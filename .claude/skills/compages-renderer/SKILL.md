@@ -54,7 +54,8 @@ scene.draw(frame);                       // = update(frame) + render()
   (`Visualization/Chart.hpp`: create(scene, {width, height, seconds, low, high}, name), series, add,
   draw, applyLook) on a CanvasTexture (`paintPixelLine`, `fillPixels`); demo `11h_Thermometers`.
 - Structured data (`Fields/`, namespace `compages`, includes only Core): `Grid2D`, `Field<T>`
-  (`sample` bilinear), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
+  (`sample` bilinear), `CurvilinearGrid::create(columns, rows, place(i, j))` (body-fitted, `locate()` is a
+  search; `show()` takes it too, demo `11g`), concept `PlanarGrid` (`locate` → `GridCell`), `intersect(ray, Field<float>)`, `intersectHeight(ray, h(x,z), from, to, step)`.
 - Helpers: `scene.grid(size, divisions)`, `scene.axes(length)` (hang from an entity = gizmo),
   `scene.showBounds(id, bool)`; components in `Renderer/Components/Helpers.hpp`, drawn as
   DebugDraw lines at each render.

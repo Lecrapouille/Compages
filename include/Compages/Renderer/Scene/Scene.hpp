@@ -240,6 +240,23 @@ public:
                               ArrowLook const& p_look);
 
     // ------------------------------------------------------------------------
+    //! \brief The same on a CurvilinearGrid (a grid fitted round a shape):
+    //! the mesh follows its points, so its edges follow the shape.
+    // ------------------------------------------------------------------------
+    compages::world::Entity show(compages::Field<float, compages::CurvilinearGrid> const& p_field,
+                                 FieldLook const& p_look,
+                                 std::string p_name);
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::Field<float, compages::CurvilinearGrid> const& p_field,
+                              FieldLook const& p_look);
+    compages::world::Entity show(compages::Field<compages::Vector2f, compages::CurvilinearGrid> const& p_field,
+                                 ArrowLook const& p_look,
+                                 std::string p_name);
+    [[nodiscard]] Status show(compages::world::EntityId p_entity,
+                              compages::Field<compages::Vector2f, compages::CurvilinearGrid> const& p_field,
+                              ArrowLook const& p_look);
+
+    // ------------------------------------------------------------------------
     //! \brief Draw a volume: a box around its grid, see-through, whose
     //! colours add up along each ray (the colour map of the look; a value at
     //! the top of the range lets 5 % of the light through across the box).

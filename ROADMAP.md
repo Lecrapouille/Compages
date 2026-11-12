@@ -138,10 +138,12 @@ In rough order. Each item should make a demo shorter or possible.
       `ShaderSource` and calls the load of the user
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
 - [ ] Grids with more detail where it matters. In order:
-  - [ ] A C++20 concept of grid (`count`, `index`, `point`, `locate`), so
-        that `Field<T, Grid>` takes other grids; for a non-regular grid,
-        finding the cell of a point is a search, not a division
-  - [ ] Curvilinear grid (body-fitted, an O-grid around a shape): same
+  - [x] A C++20 concept of grid (`PlanarGrid`: `count`, `index`, `point`,
+        `locate` → `GridCell`), so that `Field<T, Grid>::sample()`,
+        `streamline()` and `scene.show()` take other grids; for a
+        non-regular grid, finding the cell of a point is a search, not a
+        division
+  - [x] Curvilinear grid (`CurvilinearGrid`, body-fitted, an O-grid around a shape): same
         (i, j) neighbours, contiguous values and GPU upload, each point
         placed freely; `show()` keeps its mesh by `gl_VertexID`. Fixes the
         steps around the column of `11g_FlowAroundCylinder` (polar grid,
