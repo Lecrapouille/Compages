@@ -1,12 +1,16 @@
 # 🏗 13. Three complete demos, step by step
 
-The last demos of the gallery put the calls of [chapter 12](12-Going-Further.md) together, as a game or a tool would. This chapter rebuilds three of them in the order they were made. Each one adds a new kind of work:
+The last demos of the gallery put the calls of [chapter 12](12-Going-Further.md) together, as a game or a tool would. This chapter follows three implementations from their inputs to their final picture. Each one adds a new kind of work:
 
 | # | Demo | What it adds | Read first |
 |---|------|--------------|------------|
-| 1 | `10c_SweatAndDecals` | a simulation **on the GPU**, in the UV map of a mesh: several passes, ping-pong | chapter 12 §1, §8 |
-| 2 | `10e_Archipelago` | a whole world **made on the CPU** in a thread: cells, erosion, rivers, levels of detail, a sea | chapter 12 §1, §3, §5, §6 |
-| 3 | `10f_FlowingWater` | a technique of a game studio: a **flow map** baked from the scene, read by the GPU and the CPU | chapter 12 §1 to §7 |
+| 1 | `10c_SweatAndDecals` | a simulation **on the GPU**, in the UV map of a mesh: several passes, ping-pong | chapter 12 §6, §9 |
+| 2 | `10e_Archipelago` | a whole world **made on the CPU** in a thread: cells, erosion, rivers, levels of detail, a sea | chapter 12 §1, §5, §6, §7 |
+| 3 | `10f_FlowingWater` | a technique of a game studio: a **flow map** baked from the scene, read by the GPU and the CPU | chapter 12 §1, §3–8 |
+
+**How to read this chapter:** choose one demo from the table; the three are independent case studies. First run it and describe what you see in one sentence. Then follow its diagram and identify the data passed from one step to the next. Read the equations only after you understand what each step is trying to do.
+
+The snippets are selected parts of the existing implementations, not complete replacement files. Helpers such as `Land`, `Patch` and the flow-map baker belong to the demos; they are not extra Compages APIs. Use the source paths to find their definitions. The reusable library calls are indexed in [chapter 8](08-API-Reference.md).
 
 Each part follows the code: one step, the file it lives in, the lines that matter, what to try. Open the demo next to the page: `./build/linux-gcc-debug/bin/Compages-examples 10c_SweatAndDecals`.
 
@@ -31,6 +35,8 @@ flowchart LR
     WASH --> SKIN
 ```
 
+**First observation:** a flat sticker follows a curved head because the simulation stores values in the head's texture coordinates. Keep that distinction in mind: the object is 3D, while the evolving state is a 2D image.
+
 ### Step 1 — Load the head and keep its triangles
 
 ```cpp
@@ -48,7 +54,7 @@ m_indices = mesh->source_indices;
 
 ### Step 2 — The skin: your own `main`
 
-As in chapter 12 §1, the PBR shader keeps its lights and gets a new `main()` (`SKIN_MAIN`): the normal map, the decals, the drops. This demo binds its three extra textures by hand, on units 2, 3 and 4, before the render:
+As in chapter 12 §6, the PBR shader keeps its lights and gets a new `main()` (`SKIN_MAIN`): the normal map, the decals, the drops. This demo binds its three extra textures by hand, on units 2, 3 and 4, before the render:
 
 ```cpp
 material.program.set("normalMap", 2);
@@ -112,7 +118,7 @@ It also writes where the skin faces down (drops fall there) and where it sweats 
 
 A texel holds at most one drop, and where the drop sits inside the texel: drops glide, they do not jump. Pores fill small beads. A bead heavier than a threshold runs down the force field. When it crosses the border of its texel, it goes to that neighbour (diagonals too) and leaves a thin film behind, the wet trail. It stops when it has left most of its water, at a threshold that changes from texel to texel (rough skin).
 
-Each texel computes what its eight neighbours send to it, from their own state only. The water that moves is counted once on each side, so none is created on the way. The loop is chapter 12 §8: read `current()`, write `next()`, `swap()`, several steps per frame so that a drop moves at most one texel per step.
+Each texel computes what its eight neighbours send to it, from their own state only. The water that moves is counted once on each side, so none is created on the way. The loop is chapter 12 §9: read `current()`, write `next()`, `swap()`, several steps per frame so that a drop moves at most one texel per step.
 
 ### Step 6 — Decals projected on the skin
 
@@ -180,6 +186,8 @@ The map is 16 km wide. Every size is written with its unit (`toMetres(1.4_km)`),
 | `Sea`, `Swells`, `Shaders.hpp` | the sea (hooks `deform` and `main`) |
 | `FineTiles` | finer tiles near the camera |
 | `Wildlife`, `Pins`, `Signs`, `Highlight`, `Panels`, `Browser` | what lives on the map, and the interface |
+
+**First observation:** land generation happens on the CPU; displaying its result happens on the GPU. The background thread produces data. The main thread turns that data into meshes and textures while its graphics context is current.
 
 ### Step 1 — A recipe, a thread, a progress bar
 
@@ -273,7 +281,7 @@ Only these rivers are drawn: a smooth Catmull-Rom spline through their cells (th
 
 ### Step 6 — From cells to a mesh and a picture
 
-A `Patch` is a square of the map, ready for the GPU: its heights are a `Field<float>` (one per corner of its quads), its picture is the painted map. The ground at any point comes from one function, `Land::heightAt(x, z)` (the cells blended smoothly, a little roughness). A patch becomes a mesh by hand (chapter 12 §3) and a texture (§2).
+A `Patch` is a square of the map, ready for the GPU: its heights are a `Field<float>` (one per corner of its quads), its picture is the painted map. The ground at any point comes from one function, `Land::heightAt(x, z)` (the cells blended smoothly, a little roughness). A patch becomes a mesh by hand (chapter 12 §5) and a texture (§4).
 
 ### Step 7 — Levels of detail
 
@@ -283,7 +291,7 @@ Near the camera, the ground shader adds real pictures of grass, sand and rock (a
 
 ### Step 8 — The sea: one table of swells for the GPU and the CPU
 
-Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` (chapter 12 §5) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. For swells of direction $\mathbf{d}_k$, wave number $k_k = 2\pi/\lambda_k$ and amplitude $A_k$:
+Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` (chapter 12 §7) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. For swells of direction $\mathbf{d}_k$, wave number $k_k = 2\pi/\lambda_k$ and amplitude $A_k$:
 
 ```math
 \phi_k = k_k\,(\mathbf{d}_k\cdot\mathbf{x}) - \omega_k\,t, \qquad
@@ -335,9 +343,11 @@ flowchart TB
     PACK -->|"sample()"| CPU["crates, barrel"]
 ```
 
+**First observation:** a flow map stores the direction and speed of water at each point. The shader uses it to move the visible texture; the CPU uses the same field to move floating crates. This is a shared description of movement, not a full fluid solver.
+
 ### Step 1 — The scene and its pictures
 
-Every picture is made by the program and tiles (chapter 12 §2): concrete cast in panels with the holes of the form ties, green painted metal with rust, yellow and black stripes, and three pictures for the water: a **noise**, small **ripples** (a normal map) and grimy **foam** (the colour map, its opacity in alpha). The solid things share one triplanar shader (chapter 12 §1), darker and slimy near the waterline.
+Every picture is made by the program and tiles (chapter 12 §4): concrete cast in panels with the holes of the form ties, green painted metal with rust, yellow and black stripes, and three pictures for the water: a **noise**, small **ripples** (a normal map) and grimy **foam** (the colour map, its opacity in alpha). The solid things share one triplanar shader (chapter 12 §6), darker and slimy near the waterline.
 
 ### Step 2 — Where the scene meets the water
 
@@ -410,7 +420,7 @@ With $x = r / R$ and $\hat{\mathbf{r}}$ the direction from the centre:
 
 ### Step 6 — Foam, and the texture
 
-The water slows near the walls. Foam gathers there and where the water is slow; the upwellings push it away. Everything goes into one `Field<Vector4f>` (chapter 12 §7):
+The water slows near the walls. Foam gathers there and where the water is slow; the upwellings push it away. Everything goes into one `Field<Vector4f>` (chapter 12 §8):
 
 | Channel | Holds |
 |---------|-------|
@@ -466,9 +476,19 @@ The crates and the barrel move with `Field::sample()` where they are, the biline
 
 ### Step 10 — The pipe
 
-A drain pipe comes up through the deck and over the edge. Its jet is a tube along the path of a thrown body (chapter 12 §3), see-through (§4), its picture scrolling down; a crown of spray where it falls scrolls up and breathes. In the water shader, rings run out from the impact and the water is white there. In the flow map, the impact is an upwelling: the water it brings spreads out and carries the crates away. Try it → Pipe running.
+A drain pipe comes up through the deck and over the edge. Its jet is a tube along the path of a thrown body (chapter 12 §5), see-through (§3), its picture scrolling down; a crown of spray where it falls scrolls up and breathes. In the water shader, rings run out from the impact and the water is white there. In the flow map, the impact is an upwelling: the water it brings spreads out and carries the crates away. Try it → Pipe running.
 
 ---
+
+## ✅ Check what you can reuse
+
+| Demo | Trace this data | Try one controlled change |
+|------|-----------------|---------------------------|
+| Sweat and decals | Mesh UV → force texture → water state → skin material | Change the simulation speed; observe the wet trail before changing shading |
+| Archipelago | Recipe → CPU heights → patches → meshes and textures | Change one generation parameter; distinguish regenerated land from camera movement |
+| Flowing water | Scene footprint → flow field → water texture and crates | Toggle the pipe; watch both the surface and the floating objects react |
+
+For the demo you chose, write down which resources are created once, which change each frame, and which data must be available on the CPU. You are ready to adapt the technique when you can explain these choices without reading the implementation line by line.
 
 ## 🧭 Next
 

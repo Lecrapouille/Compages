@@ -1,6 +1,6 @@
 # 🔬 14. Science with fields, step by step
 
-The demos of chapter 11 of the gallery (`11a` to `11h`) compute physics on a grid and show it. This chapter explains each one: the equation, how it becomes a loop on a grid, and the Compages calls that hold and show the numbers. Read it in order: each section uses the ones before.
+The demos of chapter 11 of the gallery (`11a` to `11h`) compute physics on a grid and show it. This chapter explains each one: the equation, how it becomes a loop on a grid, and the Compages calls that hold and show the numbers. Start with §0–1. Then choose the physical effect you want to study; smoke and volume rendering are more advanced branches.
 
 What you will learn:
 
@@ -19,6 +19,21 @@ What you will learn:
 You need chapter 3 §3 (a `Scene`) and, for §2 and §5, the idea of a compute shader ([chapter 4 §5](04-GPU-Layer.md#-5-compute)).
 
 ---
+
+### How to read the equations
+
+First ask what changes and what must stay fixed. Then read the calculation. Finally follow the code that stores and shows the result. You can use fields and `scene.show()` without deriving these equations yourself.
+
+| Symbol | Read it as |
+|--------|------------|
+| $i, j$ | Column and row of a point, not a distance |
+| $h$ | Distance between neighbouring grid points |
+| $n$, $n+1$ | Current step and next step |
+| $\Delta t$ | Duration of one simulation step in seconds |
+| $\partial T / \partial t$ | How fast temperature changes with time |
+| $\nabla^2 T$ | How the value differs from the values around it; the grid formula is in §1 |
+
+The physical models and solvers in this chapter belong to the demos. Compages supplies data containers, GPU tools and visualization; creating a `Field` does not make heat or fluid move by itself.
 
 ## 🧮 0. Fields in five minutes
 
@@ -69,6 +84,12 @@ classDiagram
     Field~T~ --> Grid3D
 ```
 
+### A small example before the formulas
+
+Imagine a 3 × 3 grid with values 20 everywhere except the centre, which holds 100. The grid tells you where those nine points lie; the field stores the nine temperatures. A colour map can draw them immediately. Nothing spreads until your code computes the next temperatures.
+
+A grid point and a grid cell are different: 3 × 3 points form 2 × 2 cells between them. A texture uses one texel (one stored image element) for each field value. Keep that distinction when comparing array sizes, drawn triangles and shader coordinates.
+
 ### Between the points: bilinear sampling
 
 `field.sample(place)` asks the grid for the cell of the place (`grid.locate(place)` → `GridCell{ i, j, s, t }`): the cell between points $(i, j)$ and $(i+1, j+1)$, and how far across it, $s$ and $t$ from 0 to 1. Then it mixes the four corners:
@@ -76,6 +97,8 @@ classDiagram
 ```math
 f(\mathbf{p}) = (1-s)(1-t)\,f_{i,j} + s\,(1-t)\,f_{i+1,j} + (1-s)\,t\,f_{i,j+1} + s\,t\,f_{i+1,j+1}
 ```
+
+For example, halfway between values 20 and 40 on a straight edge, sampling gives 30. In a cell it blends all four corners in the same way. Sampling reads between stored values; it does not create a finer simulation grid.
 
 On a `Grid2D`, $s$ and $t$ are the fractional parts of $(\mathbf{p} - \mathbf{o}) / h$. Outside the grid, the value of the nearest edge.
 
@@ -130,6 +153,8 @@ m_next(i, j) = edge ? ROOM
                               m_temperature(i, j - 1) + m_temperature(i, j + 1) - (4.0f * t)));
 ```
 
+**One step with real numbers:** take the centre value 100, four neighbours at 20 and $r = 0.1$. The update gives $100 + 0.1(20 + 20 + 20 + 20 - 4 \times 100) = 68$. A hotter point cools toward its neighbours. This is one local update; heaters and edge rules may hold some other points fixed.
+
 - Two fields, `m_temperature` and `m_next`: read one, write the other, `std::swap`. Writing in place would mix old and new values.
 - The edges stay at room temperature (a **boundary condition**); the heaters are held hot.
 - `scene.show(m_plate, m_temperature, m_look)` each frame sends the new values; the mesh never changes.
@@ -147,6 +172,8 @@ A water surface of height $u$ follows the **wave equation**, with $c$ the speed 
 ```math
 \frac{\partial^2 u}{\partial t^2} = c^2\,\nabla^2 u
 ```
+
+**Picture the effect:** a local bump pushes the surrounding water, so the disturbance travels outward. Heat diffusion smooths a hot spot; a wave carries a disturbance across the grid. These are different update rules even though both store one number per grid point.
 
 A second derivative in time needs two past states. The **leapfrog** scheme keeps three: before, now, next.
 
@@ -226,7 +253,7 @@ flowchart LR
     D --> M["a straight mesh,<br/>bent on the GPU"]
 ```
 
-The CPU writes the middle line into a storage buffer; the hook `deform` (chapter 12 §5) moves each corner of a straight mesh onto it.
+The CPU writes the middle line into a storage buffer; the hook `deform` (chapter 12 §7) moves each corner of a straight mesh onto it.
 
 ---
 
@@ -368,6 +395,17 @@ COMPAGES_TRY(m_chart.draw());
 The board shows the picture as it is, like a screen: a hook `main` that only reads the picture, so the sun does not light it.
 
 ---
+
+## ✅ Practice: separate calculation from display
+
+Start with `11a_HeatPlate` and change one control at a time:
+
+1. Change the colour map. The calculated temperatures should stay the same.
+2. Change the relief. Only the drawn height should change; it is a visual scale, not a bending metal plate.
+3. Change the speed of simulated time. Heat should spread faster relative to wall-clock time; the solver still respects its step-size limit.
+4. Follow one value from the CPU update to `scene.show`. Find where old and new fields swap.
+
+You can now choose a branch: §2 and §5 for GPU solvers, §3 and §8 for reading and presenting data, or §4, §6 and §7 for other physical models. Before adapting any solver, identify its units, boundary conditions and stability limit. A plausible picture alone does not validate a numerical result.
 
 ## 📋 Summary
 

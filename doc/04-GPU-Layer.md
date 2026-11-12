@@ -9,6 +9,10 @@ The first layer speaks **shader**. You write GLSL, fill the data with the names 
 | **Code** | `include/Compages/GPU/`, implementation in `src/GPU/` |
 | **Not in this layer** | the window, entities, model files |
 
+**Before you start:** run the [triangle tutorial](03-Tutorial.md#-1-a-triangle-named-by-the-shader). You need basic GLSL to write your own shaders. If your goal is simply to show shapes or load a model, begin with [Renderer](06-Renderer-Layer.md) instead.
+
+Read §1–4 for your first drawing code. Return to §5 for simulations and §6–8 when you need more control. The snippets are setup or frame excerpts; the [complete application](03-Tutorial.md#-5-your-own-window-a-complete-program) shows their surrounding context and error handling.
+
 The commented triangle is in [chapter 3 §1](03-Tutorial.md#-1-a-triangle-named-by-the-shader).
 
 ![Particles: a compute shader writes the buffer, the draw reads it](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png)
@@ -20,15 +24,29 @@ The commented triangle is in [chapter 3 §1](03-Tutorial.md#-1-a-triangle-named-
 ```cpp
 #include <Compages/GPU/GPU.hpp>
 
-if (auto ready = compages::gpu::init(glfwGetProcAddress); !ready)
-    return fail(ready.error());
+if (auto ready = compages::gpu::init(
+        reinterpret_cast<compages::gpu::LoadProc>(glfwGetProcAddress)); !ready)
+{
+    std::cerr << ready.error() << '\n';
+    return 1; // In main().
+}
 
 // ... frames ...
 
 compages::gpu::shutdown();
 ```
 
-`init` loads the OpenGL functions. The OpenGL 4.5 core context must already be current.
+`init` loads the OpenGL functions. The OpenGL 4.5 core context must already be current. Destroy your drawables, textures and buffers before shutdown; then close the context.
+
+Before any drawing, open a pass. In the gallery this is already done for you; in your own frame loop it looks like this:
+
+```cpp
+const compages::gpu::RenderPass pass(
+    { .width = frame.width, .height = frame.height });
+// clear(), drawable.draw(), or scene.draw(frame) here.
+```
+
+Both dimensions must be nonzero. The pass ends at the closing brace of its C++ scope. A pass with no framebuffer target draws to the window if no other pass is open. More targets and state options are in [§7](#-7-passes-and-state).
 
 ---
 
@@ -49,7 +67,7 @@ mesh.draw();
 
 `operator[]` does not guess: the shader already classified each name as an attribute, a uniform or a sampler. The same syntax works for the three.
 
-- Attributes given one by one are **stored interleaved** (position, color, position, color…): the layout the GPU reads best.
+- Attributes given one by one are **stored interleaved** (position, color, position, color…): a layout that keeps the values for each vertex together.
 - Assigning an attribute marks a **dirty range**; `draw()` sends only what was marked. In `02b_DynamicGeometry`, moving the top corner sends one vertex out of three. `02a_CpuGpuSync` shows the same on a raw `Buffer`, with orange bars for the bytes the GPU does not have yet (there you call `upload()` yourself).
 - The dirty range is **one range**, from the first change to the last: changing element 1 and element 5000 sends everything between them, in one copy.
 - Uniforms are written at each draw. A texture gets a unit and is bound only for the draw.
@@ -58,7 +76,7 @@ mesh.draw();
 
 ## 🧬 3. Typed vertices
 
-When your data is already a struct, the field names must match the attribute names. The drawable keeps the vertices on the CPU and sends only what changed:
+When your data is already a struct, the field names must match the attribute names. The default editable form keeps a CPU copy and sends changed ranges at the next draw:
 
 ```cpp
 struct Vertex
@@ -85,9 +103,9 @@ mesh.editVertex<Vertex>(2u).position.y = 0.5f;      // marked, sent at the next 
 
 | The vertices... | Call | Who keeps them | Demo |
 |-----------------|------|----------------|------|
-| are given or edited from C++ | `d.setVertices(data)`, `d.editVertex<V>(i)`, `d.emplace_back(v)` | the drawable, on the CPU and the GPU | `01c`, `02a`, `02b`, `10a`, `15` |
-| are given one attribute at a time | `d["position"] = { ... }` | the drawable | `01b` |
-| are made on the GPU, shared, or large and fixed | `d.borrowVertices(buffer)` | your `Buffer`, which must outlive the drawable | `01d`, `05a`, `12`, `13`, `16` |
+| are given or edited from C++ | `d.setVertices(data)`, `d.editVertex<V>(i)`, `d.emplace_back(v)` | the drawable, on the CPU and the GPU | `01d_InterleavedTriangle`, `02b_DynamicGeometry` |
+| are given one attribute at a time | `d["position"] = { ... }` | the drawable | `01c_Triangle` |
+| are made on the GPU, shared, or large and fixed | `d.borrowVertices(buffer)` | your `Buffer`, which must outlive the drawable | `01e_BorrowedTriangle`, `05d_ComputeParticles` |
 
 ### Buffers
 
@@ -143,6 +161,8 @@ COMPAGES_TRY(step.dispatchItems(count));
 compages::gpu::barrier(compages::gpu::Barrier::VertexAttrib);
 points.draw();
 ```
+
+The dispatch starts computation. The barrier makes those writes visible to the next GPU operation. Choose the flag for **the next reader**: drawing vertices needs `VertexAttrib`; another shader reading a storage buffer needs `Storage`. If both kinds of reader follow, combine the flags.
 
 > ⚡ `barrier` is **not** added after a dispatch for you: the GPU may run ahead. A missing barrier gives a race, not a compile error. Combine the flags with `|` (`VertexAttrib`, `Storage`, `Command`, `All`… in `GPU/Enums.hpp`).
 
@@ -355,4 +375,8 @@ The gallery folders `01` to `05` follow this chapter. Read them in order; each d
 
 All demos: [chapter 9](09-Examples.md).
 
-Next: [05-World-Layer.md](05-World-Layer.md) — placing things without the GPU.
+## ✅ Check your understanding
+
+In `02b_DynamicGeometry`, edit one vertex and watch the upload counters. Then read `05d_ComputeParticles`: identify who writes the buffer, who reads it, and the barrier between them. You should be able to explain why an attribute, a uniform and a storage buffer have different jobs.
+
+For a scene of objects, go to [Renderer](06-Renderer-Layer.md). For simulation without graphics, go to [World](05-World-Layer.md). The layers are independent study paths; [the reading guide](README.md) helps you choose.

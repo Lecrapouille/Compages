@@ -9,6 +9,8 @@ The second layer answers one question: **where are things, and how do they move,
 | **Code** | `include/Compages/World/`, `src/World/` |
 | **Not in this layer** | any `gpu::` type, meshes, windows |
 
+**Before you start:** run [the terminal program](03-Tutorial.md#-2-a-world-without-a-screen). No GPU chapter is required. Learn §1–2 first; add routines (§3) or robot joints (§4) when your program needs them. Sections 5–7 explain integration and update order.
+
 The commented programs are in [chapter 3 §2](03-Tutorial.md#-2-a-world-without-a-screen).
 
 ---
@@ -58,6 +60,8 @@ compages::world::Entity gun = world.lookup("Ship/Gun");
 
 Here `position()` is the **transform** of the graph, not a component of yours. `07a_HeadlessWorld` moves its entities with its own `Position` and `Velocity` structs instead, and `each` sees an entity only if it has both. Choose what fits: particle integration with your structs, mechanical links with the graph. Both can live together.
 
+The example advances the ship **once**, by 1/60 metre along x. Put `each` and `update` inside your loop for continuous movement. `each` runs only when you call it: `world.update` does not automatically discover your systems. Read `gun.worldPosition()` after the update to see the final placement including the parent.
+
 `Entity` is a handle: copying it does not copy the entity. An empty handle, or one whose entity was destroyed, is `false` in `if (entity)`. `entity.enable(false)` switches an entity and its descendants off.
 
 ---
@@ -98,7 +102,7 @@ Inside a routine you reach `entity()`, `transform()`, `world()`, `input()` (keys
 
 ### Step 3: a fixed pace with `fixedUpdate`
 
-`update(dt)` receives the time of the frame, which changes from frame to frame. A controller, a physics engine or a behavior tree wants the same step each time, so that a run is the same on a slow and on a fast computer. `fixedUpdate(dt)` is called 0, 1 or more times per step, with a constant `dt`:
+`update(dt)` receives the time of the frame, which changes from frame to frame. A controller, a physics engine or a behavior tree wants the same step each time, so that its integration step does not depend on how often the screen redraws. A fixed step alone does not guarantee identical results across computers or different inputs. `fixedUpdate(dt)` is called 0, 1 or more times per step, with a constant `dt`:
 
 ```cpp
 world.routines().fixedStep(0.25f);   // fixedUpdate() at 4 Hz (1/60 s by default)
@@ -291,7 +295,7 @@ struct Physics: compages::world::Routine
 
 In `include/Compages/World/Components/`, simulation data:
 
-- **Camera**: field of view, near and far planes. The view used for drawing is the world matrix of the entity.
+- **Camera**: field of view, near and far planes. The view used for drawing is derived from the inverse of the entity's world matrix.
 - **Light**: color, intensity. The direction of the sun is the forward axis of its entity.
 - **SkinInstance**: bone ids and pose matrices, for skinning by the renderer.
 - **PoseDriver**: who writes the pose ([section 5](#-5-who-writes-the-pose-posedriver)).
@@ -348,4 +352,8 @@ The folder `07_World/` follows this chapter.
 | `06k_MiscLookAt` | `lookAt` on a thousand transforms |
 | `08d_RobotArm` | URDF, forward kinematics |
 
-Next: [06-Renderer-Layer.md](06-Renderer-Layer.md) — a picture of this world.
+## ✅ Practice: choose one movement rule
+
+In the terminal program of chapter 3, use a transform (`entity.position(...)`) for movement, as in §2 of this chapter. Add a child at local `(0, 0.5, 0)`. After each update, print both world positions: their y coordinates should stay 0.5 apart while the parent only translates. A custom `Position` struct alone does not move the graph; your system must copy its value into the transform if you want that result.
+
+Next: [Renderer](06-Renderer-Layer.md) to show your world. For a larger simulation, keep [the update order in §7](#-7-update-and-draw) nearby.

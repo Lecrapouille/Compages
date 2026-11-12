@@ -6,6 +6,8 @@ Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, m
 
 ---
 
+This is a lookup page after [the tutorial](03-Tutorial.md). Rows show call shapes, not complete programs: names such as `Scene`, `Routine` and `Field` are shortened in the tables. Use the full namespaces from the tutorial and include the header for the layer. For explanations and working context, use [GPU](04-GPU-Layer.md), [World](05-World-Layer.md), [Renderer](06-Renderer-Layer.md) and [Fields](14-Science-With-Fields.md).
+
 ## 📎 1. Includes
 
 ```cpp
@@ -34,6 +36,8 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 - Frame (name, type): the message is kept, read at the end of the frame or by `prepare()`.
 
 ---
+
+For a visual program, initialize a graphics context and the GPU, create resources, check `prepare()`, draw inside a `RenderPass`, then release resources before shutdown. A World-only program skips all graphics setup.
 
 ## 🟧 3. GPU
 
@@ -102,7 +106,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | field on the GPU | `scene.show(grid, storageBuffer, look, name)`, `scene.show(entity, storageBuffer, look)`: a `StorageBuffer<float>` a compute shader writes |
 | read a field | `scene.probe(field, look, pixel)` → `std::optional<FieldProbe>{ .point, .value }` |
 | show vectors | `scene.show(Field<Vector2f>, ArrowLook{ .colors, .low, .high, .scale, .every }, name)`, `scene.show(entity, field, look)` |
-| curves over time | `Chart::create(scene, { .width, .height, .seconds, .low, .high, .scale = ChartScale::Fixed|FollowValues }, name)`, `series(color)`, `add(series, time, value)`, `draw()`, `pixelOf(time, value)`, `applyLook(scene, entity)` |
+| curves over time | `Chart::create(scene, desc, name)` with `desc.scale` set to `ChartScale::Fixed` or `ChartScale::FollowValues`, `series(color)`, `add(series, time, value)`, `draw()`, `pixelOf(time, value)`, `applyLook(scene, entity)` |
 | show a volume | `scene.show(Field<float, Grid3D>, look, name)`, `scene.show(entity, volume, look)` |
 | material buffers | `material.buffers = { { .block, .buffer } }`: storage buffers bound by the Renderer |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |

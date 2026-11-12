@@ -1,5 +1,7 @@
 # 🙏 11. Credits
 
+This reference page explains the design lessons behind Compages and credits the projects, techniques and assets it uses. It is optional reading after the tutorials. The project history lives in the main README; this chapter keeps the technical sources in one place.
+
 ## 📜 1. Where Compages comes from
 
 The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compages) is told in the [README](../README.md#-the-story). Two technical lessons of OpenGLCppWrapper shaped the three layers of [chapter 1](01-Introduction.md#-3-three-layers):
@@ -40,6 +42,7 @@ The demos rebuild published techniques from the papers and talks below, with cod
   - every publication of Valve: [valvesoftware.com/publications](https://www.valvesoftware.com/fr/publications).
 - `10e_Archipelago` — Gerstner waves: M. Finch, "Effective Water Simulation from Physical Models", GPU Gems 1, chapter 1 (NVIDIA, 2004); erosion: G. Cordonnier et al., "Large Scale Terrain Generation from Tectonic Uplift and Fluvial Erosion" (Eurographics 2016), J. Braun and S. Willett (Geomorphology 2013), R. Barnes et al., "Priority-Flood" (Computers & Geosciences 2014); polygon maps: A. Patel ([Red Blob Games](https://www.redblobgames.com/maps/terrain-from-noise/)).
 - `10c_SweatAndDecals` — the head and the decals of the three.js `webgl_decals` example (Lee Perry-Smith head, CC BY 3.0); normal mapping without tangents: C. Schüler, "Followup: Normal Mapping Without Precomputed Tangents" (2013).
+- `06n_VolumetricFog` and `10b_DoomLike` — volumetric fog in froxels: B. Wronski, "Volumetric Fog: Unified compute shader based solution to atmospheric scattering", SIGGRAPH 2014; the integration over a slice: S. Hillaire, "Physically Based and Unified Volumetric Rendering in Frostbite", SIGGRAPH 2015; the phase function: L. Henyey and J. Greenstein, 1941.
 - `06m_ManyLights` and every lit scene — clustered lighting: O. Olsson, M. Billeter and U. Assarsson, "Clustered Deferred and Forward Shading", HPG 2012. The metallic-roughness model of glTF: B. Karis, "Real Shading in Unreal Engine 4", SIGGRAPH 2013.
 - `11e_Smoke` — J. Stam, "Stable Fluids", SIGGRAPH 1999.
 - `11d_BimetalBeam` — S. Timoshenko, "Analysis of Bi-Metal Thermostats", J. Opt. Soc. Am. 11, 1925.
@@ -58,3 +61,5 @@ Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), fet
 ## 📝 4. License
 
 Compages is dual-licensed: GNU GPL v3 or later, or a commercial license for those who cannot use the GPL. See [LICENSING.md](../LICENSING.md). The scripts of `.makefile` carry their own header (MIT for the third-party download scripts).
+
+Next: return to [the reading guide](README.md) to choose a project or a layer to study.

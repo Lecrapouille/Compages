@@ -1,6 +1,8 @@
 # 🚀 2. Getting started
 
-In this page you install the tools, build Compages, open the gallery of demos, run it on a machine without a screen, and install the library on your system. It takes about 20 minutes (most of it is compilation).
+Your first goal is to **see a rotating cube in the gallery**. Follow sections 1–3 on Linux. Sections 4–5 are optional: tests, servers and system installation can wait until your first program works.
+
+Run the commands in a terminal. A terminal accepts one command at a time; a trailing `\` continues a command on the next line. Commands below assume you stay in the root folder of your Compages clone after `cd Compages`. The first build needs an Internet connection and can take time to download and compile dependencies.
 
 ---
 
@@ -39,13 +41,13 @@ sudo dnf install xorg-x11-server-Xvfb mesa-dri-drivers  # machine without screen
 
 ### macOS (Homebrew)
 
-macOS stops at OpenGL 4.1. The 4.5 backend is not complete there: the gallery and the GPU tests are limited; the tests that do not touch the GPU pass.
+macOS stops at OpenGL 4.1 and cannot create the context required by the current GL45 drawing backend. Use Linux for the gallery and the visual tutorials. World-only code does not need OpenGL. The project has no Windows setup walkthrough here.
 
 ```sh
 brew install cmake glfw googletest pkg-config
 ```
 
-The CI then exports the Homebrew paths (`USER_CXXFLAGS`, `USER_LDFLAGS`, `PKG_CONFIG_PATH`): see `.github/workflows/compile.yml`.
+For CPU builds, the CI exports the Homebrew paths (`USER_CXXFLAGS`, `USER_LDFLAGS`, `PKG_CONFIG_PATH`): see `.github/workflows/compile.yml`.
 
 ---
 
@@ -55,6 +57,12 @@ The CI then exports the Homebrew paths (`USER_CXXFLAGS`, `USER_LDFLAGS`, `PKG_CO
 git clone --recurse-submodules https://github.com/Lecrapouille/Compages.git
 cd Compages
 make                             # the library and the gallery
+```
+
+If you already cloned without submodules, repair the clone with:
+
+```sh
+git submodule update --init --recursive
 ```
 
 `--recurse-submodules` fetches `.makefile`, the build system ([MyMakefile](https://github.com/Lecrapouille/MyMakefile)). Without it, `make` has no rules. `make` uses all the cores.
@@ -90,6 +98,7 @@ After the build, in `build/linux-gcc-debug/` (`make COMPILATION_MODE=release` bu
 ## 📷 3. Open the gallery
 
 ```sh
+./build/linux-gcc-debug/bin/Compages-examples 06a_FirstScene  # start here: a rotating cube
 ./build/linux-gcc-debug/bin/Compages-examples                 # every demo, with panels
 ./build/linux-gcc-debug/bin/Compages-examples 05f_Galaxy       # start on one demo
 ```
@@ -98,7 +107,11 @@ One window holds a viewport, the list of demos, an inspector, the source of the 
 
 ![Galaxy: eight thousand stars in a compute shader](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png)
 
-Check that every demo builds, draws and frees its GPU objects:
+**Checkpoint:** the window shows a lit, rotating cube. Hold the right mouse button and drag: the camera turns around it. Use the wheel: the camera moves closer or farther away. If no window opens or the image stays black, use the [first checks in chapter 10](10-Debugging.md#-0-start-with-the-smallest-check).
+
+When this works, go to [Your first programs](03-Tutorial.md). You do not need to install Compages system-wide to follow the tutorials.
+
+Optional: check that every demo draws and frees its GPU objects:
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples --check
@@ -168,7 +181,7 @@ export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_
 c++ -std=c++20 app.cpp -o app $(pkg-config --cflags --libs Compages)
 ```
 
-In `app.cpp`: create your OpenGL 4.5 context, call `compages::gpu::init(yourGetProcAddress)`, and include the layer you need ([chapter 8](08-API-Reference.md#-1-includes)).
+For a drawing application, `app.cpp` must create an OpenGL 4.5 context, initialize the GPU layer and open a render pass before drawing. The [complete program in chapter 3](03-Tutorial.md#-5-your-own-window-a-complete-program) shows all of these steps. A World-only application needs none of them. Include the layer you need ([chapter 8](08-API-Reference.md#-1-includes)).
 
 **Not linked**: GLEW, SOIL, Bullet, bzip2 are not part of the build. ImGui and GLFW stay in the gallery and the tests. glad is private to the GL45 backend.
 

@@ -9,7 +9,11 @@ The third layer turns a `world::World` into an image: camera, lights, materials,
 | **Code** | `include/Compages/Renderer/`, `src/Renderer/` |
 | **Behind it** | an asset catalog, a snapshot of the world, then `gpu::` calls |
 
-The ten-line cube is commented in [chapter 3 §3](03-Tutorial.md#-3-a-picture-of-the-world).
+**Before you start:** build and run [the complete scene program](03-Tutorial.md#-5-your-own-window-a-complete-program). You do not need to read the GPU chapter first.
+
+For a first project, read “Build a scene” and “Looks”, then §2 (the frame) and §3 (files). Custom shader hooks, field display and text are collected in §7. Clustered lighting and large-world precision in §4 are optional topics too. Fields have a guided introduction in [chapter 12](12-Going-Further.md).
+
+The cube is commented in [chapter 3 §3](03-Tutorial.md#-3-a-picture-of-the-world).
 
 ![Three.js-like: a cube, an orbit, a sun](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png)
 
@@ -30,7 +34,7 @@ compages::world::Entity cube =
     scene.box("Cube", compages::renderer::color(0.9f, 0.18f, 0.12f));
 
 COMPAGES_TRY(scene.prepare());
-// every frame:
+// Every frame, inside the application's RenderPass:
 scene.draw(frame);
 ```
 
@@ -53,122 +57,9 @@ compages::renderer::seeThrough(look, 0.35f); // any look, see-through (1 solid, 
 
 **See-through objects.** A look with an opacity below one is drawn after all the solid objects, sorted from the farthest to the nearest, and blended over what is already drawn. It does not write the depth, so a second glass behind the first still shows. The sorting is per object (by the centre of its box): two see-through objects that cross each other can still be drawn in the wrong order.
 
-### Your own material: hooks of the PBR shader
+### Choose your next step
 
-A look is enough for most objects. When you want your own shader (water, a skin, a heat map) but keep what the Renderer gives (the sun and its shadow, the lamps, the fog, the tone curve), start from its PBR shader and change only what you need. `shaders::pbr()` returns its two stages, as `gpu::ShaderSource` ([shaders made of pieces](04-GPU-Layer.md#shaders-made-of-pieces-shadersource)), with two hooks:
-
-| Hook | Stage | What you write | Default |
-|------|-------|----------------|---------|
-| `deform` | vertex | `void deform(inout vec4 world, inout vec3 normal)`: move a corner and turn its normal, in world space, before the projection | changes nothing |
-| `main` | fragment | the whole `void main()`, which writes `oColor` | the PBR colour |
-
-Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `shadePbr(albedo, n, worldPos, metallic, roughness)` (the metallic-roughness model of glTF: GGX glint, Smith shadowing, Schlick Fresnel, the ambient light standing for the sky in the glint), `bumpNormal(n, worldPos, uv, tangentNormal)` (a normal map without tangents on the mesh), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
-
-`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
-
-```cpp
-compages::renderer::shaders::ShaderPair water =
-    compages::renderer::shaders::pbr();
-water.vertex()
-    .include("archipelago/swells.glsl", swells)   // GLSL written from the C++ swells
-    .hook("deform", SURFACE_WAVES);               // Gerstner waves move the corners
-water.fragment()
-    .include("archipelago/swells.glsl", swells)
-    .hook("main", SURFACE_MAIN);
-compages::renderer::Material surface;
-COMPAGES_TRY_ASSIGN(
-    surface,
-    compages::renderer::Material::create(
-        "ArchipelagoSurface",
-        { .family = compages::renderer::ShaderFamily::PbrMinimal,
-          .shaders = std::move(water),
-          .state = opaque,
-          .see_through = compages::gpu::RenderState{
-              .depth_test = true,
-              .depth_write = false,
-              .blend = compages::gpu::Blend::alpha(),
-              .cull = compages::gpu::CullMode::Back } }));
-```
-
-and the ground reads three pictures by name: `map.textures = { { .sampler = "grassMap", .texture = grass }, … }`. The Renderer binds them on the units it leaves free (2 to 6: five at most).
-
-- The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
-- `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
-- The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see still casts its shadow of the sun into the picture: the snapshot keeps it for the shadow pass only.
-- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
-
-### Show a field: heat maps and coloured reliefs
-
-A `compages::Field<float>` (one value per point of a `Grid2D`, see [Fields](07-Architecture.md#-1-overview)) is drawn in one call. Each value becomes a colour of a **colour map**, and maybe a height:
-
-```cpp
-compages::renderer::FieldLook look{ .colors = compages::renderer::ColorMap::Inferno,
-                                    .low = 0.0f, .high = 300.0f,   // first and last colour
-                                    .relief = 0.0015f,             // metres per unit; 0 = flat
-                                    .lit = true };                 // false: exact colours, like a chart
-compages::world::Entity plate = scene.show(temperature, look, "Plate");
-// later, new values or another look, same grid size:
-COMPAGES_TRY(scene.show(plate, temperature, look));
-```
-
-The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field casts the shadow of its relief in the sun (not of the lamps). `11a_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
-
-**Values computed on the GPU.** When a compute shader makes the values, give its storage buffer instead of a `Field`: nothing comes back to the CPU. The buffer holds one float per point, row after row, and must live as long as the entity draws.
-
-```cpp
-m_surface = m_scene.show(m_grid, m_heights[m_now], m_look, "Water");   // setUp()
-// each frame, after the compute steps and their barrier(Barrier::Storage):
-COMPAGES_TRY(m_scene.show(m_surface, m_heights[m_now], m_look));
-```
-
-`11b_RippleTank` steps the wave equation this way, on three buffers (before, now, next) that turn.
-
-**Read a value under the mouse.** `scene.probe(field, look, pixel)` follows the ray of a pixel of the last picture down to the field as it is drawn (with its relief) and returns the point and the value there, or nothing:
-
-```cpp
-if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
-{
-    m_probe.position(found->point).set(Tooltip{ .title = std::format("{:.0f} m", found->value), … });
-}
-```
-
-`11c_FieldProbe` writes the altitude of an island next to the mouse.
-
-**Volumes.** A `Field<float, Grid3D>` is shown as a see-through box: along each ray of the picture, the colours of the values add up (a value at the top of the range lets 5 % of the light through across the box; the relief and the light of the look are not used). The values go to the GPU as a 3D texture. `compages::slice(volume, Axis::Y, layer)` takes one layer as a 2D field, which `show()` lays on the ground: move its entity to the height of the layer.
-
-```cpp
-m_room = m_scene.show(m_heat, m_look, "Room");   // a Field<float, Grid3D>
-m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, layer), m_cut_look, "Cut");
-m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
-```
-
-`compages::isosurface(volume, level)` (`<Compages/Fields/Isosurface.hpp>`) gives the triangles of the surface where the volume crosses a level (marching tetrahedra; the normals point toward the values under the level); `compages::renderer::meshOf(surface)` makes a mesh of them, for `scene.mesh()` or `scene.reshape()`. `11f_Volume` shows the warm air of a room this way, with the surface of the air at 30 degrees.
-
-**Vectors.** A `Field<Vector2f>` (a wind, a speed: x and y of each vector go along x and z) is shown as arrows coloured by their length, one point in `every`:
-
-```cpp
-m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compages::renderer::ColorMap::Viridis,
-    .low = 0.0f, .high = 2.0f, .scale = 0.12f, .every = 4 }, "Wind");
-```
-
-The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `11g_FlowAroundCylinder` shows the wind around a turning column this way.
-
-**Grids fitted round a shape.** `show()` takes a field on a `CurvilinearGrid` too (values and arrows): the mesh follows the points of the grid, so the edge of a column is round, not a staircase of square cells. `11g_FlowAroundCylinder` builds an O-grid round its column (i round it, j away from it, tight at the wall) and compares it with the regular grid; [chapter 12 §6](12-Going-Further.md#-6-values-on-a-grid-field) explains how.
-
-**Curves over time.** A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`; put it on any mesh, a board in the scene:
-
-```cpp
-COMPAGES_TRY(m_chart.create(m_scene, { .width = 1024u, .height = 512u, .seconds = 120.0f,
-                                       .low = 0.0f, .high = 100.0f,
-                                       .scale = ChartScale::FollowValues }, "Thermometers"));
-const std::size_t curve = m_chart.series(CanvasTexture::Color::rgb(255, 140, 0));
-m_chart.applyLook(m_scene, board.id());
-// each frame:
-m_chart.add(curve, time, temperature.sample(spot));
-COMPAGES_TRY(m_chart.draw());
-```
-
-The picture has a frame, a grid on round numbers (1, 2 or 5 times a power of ten) and the numbers of both axes, in a small font of its own (below 128 x 64 pixels there is no room: the curves fill it). `ChartScale::Fixed` keeps `low` to `high`; `ChartScale::FollowValues` takes the round numbers around the values shown, so the curves fill the picture. `pixelOf(time, value)` says where a value is drawn. `11h_Thermometers` follows two points of a heated plate this way, and shows the picture unlit, like a screen (a hook `main` that only reads `baseColorMap`). `CanvasTexture::paintPixelLine()` and `fillPixels()` draw in pixels for your own pictures.
+You can already create and move a lit shape. Try `scene.grid(10.0f, 20u)` and another box at `.position(1.0f, 0.0f, 0.0f)`. The grid helps you see distances. Continue with [§2](#-2-one-frame-in-detail) to understand the drawing loop, then [§3](#-3-files-the-catalog-and-prefabs) to load a file. Optional shader, field and text tools are in §7.
 
 ### Helpers
 
@@ -182,37 +73,6 @@ scene.showBounds(cube.id(), true);    // the box around the mesh of the cube
 
 `06b_Transforms` uses the three: the axes show the turn of the box, the bounds the size of the cone. `06c_Hierarchy` shows the pivot of a car, `06i_CameraPick` the bounds of the selection, and `08d_RobotArm` the frame of every joint of a robot (Try it hides them).
 
-### Text on the picture: labels, tooltips and captions
-
-Three components write on the picture (`Renderer/Components/Text.hpp`). A `Label` writes a name next to its entity: a dot on the point, the text on its right. A `Tooltip` is a box of lines that points at its entity, like the tooltip of a web page. A `Caption`, set on a camera, writes at a fixed place of what that camera sees (each view of a split screen has its own); change its `text` each frame for numbers that move. The letters keep their size in pixels at any distance. Load a font once (TrueType or OpenType; a wrong file is reported by `prepare()`), then set the components:
-
-```cpp
-scene.font(dataPath("fonts/DejaVuSans.ttf"));
-camera.set(compages::renderer::Caption{ .text = "Altitude 0 km",  // '\n' for more lines
-                                        .color = { 1.0f, 0.96f, 0.88f },
-                                        .pixels = 16.0f,
-                                        .at = { 12.0f, 10.0f } });   // pixels from the top left
-mars.set(compages::renderer::Label{ .text = "Mars",              // UTF-8, Latin-1 letters
-                                    .color = { 1.0f, 0.95f, 0.85f },  // sRGB
-                                    .pixels = 15.0f,                  // height of the letters
-                                    .hide_closer_than = 0.0f });      // metres; 0 = always
-region.set(compages::renderer::Tooltip{ .title = "Astronomie",   // a quarter taller
-                                        .text = "fr.wikipedia.org/wiki/Astronomie\n"
-                                                "fr.wikipedia.org/wiki/Galaxie",
-                                        .color = { 0.90f, 0.94f, 0.98f },       // the lines
-                                        .accent = { 1.0f, 0.82f, 0.48f },       // title, stem, dot
-                                        .background = { 0.05f, 0.10f, 0.17f },  // the frame
-                                        .opacity = 0.86f,                       // of the frame
-                                        .pixels = 14.0f });
-```
-
-A tooltip always faces the camera. It sits above its point, or below when there is no room above, and it slides sideways to stay inside the picture. A stem joins the frame to the point. The frame has round corners and a dark rim: it is the dot of the labels cut in nine parts, its quarters at the corners and its middle stretched between them, so it costs no other shader. Set the component to show the tooltip and remove it to hide it (`10e_Archipelago` shows the links of the region under the mouse).
-
-The letters are drawn the way of Glumpy: the font is baked once into a picture of **distance fields** (stb_truetype), where each pixel says how far it is from the edge of the letter. The shader cuts at the edge with a one-pixel smooth step, so a letter is sharp at any size, and a second cut a little outside gives a dark halo, readable on a bright planet. All the labels are drawn in one call, after everything else.
-
-Two rules: a label that would cover text already written on the picture (a caption, a tooltip, another label) is not written, so the names stay readable where things crowd; and a label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius.
-
-Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`examples/Common/DataPath.hpp`).
 
 ---
 
@@ -221,14 +81,17 @@ Assets are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PATH` (`e
 ```text
 Scene::draw(ViewFrame)
   update
-    World::update(frame)     routines
-    AnimationSystem          clips -> local transforms
-    World::update()          joints, world matrices
-    skinning                 SkinInstance
+    World::step(frame)        routines, fixed steps, timers
+    AnimationSystem::sample   clips -> local transforms
+    World::update()           joints, world matrices
+    World::endStep()          lateUpdate, final matrices
+    AnimationSystem::pose     skinning -> SkinInstance
   render(active camera)
     SceneExtractor           World -> RenderSnapshot
     Renderer                 snapshot + catalog -> gpu::
 ```
+
+`draw(frame)` is the convenient form of `update(frame)` followed by `render()`. Use one update per simulation step. Calling `world.update(frame)` as well would run the routines twice. Drawing requires an open `gpu::RenderPass`; the standalone program in chapter 3 opens one around `scene.draw`.
 
 - Draws are **sorted** by material, then by mesh, to change pipelines as rarely as possible.
 - **Culling** happens during extraction, before the snapshot: what the camera cannot see is not drawn. `09b_ManyCubes` (1,728 cubes, one mesh, five looks) shows the number of draw calls change while the camera moves.
@@ -263,7 +126,11 @@ map.render(top);         // a minimap
 | `scene.clips(model)` | the clip names, in file order |
 | `scene.copy(entity)` | draws another entity with the same mesh and look (cheap duplicates) |
 
-`load` reads **glTF / GLB** (a `.gltf` may keep its pictures in files next to it, as Poly Haven and Blender's "glTF Separate" write them). A glTF material is lit by the metallic-roughness model (`MaterialInstance::metal_roughness`): its base colour, its metallic and roughness (factors and map), its normal map; the looks of `color()` and `texture()` keep the simpler `shade()`, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
+`loadFile` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A `.gltf` may keep textures in files beside the model: keep these files together when you copy it. A `.glb` can hold the model and its resources in one file.
+
+A glTF material uses metallic and roughness properties, its base colour, and optional texture maps. The simpler `color()` and `texture()` looks use the default lit surface. For custom shading, see [§7](#-7-optional-display-tools).
+
+A URDF includes a robot's joints (`08d_RobotArm`). World builds the chain; Renderer adds the visible shapes of the links (`Renderer/Import/UrdfLoader.hpp`).
 
 - `08a_GltfModel` loads `Duck.glb` and frames the camera.
 - `08b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).
@@ -348,6 +215,31 @@ s(z) = \left\lfloor 24\,\frac{\ln(z / z_{\text{near}})}{\ln(z_{\text{far}} / z_{
 ```
 
 and a lamp goes into every cluster its sphere of light may touch. A pixel then reads the lamps of its cluster only, in `pointLightsContribution()` and `shadePbr()`: the cost follows how many lamps reach a pixel, not how many the scene holds. The clusters are three storage buffers at bindings 9, 10 and 11 of the lit shaders (keep these free in your own hooks). These lamps cast no shadows. `06m_ManyLights` flies two hundred of them over a floor; `10b_DoomLike` gives each fluorescent tube a lamp.
+
+**Fog that the light crosses.** `Environment::volumetric` turns on a volumetric fog (`Renderer/Render/FogVolume.hpp`, after B. Wronski, "Volumetric Fog", SIGGRAPH 2014): shafts of the sun between pillars, halos round the lamps, shadows in the air.
+
+```cpp
+compages::renderer::VolumetricFog& fog = scene.environment().volumetric;
+fog.enabled = true;
+fog.density = 0.035f;     // light taken per metre, at fog.height
+fog.falloff = 0.25f;      // thinner higher up
+fog.anisotropy = 0.6f;    // light sent mostly forward: bright toward the lights
+fog.noise = 0.5f;         // clumps, drifting with fog.wind
+```
+
+The Renderer keeps a 3D picture that follows the camera: 128 × 72 tiles of the picture times 64 slices of the depth, thinner near the camera (a **froxel** is a voxel of the frustum). At each render, a compute shader puts in each froxel the extinction $\sigma$ (the density, thinning with height, broken into clumps) and the light it sends toward the eye, from the sun and the four nearest lamps with their shadows, the clustered lamps and the ambient light, each weighted by the phase function of Henyey-Greenstein, scaled to 1 when $g = 0$:
+
+```math
+p(\theta) = \frac{1 - g^2}{\left(1 + g^2 - 2g\cos\theta\right)^{3/2}}
+```
+
+A second one walks each tile from the camera outward. Over a slice of thickness $\Delta z$ with extinction $\sigma$ and light sent per metre $L$, it adds the light gathered and keeps what passes (S. Hillaire, Frostbite, SIGGRAPH 2015):
+
+```math
+S \mathrel{+}= T\,\frac{L\,\left(1 - e^{-\sigma \Delta z}\right)}{\sigma}, \qquad T \mathrel{\times}= e^{-\sigma \Delta z}
+```
+
+`applyFog(colour, worldPos)` of the lit shaders then reads the picture at the pixel and the depth of the surface, $\text{colour}\cdot T + S$; the background gets the fog of the farthest slice. It replaces the plain fog of `fog_density` while it is on. The compute shaders include the pieces of the library like any shader (`shaders::compute(name, text)` defines `COMPAGES_COMPUTE`, which leaves out what needs a pixel). `06n_VolumetricFog` shows a hall lit through the slats of its roof; `10b_DoomLike` fills its corridors with dust.
 
 ### Draw into a file, without a screen
 
@@ -449,7 +341,163 @@ Performance:
 
 ---
 
-## 🧭 7. Demos of this layer
+## 🧰 7. Optional display tools
+
+Return here after you can build, update and draw a scene. Choose the tool your project needs; these subsections are independent extensions. [Chapter 12](12-Going-Further.md) teaches the field and shader calls through smaller steps.
+
+### Your own material: hooks of the PBR shader
+
+A look is enough for most objects. When you want your own shader (water, a skin, a heat map) but keep what the Renderer gives (the sun and its shadow, the lamps, the fog, the tone curve), start from its PBR shader and change only what you need. `shaders::pbr()` returns its two stages, as `gpu::ShaderSource` ([shaders made of pieces](04-GPU-Layer.md#shaders-made-of-pieces-shadersource)), with two hooks:
+
+| Hook | Stage | What you write | Default |
+|------|-------|----------------|---------|
+| `deform` | vertex | `void deform(inout vec4 world, inout vec3 normal)`: move a corner and turn its normal, in world space, before the projection | changes nothing |
+| `main` | fragment | the whole `void main()`, which writes `oColor` | the PBR colour |
+
+Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `shadePbr(albedo, n, worldPos, metallic, roughness)` (the metallic-roughness model of glTF: GGX glint, Smith shadowing, Schlick Fresnel, the ambient light standing for the sky in the glint), `bumpNormal(n, worldPos, uv, tangentNormal)` (a normal map without tangents on the mesh), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
+
+`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
+
+```cpp
+compages::renderer::shaders::ShaderPair water =
+    compages::renderer::shaders::pbr();
+water.vertex()
+    .include("archipelago/swells.glsl", swells)   // GLSL written from the C++ swells
+    .hook("deform", SURFACE_WAVES);               // Gerstner waves move the corners
+water.fragment()
+    .include("archipelago/swells.glsl", swells)
+    .hook("main", SURFACE_MAIN);
+compages::renderer::Material surface;
+COMPAGES_TRY_ASSIGN(
+    surface,
+    compages::renderer::Material::create(
+        "ArchipelagoSurface",
+        { .family = compages::renderer::ShaderFamily::PbrMinimal,
+          .shaders = std::move(water),
+          .state = opaque,
+          .see_through = compages::gpu::RenderState{
+              .depth_test = true,
+              .depth_write = false,
+              .blend = compages::gpu::Blend::alpha(),
+              .cull = compages::gpu::CullMode::Back } }));
+```
+
+and the ground reads three pictures by name: `map.textures = { { .sampler = "grassMap", .texture = grass }, … }`. The Renderer binds them on the units it leaves free (2 to 6: five at most).
+
+- The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
+- `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
+- The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see still casts its shadow of the sun into the picture: the snapshot keeps it for the shadow pass only.
+- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
+
+### Show a field: heat maps and coloured reliefs
+
+A `compages::Field<float>` (one value per point of a `Grid2D`, see [Fields](07-Architecture.md#-1-overview)) is drawn in one call. Each value becomes a colour of a **colour map**, and maybe a height:
+
+```cpp
+compages::renderer::FieldLook look{ .colors = compages::renderer::ColorMap::Inferno,
+                                    .low = 0.0f, .high = 300.0f,   // first and last colour
+                                    .relief = 0.0015f,             // metres per unit; 0 = flat
+                                    .lit = true };                 // false: exact colours, like a chart
+compages::world::Entity plate = scene.show(temperature, look, "Plate");
+// later, new values or another look, same grid size:
+COMPAGES_TRY(scene.show(plate, temperature, look));
+```
+
+The field lies on the ground of its grid (x, z). The maps are `Viridis` (readable in grey and by colour-blind eyes), `Inferno` (heat), `Coolwarm` (below and above a middle), `Terrain` and `Grey`. The values go to the GPU as a storage buffer, and the shader makes the colours and the heights (the hooks `deform` and `main` of the PBR shader, above). So a new range or new values never rebuild the mesh. The relief stops at the ends of the range, like the colours. A field casts the shadow of its relief in the sun (not of the lamps). `11a_HeatPlate` solves the heat equation on a copper plate on the CPU and shows it each frame.
+
+**Values computed on the GPU.** When a compute shader makes the values, give its storage buffer instead of a `Field`: nothing comes back to the CPU. The buffer holds one float per point, row after row, and must live as long as the entity draws.
+
+```cpp
+m_surface = m_scene.show(m_grid, m_heights[m_now], m_look, "Water");   // setUp()
+// each frame, after the compute steps and their barrier(Barrier::Storage):
+COMPAGES_TRY(m_scene.show(m_surface, m_heights[m_now], m_look));
+```
+
+`11b_RippleTank` steps the wave equation this way, on three buffers (before, now, next) that turn.
+
+**Read a value under the mouse.** `scene.probe(field, look, pixel)` follows the ray of a pixel of the last picture down to the field as it is drawn (with its relief) and returns the point and the value there, or nothing:
+
+```cpp
+if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
+{
+    m_probe.position(found->point).set(Tooltip{ .title = std::format("{:.0f} m", found->value), … });
+}
+```
+
+`11c_FieldProbe` writes the altitude of an island next to the mouse.
+
+**Volumes.** A `Field<float, Grid3D>` is shown as a see-through box: along each ray of the picture, the colours of the values add up (a value at the top of the range lets 5 % of the light through across the box; the relief and the light of the look are not used). The values go to the GPU as a 3D texture. `compages::slice(volume, Axis::Y, layer)` takes one layer as a 2D field, which `show()` lays on the ground: move its entity to the height of the layer.
+
+```cpp
+m_room = m_scene.show(m_heat, m_look, "Room");   // a Field<float, Grid3D>
+m_cut = m_scene.show(compages::slice(m_heat, compages::Axis::Y, layer), m_cut_look, "Cut");
+m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
+```
+
+`compages::isosurface(volume, level)` (`<Compages/Fields/Isosurface.hpp>`) gives the triangles of the surface where the volume crosses a level (marching tetrahedra; the normals point toward the values under the level); `compages::renderer::meshOf(surface)` makes a mesh of them, for `scene.mesh()` or `scene.reshape()`. `11f_Volume` shows the warm air of a room this way, with the surface of the air at 30 degrees.
+
+**Vectors.** A `Field<Vector2f>` (a wind, a speed: x and y of each vector go along x and z) is shown as arrows coloured by their length, one point in `every`:
+
+```cpp
+m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compages::renderer::ColorMap::Viridis,
+    .low = 0.0f, .high = 2.0f, .scale = 0.12f, .every = 4 }, "Wind");
+```
+
+The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `11g_FlowAroundCylinder` shows the wind around a turning column this way.
+
+**Grids fitted round a shape.** `show()` takes a field on a `CurvilinearGrid` too (values and arrows): the mesh follows the points of the grid, so the edge of a column is round, not a staircase of square cells. `11g_FlowAroundCylinder` builds an O-grid round its column (i round it, j away from it, tight at the wall) and compares it with the regular grid; [chapter 14 §7](14-Science-With-Fields.md#-7-11g_flowaroundcylinder-ideal-flow-and-a-grid-fitted-round-the-column) explains how.
+
+**Curves over time.** A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`; put it on any mesh, a board in the scene:
+
+```cpp
+COMPAGES_TRY(m_chart.create(m_scene, { .width = 1024u, .height = 512u, .seconds = 120.0f,
+                                       .low = 0.0f, .high = 100.0f,
+                                       .scale = ChartScale::FollowValues }, "Thermometers"));
+const std::size_t curve = m_chart.series(CanvasTexture::Color::rgb(255, 140, 0));
+m_chart.applyLook(m_scene, board.id());
+// each frame:
+m_chart.add(curve, time, temperature.sample(spot));
+COMPAGES_TRY(m_chart.draw());
+```
+
+The picture has a frame, a grid on round numbers (1, 2 or 5 times a power of ten) and the numbers of both axes, in a small font of its own (below 128 x 64 pixels there is no room: the curves fill it). `ChartScale::Fixed` keeps `low` to `high`; `ChartScale::FollowValues` takes the round numbers around the values shown, so the curves fill the picture. `pixelOf(time, value)` says where a value is drawn. `11h_Thermometers` follows two points of a heated plate this way, and shows the picture unlit, like a screen (a hook `main` that only reads `baseColorMap`). `CanvasTexture::paintPixelLine()` and `fillPixels()` draw in pixels for your own pictures.
+
+### Text on the picture: labels, tooltips and captions
+
+Three components write on the picture (`Renderer/Components/Text.hpp`). A `Label` writes a name next to its entity: a dot on the point, the text on its right. A `Tooltip` is a box of lines that points at its entity, like the tooltip of a web page. A `Caption`, set on a camera, writes at a fixed place of what that camera sees (each view of a split screen has its own); change its `text` each frame for numbers that move. The letters keep their size in pixels at any distance. Load a font once (TrueType or OpenType; a wrong file is reported by `prepare()`), then set the components:
+
+```cpp
+scene.font(dataPath("fonts/DejaVuSans.ttf"));
+camera.set(compages::renderer::Caption{ .text = "Altitude 0 km",  // '\n' for more lines
+                                        .color = { 1.0f, 0.96f, 0.88f },
+                                        .pixels = 16.0f,
+                                        .at = { 12.0f, 10.0f } });   // pixels from the top left
+mars.set(compages::renderer::Label{ .text = "Mars",              // UTF-8, Latin-1 letters
+                                    .color = { 1.0f, 0.95f, 0.85f },  // sRGB
+                                    .pixels = 15.0f,                  // height of the letters
+                                    .hide_closer_than = 0.0f });      // metres; 0 = always
+region.set(compages::renderer::Tooltip{ .title = "Astronomie",   // a quarter taller
+                                        .text = "fr.wikipedia.org/wiki/Astronomie\n"
+                                                "fr.wikipedia.org/wiki/Galaxie",
+                                        .color = { 0.90f, 0.94f, 0.98f },       // the lines
+                                        .accent = { 1.0f, 0.82f, 0.48f },       // title, stem, dot
+                                        .background = { 0.05f, 0.10f, 0.17f },  // the frame
+                                        .opacity = 0.86f,                       // of the frame
+                                        .pixels = 14.0f });
+```
+
+A tooltip always faces the camera. It sits above its point, or below when there is no room above, and it slides sideways to stay inside the picture. A stem joins the frame to the point. The frame has round corners and a dark rim: it is the dot of the labels cut in nine parts, its quarters at the corners and its middle stretched between them, so it costs no other shader. Set the component to show the tooltip and remove it to hide it (`10e_Archipelago` shows the links of the region under the mouse).
+
+The letters are drawn the way of Glumpy: the font is baked once into a picture of **distance fields** (stb_truetype), where each pixel says how far it is from the edge of the letter. The shader cuts at the edge with a one-pixel smooth step, so a letter is sharp at any size, and a second cut a little outside gives a dark halo, readable on a bright planet. All the labels are drawn in one call, after everything else.
+
+Two rules: a label that would cover text already written on the picture (a caption, a tooltip, another label) is not written, so the names stay readable where things crowd; and a label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius.
+
+The gallery resolves asset paths through `examples/Common/DataPath.hpp`, including the downloaded data and `COMPAGES_DATA_PATH`. This is application code. In your own program, use an existing file path relative to its working directory or an absolute path.
+
+
+---
+
+## 🧭 8. Demos of this layer
 
 The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow this chapter.
 
@@ -464,6 +512,7 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `09b_ManyCubes` | sorting and culling |
 | `06l_CanvasPaint` | painting on a live texture |
 | `06m_ManyLights` | two hundred lamps: clustered lighting |
+| `06n_VolumetricFog` | fog that the light crosses: shafts, halos, shadows in the air |
 | `11a_HeatPlate` | a field shown as colours and relief |
 | `11b_RippleTank` | a field computed and drawn on the GPU |
 | `11c_FieldProbe` | the value of a field under the mouse |
@@ -475,4 +524,10 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `10b_DoomLike` | the three layers together |
 | `10c_SweatAndDecals` | a custom `Material` on a glTF mesh, GPU passes in its UV map |
 
-Next: [07-Architecture.md](07-Architecture.md), or the full list of demos in [09-Examples.md](09-Examples.md).
+## ✅ Practice: a scene you can explain
+
+Extend `scene.cpp` from chapter 3 with two differently coloured shapes, one light and a ground grid. Move only one shape in the frame loop. Run it, resize it, and close it. Check that `prepare()` succeeds and `takeFrameError()` stays empty.
+
+Then load a small model with `loadFile`: check the returned `Result`, call `frameAll()` to fit the view, and keep the model's files together. You should now be able to explain the roles of World, Scene, the camera and the render pass.
+
+Next: [Going further](12-Going-Further.md) for guided extensions, or [Examples](09-Examples.md) to choose a demo. Read [Architecture](07-Architecture.md) when you want to change the library itself.

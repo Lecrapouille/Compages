@@ -4,6 +4,21 @@ A black window, a shader that compiles but shows nothing, a demo that fails `--c
 
 ---
 
+## 🧭 0. Start with the smallest check
+
+Work through these checks in order. You usually do not need a GPU capture tool for a first error.
+
+| What happened? | First check | Next action |
+|----------------|-------------|-------------|
+| The build stops before making a binary | Read the first compiler or download error | Check the packages and submodules in [Getting started](02-Getting-Started.md) |
+| No window opens | Read stderr, the terminal error output | Check that a display and an OpenGL 4.5 driver are available |
+| The gallery works, but your application is black | Check `prepare()`, the current context and the open `RenderPass` | Compare your loop with [the complete program](03-Tutorial.md#-5-your-own-window-a-complete-program) |
+| A shape is missing | Check camera position, object position and scale, then light | Try a known shape at the origin before loading a model |
+| A file cannot be read | Check the exact path from the program's working directory | Keep a model beside its textures; use an absolute path to isolate a path problem |
+| Movement is twice as fast as expected | Count simulation updates in one frame | Use `scene.draw(frame)` or `scene.update(frame)` plus renders; do not add another World update |
+
+Change one thing at a time and rerun the smallest demo that reproduces the problem. When asking for help, include the command you ran, the first full error message, your OS and driver, and the smallest code example that fails.
+
 ## 📨 1. Messages of the library
 
 | When | Where to read it |
@@ -72,6 +87,10 @@ xvfb-run -a env \
 | particles flicker or lag one frame | a missing `barrier(...)` after `dispatchItems` ([chapter 4 §5](04-GPU-Layer.md#-5-compute)) |
 | the demo panel looks wrong after your ImGui code | call `gpu::forgetRenderState()` after ImGui |
 | `libCompages.so` not found after install (Fedora) | `/usr/local/lib` missing from the loader ([chapter 2 §5](02-Getting-Started.md#-5-install-on-your-system)) |
-| textures missing | `make` fetches `Compages-data`; or set `COMPAGES_DATA_PATH` |
+| textures missing | In the gallery, check downloaded assets or `COMPAGES_DATA_PATH`; in your own application, check the file paths you supply |
 
-Next: [11-Credits.md](11-Credits.md).
+## ✅ Before returning to your program
+
+You should know whether the failure happens during build, setup or a frame. Confirm it with the first useful message, then rerun after the fix. A passing `--check NAME` confirms the gallery demo reports no GPU error or leaked handle; it does not prove that a simulation equation is correct.
+
+Return to [your learning path](README.md), or read [Credits](11-Credits.md) for the ideas and sources behind the library.

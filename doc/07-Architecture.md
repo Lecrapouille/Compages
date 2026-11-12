@@ -1,6 +1,6 @@
 # 🏗 7. Architecture
 
-The *why* of the layers is in [chapter 1](01-Introduction.md#-3-three-layers). This page says *where* the code lives, *who may include whom*, and *what happens* during one frame. Read it before you change Compages itself.
+The *why* of the layers is in [chapter 1](01-Introduction.md#-3-three-layers). This page says *where* the code lives, *who may include whom*, and *what happens* during one frame. Read it before you change Compages itself. To use the public API in an application, [the tutorial](03-Tutorial.md) and your layer chapter are enough; this page explains the internals.
 
 ---
 
@@ -137,7 +137,7 @@ Handles live in pools (index + generation). Destroying twice is harmless. `Buffe
 1. **Graph**: `SpatialGraph` (parent, first child, sibling) and `TransformStore` (local, world, dirty bit). Propagation from parent to child.
 2. **ECS**: EnTT. `Entity` is the chaining handle; `EntityId` is what you store.
 
-`World::update(Frame)` runs all routines; then `update()` without argument runs the joints (`KinematicSystem`) and computes the matrices (`TransformSystem`).
+`World::update(Frame)` is the complete headless step: `step(frame)` runs routines, `update()` without an argument applies joints and computes matrices, and `endStep()` runs `lateUpdate` and refreshes the matrices it changed. Call either the complete form or its three parts in order.
 
 `Orbit` and `Fly` are routines of `World/Controllers/Controls.hpp`, reading a `ViewFrame`. `FPSController` is a separate class, used through `apply`; it draws nothing.
 
@@ -154,10 +154,11 @@ Handles live in pools (index + generation). Destroying twice is harmless. `Buffe
 ```text
 Scene::draw(ViewFrame)
   Scene::update
-    World::update(frame)
-    AnimationSystem
+    World::step(frame)
+    AnimationSystem::sample
     World::update()
-    skinning on SkinInstance
+    World::endStep()
+    AnimationSystem::pose -> SkinInstance
   Scene::render
     SceneExtractor
     Renderer  ->  gpu::

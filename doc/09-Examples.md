@@ -9,6 +9,19 @@ make -j"$(nproc)"
 ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
+For a first visit, start with `06a_FirstScene`: predict what changing the colour or rotation speed will do, read the Source panel, then edit the file and rebuild with `make`. The panel displays source; changes are made in your editor. **F5 restarts a demo; it does not recompile C++.**
+
+Choose a short route before exploring the whole catalog:
+
+| Goal | Try these demos | What to watch |
+|------|-----------------|---------------|
+| Build a visible scene | `06a_FirstScene` → `06b_Transforms` → `06c_Hierarchy` → `08a_GltfModel` | Shapes, placement, parent-child movement, then files |
+| Simulate objects | `07a_HeadlessWorld` → `07b_Routines` → `07c_MovingRobot` | Data loops, per-object code, then joints |
+| Learn GPU drawing | `01c_Triangle` → `02b_DynamicGeometry` → `03c_DepthAndTransforms` | Named inputs, changed vertices, then 3D |
+| Show scientific data | `11a_HeatPlate` → `11c_FieldProbe` → `11h_Thermometers` | A field, a value under the mouse, then a chart |
+
+Some demos deliberately show the CPU and GPU copies separately. Pause with F6 and advance with F7 to see one step at a time. Use [chapter 12](12-Going-Further.md) before the large complete demos.
+
 A short guide of the folders is in [examples/README.md](../examples/README.md).
 
 ---
@@ -164,6 +177,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
 | `06m_ManyLights` | two hundred coloured lamps in one picture: the Renderer sorts them into clusters (tiles × depth slices), each pixel reads the lamps of its cluster | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png" alt="06m_ManyLights" width="200"> |
+| `06n_VolumetricFog` | fog that the light crosses: sun shafts through the slats of a roof, halos and shadows of lamps in the air (froxels: a 3D picture that follows the camera, filled by two compute shaders) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png" alt="06n_VolumetricFog" width="200"> |
 
 ---
 
