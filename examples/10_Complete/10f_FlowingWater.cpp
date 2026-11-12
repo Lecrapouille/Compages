@@ -80,6 +80,18 @@ compages::Status FlowingWater::setUp()
     m_scene.background(SKY.x, SKY.y, SKY.z).ambient(0.20f, 0.23f, 0.24f);
     m_scene.environment().fog_color = SKY;
     m_scene.environment().fog_density = 0.018f;
+    // A mist over the water: thick near it, thin higher up, drifting with
+    // the current; the sodium lamps glow in it (Environment::volumetric).
+    compages::renderer::VolumetricFog& mist = m_scene.environment().volumetric;
+    mist.enabled = true;
+    mist.density = 0.05f;
+    mist.height = LEVEL;
+    mist.falloff = 0.55f;
+    mist.color = Vector3f(0.78f, 0.82f, 0.8f);
+    mist.anisotropy = 0.55f;
+    mist.noise = 0.7f;
+    mist.wind = Vector3f(0.3f, 0.02f, 0.1f);
+    mist.distance = 45.0f;
     m_scene.sun("Overcast", Vector3f(0.65f, 0.72f, 0.80f), 0.75f)
         .position(-6.0f, 20.0f, -10.0f)
         .lookAt(0.0f, 0.0f, 0.0f);
@@ -899,6 +911,10 @@ void FlowingWater::controls()
     ImGui::Checkbox("Features", &m_show_features);
     ImGui::SameLine();
     ImGui::Checkbox("Pause", &m_paused);
+    compages::renderer::VolumetricFog& mist = m_scene.environment().volumetric;
+    ImGui::Checkbox("Mist", &mist.enabled);
+    ImGui::SameLine();
+    ImGui::SliderFloat("Mist density", &mist.density, 0.0f, 0.2f, "%.3f");
     ImGui::SliderFloat("Cycle (s)", &m_cycle, 0.5f, 8.0f, "%.1f");
     ImGui::SliderFloat("Flow speed x", &m_flow_scale, 0.0f, 3.0f, "%.2f");
     ImGui::SliderFloat("Floaters swirl", &m_floater_pull, 0.0f, 1.5f, "%.2f");
