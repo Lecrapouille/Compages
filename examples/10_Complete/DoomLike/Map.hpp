@@ -24,6 +24,10 @@ constexpr float WALL_HEIGHT = 3.6f;
 constexpr float CRATE = 2.4f;
 constexpr float PI = 3.14159265f;
 
+//! \brief Rounds a magazine of the rifle holds, and how many can be carried.
+constexpr int LOAD = 5;
+constexpr int CARRIED = 30;
+
 //! \brief The bodies: how high the eye is, how wide the player is, and the
 //! size of the enemies, what the shots are tested against. The robot of
 //! RobotExpressive.glb is about four metres tall: it is scaled down.
@@ -39,15 +43,21 @@ constexpr float ROBOT_HEIGHT = 1.8f;
 //! \brief What a level is made of: its grid, and what it looks like.
 //!
 //! Each character of \c rows is a cell of CELL metres: rows go along +Z,
-//! columns along +X. '#' a wall, 'C' a crate, 'T' a torch, 'B' an explosive
-//! barrel, 'A' shells, 'H' a medical kit, 'M' a soldier, 'R' a robot, 'S'
-//! where the player starts and 'E' the way out.
+//! columns along +X. '#' a wall, 'C' a container, 'T' a wall lamp, 'B' an
+//! explosive barrel, 'A' rounds, 'H' a medical kit, 'M' a soldier, 'R' a
+//! robot, 'S' where the player starts and 'E' the way out.
+//!
+//! The surfaces are Poly Haven textures (CC0), by the name of their folder
+//! in external/Compages-data/polyhaven/textures/.
 // ****************************************************************************
 struct LevelData
 {
     char const* title;
     char const* wall;
     char const* floor;
+    char const* ceiling;
+    //! \brief The containers ('C').
+    char const* container;
     compages::Vector3f wall_tint;
     compages::Vector3f fog;
     std::vector<std::string> rows;

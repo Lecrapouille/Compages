@@ -109,7 +109,6 @@ void DoomLike::moveEnemies(float p_dt)
                     direction.normalize();
                     m_cast.bolts.emplace_back(Bolt{ from, direction * 16.0f, 2.5f });
                     m_content.effects.muzzle(from, direction);
-                    playOnce(enemy.gun.id(), "Fire");
                 }
             }
             else if (sees)

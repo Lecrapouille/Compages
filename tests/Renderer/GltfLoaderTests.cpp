@@ -299,3 +299,18 @@ TEST_F(GltfLoaderTest, RendersTheKhronosDuck)
         << " orange_pixels=" << orange
         << " lit_pixels=" << lit;
 }
+
+// A .gltf whose pictures are files next to it (as Poly Haven and Blender's
+// "glTF Separate" write them): the pictures are read from its folder.
+TEST_F(GltfLoaderTest, ReadsPicturesThatAreFilesOfTheirOwn)
+{
+    const std::filesystem::path path = dataPath("polyhaven/models/barrel_03/barrel_03.gltf");
+    if (path.empty())
+    {
+        GTEST_SKIP() << "polyhaven/models/barrel_03 is missing from external/Compages-data";
+    }
+    compages::renderer::AssetManager assets;
+    auto loaded = assets.loadFile(path);
+    ASSERT_TRUE(bool(loaded)) << loaded.error();
+    EXPECT_GT(assets.textureCount(), 0u);
+}

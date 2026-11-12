@@ -15,7 +15,8 @@ namespace examples::doom
 std::array<LevelData, 2u> const& levels()
 {
     static const std::array<LevelData, 2u> data{ {
-        { "The Crypt", "rocks.png", "mud.png", compages::Vector3f(0.9f, 0.85f, 0.8f),
+        { "The Pumping Station", "concrete_panels", "metal_plate", "rusty_metal_grid", "rusty_corrugated_iron",
+          compages::Vector3f(0.62f, 0.66f, 0.7f),
           compages::Vector3f(0.02f, 0.02f, 0.035f),
           { "###########",
             "#S..#..A..#",
@@ -27,7 +28,8 @@ std::array<LevelData, 2u> const& levels()
             "#..C.M.#.R#",
             "#A.....T..#",
             "#####E#####" } },
-        { "The Depot", "rocks.png", "path.png", compages::Vector3f(0.55f, 0.65f, 0.9f),
+        { "The Depot", "rusty_corrugated_iron", "concrete_floor_worn_001", "concrete_slab_wall", "rusty_metal_grid",
+          compages::Vector3f(0.7f, 0.75f, 0.8f),
           compages::Vector3f(0.015f, 0.025f, 0.04f),
           { "#############",
             "#S....#..A..#",

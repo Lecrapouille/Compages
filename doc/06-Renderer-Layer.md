@@ -263,7 +263,7 @@ map.render(top);         // a minimap
 | `scene.clips(model)` | the clip names, in file order |
 | `scene.copy(entity)` | draws another entity with the same mesh and look (cheap duplicates) |
 
-`load` reads **glTF / GLB**, saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
+`load` reads **glTF / GLB** (a `.gltf` may keep its pictures in files next to it, as Poly Haven and Blender's "glTF Separate" write them; only the base colour map is used), saved **prefabs**, **STL** meshes and **URDF** robots. A URDF comes with its joints (`08d_RobotArm`): the World builds the chain, the renderer adds the visuals of the links (`Renderer/Import/UrdfLoader.hpp`).
 
 - `08a_GltfModel` loads `Duck.glb` and frames the camera.
 - `08b_GltfAnimation` plays the clips of `Soldier.glb` (keys 1, 2, 3).
@@ -435,7 +435,7 @@ Performance:
 
 ## 🎮 6. The game
 
-`10b_DoomLike` shows the three layers together: textured walls, fog, glTF soldiers and robots, an animated gun, particles, impacts, barrels. Click in the window to capture the mouse, Escape to release it. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload.
+`10b_DoomLike` shows the three layers together: walls in photographed materials (Poly Haven, CC0: colour, normal and roughness maps, triplanar), fog, glTF soldiers and robots, props of Poly Haven (a bolt-action rifle whose recoil and bolt the code moves, barrels, ammunition, medical kits, crates, lamps), particles, impacts. Click in the window to capture the mouse, Escape to release it. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload.
 
 ![Doom-like](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png)
 

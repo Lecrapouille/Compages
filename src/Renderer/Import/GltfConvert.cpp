@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <span>
 #include <string>
@@ -104,13 +106,14 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
     {
         return failure("glTF image pointer is null");
     }
-    const auto cached = p_cache.find(p_image);
-    if (cached != p_cache.end())
+    const auto cached = p_cache.read.find(p_image);
+    if (cached != p_cache.read.end())
     {
         return cached->second;
     }
 
     std::span<const std::byte> bytes;
+    std::vector<std::byte> file;
     if ((p_image->buffer_view != nullptr) &&
         (p_image->buffer_view->buffer != nullptr))
     {
@@ -122,9 +125,26 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
     }
     else if (p_image->uri != nullptr)
     {
-        return failure(
-            "external glTF image URIs are not supported yet; embed images "
-            "in the GLB");
+        // A picture of its own, next to the .gltf (Poly Haven, Blender's
+        // "glTF Separate"): its URI is relative and may be percent-encoded.
+        std::string uri(p_image->uri);
+        if (uri.starts_with("data:"))
+        {
+            return failure("glTF images in data: URIs are not supported; use a file or a GLB");
+        }
+        cgltf_decode_uri(uri.data());
+        uri.resize(std::strlen(uri.c_str()));
+        const std::filesystem::path where = p_cache.folder / uri;
+        std::ifstream stream(where, std::ios::binary);
+        if (!stream)
+        {
+            return failure("cannot open the glTF image '" + where.string() + "'");
+        }
+        stream.seekg(0, std::ios::end);
+        file.resize(static_cast<std::size_t>(stream.tellg()));
+        stream.seekg(0, std::ios::beg);
+        stream.read(reinterpret_cast<char*>(file.data()), static_cast<std::streamsize>(file.size()));
+        bytes = std::span<const std::byte>(file);
     }
     else
     {
@@ -144,7 +164,7 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
         return failure(id_result.error());
     }
     auto id = id_result.take();
-    p_cache.emplace(p_image, id);
+    p_cache.read.emplace(p_image, id);
     ++p_texture_count;
     return id;
 }

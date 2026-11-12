@@ -17,6 +17,7 @@
 #include "CgltfInclude.hpp"
 
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -24,7 +25,14 @@
 namespace compages::renderer::gltf
 {
 
-using TextureMap = std::unordered_map<cgltf_image*, TextureAssetId>;
+//! \brief The pictures of one file: those read so far (an image used by
+//! several materials is read once), and the folder of the file, where the
+//! pictures that are files of their own are.
+struct TextureMap
+{
+    std::filesystem::path folder;
+    std::unordered_map<cgltf_image*, TextureAssetId> read;
+};
 
 //! \brief The mesh of one primitive: positions, normals, UVs, joints.
 [[nodiscard]] Result<MeshAsset>

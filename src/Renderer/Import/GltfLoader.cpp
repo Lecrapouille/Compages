@@ -229,7 +229,7 @@ Result<PrefabId> loadGltf(std::filesystem::path const& p_path,
     prefab.root.name = "gltf-root";
     prefab.root.source_index = static_cast<std::uint32_t>(data->nodes_count);
 
-    TextureMap textures;
+    TextureMap textures{ .folder = p_path.parent_path(), .read = {} };
     std::size_t texture_count = 0u;
     std::unordered_map<cgltf_skin*, SkinAssetId> skins;
     prefab.root.children.reserve(data->scene->nodes_count);

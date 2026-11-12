@@ -33,6 +33,7 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 
 The demos rebuild published techniques from the papers and talks below, with code, pictures and scenes of their own: no asset, level or look of the games is copied.
 
+- `10b_DoomLike` — textures and models of [Poly Haven](https://polyhaven.com) (CC0): the textures `concrete_panels`, `metal_plate`, `rusty_metal_grid`, `rusty_corrugated_iron`, `concrete_floor_worn_001`, `concrete_slab_wall`; the models `bolt_action_rifle_7_62`, `ammo_box`, `medical_box`, `barrel_03`, `old_military_crate`, `industrial_caged_sconce`, `mounted_fluorescent_lights`. Triplanar normal mapping: B. Golus, "Normal Mapping for a Triplanar Shader" (2017). The soldier (`Soldier.glb`) and the robot (`RobotExpressive.glb`, by Tomás Laulhé, CC0) come from the examples of three.js.
 - `10f_FlowingWater` — the flow maps of Portal 2, by Valve:
   - Alex Grimes, "Making and Using Non-Standard Textures", GDC 2011 ([PDF](https://cdn.fastly.steamstatic.com/apps/valve/2011/gdc_2011_grimes_nonstandard_textures.pdf)): baking a flow map from the level (footprint, upwellings, vortices, deflection, slowing at the edges, foam), the noise that offsets the phase, the two phases, the foam distorted by the ripples, a flow that reacts to the game;
   - Alex Vlachos, "Water Flow in Portal 2", SIGGRAPH 2010 ([PDF](http://www.valvesoftware.com/publications/2010/siggraph2010_vlachos_waterflow.pdf)): the shader of the flowing water;

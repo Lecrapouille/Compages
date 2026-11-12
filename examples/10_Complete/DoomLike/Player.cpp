@@ -18,12 +18,22 @@ namespace examples
 
 using namespace doom;
 
-//! \brief Shells a load of the shotgun holds, and how many can be carried.
-constexpr int LOAD = 8;
-constexpr int CARRIED = 48;
-//! \brief Pellets in one shot, and how wide they spread.
-constexpr int PELLETS = 8;
-constexpr float SPREAD = 0.06f;
+//! \brief One bullet a shot, barely spread; what it takes off a body (a
+//! soldier has 6, a robot 9; twice as much in the head).
+constexpr int PELLETS = 1;
+constexpr float SPREAD = 0.004f;
+constexpr float BULLET = 5.0f;
+//! \brief Seconds of a shot (the kick, then the bolt worked back and
+//! forth) and of a reload.
+constexpr float FIRE_TIME = 1.0f;
+constexpr float RELOAD_TIME = 1.9f;
+
+//! \brief 0 before p_from, 1 after p_to, smooth between.
+static float smoothstep(float p_from, float p_to, float p_x)
+{
+    const float t = std::clamp((p_x - p_from) / (p_to - p_from), 0.0f, 1.0f);
+    return t * t * (3.0f - (2.0f * t));
+}
 
 //! \brief The length of a vector lying on the floor.
 static float flatLength(compages::Vector3f const& p_v)
@@ -180,16 +190,51 @@ void DoomLike::placeView(compages::world::ViewFrame const& p_frame)
             units::angle::radian_t(double(m_player.pitch)),
             compages::Vector3f(1.0f, 0.0f, 0.0f)));
 
-    // The gun low on the right, swinging with the steps. Its clips kick it
-    // and rack it; this only carries it.
+    // The rifle low on the right, swinging with the steps. A shot kicks it
+    // back and up, then the bolt slides back and forth (the empty case
+    // flies out); a reload turns it on its side and down.
     const float swing = std::min(m_player.walking, 1.5f);
     const compages::Vector3f bob(std::sin(m_player.bob) * 0.012f * swing,
                                        -std::abs(std::cos(m_player.bob)) *
                                            0.012f * swing,
                                        0.0f);
     const float lowered = (m_session.state == State::Playing) ? 0.0f : -0.4f;
-    m_rig.weapon.position(
-        compages::Vector3f(0.17f, -0.19f + lowered, -0.26f) + bob);
+    const float t = m_player.gun_time;
+    float kick = 0.0f;
+    float bolt = 0.0f;
+    float dip = 0.0f;
+    float roll = 0.0f;
+    if (m_player.gun == Gun::Firing)
+    {
+        kick = (t < 0.05f) ? (t / 0.05f) : std::exp(-(t - 0.05f) * 9.0f);
+        bolt = smoothstep(0.35f, 0.55f, t) * (1.0f - smoothstep(0.65f, 0.9f, t));
+        dip = 0.025f * bolt;
+        roll = 0.25f * bolt;
+    }
+    else if (m_player.gun == Gun::Reloading)
+    {
+        const float u = t / RELOAD_TIME;
+        const float e = std::sin(PI * std::clamp(u, 0.0f, 1.0f));
+        bolt = smoothstep(0.1f, 0.25f, u) * (1.0f - smoothstep(0.75f, 0.9f, u));
+        dip = 0.11f * e;
+        roll = 0.7f * e;
+        kick = -0.6f * e; // pitched down, not up
+    }
+    m_rig.weapon
+        .position(compages::Vector3f(0.14f, -0.17f + lowered - dip, -0.22f + (0.06f * std::max(kick, 0.0f))) + bob)
+        .rotation(compages::Quatf::fromAngleAxis(units::angle::radian_t(double(0.14f * kick)),
+                                                 compages::Vector3f(1.0f, 0.0f, 0.0f)) *
+                  compages::Quatf::fromAngleAxis(units::angle::radian_t(double(roll)),
+                                                 compages::Vector3f(0.0f, 0.0f, 1.0f)));
+    // The bolt slides toward the stock (-x in the file of the rifle).
+    if (m_rig.bolt_a)
+    {
+        m_rig.bolt_a.position(m_rig.bolt_a_rest - compages::Vector3f(0.09f * bolt, 0.0f, 0.0f));
+    }
+    if (m_rig.bolt_b)
+    {
+        m_rig.bolt_b.position(m_rig.bolt_b_rest - compages::Vector3f(0.09f * bolt, 0.0f, 0.0f));
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -198,33 +243,30 @@ void DoomLike::useWeapon(compages::world::ViewFrame const& p_frame)
     compages::world::Input const& input = p_frame.input;
     m_player.gun_time += p_frame.elapsed;
 
-    // The end of a clip is the end of what the gun was doing.
+    // A shot, then a reload, last a fixed time.
     if (m_player.gun == Gun::Firing)
     {
-        if (!m_player.casing_thrown && (m_player.gun_time > 0.3f) &&
+        if (!m_player.casing_thrown && (m_player.gun_time > 0.5f) &&
             bool(m_rig.muzzle))
         {
-            // The pump throws the spent shell out, to the right.
+            // The bolt, pulled back, throws the empty case out, to the right.
             m_player.casing_thrown = true;
             const compages::Vector3f right(
                 std::cos(m_player.yaw), 0.0f, -std::sin(m_player.yaw));
             m_content.effects.casing(
                 m_rig.weapon.worldPosition() + (aim() * 0.15f), right);
         }
-        if (m_player.gun_time >= clipLength(m_rig.weapon.id(), "Fire"))
+        if (m_player.gun_time >= FIRE_TIME)
         {
             m_player.gun = Gun::Idle;
-            playLoop(m_rig.weapon.id(), "Idle");
         }
     }
-    else if ((m_player.gun == Gun::Reloading) &&
-             (m_player.gun_time >= clipLength(m_rig.weapon.id(), "Reload")))
+    else if ((m_player.gun == Gun::Reloading) && (m_player.gun_time >= RELOAD_TIME))
     {
         const int added = std::min(LOAD - m_player.shells, m_player.reserve);
         m_player.shells += added;
         m_player.reserve -= added;
         m_player.gun = Gun::Idle;
-        playLoop(m_rig.weapon.id(), "Idle");
     }
 
     if (compages::world::pressed(input, m_ui.previous, compages::world::Key::R))
@@ -254,7 +296,7 @@ void DoomLike::useWeapon(compages::world::ViewFrame const& p_frame)
         }
         else if (input.mouse_left_pressed)
         {
-            say("Out of shells");
+            say("Out of rounds");
         }
     }
 }
@@ -267,7 +309,6 @@ void DoomLike::fire()
     m_player.gun_time = 0.0f;
     m_player.casing_thrown = false;
     m_player.flash = 0.07f;
-    playOnce(m_rig.weapon.id(), "Fire");
 
     // The pellets leave the eye, where the crosshair is; their streaks leave
     // the muzzle, where the eye expects them.
@@ -300,12 +341,12 @@ void DoomLike::fire()
         }
         if (target->enemy != nullptr)
         {
-            damageEnemy(*target->enemy, 1.0f, target->point, direction);
+            damageEnemy(*target->enemy, BULLET, target->point, direction);
         }
         else if (target->barrel != nullptr)
         {
             m_content.effects.sparks(target->point, target->normal, 5);
-            target->barrel->health -= 1.0f;
+            target->barrel->health -= BULLET;
             if (target->barrel->health <= 0.0f)
             {
                 explode(*target->barrel);
@@ -387,7 +428,6 @@ void DoomLike::reload()
     }
     m_player.gun = Gun::Reloading;
     m_player.gun_time = 0.0f;
-    playOnce(m_rig.weapon.id(), "Reload");
 }
 
 // ----------------------------------------------------------------------------
@@ -448,7 +488,7 @@ void DoomLike::pickUp(float p_dt)
         // Turning and floating, so that it is seen from afar.
         pickup.body
             .position(pickup.at.x,
-                      0.4f + (0.08f *
+                      0.25f + (0.08f *
                               std::sin((m_player.clock * 2.5f) + pickup.at.x)),
                       pickup.at.z)
             .rotation(m_player.clock * 1.5f,
@@ -464,7 +504,7 @@ void DoomLike::pickUp(float p_dt)
                 continue;
             }
             m_player.reserve = std::min(CARRIED, m_player.reserve + LOAD);
-            say("+8 shells");
+            say("+" + std::to_string(LOAD) + " rounds");
         }
         else
         {

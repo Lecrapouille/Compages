@@ -14,6 +14,9 @@
 #include "Compages/Renderer/Scene/Scene.hpp"
 
 #include <filesystem>
+#include <functional>
+#include <initializer_list>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -29,10 +32,13 @@ namespace examples
 //! Each level is a grid of characters (see doom::LevelData). Walking into the
 //! green light of the exit goes to the next level; leaving the second one
 //! wins. What each part of the engine does here:
-//!   - the Scene: textured boxes for the walls, lamps for the torches, fog;
+//!   - the Scene: boxes for the walls in photographed materials of Poly Haven
+//!     (DoomLike/Materials: triplanar colour, normal and roughness maps),
+//!     lamps in wall sconces, fog;
 //!   - glTF: the soldiers and the robots, skinned and animated with the clips
-//!     of their file, and the shotgun, whose Idle, Fire and Reload clips are
-//!     written by DoomLike/make_shotgun.py;
+//!     of their file; the props of Poly Haven (CC0): a bolt-action rifle
+//!     whose recoil and bolt are moved by the code, barrels, ammunition
+//!     boxes, medical kits, crates, sconces, fluorescent tubes;
 //!   - the World: routines (the torches flicker), parents (the gun in the
 //!     hands, the marks on the bones), and bones turned by hand after the
 //!     clips so that a soldier aims;
@@ -213,13 +219,19 @@ private:
         float shake = 0.0f;
     };
 
-    //! \brief Camera, lantern and shotgun in the Scene graph.
+    //! \brief Camera, lantern and rifle in the Scene graph. The weapon is a
+    //! pivot (the old grip of the hand: barrel along -z, trigger at 0) that
+    //! holds the model of the rifle; the bolt is two parts of the model.
     struct PlayerRig
     {
         compages::world::Entity camera;
         compages::world::Entity lantern;
         compages::world::Entity weapon;
         compages::world::Entity muzzle;
+        compages::world::Entity bolt_a;
+        compages::world::Entity bolt_b;
+        compages::Vector3f bolt_a_rest{ 0.0f, 0.0f, 0.0f };
+        compages::Vector3f bolt_b_rest{ 0.0f, 0.0f, 0.0f };
     };
 
     //! \brief Short messages and the keys of the previous frame.
@@ -248,7 +260,15 @@ private:
         compages::renderer::AssetManager assets;
         compages::renderer::PrefabId soldier_prefab;
         compages::renderer::PrefabId robot_prefab;
-        compages::renderer::PrefabId shotgun_prefab;
+        compages::renderer::PrefabId rifle_prefab;
+        compages::renderer::PrefabId ammo_prefab;
+        compages::renderer::PrefabId medkit_prefab;
+        compages::renderer::PrefabId barrel_prefab;
+        compages::renderer::PrefabId crate_prefab;
+        compages::renderer::PrefabId sconce_prefab;
+        compages::renderer::PrefabId tubes_prefab;
+        //! \brief The surfaces, by the name of their Poly Haven texture.
+        std::map<std::string, compages::renderer::MaterialId, std::less<>> surfaces;
         doom::Effects effects;
         doom::Map map;
     };
@@ -265,22 +285,20 @@ private:
     void beginLevel(std::size_t p_level);
     [[nodiscard]] compages::Status setupPlayerRig();
     void configureAtmosphere(doom::LevelData const& p_level);
+    [[nodiscard]] compages::Status scanMapGrid(doom::LevelData const& p_level);
     [[nodiscard]] compages::Status
-    scanMapGrid(doom::LevelData const& p_level,
-                std::filesystem::path const& p_wall_file,
-                std::filesystem::path const& p_floor_file,
-                std::filesystem::path const& p_crate_file,
-                std::filesystem::path const& p_hazard_file);
-    [[nodiscard]] compages::Status
-    placeCell(char p_cell,
-              std::size_t p_column,
-              std::size_t p_row,
-              compages::renderer::Look const& p_wall,
-              compages::renderer::Look const& p_ceiling,
-              compages::renderer::Look const& p_floor,
-              compages::renderer::Look const& p_crate,
-              compages::renderer::Look const& p_hazard);
+    placeCell(char p_cell, std::size_t p_column, std::size_t p_row, doom::LevelData const& p_level);
+    //! \brief A box in a surface of the level, with a tint.
+    compages::world::Entity surfaceBox(char const* p_name, std::string_view p_surface, compages::Vector3f p_tint);
+    //! \brief A copy of a prefab with only some of its parts shown: the
+    //! Poly Haven files hold several variants side by side.
+    [[nodiscard]] compages::Result<compages::world::Entity>
+    placeProp(compages::renderer::PrefabId p_prefab, std::initializer_list<std::string_view> p_keep);
+    //! \brief The rifle in a hand (or the camera): its pivot, at the grip.
+    [[nodiscard]] compages::Result<compages::world::Entity>
+    placeRifle(compages::world::EntityId p_parent, compages::world::LocalTransform const& p_grip);
     void placeTorch(std::size_t p_column, std::size_t p_row);
+    void placeTubes(std::size_t p_column, std::size_t p_row);
     [[nodiscard]] compages::Status placeEnemy(Kind p_kind,
                                               compages::Vector3f p_at);
     void say(std::string p_message);
