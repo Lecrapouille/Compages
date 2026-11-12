@@ -177,6 +177,51 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] Demo: smoke (`11e_Smoke`: Stable Fluids in 2D, five compute kernels
       from one GLSL text chosen by `ShaderSource::define`)
 
+## TODO: public techniques of games
+
+Published techniques of game studios, rebuilt with code, pictures and
+scenes of our own (credits in doc/11-Credits.md). From the simplest to the
+most complex: each step reuses what the ones before it built.
+
+- [x] Flow maps (Valve, Grimes GDC 2011, Vlachos SIGGRAPH 2010):
+      `10f_FlowingWater`
+- [x] Metallic-roughness shading of glTF (Karis, UE4 SIGGRAPH 2013):
+      `shadePbr()`, normal and metallic-roughness maps
+- [x] Clustered forward lighting (Olsson et al., HPG 2012; Doom 2016,
+      SIGGRAPH 2016): `LightClusters`, `06m_ManyLights`
+- [ ] Cel shading and outlines (Guilty Gear Xrd, Motomura GDC 2015): a
+      hook `main` with light in steps, and an outline pass
+- [ ] Interior mapping (van Dongen, CGI 2008): rooms behind windows faked
+      by one hook `main`, no geometry
+- [ ] Rain and wet surfaces (Lagarde, "Water drop" series, Remember Me
+      2012-2013): darker and glossier when wet, puddles from a height mask,
+      ripples of drops; reuses `shadePbr()` and the flow maps
+- [ ] A sky in an environment map, read by the glint of `shadePbr()`
+      (prefiltered by roughness): metals reflect the scene, not a flat
+      ambient
+- [ ] Shadows for more than four lamps: an atlas filled by importance
+      (distance, intensity, on screen), the others through the clusters
+- [ ] Ambient occlusion in screen space (GTAO, Jimenez et al. 2016): a
+      pass over the depth and normals
+- [ ] Temporal anti-aliasing (Karis, SIGGRAPH 2014): jittered camera,
+      motion vectors, a history picture
+- [ ] Procedural grass and wind (Ghost of Tsushima, Wohllaib GDC 2021):
+      blades instanced by a compute shader, bent by a wind `Field`
+- [ ] Octahedral impostors (Brucks, Fortnite 2018): far trees and props as
+      pictures baked from many directions
+- [ ] Geometry clipmaps (Losasso and Hoppe, SIGGRAPH 2004; GPU Gems 2,
+      chapter 2): nested rings of terrain round the camera, for
+      `10e_Archipelago`
+- [ ] Ocean by FFT (Tessendorf, "Simulating Ocean Water", SIGGRAPH 2001):
+      a spectrum of waves, FFT in compute shaders (ping-pong), in place of
+      the Gerstner swells of `10e_Archipelago`
+- [ ] Volumetric fog in froxels (Wronski, Assassin's Creed 4, SIGGRAPH
+      2014): a `Field<float, Grid3D>` of light scattering, filled by compute
+      over the slices of the clusters, ray marched in the picture
+- [ ] Shadows and occlusion from distance fields (Wright, UE4, SIGGRAPH
+      2015): signed distance fields of the meshes, on the sparse 3D grid of
+      P3
+
 ## Earlier decisions (audit of 2026-11-06)
 
 Accepted: offscreen rendering to an image, one-line helpers (grid, axes,
