@@ -149,10 +149,23 @@ In rough order. Each item should make a demo shorter or possible.
   - [ ] Quadtree / adaptive refinement, as a domain of its own (like the
         SimTaDyn topology), for fine zones that move (a flame front, a
         shock): neighbours across levels, T-junctions, neighbour tables for
-        compute shaders
+        compute shaders. This is adaptivity (the data have fine and coarse
+        zones), not level of detail (choosing a resolution by the distance
+        to the camera): the LOD of a far terrain belongs to the renderer
+        (`Patch`), not to `Fields`
   - [ ] Sparse 3D grid (dense 8^3 blocks only where there are values, like
         OpenVDB): memory and empty space skipped by the ray marching of
-        mostly empty volumes (3D smoke, lidar)
+        mostly empty volumes (3D smoke, lidar). A point with no block holds
+        the background value: `zero<T>()` of `Core/Maths.hpp`, the neutral
+        element of the algebra, which a type can redefine (minus infinity
+        for (max, +)). The sparse grid numbers only the stored points
+        (`index()` through a table of blocks), so `Field` keeps one
+        contiguous array and no storage parameter
+- [ ] Never three independent axes (kind of data, topology, storage): a
+      quadtree is its own storage, a sparse grid is a topology; the grid
+      numbers the points, the field holds one array. `Field<T, Grid>`, not
+      `Field<T, Dim>`: two grids of the same dimension (regular,
+      curvilinear) are different grids
 - [x] Demo: a bimetal beam bending with heat (`11d_BimetalBeam`: heat
       equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
       `deform` hook reading a storage buffer)
