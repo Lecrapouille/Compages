@@ -1,6 +1,6 @@
 # 📚 Compages documentation
 
-Read the chapters in order: each one uses the words of the previous ones. Chapters 1 to 3 are for everybody, even without any 3D or OpenGL background. Then open the chapter of the layer you need (4, 5 or 6). Chapters 7 to 11 are references.
+Read the chapters in order: each one uses the words of the previous ones. Chapters 1 to 3 are for everybody, even without any 3D or OpenGL background. Then open the chapter of the layer you need (4, 5 or 6), or follow the tutorial on with chapters 12 and 13. Chapters 7 to 11 are references.
 
 ![The three layers](logos/compages-layers.png)
 
@@ -11,6 +11,8 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 | 1 | [Introduction](01-Introduction.md) | 3D words (shader, buffer, entity, component…), the three layers and why they are separate | 15 min |
 | 2 | [Getting started](02-Getting-Started.md) | Install, build, run the gallery, run without a screen | 20 min |
 | 3 | [Your first programs](03-Tutorial.md) | Three small programs, one per layer, explained line by line | 30 min |
+| 12 | [Going further](12-Going-Further.md) | The calls that matter, one step at a time: your own shader, pictures and meshes made by the program, see-through things, fields, passes, picking | 1 h |
+| 13 | [Three complete demos](13-Complete-Demos.md) | `10c_SweatAndDecals`, `10e_Archipelago` and `10f_FlowingWater` rebuilt step by step | 2 h |
 
 ## 🧱 The three layers
 
@@ -36,6 +38,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 - *"I have a shader and numbers."* → [3. Tutorial §1](03-Tutorial.md#-1-a-triangle-named-by-the-shader), then [4. GPU](04-GPU-Layer.md)
 - *"I simulate things, no window needed."* → [3. Tutorial §2](03-Tutorial.md#-2-a-world-without-a-screen), then [5. World](05-World-Layer.md)
 - *"I want a 3D scene in ten lines."* → [3. Tutorial §3](03-Tutorial.md#-3-a-picture-of-the-world), then [6. Renderer](06-Renderer-Layer.md)
+- *"I know the basics; how do the big demos work?"* → [12. Going further](12-Going-Further.md), then [13. Three complete demos](13-Complete-Demos.md)
 - *"My window is black."* → [10. Debugging](10-Debugging.md)
 - *"I want to change Compages itself."* → [7. Architecture](07-Architecture.md), and [AGENTS.md](../AGENTS.md) for the conventions
 

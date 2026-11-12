@@ -293,4 +293,4 @@ Texture files are searched in `external/Compages-data/`, or in `COMPAGES_DATA_PA
 | simulation with chaining `entity().child()` | `<Compages/World/Entity.hpp>` |
 | scene and pictures | `<Compages/Compages.hpp>` |
 
-Next: the chapter of your layer — [4. GPU](04-GPU-Layer.md), [5. World](05-World-Layer.md) or [6. Renderer](06-Renderer-Layer.md).
+Next: the chapter of your layer — [4. GPU](04-GPU-Layer.md), [5. World](05-World-Layer.md) or [6. Renderer](06-Renderer-Layer.md). To keep learning by examples, go on with [12. Going further](12-Going-Further.md).
