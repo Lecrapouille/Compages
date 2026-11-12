@@ -204,7 +204,13 @@ TEST_F(FieldShowTest, DrawsVectorsAsArrows)
 TEST_F(FieldShowTest, ChartsAValueOverTime)
 {
     compages::renderer::Chart chart;
-    ASSERT_TRUE(bool(chart.create(*m_scene, { .width = 64u, .height = 32u, .seconds = 10.0f, .low = 0.0f, .high = 2.0f },
+    ASSERT_TRUE(bool(chart.create(*m_scene,
+                                  { .width = 64u,
+                                    .height = 32u,
+                                    .seconds = 10.0f,
+                                    .low = 0.0f,
+                                    .high = 2.0f,
+                                    .scale = compages::renderer::ChartScale::Fixed },
                                   "Chart")));
     const std::size_t curve = chart.series(compages::renderer::CanvasTexture::Color::rgb(255, 0, 0));
     for (int k = 0; k <= 20; ++k)
@@ -215,6 +221,35 @@ TEST_F(FieldShowTest, ChartsAValueOverTime)
     auto pixels = m_scene->assets().texture(chart.texture())->texture.read();
     ASSERT_TRUE(bool(pixels)) << pixels.error();
     auto red = [&pixels](int p_x, int p_y) { return int(pixels.value()[((std::size_t(p_y) * 64u) + std::size_t(p_x)) * 4u]); };
-    EXPECT_EQ(red(40, 15), 255); // y = 0.5 * 31
-    EXPECT_LT(red(40, 3), 100);  // the background
+    const compages::Vector2f middle = chart.pixelOf(15.0f, 1.0f);
+    EXPECT_NEAR(middle.y, 15.5f, 1.0f); // too small for numbers: the curves fill it
+    EXPECT_EQ(red(int(middle.x), int(middle.y)), 255);
+    EXPECT_LT(red(int(middle.x), 5), 100); // the background
+}
+
+// Following the values: the axis takes round numbers just around them.
+TEST_F(FieldShowTest, ChartFollowsTheValues)
+{
+    compages::renderer::Chart chart;
+    ASSERT_TRUE(bool(chart.create(*m_scene,
+                                  { .width = 512u,
+                                    .height = 256u,
+                                    .seconds = 10.0f,
+                                    .low = 0.0f,
+                                    .high = 300.0f,
+                                    .scale = compages::renderer::ChartScale::FollowValues },
+                                  "Chart")));
+    const std::size_t curve = chart.series(compages::renderer::CanvasTexture::Color::rgb(255, 0, 0));
+    for (int k = 0; k <= 20; ++k)
+    {
+        chart.add(curve, float(k), 40.0f + float(k));
+    }
+    ASSERT_TRUE(bool(chart.draw()));
+    // The last 10 s hold 50 to 60, widened to a tenth of 0..300: 40 to 70,
+    // then a step more on each side, where the curve would touch the frame.
+    EXPECT_FLOAT_EQ(chart.low(), 30.0f);
+    EXPECT_FLOAT_EQ(chart.high(), 80.0f);
+    // Room on the left and the bottom for the numbers.
+    EXPECT_GT(chart.pixelOf(10.0f, chart.low()).x, 20.0f);
+    EXPECT_GT(chart.pixelOf(10.0f, chart.low()).y, 10.0f);
 }

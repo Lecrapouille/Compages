@@ -124,7 +124,9 @@ In rough order. Each item should make a demo shorter or possible.
 - [x] Inspection: follow a point over time (`Chart`, demo `11h_Thermometers`),
       slices (`compages::slice()`)
 - [x] Time series on a `CanvasTexture` (`Chart`)
-- [ ] Histograms, axes with numbers on a `Chart`
+- [x] Axes with numbers on a `Chart`, a values axis that follows the
+      values (`ChartScale::FollowValues`)
+- [ ] Histograms on a `Chart`
 - [x] Hooks in the shadow of the sun: a material whose `deform` is replaced
       draws its own shadow (`Material::casts_shadow`)
 - [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes

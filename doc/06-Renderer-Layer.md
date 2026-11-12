@@ -156,8 +156,9 @@ The arrows are a mesh made on the CPU at each `show()`. `compages::streamline(fi
 **Curves over time.** A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`; put it on any mesh, a board in the scene:
 
 ```cpp
-COMPAGES_TRY(m_chart.create(m_scene, { .width = 512u, .height = 256u, .seconds = 120.0f,
-                                       .low = 0.0f, .high = 300.0f }, "Thermometers"));
+COMPAGES_TRY(m_chart.create(m_scene, { .width = 1024u, .height = 512u, .seconds = 120.0f,
+                                       .low = 0.0f, .high = 100.0f,
+                                       .scale = ChartScale::FollowValues }, "Thermometers"));
 const std::size_t curve = m_chart.series(CanvasTexture::Color::rgb(255, 140, 0));
 m_chart.applyLook(m_scene, board.id());
 // each frame:
@@ -165,7 +166,7 @@ m_chart.add(curve, time, temperature.sample(spot));
 COMPAGES_TRY(m_chart.draw());
 ```
 
-`11h_Thermometers` follows two points of a heated plate this way. `CanvasTexture::paintPixelLine()` and `fillPixels()` draw in pixels for your own pictures.
+The picture has a frame, a grid on round numbers (1, 2 or 5 times a power of ten) and the numbers of both axes, in a small font of its own (below 128 x 64 pixels there is no room: the curves fill it). `ChartScale::Fixed` keeps `low` to `high`; `ChartScale::FollowValues` takes the round numbers around the values shown, so the curves fill the picture. `pixelOf(time, value)` says where a value is drawn. `11h_Thermometers` follows two points of a heated plate this way, and shows the picture unlit, like a screen (a hook `main` that only reads `baseColorMap`). `CanvasTexture::paintPixelLine()` and `fillPixels()` draw in pixels for your own pictures.
 
 ### Helpers
 

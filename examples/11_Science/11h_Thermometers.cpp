@@ -10,11 +10,16 @@
 #include "Common/DataPath.hpp"
 #include "Common/Gui.hpp"
 #include "Compages/GPU/Errors.hpp"
+#include "Compages/Renderer/Assets/AssetManager.hpp"
+#include "Compages/Renderer/Assets/Material.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 #include "Compages/Renderer/Components/Text.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdio>
 
 namespace examples
 {
@@ -81,21 +86,46 @@ compages::Status Thermometers::setUp()
         m_scene.font(font);
     }
     m_scene.background(0.55f, 0.6f, 0.66f);
-    m_scene.camera().position(0.0f, 2.2f, 3.2f).add<compages::world::Orbit>(
-        compages::Vector3f(0.0f, 0.5f, -0.5f));
+    m_scene.camera().position(0.0f, 2.0f, 2.6f).add<compages::world::Orbit>(
+        compages::Vector3f(0.0f, 0.75f, -0.6f));
     m_scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.2f);
     m_plate = m_scene.show(m_temperature, m_look, "Plate");
 
     // The board behind the plate: a plane stands up, facing +z.
+    // The values axis follows the temperatures: the curves fill the board.
     COMPAGES_TRY(m_chart.create(m_scene,
-                                { .width = 512u, .height = 256u, .seconds = 120.0f, .low = 0.0f, .high = 300.0f },
+                                { .width = 1024u,
+                                  .height = 512u,
+                                  .seconds = 120.0f,
+                                  .low = 0.0f,
+                                  .high = 100.0f,
+                                  .scale = compages::renderer::ChartScale::FollowValues },
                                 "Thermometers"));
     compages::world::Entity board = m_scene.plane("Board")
-                                        .position(0.0f, 1.0f, -1.3f)
-                                        .scale(2.0f, 1.0f, 1.0f);
+                                        .position(0.0f, 1.35f, -1.2f)
+                                        .scale(2.6f, 1.3f, 1.0f);
     m_chart.applyLook(m_scene, board.id());
-    board.child("Caption").position(-0.5f, -0.6f, 0.0f)
-        .set(compages::renderer::Label{ .text = "0 to 300 degrees, the last 2 minutes",
+    // A screen: the picture as it is, not lit by the sun (its dark
+    // background would turn grey). The hook "main" of the PBR shader reads
+    // the picture the look above gave the board.
+    compages::renderer::shaders::ShaderPair screen = compages::renderer::shaders::pbr();
+    screen.fragment().hook("main", "void main() { oColor = vec4(texture(baseColorMap, vUv).rgb, opacity); }");
+    compages::renderer::Material material;
+    COMPAGES_TRY_ASSIGN(material,
+                        compages::renderer::Material::create(
+                            "Screen", { .family = compages::renderer::ShaderFamily::PbrMinimal,
+                                        .shaders = std::move(screen),
+                                        .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
+                                        .see_through = std::nullopt }));
+    compages::renderer::MaterialId shown;
+    COMPAGES_TRY_ASSIGN(shown, m_scene.assets().addMaterial(material.name, std::move(material)));
+    m_scene.look(board, shown);
+    // A frame round the screen.
+    m_scene.box("Screen frame", compages::renderer::color(0.12f, 0.13f, 0.15f))
+        .position(0.0f, 1.35f, -1.23f)
+        .scale(2.7f, 1.4f, 0.04f);
+    board.child("Caption").position(-0.48f, 0.58f, 0.0f)
+        .set(compages::renderer::Label{ .text = "Temperature (degrees) over the last 2 minutes",
                                         .color = { 1.0f, 1.0f, 1.0f },
                                         .pixels = 14.0f,
                                         .hide_closer_than = 0.0f });
@@ -112,6 +142,13 @@ compages::Status Thermometers::setUp()
                                                               float(colors[k].g) / 255.0f,
                                                               float(colors[k].b) / 255.0f))
                          .scale(0.06f);
+        // Its reading, written over it (draw() updates the text).
+        m_marks[k].set(compages::renderer::Label{ .text = "",
+                                                  .color = { float(colors[k].r) / 255.0f,
+                                                             float(colors[k].g) / 255.0f,
+                                                             float(colors[k].b) / 255.0f },
+                                                  .pixels = 16.0f,
+                                                  .hide_closer_than = 0.0f });
     }
     // A minute and a half of heating before the first picture.
     for (int k = 0; k < 90; ++k)
@@ -141,6 +178,9 @@ void Thermometers::draw(compages::world::ViewFrame const& p_frame)
     {
         m_chart.add(m_curves[k], m_time, m_temperature.sample(m_spots[k]));
         m_marks[k].position(m_spots[k].x, 0.05f, m_spots[k].y);
+        std::array<char, 32> reading{};
+        std::snprintf(reading.data(), reading.size(), "%.0f degrees", double(m_temperature.sample(m_spots[k])));
+        m_marks[k].get<compages::renderer::Label>().text = reading.data();
     }
     compages::Status shown = m_scene.show(m_plate, m_temperature, m_look);
     if (shown)

@@ -102,7 +102,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | field on the GPU | `scene.show(grid, storageBuffer, look, name)`, `scene.show(entity, storageBuffer, look)`: a `StorageBuffer<float>` a compute shader writes |
 | read a field | `scene.probe(field, look, pixel)` → `std::optional<FieldProbe>{ .point, .value }` |
 | show vectors | `scene.show(Field<Vector2f>, ArrowLook{ .colors, .low, .high, .scale, .every }, name)`, `scene.show(entity, field, look)` |
-| curves over time | `Chart::create(scene, { .width, .height, .seconds, .low, .high }, name)`, `series(color)`, `add(series, time, value)`, `draw()`, `applyLook(scene, entity)` |
+| curves over time | `Chart::create(scene, { .width, .height, .seconds, .low, .high, .scale = ChartScale::Fixed|FollowValues }, name)`, `series(color)`, `add(series, time, value)`, `draw()`, `pixelOf(time, value)`, `applyLook(scene, entity)` |
 | show a volume | `scene.show(Field<float, Grid3D>, look, name)`, `scene.show(entity, volume, look)` |
 | material buffers | `material.buffers = { { .block, .buffer } }`: storage buffers bound by the Renderer |
 | helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
