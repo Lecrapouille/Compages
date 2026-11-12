@@ -1,6 +1,6 @@
 # 📚 Compages documentation
 
-Read the chapters in order: each one uses the words of the previous ones. Chapters 1 to 3 are for everybody, even without any 3D or OpenGL background. Then open the chapter of the layer you need (4, 5 or 6), or follow the tutorial on with chapters 12 and 13. Chapters 7 to 11 are references.
+Read the chapters in order: each one uses the words of the previous ones. Chapters 1 to 3 are for everybody, even without any 3D or OpenGL background. Then open the chapter of the layer you need (4, 5 or 6), or follow the tutorial on with chapters 12 to 14. Chapters 7 to 11 are references.
 
 ![The three layers](logos/compages-layers.png)
 
@@ -13,6 +13,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 | 3 | [Your first programs](03-Tutorial.md) | Three small programs, one per layer, explained line by line | 30 min |
 | 12 | [Going further](12-Going-Further.md) | The calls that matter, one step at a time: your own shader, pictures and meshes made by the program, see-through things, fields, passes, picking | 1 h |
 | 13 | [Three complete demos](13-Complete-Demos.md) | `10c_SweatAndDecals`, `10e_Archipelago` and `10f_FlowingWater` rebuilt step by step | 2 h |
+| 14 | [Science with fields](14-Science-With-Fields.md) | The `11_Science` demos: each equation (heat, waves, fluids, light through a volume, ideal flow), its loop on a grid, its calls | 1 h 30 |
 
 ## 🧱 The three layers
 
@@ -39,6 +40,7 @@ Read the chapters in order: each one uses the words of the previous ones. Chapte
 - *"I simulate things, no window needed."* → [3. Tutorial §2](03-Tutorial.md#-2-a-world-without-a-screen), then [5. World](05-World-Layer.md)
 - *"I want a 3D scene in ten lines."* → [3. Tutorial §3](03-Tutorial.md#-3-a-picture-of-the-world), then [6. Renderer](06-Renderer-Layer.md)
 - *"I know the basics; how do the big demos work?"* → [12. Going further](12-Going-Further.md), then [13. Three complete demos](13-Complete-Demos.md)
+- *"I compute physics on a grid."* → [14. Science with fields](14-Science-With-Fields.md)
 - *"My window is black."* → [10. Debugging](10-Debugging.md)
 - *"I want to change Compages itself."* → [7. Architecture](07-Architecture.md), and [AGENTS.md](../AGENTS.md) for the conventions
 

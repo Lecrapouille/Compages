@@ -271,7 +271,14 @@ m_scene.draw(p_frame);
 
 - `box` returns an entity of the **world**: you move it like any other entity. The mesh and the material are renderer components.
 - `Orbit` is a routine that reads the mouse from the `ViewFrame` (a `Frame` plus keyboard and mouse). Right drag turns, the wheel zooms.
-- `draw` updates the world, then draws it.
+- `draw` updates the world, then draws it:
+
+```mermaid
+flowchart LR
+    F["ViewFrame<br/>time, mouse, keys"] --> U["update<br/>routines (Orbit), matrices"]
+    U --> S["snapshot<br/>what to draw"]
+    S --> R["render<br/>GPU"]
+```
 
 Other looks, same call:
 

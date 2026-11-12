@@ -15,7 +15,7 @@ in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
 | File | Holds |
 |------|-------|
 | README.md | what it is for (no jargon), the story, why Compages (comparison), code at a glance, quick start, doc table |
-| doc/README.md | index: Learn (1–3, 12–13), layers (4–6), Reference (7–11), quick paths |
+| doc/README.md | index: Learn (1–3, 12–14), layers (4–6), Reference (7–11), quick paths |
 | 01-Introduction.md | glossary, three layers and what each leaves out, error moments, OpenGL versions |
 | 02-Getting-Started.md | tools per OS, build, third parties, gallery, tests/CI, install |
 | 03-Tutorial.md | one program per layer (§2 is compiled and run headless) |
@@ -26,6 +26,7 @@ in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
 | 10-Debugging.md | library/driver messages, apitrace, RenderDoc, CI, common problems |
 | 11-Credits.md | technical lessons, inspirations, third parties, license (the story is in README.md) |
 | 12-Going-Further.md | the tutorial continued: one important call per step (own shader, pictures, meshes, see-through, deform, Field, fromField, passes, picking), from real demo code |
+| 14-Science-With-Fields.md | the 11_Science demos: equations (LaTeX ```math blocks), discrete loops, mermaid diagrams, the Fields calls |
 | 13-Complete-Demos.md | 10c, 10e, 10f rebuilt step by step (the technique lives here; 09 keeps the idea, the keys and a link) |
 
 Put a fact in one place and link to it. README.md and doc/README.md hold the
@@ -45,6 +46,9 @@ chapter tables: keep them in sync. Code comments point to chapters
 - Namespaces in snippets: `compages::Vector3f`, `compages::Frame`,
   `compages::world::...`, `compages::renderer::...`, `compages::gpu::...`.
 - Each chapter: what you will learn → content/tutorial → reference tables → next.
+- Maths: display equations in ```` ```math ```` blocks, inline as `$...$` (GitHub renders both);
+  in Python string edits, beware `\f`, `\t`, `\r` in LaTeX (`\frac`, `\text`, `\right`): use raw strings.
+  Diagrams: ```` ```mermaid ```` (flowchart, classDiagram), short labels, `<br/>` for new lines.
 - Do not document what does not exist (check the header first); mark future
   work as such.
 - Link anchors: GitHub drops emojis from heading ids (`## 🚀 2. Build` →

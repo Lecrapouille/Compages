@@ -159,7 +159,7 @@ Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels.
 
 ## 📚 Documentation
 
-Start with chapters 1 to 3, then open the chapter of the layer you need. Chapters 12 and 13 continue the tutorial up to the large demos.
+Start with chapters 1 to 3, then open the chapter of the layer you need. Chapters 12 to 14 continue the tutorial up to the large demos and the science demos.
 
 | # | Chapter | Contents |
 |---|---------|----------|
@@ -177,6 +177,7 @@ Start with chapters 1 to 3, then open the chapter of the layer you need. Chapter
 | 11 | [Credits](doc/11-Credits.md) | 🙏 Inspirations, third parties |
 | 12 | [Going further](doc/12-Going-Further.md) | 🎓 The calls that matter, step by step |
 | 13 | [Three complete demos](doc/13-Complete-Demos.md) | 🏗 Sweat, an archipelago and flowing water, rebuilt step by step |
+| 14 | [Science with fields](doc/14-Science-With-Fields.md) | 🔬 Heat, waves, fluids, volumes, ideal flow: equations and grids |
 
 Coding agents: [AGENTS.md](AGENTS.md) and the skills of `.claude/skills/`.
 

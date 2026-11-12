@@ -23,7 +23,9 @@ namespace examples
 // ****************************************************************************
 //! \brief Water that flows round what stands in it, by a flow map: the
 //! technique of Portal 2 (A. Grimes, "Making and Using Non-Standard
-//! Textures", GDC 2011; A. Vlachos, "Water Flow in Portal 2", SIGGRAPH 2010),
+//! Textures", GDC 2011; A. Vlachos, "Water Flow in Portal 2", SIGGRAPH 2010;
+//! https://cdn.fastly.steamstatic.com/apps/valve/2011/gdc_2011_grimes_nonstandard_textures.pdf,
+//! https://www.valvesoftware.com/fr/publications),
 //! in a concrete settling pool lit by sodium lamps.
 //!
 //! The flow map is baked on the CPU from the scene (FlowingWater/FlowBake):

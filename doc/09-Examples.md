@@ -224,7 +224,7 @@ The camera is a `Rig`: left drag moves the map, right drag turns it, the wheel z
 
 ## 🔬 13. 11 — Science: fields, computed and shown
 
-Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](06-Renderer-Layer.md#show-a-field-heat-maps-and-coloured-reliefs)).
+Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](06-Renderer-Layer.md#show-a-field-heat-maps-and-coloured-reliefs)). [Chapter 14](14-Science-With-Fields.md) explains each demo: its equation, its loop on the grid, its calls.
 
 | Demo | Idea | Picture |
 |------|------|---------|

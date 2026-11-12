@@ -29,6 +29,20 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 - `10e_Archipelago` is a new take on Chréage, the mindscape of Idriss J. Aberkane ("Mind Ergonomy for the Knowledge Economy", PhD thesis, 2016, chapter 11; the WebGL proof of concept by Gabriel Uribe, first made with Unity, then taken up by Stigmee). Its contents and their graph come from [IslandedBrowser](https://github.com/Lecrapouille/IslandedBrowser) (bookmarks of Firefox grouped by similarity, then a force directed layout). Its islands follow "Polygonal Map Generation for Games" (Amit Patel, Red Blob Games, 2010), as the thesis does. The relief follows the stream power law with uplift as in "Large Scale Terrain Generation from Tectonic Uplift and Fluvial Erosion" (Cordonnier, Braun, Cani, Benes, Galin, Peytavie, Guérin, 2016), solved by the implicit scheme of Braun and Willett (2013), with the pits filled by the priority flood of Barnes, Lehman and Mulla (2014). The waves of the sea are Gerstner waves as in "Effective Water Simulation from Physical Models" (Mark Finch, GPU Gems 1, 2004). The pictures of grass, sand and rock come from ambientCG (CC0). The rivers widen as Leopold and Maddock (1953) measured, and meander with the wavelength of Leopold and Wolman (1960). The flight of `RigController::flyTo` follows "Smooth and efficient zooming and panning" (Jarke J. van Wijk and Wim A. A. Nuij, 2003), as d3-zoom does.
 - `10d_EarthMoon` wears NASA pictures (public domain): the Blue Marble of the Earth (Scientific Visualization Studio, [svs.gsfc.nasa.gov/2915](https://svs.gsfc.nasa.gov/2915)) and the colour map of the Moon from the Lunar Reconnaissance Orbiter Camera (CGI Moon Kit, [svs.gsfc.nasa.gov/4720](https://svs.gsfc.nasa.gov/4720)). The reversed depth follows the article "Depth Precision Visualized" (Nathan Reed) and the logarithmic depth example of three.js.
 
+**Techniques of games and papers, rebuilt in the demos**
+
+The demos rebuild published techniques from the papers and talks below, with code, pictures and scenes of their own: no asset, level or look of the games is copied.
+
+- `10f_FlowingWater` — the flow maps of Portal 2, by Valve:
+  - Alex Grimes, "Making and Using Non-Standard Textures", GDC 2011 ([PDF](https://cdn.fastly.steamstatic.com/apps/valve/2011/gdc_2011_grimes_nonstandard_textures.pdf)): baking a flow map from the level (footprint, upwellings, vortices, deflection, slowing at the edges, foam), the noise that offsets the phase, the two phases, the foam distorted by the ripples, a flow that reacts to the game;
+  - Alex Vlachos, "Water Flow in Portal 2", SIGGRAPH 2010 ([PDF](http://www.valvesoftware.com/publications/2010/siggraph2010_vlachos_waterflow.pdf)): the shader of the flowing water;
+  - every publication of Valve: [valvesoftware.com/publications](https://www.valvesoftware.com/fr/publications).
+- `10e_Archipelago` — Gerstner waves: M. Finch, "Effective Water Simulation from Physical Models", GPU Gems 1, chapter 1 (NVIDIA, 2004); erosion: G. Cordonnier et al., "Large Scale Terrain Generation from Tectonic Uplift and Fluvial Erosion" (Eurographics 2016), J. Braun and S. Willett (Geomorphology 2013), R. Barnes et al., "Priority-Flood" (Computers & Geosciences 2014); polygon maps: A. Patel ([Red Blob Games](https://www.redblobgames.com/maps/terrain-from-noise/)).
+- `10c_SweatAndDecals` — the head and the decals of the three.js `webgl_decals` example (Lee Perry-Smith head, CC BY 3.0); normal mapping without tangents: C. Schüler, "Followup: Normal Mapping Without Precomputed Tangents" (2013).
+- `11e_Smoke` — J. Stam, "Stable Fluids", SIGGRAPH 1999.
+- `11d_BimetalBeam` — S. Timoshenko, "Analysis of Bi-Metal Thermostats", J. Opt. Soc. Am. 11, 1925.
+- `11f_Volume` — marching tetrahedra (A. Doi and A. Koide, IEICE 1991); emission and absorption: N. Max, "Optical Models for Direct Volume Rendering" (IEEE TVCG 1995).
+
 ---
 
 ## 📦 3. Third-party libraries

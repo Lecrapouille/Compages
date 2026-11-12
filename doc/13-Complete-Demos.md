@@ -20,6 +20,17 @@ Each part follows the code: one step, the file it lives in, the lines that matte
 
 A head sweats. Drops form in the pores, run down the skin, leave a wet trail, and wash away the stickers (**decals**) you paint on it. Nothing is simulated in 3D: everything happens in textures laid on the skin.
 
+```mermaid
+flowchart LR
+    HEAD["head mesh<br/>(glTF)"] -->|"drawn into its UV map"| F["1 forces<br/>slope in texels"]
+    F --> W["2 water<br/>ping-pong, N steps"]
+    CLICK["click"] --> DEC["3 decal<br/>box projected"]
+    W --> WASH["4 wash<br/>ping-pong"]
+    DEC --> WASH
+    W --> SKIN["skin shader<br/>drops, wet skin"]
+    WASH --> SKIN
+```
+
 ### Step 1 — Load the head and keep its triangles
 
 ```cpp
@@ -66,7 +77,22 @@ Drawn into a 256 x 256 texture, each pixel of this pass is one texel of the skin
 
 ### Step 4 — The force pass: which way is down, in texels
 
-Gravity along the skin is the part of gravity that is not along the normal. The water moves in texels, so the slope must be written in the frame of the UV map. In this pass, `dFdx(vWorldPos)` is the piece of skin one texel to the right covers, and `dFdy` the one above: the two tangents of the map.
+Gravity along the skin is the part of gravity $\mathbf{g}$ that is not along the normal $\mathbf{n}$:
+
+```math
+\mathbf{s} = \mathbf{g} - (\mathbf{g}\cdot\mathbf{n})\,\mathbf{n}
+```
+
+The water moves in texels, so the slope must be written in the frame of the UV map. In this pass, $\mathbf{p}_u$ = `dFdx(vWorldPos)` is the piece of skin one texel to the right covers, and $\mathbf{p}_v$ = `dFdy` the one above: the two tangents of the map. We want $(a, b)$ with $\mathbf{s} \approx a\,\mathbf{p}_u + b\,\mathbf{p}_v$, the best fit (least squares):
+
+```math
+\begin{pmatrix} \mathbf{p}_u\cdot\mathbf{p}_u & \mathbf{p}_u\cdot\mathbf{p}_v \\ \mathbf{p}_u\cdot\mathbf{p}_v & \mathbf{p}_v\cdot\mathbf{p}_v \end{pmatrix}
+\begin{pmatrix} a \\ b \end{pmatrix}
+=
+\begin{pmatrix} \mathbf{s}\cdot\mathbf{p}_u \\ \mathbf{s}\cdot\mathbf{p}_v \end{pmatrix}
+```
+
+A 2 × 2 system, solved by its determinant:
 
 ```glsl
 vec3 pu = dFdx(vWorldPos);
@@ -113,7 +139,13 @@ Where a drop runs, the paint is read from upstream (`uv - flow * dt`): it is car
 
 ### Step 8 — The drops, drawn round
 
-The skin shader looks at the 5 x 5 texels around each pixel. Each drop is a small round cap at its place, its radius the cube root of its water. Caps of nearby drops add up, so drops that touch merge. A drop is darker, a sharp mirror of the sun and of a window of light above the viewer, with the Fresnel rim of water (2 %).
+The skin shader looks at the 5 x 5 texels around each pixel. Each drop is a small round cap at its place, its radius the cube root of its water $V$ (a volume grows as the cube of a length), and its height a paraboloid:
+
+```math
+r = 1.2\,V^{1/3}, \qquad z(\mathbf{d}) = 0.45\,r\left(1 - \frac{|\mathbf{d}|^2}{r^2}\right)
+```
+
+ Caps of nearby drops add up, so drops that touch merge. A drop is darker, a sharp mirror of the sun and of a window of light above the viewer, with the Fresnel rim of water (2 %).
 
 ### The frame, in order
 
@@ -177,6 +209,17 @@ Land makeLand(Recipe const& p_recipe, Progress const& p_progress)
 }
 ```
 
+```mermaid
+flowchart LR
+    R["Recipe<br/>graph + seed"] --> C["cells<br/>(Voronoi)"]
+    C --> I["islands<br/>round the graph"]
+    I --> S["sea, regions"]
+    S --> E["relief<br/>uplift vs erosion"]
+    E --> RV["rivers, links"]
+    RV --> P["patches<br/>mesh + picture"]
+    P -->|"main thread"| GPU["Scene"]
+```
+
 The same seed gives the same map: Try it → Seed, Erosion steps, Generate.
 
 ### Step 2 — Cells: a Voronoi diagram on a `Grid2D`
@@ -205,7 +248,13 @@ The land is not drawn by hand. It grows by a simple geological model on the grap
 
 `dh/dt = U - K A^½ S`
 
-It cuts faster where a river drains more land (A) and where it is steeper (S). One step is 40 000 years, solved exactly from the sea upward (Braun and Willett 2013): a cell needs only the new height of the cell it drains to. Pits are filled first (**priority flood**, Barnes et al. 2014: a lake overflows at its lowest pass), and the slopes creep.
+It cuts faster where a river drains more land (A) and where it is steeper (S). One step is 40 000 years, solved exactly from the sea upward (Braun and Willett 2013): a cell $i$ needs only the new height of the cell $r$ it drains to, at a distance $L$:
+
+```math
+h_i^{t+\Delta t} = \frac{h_i^{t} + U\,\Delta t + F\,h_r^{t+\Delta t}}{1 + F}, \qquad F = \frac{K\,\Delta t\,\sqrt{A_i}}{L}
+```
+
+No step is too long for it (it is implicit), which is why 40 000 years at once work. Pits are filled first (**priority flood**, Barnes et al. 2014: a lake overflows at its lowest pass), and the slopes creep.
 
 ```cpp
 uplift[c] = UPLIFT * massif * (0.25f + (0.75f * heart)) * (1.0f + (RIDGE * ridge[c]));
@@ -234,7 +283,15 @@ Near the camera, the ground shader adds real pictures of grass, sand and rock (a
 
 ### Step 8 — The sea: one table of swells for the GPU and the CPU
 
-Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` (chapter 12 §5) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. Ten swells are blown by one wind, each with the speed of deep water waves (`omega² = g k`: a swell of 233 m has a period of 12 s). Waves come in groups: the height of each swell follows a noise that drifts at half the speed of the waves.
+Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` (chapter 12 §5) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. For swells of direction $\mathbf{d}_k$, wave number $k_k = 2\pi/\lambda_k$ and amplitude $A_k$:
+
+```math
+\phi_k = k_k\,(\mathbf{d}_k\cdot\mathbf{x}) - \omega_k\,t, \qquad
+\mathbf{x}' = \mathbf{x} + \sum_k Q\,A_k\,\mathbf{d}_k \cos\phi_k, \qquad
+y' = \sum_k A_k \sin\phi_k, \qquad \omega_k^2 = g\,k_k
+```
+
+with $Q = 0.75$ the sharpness of the crests (below 1, a crest never loops). Ten swells are blown by one wind, each with the speed of deep water waves (`omega² = g k`: a swell of 233 m has a period of 12 s). Waves come in groups: the height of each swell follows a noise that drifts at half the speed of the waves.
 
 ```cpp
 inline constexpr std::array SWELLS = { Swell{ 0.80f, 0.60f, 233.0f, 0.062f },
@@ -260,6 +317,23 @@ Boats sail round the islands where the water is deep enough, gulls circle in flo
 📁 `examples/10_Complete/10f_FlowingWater.cpp` and `examples/10_Complete/FlowingWater/`: `Pictures` (the textures), `FlowBake` (the flow map), `Spout` (the jet of the pipe), `Shaders.hpp`
 
 A settling pool of concrete under sodium lamps. The water flows round the pillars, turns in vortices, spreads out of upwellings, and carries crates and a barrel. A pipe spits water into it. The technique is the water of Portal 2: A. Grimes, "Making and Using Non-Standard Textures" (GDC 2011), and A. Vlachos, "Water Flow in Portal 2" (SIGGRAPH 2010). The surface is one flat square: everything moves in its textures.
+
+References: Grimes, GDC 2011 ([PDF](https://cdn.fastly.steamstatic.com/apps/valve/2011/gdc_2011_grimes_nonstandard_textures.pdf)); Vlachos, SIGGRAPH 2010 ([PDF](http://www.valvesoftware.com/publications/2010/siggraph2010_vlachos_waterflow.pdf), the address the GDC talk gives); all of [Valve's publications](https://www.valvesoftware.com/fr/publications). The demo rebuilds the technique with its own code, pictures and scene; more credits in [chapter 11](11-Credits.md).
+
+```mermaid
+flowchart TB
+    SCENE["meshes of the scene"] -->|"clip ±25 cm, scatter"| FOOT["footprint"]
+    FOOT -->|"two passes"| DIST["distance + direction<br/>away from the walls"]
+    DIST --> CUR["current<br/>slides, bounces"]
+    DIST --> FEAT["upwellings, vortices<br/>× turbulence mask"]
+    CUR --> SUM["flow = (current + features) × open"]
+    FEAT --> SUM
+    SUM --> FOAM["foam"]
+    SUM --> PACK["Field&lt;Vector4f&gt;<br/>RG flow, B foam, A open"]
+    FOAM --> PACK
+    PACK -->|"Texture::fromField"| GPU["water shader"]
+    PACK -->|"sample()"| CPU["crates, barrel"]
+```
 
 ### Step 1 — The scene and its pictures
 
@@ -324,7 +398,15 @@ const Vector2f push = feature.vortex ? (Vector2f(-out.y, out.x) * feature.spin) 
 const Vector2f added = push * (feature.strength * bump(x));      // bump = x (1 - x²)², scaled to 1
 ```
 
-The vortex is the cross product of the spreading with the up vector. The upwellings are much larger than the vortices: the interesting motion is where they meet. They count where a **turbulence mask** lets them (painted in the paper, a slow noise here). A left click on the water adds one; the jet of the pipe adds one where it falls.
+With $x = r / R$ and $\hat{\mathbf{r}}$ the direction from the centre:
+
+```math
+\text{bump}(x) = \frac{x\,(1 - x^2)^2}{0.2862}, \qquad
+\mathbf{v}_{\text{up}} = S\,\text{bump}(x)\,\hat{\mathbf{r}}, \qquad
+\mathbf{v}_{\text{vortex}} = \pm S\,\text{bump}(x)\,(\hat{\mathbf{y}} \times \hat{\mathbf{r}})
+```
+
+(0.2862 is the top of $x(1-x^2)^2$, at $x = 1/\sqrt5$.) The vortex is the cross product of the spreading with the up vector. The upwellings are much larger than the vortices: the interesting motion is where they meet. They count where a **turbulence mask** lets them (painted in the paper, a slow noise here). A left click on the water adds one; the jet of the pipe adds one where it falls.
 
 ### Step 6 — Foam, and the texture
 
@@ -344,7 +426,19 @@ A picture moved along the flow for a time `t` is read at `p - flow * t`. It can 
 
 A noise offsets the phase of each pixel, so they do not all start again at once. Try it → "2. Phase offset by noise": the edges between pixels that started again and the others **crawl** over the surface (in red).
 
-The cure: read the picture twice, half a cycle apart, and blend them by the same phase. Each layer starts again while its weight is zero. Try it → "3. Two phases blended".
+The cure: read the picture twice, half a cycle apart, and blend them by the same phase. Each layer starts again while its weight is zero. Try it → "3. Two phases blended". With $T$ the cycle, $\nu(\mathbf{p})$ the noise and $\mathbf{f}$ the flow:
+
+```math
+\varphi_0 = \operatorname{fract}\!\left(\frac{t}{T} + \nu\right), \quad
+\varphi_1 = \operatorname{fract}\!\left(\varphi_0 + \tfrac12\right), \quad
+w = |2\varphi_0 - 1|
+```
+
+```math
+C(\mathbf{p}) = (1 - w)\;\text{tex}\big(\mathbf{p} - \mathbf{f}\,(\varphi_0 - \tfrac12)\,T\big) + w\;\text{tex}\big(\mathbf{p} - \mathbf{f}\,(\varphi_1 - \tfrac12)\,T\big)
+```
+
+When layer 0 jumps ($\varphi_0$ goes from 1 to 0), $w = 1$: it is invisible.
 
 ```glsl
 float offset = noise.r;
@@ -363,7 +457,12 @@ The ripples flow first. Then they bend the reading of the foam: the foam rides t
 
 ### Step 9 — The CPU reads the same field
 
-The crates and the barrel move with `Field::sample()` where they are, the bilinear value the GPU reads too. They turn with half the **curl** of the flow (the spin of a small body in a fluid). The walls push them back by the distance and the direction of step 3. They also send their places to the shader, which turns the water round them: the flow reacts to the game, like the emancipation grids of the paper.
+The crates and the barrel move with `Field::sample()` where they are, the bilinear value the GPU reads too. They turn with half the **curl** of the flow (the spin of a small body in a fluid), measured by central differences on the field:
+
+```math
+\omega = \frac{\partial f_z}{\partial x} - \frac{\partial f_x}{\partial z}, \qquad \dot\theta = \tfrac12\,\omega
+```
+ The walls push them back by the distance and the direction of step 3. They also send their places to the shader, which turns the water round them: the flow reacts to the game, like the emancipation grids of the paper.
 
 ### Step 10 — The pipe
 

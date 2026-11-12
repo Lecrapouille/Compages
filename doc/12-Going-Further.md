@@ -40,6 +40,16 @@ material.textures = { { .sampler = "surfaceMap", .texture = p_picture } };
 return m_scene.assets().addMaterial(material.name, std::move(material));
 ```
 
+```mermaid
+flowchart LR
+    VS["vertex shader<br/>of the PBR shader"] --> DEF["hook deform<br/>(§5: yours, or none)"]
+    DEF --> RAST["triangles<br/>to pixels"]
+    RAST --> FS["fragment shader<br/>of the PBR shader"]
+    FS --> MAIN["hook main<br/>(yours)"]
+    MAIN --> OUT["oColor"]
+    LIB["shade() applyFog() present()<br/>sun, lamps, shadow, fog"] -.-> MAIN
+```
+
 Your `main()` sees what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, and the functions `shade(base, normal, position)`, `applyFog(colour, position)` and `present(colour)`. It writes `oColor`. Here, a picture projected along the three axes and blended by the normal (**triplanar mapping**): long walls need no texture coordinates.
 
 ```glsl
@@ -211,6 +221,8 @@ COMPAGES_TRY(m_scene.show(m_plate, m_temperature, m_look));     // each frame, n
 
 `10f` shows its flow as arrows with the same call (Try it → Arrows), and its floating crates read the flow where they are with `sample()`.
 
+`sample()` mixes the four points round a place (bilinear interpolation), and a `CurvilinearGrid` places each point freely, fitted round a shape. [Chapter 14 §0](14-Science-With-Fields.md#-0-fields-in-five-minutes) gives the formulas, and the rest of chapter 14 the physics of the `11_Science` demos.
+
 ---
 
 ## 🚚 7. A field sent to a shader
@@ -251,6 +263,13 @@ for (int i = 0; i < steps; ++i)
     }
     m_fluid.swap();
 }
+```
+
+```mermaid
+flowchart LR
+    A["texture A<br/>(current)"] -->|"read"| P["pass"]
+    P -->|"write"| B["texture B<br/>(next)"]
+    B -. "swap(): B is current" .-> A
 ```
 
 - `drawable["name"] = value` sets a uniform or binds a texture by the name of its sampler.
