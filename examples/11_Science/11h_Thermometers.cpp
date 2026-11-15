@@ -81,10 +81,11 @@ compages::Status Thermometers::setUp()
     m_next = m_temperature;
 
     const std::filesystem::path font = dataPath("fonts/DejaVuSans.ttf");
-    if (!font.empty())
+    if (font.empty())
     {
-        m_scene.font(font);
+        return compages::failure("fonts/DejaVuSans.ttf is missing from external/Compages-data/");
     }
+    m_scene.font(font);
     m_scene.background(0.55f, 0.6f, 0.66f);
     m_scene.camera().position(0.0f, 2.0f, 2.6f).add<compages::world::Orbit>(
         compages::Vector3f(0.0f, 0.75f, -0.6f));
