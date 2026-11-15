@@ -28,15 +28,32 @@ scene.draw(frame);                       // = update(frame) + render()
 - Colours given to a Scene (looks, lights, ambient, fog) are sRGB; MaterialInstance and the
   snapshot hold linear (`srgbToLinear`, done in Looks and the extractor). Shaders end with
   `present()` = exposure + tone curve (`environment().tone_mapping`, `.exposure`) + sRGB encode.
+- Screen effects per view: `camera.set(ScreenEffects{ .filters = { { .name, .glsl, .values } }, .bloom = {
+  .enabled, .threshold, .strength } })` (`Components/ScreenEffects.hpp`). The view is then drawn into an
+  RGBA16F picture (`src/Renderer/Render/ScreenPost`), `present()` stays linear (`linearTarget`), the
+  last pass does tone curve + sRGB. A filter is `vec3 effect(vec2 uv)` reading `screenColor`,
+  `screenDepth` (reversed), `screenSize`. Shaders writing a screen colour use `screen(c)` (inverse
+  tone curve) so it stays the same; demos `12a_ScreenFilters`, `12b_Bloom`.
 - Own material: `auto pbr = shaders::pbr();` (`ShaderPair`, `Procedural/ShaderLib.hpp`; also `lit()`,
   `unlit()`, `depth()`, `normals()`, `shadow()`, `lampShadow()`), hooks `pbr.vertex().hook("deform",
-  "void deform(inout vec4 world, inout vec3 normal) {...}")` and `pbr.fragment().hook("main", ...)`
-  (writes `oColor`; `shade`, `applyFog`, `present`... included; library pieces `<compages/*.glsl>`).
-  `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures =
-  { { .sampler, .texture } }` (units 2-6, bound by the Renderer), `assets().addMaterial`, then
+  "void deform(inout vec4 world, inout vec3 normal) {...}")`, `pbr.fragment().hook("surface",
+  "void surface(inout Surface s) {...}")` (preferred: change albedo/normal/metallic/roughness/
+  emission/opacity, the Renderer lights it, fogs it, tone-maps it), `hook("light", "vec3 light(Surface
+  s) {...}")` for another model of light (cel shading `06o`; default `sceneLight(s)`, linear, before
+  emission/fog) and `hook("main", ...)` only for unlit or multi-lighting looks (writes `oColor`;
+  `instanceSurface()`, `surface(s)`, `light(s)`, `toScreen(s, lit)`,
+  `shade`, `applyFog`, `present`... included; library pieces `<compages/*.glsl>`).
+  `assets().createMaterial(name, { .family, .shaders, .state, .see_through, .textures = { {
+  .sampler, .texture } }, .buffers = { { .block, .buffer } } })` → MaterialId (units 2-6, bound by
+  the Renderer; `Material::create` + `addMaterial` is the two-step form), then
   `scene.look(entity, materialId)`; `scene.reshape(entity, mesh)` replaces a mesh in place. The
   Renderer sets family uniforms only if the shader reads them (`src/Renderer/Render/Offer.hpp`).
-  Demos: `10e_Archipelago` (Sea.cpp), `10c_SweatAndDecals`.
+  Demos: `10e_Archipelago` (Sea.cpp), `10c_SweatAndDecals`, `11d_BimetalBeam` (surface + emission).
+- `scene.debug()` (DebugDraw, one frame): line, ray, box, polyline, arrow, frame(pose, length),
+  frustum(pose, lens, aspect, length, colour) (06j_SplitViews).
+- Helps for the operator: `RenderFlags::Helper` on a MeshRenderer; a camera with
+  `world::Camera::sees_helpers = false` (a robot sensor) skips them, grid/axes/bounds and
+  `scene.debug()` lines (left queued for the next view).
 - Show a field: `scene.show(Field<float>, FieldLook{ .colors = ColorMap::Viridis|Inferno|Coolwarm|
   Terrain|Grey, .low, .high, .relief, .lit }, name)` → entity with a `FieldView` component;
   `scene.show(entity, field, look)` writes new values (same grid size); GPU values:
@@ -70,7 +87,10 @@ scene.draw(frame);                       // = update(frame) + render()
   glClipControl 0..1, compares mirrored in the backend). Drawing over a Scene picture with its depth:
   open a pass with `reversed_depth = true`, use `lastCamera().reversed_projection` (10b_DoomLike particles).
   Planet scales: floating origin (double sim outside in `Vector3m`, write `toMetres(p - origin)`), `10d_EarthMoon`.
-- `scene.renderToFile("out.png", w, h)` (after update); `Compages-headless` makes an EGL
+- `RenderTarget::create(w, h)` + `scene.render(camera, target)`: off-screen colour + Depth32F,
+  `readColor()` RGBA8 top row first, `readDepth(lens)` metres along the axis (+inf = nothing),
+  `resize()` no-op on same size (robot cameras, thumbnails).
+- `scene.renderToFile("out.png", w, h)` (after update, built on RenderTarget); `Compages-headless` makes an EGL
   context with no surface; `gpu::Texture::saveFile(path)` writes a 2D R8/RGB8/RGBA8 PNG.
 - Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF
   with joints); `assets().loadFile(path)` → `PrefabId`, `instantiate(id)`;

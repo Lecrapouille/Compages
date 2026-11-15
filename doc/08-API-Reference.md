@@ -58,6 +58,7 @@ For a visual program, initialize a graphics context and the GPU, create resource
 | ping-pong | `PingPong<T>::from(data)`: `current()`, `next()`, `swap()`; `dispatch(program, state, { .read = "In", .write = "Out" })`; `TexturePingPong::create(desc)`: `current()` (texture), `next()` / `currentTarget()` (framebuffers), `swap()` |
 | read back | `buffer.download()` after the right barrier; `texture.read()` |
 | save a picture | `texture.saveFile("out.png")` (2D, R8 / RGB8 / RGBA8) |
+| measure a frame | `frameStatistics()` (draws, vertices, passes, dispatches), `resetFrameStatistics()`; GPU time: `beginGpuTimer()` … `endGpuTimer()`, then `gpuMilliseconds()` (the last frame ready, read without waiting; negative before) |
 | after ImGui | `forgetRenderState()` |
 
 GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawable`; `upload()` does it for a `Buffer` you manage yourself.
@@ -100,7 +101,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | shadows | `environment().shadows` (sun), `PointLight::shadows` (one lamp), `environment().shadow_resolution`, `environment().lamp_shadow_resolution` |
 | primitives | `scene.box(name, look)` `sphere` `plane` `cylinder` `cone` `pyramid` |
 | looks | `color(r, g, b)` `texture("a.jpg")` `unlit(r, g, b)` `normals()` `depth(near, far)` `seeThrough(look, opacity)` |
-| own material | `auto pbr = shaders::pbr(); pbr.vertex().hook("deform", glsl); pbr.fragment().hook("main", glsl);` then `Material::create(name, { .family, .shaders, .state, .see_through })`, `material.textures = { { .sampler, .texture } }`, `assets().addMaterial(name, material)`, `scene.look(entity, materialId)` |
+| own material | `auto pbr = shaders::pbr(); pbr.vertex().hook("deform", glsl); pbr.fragment().hook("surface", glsl);` (`"light"` for another model of light, `"main"` for an unlit picture) then `assets().createMaterial(name, { .family, .shaders, .state, .see_through, .textures = { { .sampler, .texture } }, .buffers = { { .block, .buffer } } })` → `MaterialId`, `scene.look(entity, materialId)` |
 | new geometry | `scene.reshape(entity, mesh)` (in place: its copies change too) |
 | show a field | `scene.show(field, FieldLook{ .colors, .low, .high, .relief, .lit }, name)` → entity; `scene.show(entity, field, look)` for new values; `ColorMap::Viridis` `Inferno` `Coolwarm` `Terrain` `Grey` |
 | field on the GPU | `scene.show(grid, storageBuffer, look, name)`, `scene.show(entity, storageBuffer, look)`: a `StorageBuffer<float>` a compute shader writes |
@@ -109,11 +110,13 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | curves over time | `Chart::create(scene, desc, name)` with `desc.scale` set to `ChartScale::Fixed` or `ChartScale::FollowValues`, `series(color)`, `add(series, time, value)`, `draw()`, `pixelOf(time, value)`, `applyLook(scene, entity)` |
 | show a volume | `scene.show(Field<float, Grid3D>, look, name)`, `scene.show(entity, volume, look)` |
 | material buffers | `material.buffers = { { .block, .buffer } }`: storage buffers bound by the Renderer |
-| helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)` |
+| helpers | `scene.grid(size, divisions)` `scene.axes(length)` `scene.showBounds(id, true)`; a mesh as a help: `MeshRenderer::flags = RenderFlags::Helper`; a sensor camera that sees none: `world::Camera::sees_helpers = false` |
 | colours | sRGB in, linear inside: `srgbToLinear(c)`; `environment().tone_mapping` (`Aces`, `Reinhard`, `None`), `environment().exposure` |
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |
 | map camera (`Rig`) | left drag pans, wheel zooms toward the mouse; `RigController::flyTo(target, distance)`, `flying()`, `flight_pace` |
 | picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
+| picture of its own (a robot camera) | `RenderTarget::create(w, h)`, `scene.render(camera, target)`, `target.color()` `depth()` `readColor()` (RGBA8, top row first) `readDepth(lens)` (metres, top row first, +inf = nothing) `saveColor(path)` `resize(w, h)` |
+| filters, bloom of one view | `camera.set(ScreenEffects{ .filters = { { .name, .glsl = "vec3 effect(vec2 uv) {...}", .values = { { "uniform", v } } } }, .bloom = { .enabled, .threshold, .strength } })`; GLSL reads `screenColor` `screenDepth` `screenSize`; a screen colour of your own: `screen(toSrgb(c))` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |
 | prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |
 | frame | `scene.draw(ViewFrame)`, or `update` then `render()` / `render(cameraId)` |
@@ -121,7 +124,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | animation | `scene.play(model, "Walk")` `scene.clips(model)` |
 | sky | `scene.skybox({ "+x", "-x", "+y", "-y", "+z", "-z" })` |
 | picking | `scene.pick({ x, y })` |
-| debug lines | `scene.debug()` |
+| debug lines | `scene.debug()`: `.line(a, b, c)` `.ray(o, d, l, c)` `.box(bounds, matrix, c)` `.polyline(points, c)` `.arrow(from, to, c)` `.frame(pose, length)` `.frustum(pose, lens, aspect, length, c)` |
 | text on the picture | `scene.font(file)`, `entity.set(Label{ .text, .color, .pixels, .hide_closer_than })`, `entity.set(Tooltip{ .title, .text, .color, .accent, .background, .opacity, .pixels })`, `camera.set(Caption{ .text, .color, .pixels, .at })` |
 | live texture | `CanvasTexture`: `create`, `setMapping`, `bind`, `paintWorld`, `paintPixelLine`, `fillPixels`, `sync`, `applyLook` |
 
@@ -137,7 +140,7 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 | neighbours | `for (std::size_t n : grid.neighbours4(index))`, `neighbours8(index)` |
 | a grid fitted round a shape | `CurvilinearGrid::create(columns, rows, place(i, j))` → `Result`; same calls as `Grid2D`, plus `low()` `high()`; `Field<T, CurvilinearGrid>` (`<Compages/Fields/CurvilinearGrid.hpp>`) |
 | the cell of a place | `grid.locate(place)` → `GridCell{ i, j, s, t, inside }`; any grid of the plane is a `PlanarGrid` (`<Compages/Fields/PlanarGrid.hpp>`) |
-| values on it | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
+| values on it (a grid with a size of zero or less holds no point: `count()` is 0, `valid()` false) | `Field<T> field(grid, value)`; `field(i, j)` `field[index]` `values()` (contiguous span) `fill(value)` `size()` `grid()` |
 | between the points | `field.sample(place)`: bilinear in its cell, the edge value outside (any `PlanarGrid`) |
 | a volume | `Grid3D{ .columns, .rows, .layers, .origin, .spacing }`, `index(i, j, k)`, `layer(n)`, `neighbours6(index)`; `Field<T, Grid3D> volume(grid, value)`, `volume(i, j, k)`, `volume.sample(Vector3f)` (trilinear) |
 | streamline | `compages::streamline(field, start, step, steps)` → points (`<Compages/Fields/Streamline.hpp>`) |

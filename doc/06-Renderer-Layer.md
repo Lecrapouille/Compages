@@ -73,6 +73,8 @@ scene.showBounds(cube.id(), true);    // the box around the mesh of the cube
 
 `06b_Transforms` uses the three: the axes show the turn of the box, the bounds the size of the cone. `06c_Hierarchy` shows the pivot of a car, `06i_CameraPick` the bounds of the selection, and `08d_RobotArm` the frame of every joint of a robot (Try it hides them).
 
+A camera that stands for a sensor (the eye of a robot) must not see them: set `camera.get<world::Camera>().sees_helpers = false`. It then draws neither these lines nor `scene.debug()`, nor the meshes you mark as helps for the person at the screen (`RenderFlags::Helper` on their `MeshRenderer`: a marker, a gizmo made of boxes). The other views still draw them.
+
 
 ---
 
@@ -112,6 +114,35 @@ map.render(top);         // a minimap
 
 `06j_SplitViews`: a perspective orbit on the left, an orthographic top view on the right. A camera whose viewport covers part of the image clears and draws only this part.
 
+### Screen effects: filters and bloom
+
+Put a `ScreenEffects` component on a camera, and its view goes through filters before it reaches the screen. The Scene then draws that view in linear light into a picture of its own (RGBA16F): `present()` keeps the light linear, the filters run one after the other, then the bloom, and a last pass gives the tone curve and the screen colours. A camera without the component is drawn as before.
+
+```cpp
+camera.set(compages::renderer::ScreenEffects{
+    .filters = { { .name = "Sepia", .glsl = SEPIA, .values = { { "amount", 0.8f } } } },
+    .bloom = { .enabled = true, .threshold = 1.0f, .strength = 0.6f } });
+```
+
+A filter is a function of GLSL, `vec3 effect(vec2 uv)`: the light of the pixel at `uv` (0 to 1 across the view). It reads `screenColor` (the light of the view, or what the previous filter made), `screenDepth` (the depth, reversed: 1 near, 0 far and for the background), `screenSize` (pixels), and its own `uniform float`, set by `values`. A value whose uniform is not in the text is an error.
+
+```glsl
+uniform float amount;
+
+vec3 effect(vec2 uv)
+{
+    vec3 c = texture(screenColor, uv).rgb;
+    float y = dot(c, vec3(0.299, 0.587, 0.114));
+    return mix(c, y * vec3(1.2, 1.0, 0.75), amount);
+}
+```
+
+The **bloom** keeps the light above `threshold` (1 is the white of the screen, after the exposure), makes it half as large up to six times, then enlarges and sums it back: a halo of every size, added with `strength` before the tone curve. An unlit bulb of colour 1 is about seven times the white of the screen in linear light (with ACES), so it blooms.
+
+Colours given for the screen keep their colour with the effects on: the background, unlit looks, the sky, the debug lines and the depth and normals looks go through `screen()`, the inverse of the tone curve. A material of your own that writes a screen colour itself (not through `present()`) should do the same: `oColor = vec4(screen(toSrgb(c)), opacity)`. The text of the names (`Text`) is drawn after the last pass, as it is.
+
+`12a_ScreenFilters` shows three filters on one of two views; `12b_Bloom` lamps at night.
+
 ---
 
 ## 📂 3. Files, the catalog and prefabs
@@ -149,7 +180,7 @@ scene.activeCamera(id);
 
 - The sky (`06h_Skybox`) turns with the camera but never comes closer.
 - `scene.pick({ x, y })` reads the result of the last `render`, pixel counted from the bottom left, like the mouse coordinates (`06i_CameraPick`).
-- `scene.debug()` queues debug lines for the next render, then forgets them (`10a_MvpDemo`).
+- `scene.debug()` queues debug lines for the next render, then forgets them (`10a_MvpDemo`): `line`, `ray`, `box`, `polyline(points, colour)` (a path), `arrow(from, to, colour)` (a force, a speed), `frame(pose, length)` (the axes of a pose), `frustum(pose, lens, aspect, length, colour)` (what a camera sees: `06j_SplitViews` shows the left camera on the map).
 - Ready-made controls, as routines: `Orbit` (right button, wheel; the zoom is logarithmic and glides, Shift is faster), `Fly` (right button to look, WASD, Q, E) and `Rig`. `32b` switches between `Orbit` and `Fly`. `FPSController` keeps you on the ground; it is applied directly, not as a routine.
 - `Rig` is a strategy-game camera, looking at a point of the ground. The left button drags the ground (the grabbed point stays under the mouse), the right or middle button turns, the wheel zooms; W A S D or the arrows move, Q and E turn, R and F zoom, Shift runs. The camera glides to the wanted pose; each frame covers the part `1 - exp(-sharpness * dt)` of the way, so the glide is the same at any frame rate and never overshoots (a `Lerp(a, b, dt * speed)` does both wrong). The logic is in `RigController`, tested without a window.
 
@@ -263,6 +294,36 @@ The library still never makes the context: the program does, then calls
 as the last `update` left it. It waits for the GPU: use it for a report, a
 thumbnail, or a test that compares pictures, not for every frame.
 
+### Draw into a picture of its own: the eye of a robot
+
+A `RenderTarget` is a picture a scene draws into instead of the window: a
+colour picture and a depth picture of one size, kept from frame to frame.
+
+```cpp
+COMPAGES_TRY_ASSIGN(m_eye, compages::renderer::RenderTarget::create(640u, 480u));
+// each frame, or at the rate of the sensor
+scene.render(robot_camera, m_eye);            // opens its pass, clears, draws
+COMPAGES_TRY_ASSIGN(pixels, m_eye.readColor()); // RGBA8, the top row first
+```
+
+`color()` shows it (an ImGui window, a material), `resize(width, height)` does
+nothing when the size has not changed, so a panel may call it each frame.
+`readColor()` waits for the GPU. `renderToFile` is this target written as a PNG.
+A sensor camera should not see what is drawn for the person at the screen:
+set its `sees_helpers` to false ([Helpers](#helpers)).
+
+An RGB-D camera also reads the depth, in metres along the axis of the camera,
+the top row first; +infinity where nothing was drawn:
+
+```cpp
+COMPAGES_TRY_ASSIGN(metres, m_eye.readDepth(robot_camera.get<compages::world::Camera>()));
+```
+
+The GPU keeps the depth reversed and not linear (1 at the near plane, 0 at the
+far one): `readDepth` undoes it with the near and far planes of the lens. A
+camera with `ScreenEffects` (noise, blur of a lens) gives the filtered colour to
+`readColor()`; the depth stays the one of the geometry.
+
 ### Very large scenes: from a rocket to the Moon
 
 Three things let a metre and 384 000 km live in one picture (`10d_EarthMoon`):
@@ -347,16 +408,49 @@ Return here after you can build, update and draw a scene. Choose the tool your p
 
 ### Your own material: hooks of the PBR shader
 
-A look is enough for most objects. When you want your own shader (water, a skin, a heat map) but keep what the Renderer gives (the sun and its shadow, the lamps, the fog, the tone curve), start from its PBR shader and change only what you need. `shaders::pbr()` returns its two stages, as `gpu::ShaderSource` ([shaders made of pieces](04-GPU-Layer.md#shaders-made-of-pieces-shadersource)), with two hooks:
+A look is enough for most objects. When you want your own shader (water, a skin, a heat map) but keep what the Renderer gives (the sun and its shadow, the lamps, the fog, the tone curve), start from its PBR shader and change only what you need. `shaders::pbr()` returns its two stages, as `gpu::ShaderSource` ([shaders made of pieces](04-GPU-Layer.md#shaders-made-of-pieces-shadersource)), with four hooks:
 
 | Hook | Stage | What you write | Default |
 |------|-------|----------------|---------|
 | `deform` | vertex | `void deform(inout vec4 world, inout vec3 normal)`: move a corner and turn its normal, in world space, before the projection | changes nothing |
-| `main` | fragment | the whole `void main()`, which writes `oColor` | the PBR colour |
+| `surface` | fragment | `void surface(inout Surface s)`: change what the surface is (`albedo`, `normal`, `metallic`, `roughness`, `emission`, `opacity`); the Renderer then lights it, adds the fog and the tone curve | changes nothing |
+| `light` | fragment | `vec3 light(Surface s)`: the light on the surface in linear units, before its emission, the fog and the tone curve | `sceneLight(s)`: sun, sky, lamps, shadows |
+| `main` | fragment | the whole `void main()`, which writes `oColor` | lights the surface |
 
-Your `main()` can call every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `shadePbr(albedo, n, worldPos, metallic, roughness)` (the metallic-roughness model of glTF: GGX glint, Smith shadowing, Schlick Fresnel, the ambient light standing for the sky in the glint), `bumpNormal(n, worldPos, uv, tangentNormal)` (a normal map without tangents on the mesh), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
+**Start with `surface`.** It receives what the material instance gives (its colour and picture, its normal map, its metal and roughness) and changes only what it wants. The light stays right without effort: the sun and its shadow, the lamps and their clusters, the fog, the tone curve. It may `discard`. `11d_BimetalBeam` paints its hot metal this way:
 
-`Material::create(name, desc)` compiles the two stages and makes the pipelines. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). `10e_Archipelago` makes its sea this way (`Sea.cpp`):
+```glsl
+void surface(inout Surface s)
+{
+    s.albedo = mix(STEEL, BRASS, vBrass);
+    float glow = smoothstep(350.0, 800.0, vHeat);
+    s.emission = 0.6 * glow * mix(RED, ORANGE, glow);   // light of its own, after the lamps
+}
+```
+
+**Then `light`, for another model of light.** The surface stays what the instance says; only the way the light falls on it changes. `06o_CelShading` draws the sun in flat tones, like a cartoon, with a hard glint:
+
+```glsl
+uniform float tones;   // set by the demo: m_scene.assets().material(id)->program.set("tones", 3.0f)
+
+vec3 light(Surface s)
+{
+    vec3 toSun = normalize(-lightDir);
+    vec3 toEye = normalize(cameraPos - vWorldPos);
+    float sun = max(dot(s.normal, toSun), 0.0) * sunVisibility(s.normal, toSun, vWorldPos);
+    float band = ceil(sun * tones) / tones;                                // flat steps
+    float glint = pow(max(dot(s.normal, normalize(toSun + toEye)), 0.0), 80.0);
+    return s.albedo * (ambient + lightColor * band) + lightColor * step(0.5, glint) * step(0.0, sun - 0.01);
+}
+```
+
+Its black outline is a second material: a shell of each shape, a little larger, drawn inside out (`.cull = CullMode::Front`) with a `main` that writes one dark colour.
+
+The fog, the tone curve and the emission are still added after it. `light` reads `lightDir`, `lightColor`, `ambient`, `cameraPos`, `vWorldPos` and can call `sunVisibility(...)`, `pointLightsContribution(...)`, `shade(...)`, `shadePbr(...)` or `sceneLight(s)` (to change the light of the scene, not replace it).
+
+Replace `main` only for what is not a lit surface: a picture shown as it is, a debug view, several lightings mixed (the water of `10f`). Your `main()` can call `instanceSurface()`, `surface(s)`, `light(s)` and `toScreen(s, lit)` (emission, fog, tone curve, sRGB; the default `main` is `oColor = toScreen(s, light(s))` after the first two), and every piece of the library, already included: `shade(base, n, worldPos)` (sun, sky, lamps), `shadePbr(albedo, n, worldPos, metallic, roughness)` (the metallic-roughness model of glTF: GGX glint, Smith shadowing, Schlick Fresnel, the ambient light standing for the sky in the glint), `bumpNormal(n, worldPos, uv, tangentNormal)` (a normal map without tangents on the mesh), `sunVisibility(...)`, `pointLightsContribution(...)`, `applyFog(colour, worldPos)`, `present(linear)` (tone curve, sRGB), and read `vWorldPos`, `vNormal`, `vUv`, `baseColorMap`, `baseColorFactor`, `opacity`, `cameraPos`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`… listed in `ShaderLib.hpp`).
+
+`assets().createMaterial(name, desc)` compiles the two stages, makes the pipelines and registers the material: it returns its id. `textures` lists the pictures the material reads, by the name of their sampler, and `buffers` the storage buffers it reads, by the name of their block: the Renderer binds them for you. `scene.look(entity, material)` puts the material on an entity (it keeps its colour and its picture). (`Material::create(name, desc)` builds one without registering it.) `10e_Archipelago` makes its sea this way (`Sea.cpp`):
 
 ```cpp
 compages::renderer::shaders::ShaderPair water =
@@ -367,10 +461,9 @@ water.vertex()
 water.fragment()
     .include("archipelago/swells.glsl", swells)
     .hook("main", SURFACE_MAIN);
-compages::renderer::Material surface;
 COMPAGES_TRY_ASSIGN(
-    surface,
-    compages::renderer::Material::create(
+    m_surface_material,
+    p_scene.assets().createMaterial(
         "ArchipelagoSurface",
         { .family = compages::renderer::ShaderFamily::PbrMinimal,
           .shaders = std::move(water),
@@ -382,12 +475,12 @@ COMPAGES_TRY_ASSIGN(
               .cull = compages::gpu::CullMode::Back } }));
 ```
 
-and the ground reads three pictures by name: `map.textures = { { .sampler = "grassMap", .texture = grass }, … }`. The Renderer binds them on the units it leaves free (2 to 6: five at most).
+and the ground reads three pictures by name: `.textures = { { .sampler = "grassMap", .texture = grass }, … }`. The Renderer binds them on the units it leaves free (2 to 6: five at most).
 
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when your shader reads them: a `main()` without light is fine.
 - `scene.reshape(entity, mesh)` gives an entity new geometry in place (its copies change with it): the tiles of the map when a new land is made.
 - The shadow of the sun has the shape of the picture: a material whose `deform` hook is replaced draws its own shadow (`Material::casts_shadow`). It casts no shadow of a lamp (the lamp pass has no hooks). What the camera does not see still casts its shadow of the sun into the picture: the snapshot keeps it for the shadow pass only.
-- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `material.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
+- A hook can read data of the CPU: put it in a storage buffer and give it to the material, `.buffers = { { .block = "Beam", .buffer = line.handle() } }`. `11d_BimetalBeam` bends a straight strip on the middle line its model computes each frame.
 
 ### Show a field: heat maps and coloured reliefs
 
@@ -513,6 +606,8 @@ The folders `06_Scene/` (compose a scene) and `08_Assets/` (load files) follow t
 | `06l_CanvasPaint` | painting on a live texture |
 | `06m_ManyLights` | two hundred lamps: clustered lighting |
 | `06n_VolumetricFog` | fog that the light crosses: shafts, halos, shadows in the air |
+| `06o_CelShading` | another model of light (hook `light`): cartoon tones and an outline |
+| `12a_ScreenFilters`, `12b_Bloom` | filters of the picture of one view, bloom |
 | `11a_HeatPlate` | a field shown as colours and relief |
 | `11b_RippleTank` | a field computed and drawn on the GPU |
 | `11c_FieldProbe` | the value of a field under the mouse |

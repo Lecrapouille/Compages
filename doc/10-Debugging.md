@@ -57,6 +57,12 @@ When a trace of the same name exists, apitrace writes `.1.trace`, `.2.trace`… 
 
 ---
 
+## ⏱️ Slow frames: CPU or GPU?
+
+The gallery shows two times above the number of draws. **CPU** is what the program spends in `draw()` sending the work (extraction, sorting, uniforms, draw calls). **GPU** is what the card spends doing it (`gpu::beginGpuTimer()` and `endGpuTimer()` around the draw, read a few frames later by `gpu::gpuMilliseconds()` without making the CPU wait). A high CPU time with a low GPU time asks for fewer draw calls (instancing); the other way round, for lighter shaders or fewer pixels. Compare the same demo before and after a change, on the same machine: llvmpipe (no GPU) gives times, not a measure of a card.
+
+---
+
 ## 📸 4. RenderDoc: one frame in detail
 
 Capture single frames: shaders, render targets, draw calls. Target: `build/linux-gcc-debug/bin/Compages-examples`.

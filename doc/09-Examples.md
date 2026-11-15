@@ -173,11 +173,12 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06g_TextureGallery` | nine images of the assets repository | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06g_TextureGallery.png" alt="06g_TextureGallery" width="200"> |
 | `06h_Skybox` | six faces; the sky turns with the camera | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06h_Skybox.png" alt="06h_Skybox" width="200"> |
 | `06i_CameraPick` | orbit or fly, click to select: the cube changes colour and shows its bounds | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06i_CameraPick.png" alt="06i_CameraPick" width="200"> |
-| `06j_SplitViews` | one world, two cameras, one update | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png" alt="06j_SplitViews" width="200"> |
+| `06j_SplitViews` | one world, two cameras, one update; the map draws what the left camera sees (`debug().frustum()`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png" alt="06j_SplitViews" width="200"> |
 | `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
 | `06m_ManyLights` | two hundred coloured lamps in one picture: the Renderer sorts them into clusters (tiles × depth slices), each pixel reads the lamps of its cluster | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png" alt="06m_ManyLights" width="200"> |
 | `06n_VolumetricFog` | fog that the light crosses: sun shafts through the slats of a roof, halos and shadows of lamps in the air (froxels: a 3D picture that follows the camera, filled by two compute shaders) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png" alt="06n_VolumetricFog" width="200"> |
+| `06o_CelShading` | another model of light: the hook `light` of the PBR shader draws the sun in flat tones (cel shading); a black outline from a shell drawn inside out | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_CelShading.png" alt="06o_CelShading" width="200"> |
 
 ---
 
@@ -252,9 +253,18 @@ Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on 
 | `11g_FlowAroundCylinder` | the wind around a turning column: a `Field<Vector2f>` as arrows (`scene.show(field, ArrowLook)`), streamlines (`compages::streamline()`), the pressure under them; the Magnus effect; a regular `Grid2D` or a `CurvilinearGrid` fitted round the column (an O-grid) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11g_FlowAroundCylinder.png" alt="11g_FlowAroundCylinder" width="200"> |
 | `11h_Thermometers` | follow values over time: two thermometers on a heated plate, their curves on a board (`Chart`, a `CanvasTexture`); a click moves one (`scene.probe`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11h_Thermometers.png" alt="11h_Thermometers" width="200"> |
 
+## ✨ 14. 12 — Effects: filters of the picture
+
+A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), passed through its filters and its bloom, and only then given the tone curve ([Renderer, screen effects](06-Renderer-Layer.md#screen-effects-filters-and-bloom)). Each view chooses: another camera stays as it was.
+
+| Demo | Idea | Picture |
+|------|------|---------|
+| `12a_ScreenFilters` | a filter is `vec3 effect(vec2 uv)` in a few lines; three in a row (outlines from the depth, sepia, vignette) on the right view only | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12a_ScreenFilters.png" alt="12a_ScreenFilters" width="200"> |
+| `12b_Bloom` | light brighter than the screen spills round it: bulbs at night, `bloom = { .enabled, .threshold, .strength }` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png" alt="12b_Bloom" width="200"> |
+
 ---
 
-## 🪟 14. Window, ImGui and physics
+## 🪟 15. Window, ImGui and physics
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.

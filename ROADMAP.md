@@ -224,6 +224,92 @@ most complex: each step reuses what the ones before it built.
       2015): signed distance fields of the meshes, on the sparse 3D grid of
       P3
 
+## After the audit of 2026-11-15
+
+From the simplest to the most complex. Each step must make a demo shorter
+or possible. Refused: a `GpuField` type (a `Grid` and a `StorageBuffer`
+already do it), a compute graph, a `gpu::run` beside `dispatch`, clusters
+built on the GPU, a benchmark tree compared with other engines, one C++
+class per screen effect.
+
+- [x] Grids with a size of zero or less hold no point (`count()` 0,
+      `valid()`): a `Field` on a wrong grid is empty, not huge
+- [x] `LightClusters::build()` keeps its memory from frame to frame
+- [x] Fog sampler always on its unit (Mesa refused the draws: glTF duck
+      test, first frame of every `11_Science` demo)
+- [x] Helps for the operator: `RenderFlags::Helper`,
+      `world::Camera::sees_helpers` (a robot camera does not see them)
+- [x] Hook `surface` of the PBR shader (`Surface`: albedo, normal,
+      metallic, roughness, emission, opacity); `10f` concrete, `11d` metal
+- [x] `AssetManager::createMaterial(name, desc)`, `.textures` and
+      `.buffers` in `MaterialDesc`
+- [x] CPU and GPU time of a frame (`gpu::beginGpuTimer()`,
+      `gpuMilliseconds()`), shown by the gallery
+- [x] RobotIK: its teach markers marked `Helper`, no more hide/show in
+      `RenderedCamera::capture()`; `Texture::create` / `fromFile` in place of
+      the removed `allocate` / `loadFile` (RobotIK builds and passes its tests
+      on this Compages)
+- [x] Hook `light` of the PBR shader (`vec3 light(Surface s)`, default
+      `sceneLight(s)`; `toScreen(s, lit)` after it), checked by
+      `06o_CelShading` (flat tones, an outline from a shell inside out)
+- [x] A render target of the `Scene` (`RenderTarget`: colour, depth,
+      `resize`, `readColor` top row first), used by `renderToFile()`
+- [x] RobotIK: its own `RenderTarget` struct replaced by Compages' one (3D
+      view, model preview, robot cameras, `--screenshot` by `saveColor`);
+      the camera frames written from the CPU keep a plain texture
+      (`ShownPicture`); `Screenshot.cpp` and its stb copy are gone
+- [x] Colour in linear light until a last pass, for a view that has
+      screen effects (`linearTarget`: `present()` keeps the light linear;
+      `screen()` turns a screen colour back into light, so unlit looks,
+      sky, lines and background keep their colour)
+- [x] Screen filters per view: `ScreenEffects` on a camera, a filter is
+      `vec3 effect(vec2 uv)` reading `screenColor`, `screenDepth`,
+      `screenSize`; bloom; chapter `12_Effects` (`12a_ScreenFilters`,
+      `12b_Bloom`)
+- [x] Metric depth read back (`RenderTarget::readDepth(lens)`)
+- [ ] Entity ids in the main pass (segmentation for RobotIK, `pick()` to
+      the pixel)
+- [x] Diagnostic primitives in `DebugDraw`: `polyline`, `arrow`, `frame`
+      (a pose), `frustum` (what a camera sees, in `06j_SplitViews`)
+- [ ] Normals written by the main pass, SSAO; then history per view, TAA
+- [ ] Vector field on the GPU and instanced arrows; automatic instancing
+
+### What blocks RobotIK
+
+What RobotIK still cannot do, or cannot do simply, with this Compages:
+
+- [ ] **Its lock points to an old Compages.** `external/versions.lock` names
+      2c39088 and `external/Compages` is an older clone (cd14d14): a plain
+      `make` fails (`Vector3g`, `Quatd`, `Posed`, `yaw` missing). It builds
+      only with `make CompagesProject.PATH=$HOME/MyGithub/Compages`. To do:
+      commit Compages, move the lock to that commit, fetch again.
+- [x] **Depth of a robot camera in metres.** `RenderTarget::readDepth(lens)`
+      gives the distance along the axis, top row first (+infinity where
+      nothing was drawn). RobotIK fills `CameraFrame::depth` with it for an
+      `rgbd` camera: until now the simulator left it empty, so its
+      `DepthEstimator` had nothing to read. No scenario has an `rgbd`
+      camera yet to show it.
+- [ ] **Segmentation.** No id of entity per pixel: a perception test cannot
+      know which object a pixel shows. Wanted: an id target in the main pass,
+      read back like the colour; `pick()` to the pixel comes with it.
+- [ ] **A robot camera reads its picture by stopping the GPU.**
+      `readColor()` waits for the frame (fine at a few images per second,
+      not at 30 Hz with several cameras). Wanted: an asynchronous read
+      (pixel buffer, read one frame later).
+- [ ] **The noise of a real camera.** Blur, distortion of the lens, grain:
+      now possible (a `ScreenEffects` on the entity of the robot camera, read
+      back by `readColor()`), but no filter is written yet and the docs of
+      RobotIK have no recipe.
+- [ ] **Skinned meshes stay in their rest pose in RobotIK**: it calls
+      `World::update` and `Scene::render`, never `Scene::update`, so the
+      animation clips never run (no humanoid skin moves).
+- [ ] **`Robotik-LineFollower` does not link** on this machine: the system
+      `libgdal` needs `expat` (not Compages; environment).
+
+Fixed on the way: a package's `background` was ignored (the colour went to
+the render pass, and `Scene::render` clears with `scene.background()`); it
+is now given to the Scene.
+
 ## Earlier decisions (audit of 2026-11-06)
 
 Accepted: offscreen rendering to an image, one-line helpers (grid, axes,

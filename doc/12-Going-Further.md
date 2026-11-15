@@ -13,7 +13,7 @@ These are **guided excerpts from real demos**, not nine blocks to paste into one
 | 3 | See through a surface | Opacity and drawing order | `10f_FlowingWater` |
 | 4 | Make a texture from calculated pixels | Image format and upload | `10f_FlowingWater` |
 | 5 | Build a shape from triangles | Mesh vertices, indices and bounds | `10f_FlowingWater` |
-| 6 | Change surface shading | The fragment hook `main` | `10f_FlowingWater` |
+| 6 | Change surface shading | The fragment hook `surface` | `10f_FlowingWater` |
 | 7 | Move a surface in a shader | The vertex hook `deform` | `10e_Archipelago` |
 | 8 | Read field values in your own shader | `Texture::fromField` | `10f_FlowingWater` |
 | 9 | Keep a simulation on the GPU | Passes and ping-pong | `10c_SweatAndDecals` |
@@ -231,26 +231,23 @@ m_jet_body = m_scene.mesh(flowing::jetMesh(m_jet, LEVEL), "Water jet");
 
 ---
 
-## 🎨 6. Your own look: the hook `main`
+## 🎨 6. Your own look: the hook `surface`
 
 📁 `examples/10_Complete/10f_FlowingWater.cpp`, `FlowingWater/Shaders.hpp` · more in [chapter 6 §7](06-Renderer-Layer.md#your-own-material-hooks-of-the-pbr-shader)
 
 A custom fragment shader changes the appearance of a surface. Keep the Renderer’s lights and camera, and replace only the part that computes the final pixel colour.
 
-`color(...)` and `texture(...)` cover the simple cases. For anything else, write the `main()` of the fragment shader yourself, and keep the rest of the PBR shader of the Renderer: its sun, its lamps, its shadow, its fog and its tone curve. The PBR shader leaves a hole called a **hook** for it:
+`color(...)` and `texture(...)` cover the simple cases. For anything else, say what the surface is, and let the PBR shader of the Renderer light it: its sun, its lamps, its shadow, its fog and its tone curve. The PBR shader leaves a hole called a **hook** for it:
 
 ```cpp
 compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
-shaders.fragment().hook("main", flowing::SOLID_MAIN);
-compages::renderer::Material material;
-COMPAGES_TRY_ASSIGN(material,
-                    compages::renderer::Material::create(
-                        p_name, { .family = compages::renderer::ShaderFamily::PbrMinimal,
-                                  .shaders = std::move(shaders),
-                                  .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
-                                  .see_through = std::nullopt }));
-material.textures = { { .sampler = "surfaceMap", .texture = p_picture } };
-return m_scene.assets().addMaterial(material.name, std::move(material));
+shaders.fragment().hook("surface", flowing::SOLID_SURFACE);
+return m_scene.assets().createMaterial(
+    p_name, { .family = compages::renderer::ShaderFamily::PbrMinimal,
+              .shaders = std::move(shaders),
+              .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
+              .see_through = std::nullopt,
+              .textures = { { .sampler = "surfaceMap", .texture = p_picture } } });
 ```
 
 ```mermaid
@@ -258,31 +255,31 @@ flowchart LR
     VS["vertex shader<br/>of the PBR shader"] --> DEF["hook deform<br/>(§7: yours, or none)"]
     DEF --> RAST["triangles<br/>to pixels"]
     RAST --> FS["fragment shader<br/>of the PBR shader"]
-    FS --> MAIN["hook main<br/>(yours)"]
-    MAIN --> OUT["oColor"]
-    LIB["shade() applyFog() present()<br/>sun, lamps, shadow, fog"] -.-> MAIN
+    FS --> SURF["hook surface<br/>(yours)"]
+    SURF --> LIGHT["light(): sun, lamps,<br/>shadow, fog, tone curve"]
+    LIGHT --> OUT["oColor"]
 ```
 
-Your `main()` sees what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, and the functions `shade(base, normal, position)`, `applyFog(colour, position)` and `present(colour)`. It writes `oColor`. Here, a picture projected along the three axes and blended by the normal (**triplanar mapping**): long walls need no texture coordinates.
+Your `surface()` receives a `Surface` already filled from the material instance (`albedo`, `normal`, `metallic`, `roughness`, `emission`, `opacity`) and changes what it wants. It sees what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`. Here, a picture projected along the three axes and blended by the normal (**triplanar mapping**): long walls need no texture coordinates.
 
 ```glsl
 uniform sampler2D surfaceMap;
 uniform float tileMetres;
 uniform float waterLevel;
 
-void main()
+void surface(inout Surface s)
 {
-    vec3 n = normalize(vNormal);
-    vec3 w = pow(abs(n), vec3(4.0));
+    vec3 w = pow(abs(s.normal), vec3(4.0));
     w /= (w.x + w.y + w.z);
     vec3 p = vWorldPos / tileMetres;
     vec3 c = texture(surfaceMap, p.zy).rgb * w.x + texture(surfaceMap, p.xz).rgb * w.y
            + texture(surfaceMap, p.xy).rgb * w.z;
-    vec3 base = c * baseColorFactor;
+    s.albedo = c * baseColorFactor;
     // ... darker and slimy near the water ...
-    oColor = vec4(present(applyFog(shade(base, n, vWorldPos), vWorldPos)), opacity);
 }
 ```
+
+For what is not a lit surface (a picture shown as it is, the water of `10f` that mixes several lightings), replace the hook `main` instead: the whole `main()`, which writes `oColor` with `shade()`, `applyFog()` and `present()`.
 
 Then a shape wears it, and each frame you give its uniforms:
 
@@ -294,7 +291,7 @@ material->program.set("waterLevel", LEVEL);
 ```
 
 - `material.textures` binds pictures to the samplers by name: the Renderer does it at each draw (at most five, units 2 to 6).
-- One shader text, several materials: the concrete, the painted metal and the stripes of `10f` are three `Material`s of the same `SOLID_MAIN`, each with its own picture.
+- One shader text, several materials: the concrete, the painted metal and the stripes of `10f` are three `Material`s of the same `SOLID_SURFACE`, each with its own picture.
 - Setting a uniform the shader does not use (or with the wrong type) is a **frame error**: `--check` fails. A GLSL compiler drops a uniform it never reads, so a uniform you set must really count in the result.
 - A tint per shape: each shape has its own `MaterialInstance` (`base_color_factor`, in linear colours: `srgbToLinear(...)`).
 
@@ -325,7 +322,7 @@ void deform(inout vec4 world, inout vec3 normal)
 ```
 
 - `include(name, text)` gives GLSL text a name: here the table of swells, written by C++ (`swellsGlsl()`). The boats read the same table on the CPU (`swellHeight()`): they ride the waves that are drawn.
-- When the vertex shader replaces `deform`, `Material::create` also makes the program of the sun shadow with it: the shadow follows the waves.
+- When the vertex shader replaces `deform`, `createMaterial` also makes the program of the sun shadow with it: the shadow follows the waves.
 
 **Check it:** Follow the shared swell table in the archipelago demo: the shader draws waves and CPU code positions boats from the same formula. Shader deformation alone would leave the boats unaware of the waves.
 
@@ -401,7 +398,7 @@ flowchart LR
 | draw something see-through | `see_through` state, `opacity < 1` | 3 |
 | make a texture from bytes | `TextureDesc::image`, `Texture::create`, `write`, `generateMipmaps`, `addTexture` | 4 |
 | make a mesh from corners | `MeshAsset`, `scene.mesh`, `scene.reshape` | 5 |
-| write my own fragment shader and keep the lights | `shaders::pbr()`, `.hook("main", …)`, `Material::create` | 6 |
+| write my own fragment shader and keep the lights | `shaders::pbr()`, `.hook("surface", …)`, `assets().createMaterial` | 6 |
 | give a uniform each frame | `material->program.set(name, value)` | 6 |
 | move vertices on the GPU | `.hook("deform", …)`, `.include(name, text)` | 7 |
 | give a field to my shader | `Texture::fromField`, `write(values())` | 8 |
