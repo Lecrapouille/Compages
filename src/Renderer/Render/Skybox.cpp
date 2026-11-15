@@ -22,11 +22,15 @@ constexpr char const* SKY_VERTEX = R"(#version 450 core
 in vec3 position;
 uniform mat4 view;
 uniform mat4 projection;
-out vec3 vDirection;
+struct V2F
+{
+    vec3 direction;
+};
+out V2F v2f;
 
 void main()
 {
-    vDirection = position;
+    v2f.direction = position;
     // The camera turns but never moves away from the sky: the translation
     // of the view is dropped.
     gl_Position = projection * mat4(mat3(view)) * vec4(position, 1.0);
@@ -34,14 +38,18 @@ void main()
 )";
 
 constexpr char const* SKY_FRAGMENT = R"(#version 450 core
-in vec3 vDirection;
+struct V2F
+{
+    vec3 direction;
+};
+in V2F v2f;
 uniform samplerCube sky;
 #include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(screen(texture(sky, normalize(vDirection)).rgb), 1.0);
+    oColor = vec4(screen(texture(sky, normalize(v2f.direction)).rgb), 1.0);
 }
 )";
 

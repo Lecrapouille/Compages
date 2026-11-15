@@ -2,21 +2,21 @@
 
 ![The workshop at the last step](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13d_RobotEye.png)
 
-Compages is based on three layers, and the tutorials follow them from the bottom up:
+You want to move a robot arm, draw it, and read what its camera sees. Start with one triangle. Then build the arm without a screen, before adding its workshop. The later steps keep that workshop and add heat, worn paint, and a camera.
 
-- First the GPU layer alone: a shader and some numbers.
-- Then the World: a robot arm that moves, with no screen at all.
-- Then the Renderer, which draws that arm in a small workshop and adds one idea per page: values on a grid, a shader of your own, a second camera.
+You need basic C++: functions, structs, loops, inheritance, and a lambda. You do not need previous 3D or OpenGL experience. The commands use Linux and run from the `Compages` repository folder.
 
-0. [Glossary](00-glossary.md): the words of 3D and of Compages. Read it first, and come back to it when a word is new.
-1. [Install and run](01-install.md): how to compile Compages and install it on your operating system and how to use it on your project.
-2. [The GPU](02-the-gpu.md): a triangle and a compute shader
-3. [The World](03-the-world.md): a robot arm without a screen
-4. [A scene](04-a-scene.md): the arm drawn in a workshop, then in your own window
-5. [Values on a grid](05-values-on-a-grid.md): the heat the arm leaves on a plate
-6. [A look of your own](06-a-look-of-your-own.md): worn paint, from a shader hook
-7. [What the robot sees](07-what-the-robot-sees.md): a camera on the arm, read by the program
+0. [Glossary](00-glossary.md): coordinates and units first; use the other entries when a word is new.
+1. [Install and run](01-install.md): build the library, see a triangle, and compile your first program.
+2. [The GPU](02-the-gpu.md): connect shader inputs to data, then compute twelve numbers.
+3. [The World](03-the-world.md): move one entity, attach a child, then build the robot arm without graphics.
+4. [A scene](04-a-scene.md): give the arm shapes and lights, then open your own window.
+5. [Values on a grid](05-values-on-a-grid.md): store and inspect temperatures, then spread heat under the tool.
+6. [A look of your own](06-a-look-of-your-own.md): replace a surface colour, then use UV coordinates to wear its edges.
+7. [What the robot sees](07-what-the-robot-sees.md): show a second view, read its pixels, and measure a colour.
 
-Each page has a demo in the gallery. Run it before you read the page. The code of the workshop is in [examples/13_Workshop/Workshop/](../../examples/13_Workshop/Workshop/): change it and rebuild with `make`.
+Run the demo near the start of each practical chapter. Observe its result before changing its code. Change one thing, rebuild with `make`, then run the same command again. Each “Try” gives an expected result so you can check your change. Restore the change before the next exercise unless the page says otherwise.
 
-You need basic C++: variables, functions, structs, a loop, a lambda. You do not need to know 3D or OpenGL. Start with the [glossary](00-glossary.md).
+Complete programs say which file to create and give a build command. Other code blocks are excerpts: edit the linked source file rather than pasting them into an empty program. The gallery supplies the window and calls `setUp()` once, then `draw()` at each frame. Chapter 4 shows how to supply that loop yourself.
+
+The layers solve separate problems. The GPU executes shaders; the World moves entities; the Renderer draws a World. Learning them in this order explains their boundaries. World-only programs need no graphics context, even though you learn the GPU first.

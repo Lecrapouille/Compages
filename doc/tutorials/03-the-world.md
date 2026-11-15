@@ -4,9 +4,13 @@
 
 ![13a_Workshop](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13a_Workshop.png)
 
-The second layer holds the things of a simulation and moves them. It draws nothing and never touches the GPU. On this page you build the robot arm of the picture above, in a `compages::world::World`, and you print where its tip is. No window opens: the picture is for the next page, where the Renderer draws this same arm.
+## 🎯 Goal
 
-You get there in small steps. Each step adds one idea, gives a whole program, and shows what it prints. Words in bold are in the [glossary](00-glossary.md).
+You want to move a robot arm and find its tip, even when no screen is available. The World holds the entities of a simulation and moves them. It draws nothing and never touches the GPU. The picture shows what the Renderer will draw on the next page.
+
+Build a chain of entities and joints in a `compages::world::World`, then move it with a routine. You will print the arm tip's world position at known times, without opening a window.
+
+Steps 1 to 4 are complete programs you can compile separately. Steps 5 and 6 explain the existing arm code; step 7 runs that code in a complete program. Words in bold are in the [glossary](00-glossary.md).
 
 ## 🧰 Before you start
 
@@ -47,7 +51,9 @@ Box at (1.00, 0.00, 0.00)
 
 `world.entity("Box")` makes the entity, and `position()` places it. The calls chain: each one returns the entity. Distances are in metres, and y goes up.
 
-`world.update()` is the step of the World. It computes where every entity really is, and `worldPosition()` reads the result. Read positions after an update, never before. The empty `compages::Frame{}` says "no time has passed": you will give it a time in step 4.
+`world.update()` is the step of the World. It computes where every entity really is, and `worldPosition()` reads the result. Read positions after an update, never before. The empty `compages::Frame{}` has zero elapsed and total time. You will give it a time in step 4.
+
+Change x to `2.0f`, recompile, and check that the output changes to `2.00`. Restore it before the next step.
 
 ## 🌳 Step 2: a parent and a child
 
@@ -90,6 +96,8 @@ Wheel  at (6.00, 0.00, 0.00)
 ```
 
 The position of a child is **local**: it is measured from its parent. The wheel is 1 m from the car, so it is at x = 3 when the car is at x = 2. The code moves only the car, and the wheel follows. This tree of parents and children is the **scene graph**.
+
+Before running the program, predict the last wheel position if its local x becomes `2.0f`. It should be `7.00`, because the car ends at x = 5. That addition works here because the car has no rotation or scale. A rotating parent also turns the child's offset, as the next step shows.
 
 ## 🔩 Step 3: a joint
 
@@ -185,7 +193,9 @@ A `compages::Frame` carries the time. `frame.elapsed` is the time since the prev
 
 `base.add<Spin>(…)` attaches the routine to the base. In `update()`, `entity()` is that base and `frame()` is the frame of the current step. The angle is a speed of 0.5 rad/s times the total time: the units multiply, and the result is an angle, which `angle()` accepts. After three seconds the base has turned by 1.5 rad, almost a quarter of a turn.
 
-The routine computes the angle from the total time. It does not add a small step to the angle at each frame. So a pause or a slow frame never makes the arm drift.
+The routine computes the angle from the supplied total time. It does not accumulate an approximate angle from previous frames. The application decides whether total time advances during a pause.
+
+Try changing `frame.elapsed` to `0.5_s`, keeping the same loop. The final total time becomes 1.5 s and the angle becomes 0.75 rad. You can choose simulation time without waiting for a real clock. A printed `-0.00` instead of `+0.00` in these examples is floating-point rounding.
 
 ## 🦾 Step 5: a chain of joints
 
@@ -209,7 +219,7 @@ flowchart LR
 
 ## 📐 Step 6: aim the tip
 
-The routine of the arm, `FollowPath`, is the routine of step 4 with more maths. It chooses where the **tip** goes, not the angles of the joints. The tip must touch the table, 3 mm above its top, and lift off now and then:
+The routine of the arm, `FollowPath`, uses the same update mechanism as `Spin`. Its geometry is more involved. You can run step 7 first, then return to these calculations. You do not need to implement an inverse-kinematics solver to continue to chapter 4. The following excerpts are already in [Arm.cpp](../../examples/13_Workshop/Workshop/Arm.cpp). It chooses where the **tip** goes, not the angles of the joints. The tip must touch the table, 3 mm above its top, and lift off now and then:
 
 ```cpp
 void update(compages::si::Seconds) override
@@ -247,7 +257,7 @@ shoulder.joint().angle(-lean);
 elbow.joint().angle(-bend);
 ```
 
-Square metres divided by square metres has no unit: it is a plain number, the cosine of the bend. `acos` and `atan2` give angles back, so `angle()` takes them directly. Since the path is given for the tip, the tip can never go into the table, whatever the path.
+Square metres divided by square metres has no unit: it is a plain number, the cosine of the bend. `acos` and `atan2` give angles back, so `angle()` takes them directly. The chosen path keeps the tip above the table for this arm and its unrestricted joints. The target distance must lie between `abs(l1 - l2)` and `l1 + l2` to be reachable. Clamping the cosine avoids invalid input to `acos`; it does not make an unreachable target reachable. Joint limits can also prevent the tip from reaching a valid geometric target. This routine does not detect collisions with the table or other objects.
 
 ## ▶ Step 7: run the arm
 

@@ -28,18 +28,26 @@ in float size;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float pixels;
-out vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+out V2F v2f;
 void main()
 {
     vec4 eye = view * vec4(position, 1.0);
     gl_Position = projection * eye;
     gl_PointSize = clamp(size * pixels / max(-eye.z, 0.05), 1.0, 256.0);
-    vColor = color;
+    v2f.color = color;
 }
 )";
 
 constexpr char const* FRAGMENT_SHADER = R"(#version 450 core
-in vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+in V2F v2f;
 out vec4 oColor;
 void main()
 {
@@ -49,7 +57,7 @@ void main()
     {
         discard;
     }
-    oColor = vec4(vColor.rgb, vColor.a * (1.0 - r));
+    oColor = vec4(v2f.color.rgb, v2f.color.a * (1.0 - r));
 }
 )";
 

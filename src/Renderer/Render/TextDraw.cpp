@@ -40,17 +40,21 @@ in float opacity;
 
 uniform vec2 viewport;
 
-out vec2 vUv;
-out vec3 vColor;
-out float vHalo;
-out float vOpacity;
+struct V2F
+{
+    vec2 uv;
+    vec3 color;
+    float halo;
+    float opacity;
+};
+out V2F v2f;
 
 void main()
 {
-    vUv = uv;
-    vColor = color;
-    vHalo = halo;
-    vOpacity = opacity;
+    v2f.uv = uv;
+    v2f.color = color;
+    v2f.halo = halo;
+    v2f.opacity = opacity;
     gl_Position = vec4((position / viewport) * 2.0 - 1.0, 0.0, 1.0);
 }
 )";
@@ -60,10 +64,14 @@ void main()
 // over one pixel at any size. The halo is the same test at a lower value,
 // drawn dark under the letter.
 constexpr char const* LABEL_FRAGMENT = R"(#version 450 core
-in vec2 vUv;
-in vec3 vColor;
-in float vHalo;
-in float vOpacity;
+struct V2F
+{
+    vec2 uv;
+    vec3 color;
+    float halo;
+    float opacity;
+};
+in V2F v2f;
 
 uniform sampler2D atlas;
 
@@ -71,17 +79,17 @@ out vec4 oColor;
 
 void main()
 {
-    float field = texture(atlas, vUv).r;
+    float field = texture(atlas, v2f.uv).r;
     float soft = max(fwidth(field) * 0.75, 1e-4);
     float letter = smoothstep(0.5 - soft, 0.5 + soft, field);
-    float halo = 0.75 * smoothstep(vHalo - soft, vHalo + soft, field);
+    float halo = 0.75 * smoothstep(v2f.halo - soft, v2f.halo + soft, field);
     // The letter over its black halo.
     float alpha = letter + (halo * (1.0 - letter));
-    if ((alpha * vOpacity) < 0.004)
+    if ((alpha * v2f.opacity) < 0.004)
     {
         discard;
     }
-    oColor = vec4(vColor * (letter / alpha), alpha * vOpacity);
+    oColor = vec4(v2f.color * (letter / alpha), alpha * v2f.opacity);
 }
 )";
 

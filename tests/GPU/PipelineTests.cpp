@@ -51,13 +51,17 @@ in vec3 position;
 in vec3 normal;
 in vec2 uv;
 
-out vec3 vNormal;
-out vec2 vUV;
+struct V2F
+{
+    vec3 normal;
+    vec2 uv;
+};
+out V2F v2f;
 
 void main()
 {
-    vNormal = normal;
-    vUV = uv;
+    v2f.normal = normal;
+    v2f.uv = uv;
     gl_Position = vec4(position, 1.0);
 }
 )";
@@ -86,11 +90,15 @@ constexpr const char* INTEGER_COLOR_VERTEX = R"(#version 450 core
 in vec2 position;
 in uvec4 color;
 
-flat out uvec4 vColor;
+struct V2F
+{
+    uvec4 color;
+};
+flat out V2F v2f;
 
 void main()
 {
-    vColor = color;
+    v2f.color = color;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
@@ -100,11 +108,15 @@ constexpr const char* FLOAT_COLOR_VERTEX = R"(#version 450 core
 in vec2 position;
 in vec4 color;
 
-out vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vColor = color;
+    v2f.color = color;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
@@ -137,22 +149,34 @@ void main() { oColor = vec4(1.0); }
 //! introspection is concerned. Pairing FORWARD_VERTEX with a fragment shader that
 //! ignores its outputs would leave a program reading position alone.
 constexpr const char* LIT_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec2 vUV;
+struct V2F
+{
+    vec3 normal;
+    vec2 uv;
+};
+in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vec4(normalize(vNormal) * 0.5 + 0.5, vUV.x + vUV.y); }
+void main() { oColor = vec4(normalize(v2f.normal) * 0.5 + 0.5, v2f.uv.x + v2f.uv.y); }
 )";
 
 constexpr const char* FLAT_FRAGMENT = R"(#version 450 core
-flat in uvec4 vColor;
+struct V2F
+{
+    uvec4 color;
+};
+flat in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vec4(vColor) / 255.0; }
+void main() { oColor = vec4(v2f.color) / 255.0; }
 )";
 
 constexpr const char* COLOR_FRAGMENT = R"(#version 450 core
-in vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vColor; }
+void main() { oColor = v2f.color; }
 )";
 
 constexpr const char* COMPUTE = R"(#version 450 core

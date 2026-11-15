@@ -71,7 +71,7 @@ void main()
 
 A `Surface` holds `albedo`, `normal`, `metallic`, `roughness`, `emission` and `opacity`. `metallic` and `roughness` count only when the instance uses the metallic-roughness model of glTF (`MaterialInstance::metal_roughness`, turned on by the glTF loader, or by hand). A shape made with `color()` has it off and is lit by `shade()`, which uses the albedo and the normal only.
 
-A hook may read what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`, and everything the pieces above give. A hook name that the shader does not declare is an error that lists the known names.
+A hook may read what the PBR shader declares: `v2f.worldPos`, `v2f.normal`, `v2f.uv` (the struct `V2F`, from the vertex shader to the fragment shader), `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`, and everything the pieces above give. A hook name that the shader does not declare is an error that lists the known names. To pass data of its own from `deform` to `surface`, a material declares a second struct named after it in both hooks, never a second `V2F`: `struct MetalV2F { float heat; float brass; }; out MetalV2F metal;` in `deform`, the same with `in` in `surface` (`11d_BimetalBeam`).
 
 You add your own pieces with `include(name, text)` on a stage, before the hook that uses them:
 

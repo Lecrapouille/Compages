@@ -42,10 +42,10 @@ void surface(inout Surface s)
 {
     vec3 w = pow(abs(s.normal), vec3(4.0));
     w /= (w.x + w.y + w.z);
-    vec3 p = vWorldPos / tileMetres;
+    vec3 p = v2f.worldPos / tileMetres;
     vec3 c = texture(surfaceMap, p.zy).rgb * w.x + texture(surfaceMap, p.xz).rgb * w.y
            + texture(surfaceMap, p.xy).rgb * w.z;
-    float above = vWorldPos.y - waterLevel;
+    float above = v2f.worldPos.y - waterLevel;
     float wet = 1.0 - smoothstep(0.0, 0.5, above);
     float slime = 1.0 - smoothstep(-0.05, 0.14, above);
     s.albedo = c * baseColorFactor * mix(1.0, 0.5, wet);
@@ -112,7 +112,7 @@ vec3 ripple(vec2 p, vec2 shift)
 
 vec3 lampGlint(vec3 pos, vec3 colour, float range, vec3 n, vec3 toEye)
 {
-    vec3 toLamp = pos - vWorldPos;
+    vec3 toLamp = pos - v2f.worldPos;
     float d = length(toLamp);
     float fade = pow(max(1.0 - d / range, 0.0), 2.0);
     return colour * (2.5 * fade * pow(max(dot(reflect(-toLamp / d, n), toEye), 0.0), 90.0));
@@ -127,7 +127,7 @@ float uvLines(vec2 uv)
 
 void main()
 {
-    vec2 p = vWorldPos.xz;
+    vec2 p = v2f.worldPos.xz;
     vec4 data = flowAt(p);
     if (waterView == 1)
     {
@@ -202,10 +202,10 @@ void main()
     }
 
     vec3 up = vec3(0.0, 1.0, 0.0);
-    vec3 toEye = normalize(cameraPos - vWorldPos);
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
     vec3 toLight = normalize(-lightDir);
-    float sun = sunVisibility(up, toLight, vWorldPos);
-    vec3 body = shade(vec3(0.03, 0.045, 0.032), up, vWorldPos);
+    float sun = sunVisibility(up, toLight, v2f.worldPos);
+    vec3 body = shade(vec3(0.03, 0.045, 0.032), up, v2f.worldPos);
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, toEye), 0.0), 5.0);
     vec3 sky = mix(ambient * 1.6, fogColor * 1.3, 0.5);
     vec3 water = mix(body, sky, 0.85 * fresnel);
@@ -214,11 +214,11 @@ void main()
     if (pointLightCount > 1) water += lampGlint(pointLightPos1, pointLightColor1, pointLightRange1, n, toEye);
     if (pointLightCount > 2) water += lampGlint(pointLightPos2, pointLightColor2, pointLightRange2, n, toEye);
     if (pointLightCount > 3) water += lampGlint(pointLightPos3, pointLightColor3, pointLightRange3, n, toEye);
-    vec3 scum = shade(foam.rgb, normalize(up + 0.3 * n), vWorldPos);
+    vec3 scum = shade(foam.rgb, normalize(up + 0.3 * n), v2f.worldPos);
     vec3 colour = mix(water, scum, foam.a * gathered);
-    colour = mix(colour, shade(vec3(0.75, 0.78, 0.72), normalize(up + 0.5 * n), vWorldPos), clamp(churned, 0.0, 1.0));
+    colour = mix(colour, shade(vec3(0.75, 0.78, 0.72), normalize(up + 0.5 * n), v2f.worldPos), clamp(churned, 0.0, 1.0));
     colour *= mix(0.55, 1.0, data.a);
-    oColor = vec4(present(applyFog(colour, vWorldPos)), opacity);
+    oColor = vec4(present(applyFog(colour, v2f.worldPos)), opacity);
 }
 )";
 
@@ -235,18 +235,18 @@ uniform float fade;
 
 void main()
 {
-    float s = vUv.y - time * scroll;
-    float streaks = texture(noiseMap, vec2(vUv.x * 3.0, s * 0.35)).r;
-    vec4 foam = texture(foamMap, vec2(vUv.x * 2.0, s * 0.5));
-    vec3 n = normalize(vNormal);
-    vec3 toEye = normalize(cameraPos - vWorldPos);
+    float s = v2f.uv.y - time * scroll;
+    float streaks = texture(noiseMap, vec2(v2f.uv.x * 3.0, s * 0.35)).r;
+    vec4 foam = texture(foamMap, vec2(v2f.uv.x * 2.0, s * 0.5));
+    vec3 n = normalize(v2f.normal);
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
     float edge = 1.0 - abs(dot(n, toEye));
     float white = clamp(foam.a + 0.9 * streaks - 0.15, 0.0, 1.0);
-    vec3 c = mix(shade(vec3(0.10, 0.12, 0.09), n, vWorldPos), shade(foam.rgb * 1.15, n, vWorldPos), white);
+    vec3 c = mix(shade(vec3(0.10, 0.12, 0.09), n, v2f.worldPos), shade(foam.rgb * 1.15, n, v2f.worldPos), white);
     c += lightColor * (0.15 * pow(edge, 3.0));
     float alpha = mix(0.5, 0.97, white) * (0.6 + 0.4 * edge);
-    alpha *= mix(1.0, smoothstep(0.0, 0.2, (0.5 + 0.5 * streaks) - vUv.y), fade);
-    oColor = vec4(present(applyFog(c, vWorldPos)), alpha * opacity);
+    alpha *= mix(1.0, smoothstep(0.0, 0.2, (0.5 + 0.5 * streaks) - v2f.uv.y), fade);
+    oColor = vec4(present(applyFog(c, v2f.worldPos)), alpha * opacity);
 }
 )";
 

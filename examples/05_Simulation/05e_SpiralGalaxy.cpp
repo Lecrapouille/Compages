@@ -68,7 +68,11 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform sampler1D colormap;
 
-out vec3 vColor;
+struct V2F
+{
+    vec3 color;
+};
+out V2F v2f;
 
 vec2 orbit(float a, float b)
 {
@@ -91,14 +95,14 @@ void main()
         shown = (kind == 2.0) ? 2.0 * span : span / 6.0;
     }
 
-    vColor = texture(colormap, temperature).rgb * brightness;
+    v2f.color = texture(colormap, temperature).rgb * brightness;
     if (kind == 2.0)
     {
-        vColor *= vec3(2.0, 1.0, 1.0);   // the cloud, pulled toward red
+        v2f.color *= vec3(2.0, 1.0, 1.0);   // the cloud, pulled toward red
     }
     else if (kind == 3.0)
     {
-        vColor = vec3(0.9);              // its core, white
+        v2f.color = vec3(0.9);              // its core, white
     }
 
     // A point size of zero is undefined: a body meant to vanish is sent
@@ -118,14 +122,18 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
-in vec3 vColor;
+struct V2F
+{
+    vec3 color;
+};
+in V2F v2f;
 uniform sampler2D sprite;
 out vec4 oColor;
 
 void main()
 {
     // A soft disc: with additive blending, a black texel adds nothing.
-    oColor = vec4(texture(sprite, gl_PointCoord).r * vColor, 1.0);
+    oColor = vec4(texture(sprite, gl_PointCoord).r * v2f.color, 1.0);
 }
 )";
 

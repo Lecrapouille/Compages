@@ -27,14 +27,22 @@ constexpr int HEIGHT = 16;
 constexpr const char* COLORED_VERTEX = R"(#version 450 core
 in vec2 position;
 in vec3 color;
-out vec3 vColor;
-void main() { vColor = color; gl_Position = vec4(position, 0.0, 1.0); }
+struct V2F
+{
+    vec3 color;
+};
+out V2F v2f;
+void main() { v2f.color = color; gl_Position = vec4(position, 0.0, 1.0); }
 )";
 
 constexpr const char* COLORED_FRAGMENT = R"(#version 450 core
-in vec3 vColor;
+struct V2F
+{
+    vec3 color;
+};
+in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vec4(vColor, 1.0); }
+void main() { oColor = vec4(v2f.color, 1.0); }
 )";
 
 //! \brief Position only, painted with a uniform colour.

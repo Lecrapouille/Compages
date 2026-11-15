@@ -508,22 +508,32 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vNormal;
-out vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+out V2F v2f;
 
 void main()
 {
     mat4 skin = skinMatrix();
     vec4 world = model * (skin * vec4(position, 1.0));
-    vWorldPos = world.xyz;
-    vNormal = mat3(transpose(inverse(model * skin))) * normal;
+    v2f.worldPos = world.xyz;
+    v2f.normal = mat3(transpose(inverse(model * skin))) * normal;
     gl_Position = projection * view * world;
 }
 )";
 
 constexpr char const* LIT_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+in V2F v2f;
 uniform vec3 color;
 #include <compages/fog.glsl>
 #include <compages/shade.glsl>
@@ -533,7 +543,7 @@ out vec4 oColor;
 
 void main()
 {
-    vec3 shaded = applyFog(shade(color, normalize(vNormal), vWorldPos), vWorldPos);
+    vec3 shaded = applyFog(shade(color, normalize(v2f.normal), v2f.worldPos), v2f.worldPos);
     oColor = vec4(present(shaded), opacity);
 }
 )";
@@ -547,9 +557,13 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vNormal;
-out vec2 vUv;
-out vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+out V2F v2f;
 
 #include <hook/deform>
 
@@ -559,9 +573,9 @@ void main()
     vec4 world = model * (skin * vec4(position, 1.0));
     vec3 n = mat3(transpose(inverse(model * skin))) * normal;
     deform(world, n);
-    vWorldPos = world.xyz;
-    vNormal = n;
-    vUv = uv;
+    v2f.worldPos = world.xyz;
+    v2f.normal = n;
+    v2f.uv = uv;
     gl_Position = projection * view * world;
 }
 )";
@@ -572,9 +586,13 @@ constexpr char const* PBR_DEFORM = R"(void deform(inout vec4 world, inout vec3 n
 )";
 
 constexpr char const* PBR_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec2 vUv;
-in vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+in V2F v2f;
 uniform vec3 baseColorFactor;
 uniform sampler2D baseColorMap;
 uniform bool hasBaseColorMap;
@@ -614,21 +632,21 @@ Surface instanceSurface()
     s.albedo = baseColorFactor;
     if (hasBaseColorMap)
     {
-        s.albedo *= texture(baseColorMap, vUv).rgb;
+        s.albedo *= texture(baseColorMap, v2f.uv).rgb;
     }
-    s.normal = normalize(vNormal);
+    s.normal = normalize(v2f.normal);
     s.metallic = pbrMetallic;
     s.roughness = pbrRoughness;
     if (pbrUseMetalRoughness)
     {
         if (pbrHasNormalMap)
         {
-            vec3 t = texture(pbrNormalMap, vUv).xyz * 2.0 - 1.0;
-            s.normal = bumpNormal(s.normal, vWorldPos, vUv, normalize(vec3(t.xy * pbrNormalScale, t.z)));
+            vec3 t = texture(pbrNormalMap, v2f.uv).xyz * 2.0 - 1.0;
+            s.normal = bumpNormal(s.normal, v2f.worldPos, v2f.uv, normalize(vec3(t.xy * pbrNormalScale, t.z)));
         }
         if (pbrHasMetalRoughnessMap)
         {
-            vec4 mr = texture(pbrMetalRoughnessMap, vUv);
+            vec4 mr = texture(pbrMetalRoughnessMap, v2f.uv);
             s.roughness *= mr.g;
             s.metallic *= mr.b;
         }
@@ -643,15 +661,15 @@ Surface instanceSurface()
 // light() returns it.
 vec3 sceneLight(Surface s)
 {
-    return pbrUseMetalRoughness ? shadePbr(s.albedo, s.normal, vWorldPos, s.metallic, s.roughness)
-                                : shade(s.albedo, s.normal, vWorldPos);
+    return pbrUseMetalRoughness ? shadePbr(s.albedo, s.normal, v2f.worldPos, s.metallic, s.roughness)
+                                : shade(s.albedo, s.normal, v2f.worldPos);
 }
 
 // From the lit surface to the screen: its own light, the fog, the tone curve
 // and the screen colours.
 vec4 toScreen(Surface s, vec3 lit)
 {
-    return vec4(present(applyFog(lit + s.emission, vWorldPos)), s.opacity);
+    return vec4(present(applyFog(lit + s.emission, v2f.worldPos)), s.opacity);
 }
 
 #include <hook/surface>
@@ -705,24 +723,36 @@ in vec3 position;
 #include <compages/skinning.glsl>
 uniform mat4 model;
 uniform mat4 lightViewProj;
-out vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+out V2F v2f;
 
 void main()
 {
     vec4 world = model * skinMatrix() * vec4(position, 1.0);
-    vWorldPos = world.xyz;
+    v2f.worldPos = world.xyz;
     gl_Position = lightViewProj * world;
 }
 )";
 
 constexpr char const* LAMP_SHADOW_FRAGMENT = R"(#version 450 core
-in vec3 vWorldPos;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+in V2F v2f;
 uniform vec3 lampPos;
 uniform float lampRange;
 
 void main()
 {
-    gl_FragDepth = length(vWorldPos - lampPos) / lampRange;
+    gl_FragDepth = length(v2f.worldPos - lampPos) / lampRange;
 }
 )";
 
@@ -732,19 +762,27 @@ in vec3 position;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-out float vEyeDepth;
+struct V2F
+{
+    float eyeDepth;
+};
+out V2F v2f;
 
 void main()
 {
     vec4 world = model * (skinMatrix() * vec4(position, 1.0));
     vec4 eye = view * world;
-    vEyeDepth = -eye.z;
+    v2f.eyeDepth = -eye.z;
     gl_Position = projection * eye;
 }
 )";
 
 constexpr char const* DEPTH_FRAGMENT = R"(#version 450 core
-in float vEyeDepth;
+struct V2F
+{
+    float eyeDepth;
+};
+in V2F v2f;
 uniform float near;
 uniform float far;
 #include <compages/present.glsl>
@@ -752,7 +790,7 @@ out vec4 oColor;
 
 void main()
 {
-    float shade = 1.0 - smoothstep(near, far, vEyeDepth);
+    float shade = 1.0 - smoothstep(near, far, v2f.eyeDepth);
     oColor = vec4(screen(vec3(shade)), opacity);
 }
 )";
@@ -764,25 +802,37 @@ in vec3 normal;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-out vec3 vNormal;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+out V2F v2f;
 
 void main()
 {
     mat4 skin = skinMatrix();
     vec4 world = model * (skin * vec4(position, 1.0));
-    vNormal = mat3(transpose(inverse(view * model * skin))) * normal;
+    v2f.normal = mat3(transpose(inverse(view * model * skin))) * normal;
     gl_Position = projection * view * world;
 }
 )";
 
 constexpr char const* NORMALS_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
+struct V2F
+{
+    vec3 normal;
+    vec3 worldPos;
+    vec2 uv;
+};
+in V2F v2f;
 #include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(screen(0.5 * normalize(vNormal) + 0.5), opacity);
+    oColor = vec4(screen(0.5 * normalize(v2f.normal) + 0.5), opacity);
 }
 )";
 

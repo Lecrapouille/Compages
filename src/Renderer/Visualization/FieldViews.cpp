@@ -56,7 +56,12 @@ uniform float fieldHigh;
 uniform float fieldRelief;
 uniform float fieldSpacing;
 
-out float vFieldValue;
+// A value of its own, next to the V2F of the library.
+struct FieldV2F
+{
+    float value;
+};
+out FieldV2F field;
 
 float fieldValue(int i, int j)
 {
@@ -75,7 +80,7 @@ void deform(inout vec4 world, inout vec3 normal)
 {
     int i = gl_VertexID % fieldColumns;
     int j = gl_VertexID / fieldColumns;
-    vFieldValue = fieldValue(i, j);
+    field.value = fieldValue(i, j);
     float dx = fieldHeight(i + 1, j) - fieldHeight(i - 1, j);
     float dz = fieldHeight(i, j + 1) - fieldHeight(i, j - 1);
     world.y += fieldHeight(i, j);
@@ -92,16 +97,20 @@ uniform float fieldLow;
 uniform float fieldHigh;
 uniform bool fieldLit;
 
-in float vFieldValue;
+struct FieldV2F
+{
+    float value;
+};
+in FieldV2F field;
 
 void main()
 {
-    float t = clamp((vFieldValue - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
+    float t = clamp((field.value - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
     float width = float(textureSize(fieldColors, 0).x);
     vec3 colour = texture(fieldColors, vec2((t * (width - 1.0) + 0.5) / width, 0.5)).rgb;
     if (fieldLit)
     {
-        vec3 shaded = applyFog(shade(colour, normalize(vNormal), vWorldPos), vWorldPos);
+        vec3 shaded = applyFog(shade(colour, normalize(v2f.normal), v2f.worldPos), v2f.worldPos);
         oColor = vec4(present(shaded), opacity);
     }
     else
@@ -129,9 +138,9 @@ const int STEPS = 160;
 
 void main()
 {
-    vec3 dir = normalize(vWorldPos - cameraPos);
+    vec3 dir = normalize(v2f.worldPos - cameraPos);
     vec3 inverse = 1.0 / dir;
-    vec3 far = max((volumeMin - vWorldPos) * inverse, (volumeMax - vWorldPos) * inverse);
+    vec3 far = max((volumeMin - v2f.worldPos) * inverse, (volumeMax - v2f.worldPos) * inverse);
     float through = max(min(min(far.x, far.y), far.z), 0.0);
     float dl = through / float(STEPS);
     vec3 size = volumeMax - volumeMin;
@@ -142,7 +151,7 @@ void main()
     float alpha = 0.0;
     for (int s = 0; (s < STEPS) && (alpha < 0.99); ++s)
     {
-        vec3 p = vWorldPos + dir * (dl * (float(s) + 0.5));
+        vec3 p = v2f.worldPos + dir * (dl * (float(s) + 0.5));
         // The grid points are the centres of the texels.
         vec3 at = (((p - volumeMin) / size) * (texels - 1.0) + 0.5) / texels;
         float t = clamp((texture(fieldVolume, at).r - fieldLow) / (fieldHigh - fieldLow), 0.0, 1.0);
@@ -163,7 +172,7 @@ constexpr char const* ARROW_MAIN = R"(uniform sampler2D fieldColors;
 void main()
 {
     float width = float(textureSize(fieldColors, 0).x);
-    vec3 colour = texture(fieldColors, vec2((clamp(vUv.x, 0.0, 1.0) * (width - 1.0) + 0.5) / width, 0.5)).rgb;
+    vec3 colour = texture(fieldColors, vec2((clamp(v2f.uv.x, 0.0, 1.0) * (width - 1.0) + 0.5) / width, 0.5)).rgb;
     oColor = vec4(screen(toSrgb(colour)), opacity);
 }
 )";

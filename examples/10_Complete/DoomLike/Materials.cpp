@@ -37,10 +37,10 @@ uniform float metallic;
 
 void main()
 {
-    vec3 n = normalize(vNormal);
+    vec3 n = normalize(v2f.normal);
     vec3 w = pow(abs(n), vec3(4.0));
     w /= (w.x + w.y + w.z);
-    vec3 p = vWorldPos / tileMetres;
+    vec3 p = v2f.worldPos / tileMetres;
     vec3 base = (texture(surfaceMap, p.zy).rgb * w.x + texture(surfaceMap, p.xz).rgb * w.y
                + texture(surfaceMap, p.xy).rgb * w.z) * baseColorFactor;
     float rough = texture(roughMap, p.zy).r * w.x + texture(roughMap, p.xz).r * w.y
@@ -52,7 +52,7 @@ void main()
     ty = vec3(ty.xy + n.xz, abs(ty.z) * n.y);
     tz = vec3(tz.xy + n.xy, abs(tz.z) * n.z);
     vec3 bumped = normalize(tx.zyx * w.x + ty.xzy * w.y + tz.xyz * w.z);
-    oColor = vec4(present(applyFog(shadePbr(base, bumped, vWorldPos, metallic, rough), vWorldPos)), opacity);
+    oColor = vec4(present(applyFog(shadePbr(base, bumped, v2f.worldPos, metallic, rough), v2f.worldPos)), opacity);
 }
 )";
 

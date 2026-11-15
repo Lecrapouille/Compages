@@ -28,7 +28,11 @@ in float phase;
 uniform float time;
 uniform float aspect;
 
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 void main()
 {
@@ -41,7 +45,7 @@ void main()
 
     float col = mod(tile, 4.0);
     float row = floor(tile / 4.0);
-    vUV = (vec2(col, row) + uv) / 4.0;
+    v2f.uV = (vec2(col, row) + uv) / 4.0;
 
     float wobble = 0.012 * sin(time * 1.6 + phase);
     vec2 place = center + (corner * extent) + vec2(wobble, 0.0);
@@ -51,15 +55,19 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D atlas;
 out vec4 oColor;
 
 void main()
 {
-    vec4 colour = texture(atlas, vUV);
+    vec4 colour = texture(atlas, v2f.uV);
     // A slight inset so neighbouring sprites do not fuse into a sheet.
-    vec2 edge = abs(vUV * 4.0 - floor(vUV * 4.0) - 0.5);
+    vec2 edge = abs(v2f.uV * 4.0 - floor(v2f.uV * 4.0) - 0.5);
     if (max(edge.x, edge.y) > 0.46)
     {
         discard;

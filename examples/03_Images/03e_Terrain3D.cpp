@@ -29,24 +29,32 @@ in vec3 layer_coord;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vLayerCoord;
+struct V2F
+{
+    vec3 layerCoord;
+};
+out V2F v2f;
 
 void main()
 {
-    vLayerCoord = layer_coord;
+    v2f.layerCoord = layer_coord;
     gl_Position = projection * view * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec3 vLayerCoord;
+struct V2F
+{
+    vec3 layerCoord;
+};
+in V2F v2f;
 uniform sampler3D layers;
 out vec4 oColor;
 
 void main()
 {
-    oColor = texture(layers, vLayerCoord);
+    oColor = texture(layers, v2f.layerCoord);
 }
 )";
 

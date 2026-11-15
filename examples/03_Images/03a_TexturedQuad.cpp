@@ -29,11 +29,15 @@ in vec2 uv;
 
 uniform float scale;
 
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 void main()
 {
-    vUV = uv * scale;
+    v2f.uV = uv * scale;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
@@ -41,7 +45,11 @@ void main()
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 
 uniform sampler2D image;
 
@@ -49,7 +57,7 @@ out vec4 oColor;
 
 void main()
 {
-    oColor = texture(image, vUV);
+    oColor = texture(image, v2f.uV);
 }
 )";
 

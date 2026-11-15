@@ -23,20 +23,28 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec2 aUV;
 layout(location = 2) in ivec2 aCell;
 
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 uniform mat4 uModel;
 
 void main()
 {
-    vUV = aUV + vec2(aCell);
+    v2f.uV = aUV + vec2(aCell);
     gl_Position = uModel * vec4(aPosition, 1.0);
 }
 )";
 
 //! \brief A fragment shader with a sampler and a plain uniform.
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 out vec4 oColor;
 
 uniform sampler2D uTexture;
@@ -45,7 +53,7 @@ uniform float uGamma;
 
 void main()
 {
-    oColor = texture(uTexture, vUV) * uTint * uGamma;
+    oColor = texture(uTexture, v2f.uV) * uTint * uGamma;
 }
 )";
 
@@ -188,9 +196,13 @@ TEST_F(ShaderTest, LinksAProgram)
 TEST_F(ShaderTest, HandsBackTheLinkerLogOnFailure)
 {
     constexpr const char* WANTS_SOMETHING_ELSE = R"(#version 450 core
-in vec3 vMissing;
+struct V2F
+{
+    vec3 missing;
+};
+in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vec4(vMissing, 1.0); }
+void main() { oColor = vec4(v2f.missing, 1.0); }
 )";
 
     auto program = tests::programFromSources(VERTEX, WANTS_SOMETHING_ELSE);

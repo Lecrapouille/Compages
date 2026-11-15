@@ -35,28 +35,36 @@ layout(std140, binding = 0) uniform Transforms
     mat4 model;
 } u;
 
-out vec3 vNormal;
-out vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vNormal = mat3(u.model) * normal;
-    vColor = color;
+    v2f.normal = mat3(u.model) * normal;
+    v2f.color = color;
     gl_Position = u.projection * u.view * u.model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* LIT_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
 {
     const vec3 toLight = normalize(vec3(0.4, 0.8, 0.6));
-    float lit = 0.25 + (0.75 * max(dot(normalize(vNormal), toLight), 0.0));
-    oColor = vec4(vColor * lit, 1.0);
+    float lit = 0.25 + (0.75 * max(dot(normalize(v2f.normal), toLight), 0.0));
+    oColor = vec4(v2f.color * lit, 1.0);
 }
 )";
 
@@ -75,23 +83,33 @@ layout(std140, binding = 0) uniform Transforms
     mat4 model;
 } u;
 
-out vec3 vNormal;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vNormal = mat3(u.model) * normal;
+    v2f.normal = mat3(u.model) * normal;
     gl_Position = u.projection * u.view * u.model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* NORMALS_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0);
+    oColor = vec4(normalize(v2f.normal) * 0.5 + 0.5, 1.0);
 }
 )";
 

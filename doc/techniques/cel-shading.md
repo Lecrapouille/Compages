@@ -76,7 +76,7 @@ m_scene.assets().material(m_cel)->program.set("tones", float(m_tones));
 
 ## 🔍 The shader
 
-The whole hook `light`. `lightDir`, `lightColor`, `ambient`, `cameraPos`, `vWorldPos` and `sunVisibility()` (the shadow of the sun) are given by the PBR shader:
+The whole hook `light`. `lightDir`, `lightColor`, `ambient`, `cameraPos`, `v2f.worldPos` and `sunVisibility()` (the shadow of the sun) are given by the PBR shader:
 
 ```glsl
 uniform float tones;
@@ -84,8 +84,8 @@ uniform float tones;
 vec3 light(Surface s)
 {
     vec3 toSun = normalize(-lightDir);
-    vec3 toEye = normalize(cameraPos - vWorldPos);
-    float sun = max(dot(s.normal, toSun), 0.0) * sunVisibility(s.normal, toSun, vWorldPos);
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
+    float sun = max(dot(s.normal, toSun), 0.0) * sunVisibility(s.normal, toSun, v2f.worldPos);
     float band = ceil(sun * tones) / tones;
     float glint = pow(max(dot(s.normal, normalize(toSun + toEye)), 0.0), 80.0);
     return s.albedo * (ambient + lightColor * band) + lightColor * step(0.5, glint) * step(0.0, sun - 0.01);

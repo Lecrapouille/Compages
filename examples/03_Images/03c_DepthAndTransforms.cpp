@@ -34,16 +34,20 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vNormal;
-out vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+out V2F v2f;
 
 void main()
 {
     // The rotation applies to the normal as it does to the position, but the
     // translation does not: a direction has no place. Taking the upper three by
     // three part of the matrix is what says so.
-    vNormal = mat3(model) * normal;
-    vColor = color;
+    v2f.normal = mat3(model) * normal;
+    v2f.color = color;
     gl_Position = projection * view * model * vec4(position, 1.0);
 }
 )";
@@ -51,8 +55,12 @@ void main()
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT_SHADER = R"(#version 450 core
 
-in vec3 vNormal;
-in vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+in V2F v2f;
 
 out vec4 oColor;
 
@@ -61,8 +69,8 @@ void main()
     // One fixed light, so that the faces are told apart by more than their colour
     // and the shape reads as a solid.
     const vec3 toLight = normalize(vec3(0.4, 0.8, 0.6));
-    float lit = 0.25 + (0.75 * max(dot(normalize(vNormal), toLight), 0.0));
-    oColor = vec4(vColor * lit, 1.0);
+    float lit = 0.25 + (0.75 * max(dot(normalize(v2f.normal), toLight), 0.0));
+    oColor = vec4(v2f.color * lit, 1.0);
 }
 )";
 

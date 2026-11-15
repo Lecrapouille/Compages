@@ -124,7 +124,7 @@ vec4 flowAt(vec2 p)
 
 void main()
 {
-    vec2 p = vWorldPos.xz;
+    vec2 p = v2f.worldPos.xz;
     vec4 data = flowAt(p);
     vec4 noise = texture(noiseMap, p / 9.0);
     vec2 flow = data.xy * flowScale;

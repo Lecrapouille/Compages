@@ -857,20 +857,28 @@ TEST_F(DrawTest, DrawsEachInstanceAtItsOwnPlace)
 in vec2 center;
 in vec2 extent;
 in vec4 color;
-out vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[4] = vec2[4](vec2(-1.0, -1.0), vec2(1.0, -1.0),
                               vec2(-1.0, 1.0), vec2(1.0, 1.0));
-    vColor = color;
+    v2f.color = color;
     gl_Position = vec4(center + (corners[gl_VertexID] * extent), 0.0, 1.0);
 }
 )";
     constexpr const char* fragment = R"(#version 450 core
-in vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+in V2F v2f;
 out vec4 oColor;
-void main() { oColor = vColor; }
+void main() { oColor = v2f.color; }
 )";
 
     auto compiled = tests::programFromSources(vertex, fragment);

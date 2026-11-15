@@ -44,6 +44,18 @@ doc/tutorials/ too (and of its screenshots).
 
 ## Rules
 
+- Data from the vertex to the fragment shader goes in one struct, as in
+  Unity: `struct V2F { vec3 normal; vec2 uv; }; out V2F v2f;` in the vertex
+  shader, the same struct with `in V2F v2f;` in the fragment shader, read as
+  `v2f.uv`. No loose `out vec2 vUv;`. Vertex inputs stay plain `in`
+  variables (filled by name); integer data makes the whole variable `flat`.
+  A hook that adds data to the PBR shader declares its own struct
+  (`struct MetalV2F {…}; out MetalV2F metal;`), never a second `V2F`.
+- With a geometry shader between them, the same convention as Unity: the
+  vertex shader writes `out V2G v2g;`, the geometry shader reads the corners
+  of a primitive as an array, `in V2G v2g[];`, and writes `out G2F g2f;`
+  (one per emitted vertex, before `EmitVertex()`); the fragment shader reads
+  `in G2F g2f;` instead of `v2f`.
 - SI units first: a time, an angle or a speed is a `compages::si` type
   (`Seconds`, `Radians`, `AngularVelocity`, `LinearVelocity`, `Length`…, in
   `Core/Units.hpp`), not a bare `float`/`double`, above all in a public API.

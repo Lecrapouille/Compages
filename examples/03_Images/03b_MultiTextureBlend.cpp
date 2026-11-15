@@ -21,19 +21,27 @@ namespace examples
 constexpr char const* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 void main()
 {
     // Once across the quad: the blend map is a map of the whole ground, and
     // repeating it is what made the same pattern show four times.
-    vUV = uv;
+    v2f.uV = uv;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D backgroundTexture;
 uniform sampler2D rTexture;
 uniform sampler2D gTexture;
@@ -44,11 +52,11 @@ void main()
 {
     // Each channel of the blend map is the weight of one material. What is
     // left over is the background.
-    vec4 blend = texture(blendMap, vUV);
+    vec4 blend = texture(blendMap, v2f.uV);
     float backAmount = 1.0 - (blend.r + blend.g + blend.b);
     // The materials are small patches of ground: stretched over the whole
     // quad they would be a blur, so they are read a few times across it.
-    vec2 detail = vUV * 6.0;
+    vec2 detail = v2f.uV * 6.0;
     vec4 colour = texture(backgroundTexture, detail) * backAmount;
     colour += texture(rTexture, detail) * blend.r;
     colour += texture(gTexture, detail) * blend.g;

@@ -49,16 +49,20 @@ in vec3 position;
 in vec3 normal;
 in vec2 uv;
 uniform mat4 model;
-out vec3 vWorldPos;
-out vec3 vLocalPos;
-out vec3 vNormal;
+struct V2F
+{
+    vec3 worldPos;
+    vec3 localPos;
+    vec3 normal;
+};
+out V2F v2f;
 
 void main()
 {
     vec4 world = model * vec4(position, 1.0);
-    vWorldPos = world.xyz;
-    vLocalPos = position;
-    vNormal = mat3(transpose(inverse(model))) * normal;
+    v2f.worldPos = world.xyz;
+    v2f.localPos = position;
+    v2f.normal = mat3(transpose(inverse(model))) * normal;
     gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
 }
 )";
@@ -70,9 +74,13 @@ void main()
 // skin is written in that frame, in texels per unit of world distance.
 // ----------------------------------------------------------------------------
 constexpr char const* FORCE_FRAGMENT = R"(#version 450 core
-in vec3 vWorldPos;
-in vec3 vLocalPos;
-in vec3 vNormal;
+struct V2F
+{
+    vec3 worldPos;
+    vec3 localPos;
+    vec3 normal;
+};
+in V2F v2f;
 uniform vec3 gravity;
 uniform vec2 zone;      // local height where the forehead starts, head height
 uniform float wobble;   // radians: the skin is not smooth, drops meander
@@ -98,9 +106,9 @@ float noise(vec3 x)
 
 void main()
 {
-    vec3 n = normalize(vNormal);
-    vec3 pu = dFdx(vWorldPos);
-    vec3 pv = dFdy(vWorldPos);
+    vec3 n = normalize(v2f.normal);
+    vec3 pu = dFdx(v2f.worldPos);
+    vec3 pv = dFdy(v2f.worldPos);
     vec3 slope = gravity - dot(gravity, n) * n;
 
     // Solve slope = a pu + b pv: the same move, counted in texels.
@@ -115,11 +123,11 @@ void main()
         float sv = dot(slope, pv);
         flow = vec2(g * su - f * sv, e * sv - f * su) / det;
     }
-    float angle = (noise(vWorldPos * scale * 14.0) - 0.5) * wobble;
+    float angle = (noise(v2f.worldPos * scale * 14.0) - 0.5) * wobble;
     flow = mat2(cos(angle), sin(angle), -sin(angle), cos(angle)) * flow;
 
     float facesDown = max(dot(n, gravity), 0.0);
-    float forehead = smoothstep(zone.x, zone.x + 0.2 * zone.y, vLocalPos.y);
+    float forehead = smoothstep(zone.x, zone.x + 0.2 * zone.y, v2f.localPos.y);
     oColor = vec4(flow, facesDown, 0.05 + 0.95 * forehead);
 }
 )";
@@ -276,9 +284,13 @@ void main()
 // contains, and the picture is painted into the decal map at those texels.
 // ----------------------------------------------------------------------------
 constexpr char const* DECAL_FRAGMENT = R"(#version 450 core
-in vec3 vWorldPos;
-in vec3 vLocalPos;
-in vec3 vNormal;
+struct V2F
+{
+    vec3 worldPos;
+    vec3 localPos;
+    vec3 normal;
+};
+in V2F v2f;
 uniform sampler2D picture;
 uniform vec3 center;
 uniform vec3 right;     // half size included
@@ -289,13 +301,13 @@ out vec4 oColor;
 
 void main()
 {
-    vec3 d = vWorldPos - center;
+    vec3 d = v2f.worldPos - center;
     vec3 box = vec3(dot(d, right) / dot(right, right),
                     dot(d, up) / dot(up, up),
                     dot(d, forward) / dot(forward, forward));
     // Outside the box, or skin turned away from the decal: not painted.
     if (any(greaterThan(abs(box), vec3(1.0))) ||
-        dot(normalize(vNormal), -normalize(forward)) < 0.2)
+        dot(normalize(v2f.normal), -normalize(forward)) < 0.2)
     {
         discard;
     }
@@ -351,10 +363,10 @@ uniform int showWater;
 // mesh has no tangents (Schüler, "Normal mapping without precomputed tangents").
 vec3 bend(vec3 n, vec3 tangentNormal)
 {
-    vec3 dp1 = dFdx(vWorldPos);
-    vec3 dp2 = dFdy(vWorldPos);
-    vec2 duv1 = dFdx(vUv);
-    vec2 duv2 = dFdy(vUv);
+    vec3 dp1 = dFdx(v2f.worldPos);
+    vec3 dp2 = dFdy(v2f.worldPos);
+    vec2 duv1 = dFdx(v2f.uv);
+    vec2 duv2 = dFdy(v2f.uv);
     vec3 dp2perp = cross(dp2, n);
     vec3 dp1perp = cross(n, dp1);
     vec3 t = dp2perp * duv1.x + dp1perp * duv2.x;
@@ -366,14 +378,14 @@ vec3 bend(vec3 n, vec3 tangentNormal)
 
 void main()
 {
-    vec3 n = normalize(vNormal);
-    vec3 skin = bend(n, texture(normalMap, vUv).xyz * 2.0 - 1.0);
+    vec3 n = normalize(v2f.normal);
+    vec3 skin = bend(n, texture(normalMap, v2f.uv).xyz * 2.0 - 1.0);
 
     // Water. Each drop is a small round cap, centred where the water pass
     // says it sits; its radius grows as the cube root of its water. Caps of
     // nearby drops add up, so drops that touch merge.
     vec2 size = vec2(textureSize(fluidMap, 0));
-    vec2 at = vUv * size;
+    vec2 at = v2f.uv * size;
     ivec2 base = ivec2(floor(at));
     float height = 0.0;
     vec2 slope = vec2(0.0);
@@ -400,28 +412,28 @@ void main()
         }
     }
     float bead = smoothstep(0.0, 0.1, height);
-    float wet = clamp(texture(fluidMap, vUv).g, 0.0, 1.0);
+    float wet = clamp(texture(fluidMap, v2f.uv).g, 0.0, 1.0);
     vec3 drop = bend(n, normalize(vec3(-slope, 1.0)));
     vec3 normal = normalize(mix(skin, drop, bead));
 
     vec3 albedo = baseColorFactor;
     if (hasBaseColorMap)
     {
-        albedo *= texture(baseColorMap, vUv).rgb;
+        albedo *= texture(baseColorMap, v2f.uv).rgb;
     }
-    vec4 decal = texture(decalMap, vUv);
+    vec4 decal = texture(decalMap, v2f.uv);
     albedo = albedo * (1.0 - clamp(decal.a, 0.0, 1.0)) + decal.rgb;   // premultiplied
     // Wet skin is darker, and a bead darker still: light goes through it.
     albedo *= mix(1.0, 0.8, wet) * mix(1.0, 0.7, bead);
 
-    vec3 shaded = shade(albedo, normal, vWorldPos);
+    vec3 shaded = shade(albedo, normal, v2f.worldPos);
 
     // Water is a mirror: a sharp highlight of the sun and of the sky at
     // grazing angles, on beads and, fainter, on the wet trail.
     vec3 toLight = normalize(-lightDir);
-    vec3 toEye = normalize(cameraPos - vWorldPos);
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
     vec3 halfway = normalize(toLight + toEye);
-    float sun = sunVisibility(normal, toLight, vWorldPos);
+    float sun = sunVisibility(normal, toLight, v2f.worldPos);
     float gloss = 0.5 * wet + 1.5 * bead;
     float highlight = pow(max(dot(normal, halfway), 0.0), mix(80.0, 300.0, bead));
     // And the sky it reflects (Schlick, 2 % for water): the rim of each bead.
@@ -439,7 +451,7 @@ void main()
     {
         shaded = mix(shaded, vec3(0.1, 0.45, 1.0), max(bead, 0.5 * wet));
     }
-    shaded = applyFog(shaded, vWorldPos);
+    shaded = applyFog(shaded, v2f.worldPos);
     oColor = vec4(present(shaded), opacity);
 }
 )";

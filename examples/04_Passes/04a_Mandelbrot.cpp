@@ -16,19 +16,27 @@ namespace examples
 
 // ----------------------------------------------------------------------------
 constexpr const char* VERTEX = R"(#version 450 core
-out vec2 vClip;
+struct V2F
+{
+    vec2 clip;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
-    vClip = corners[gl_VertexID];
-    gl_Position = vec4(vClip, 0.0, 1.0);
+    v2f.clip = corners[gl_VertexID];
+    gl_Position = vec4(v2f.clip, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec2 vClip;
+struct V2F
+{
+    vec2 clip;
+};
+in V2F v2f;
 
 uniform vec2 center;
 uniform float scale;
@@ -39,7 +47,7 @@ out vec4 oColor;
 void main()
 {
     // Clip position, stretched by the window, is the complex number c.
-    vec2 c = center + vec2(vClip.x * aspect, vClip.y) * scale;
+    vec2 c = center + vec2(v2f.clip.x * aspect, v2f.clip.y) * scale;
     vec2 z = vec2(0.0);
     int n = 0;
     const int limit = 80;

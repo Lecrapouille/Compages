@@ -50,8 +50,12 @@ static constexpr char const* BEND = R"(layout(std430) readonly buffer Beam
 };
 // SLICE_COUNT and BEAM_LENGTH come from C++ (ShaderSource::define).
 
-out float vHeat;
-out float vBrass;
+struct MetalV2F
+{
+    float heat;
+    float brass;
+};
+out MetalV2F metal;
 
 void deform(inout vec4 world, inout vec3 normal)
 {
@@ -59,8 +63,8 @@ void deform(inout vec4 world, inout vec3 normal)
     int k = min(int(s), SLICE_COUNT - 2);
     vec4 slice = mix(slices[k], slices[k + 1], s - float(k));
     vec2 across = vec2(-sin(slice.z), cos(slice.z));
-    vBrass = (world.y > 0.0) ? 1.0 : 0.0;
-    vHeat = slice.w;
+    metal.brass = (world.y > 0.0) ? 1.0 : 0.0;
+    metal.heat = slice.w;
     world.xy = slice.xy + across * world.y;
     normal.xy = vec2(normal.x * cos(slice.z) - normal.y * sin(slice.z),
                      normal.x * sin(slice.z) + normal.y * cos(slice.z));
@@ -70,13 +74,17 @@ void deform(inout vec4 world, inout vec3 normal)
 // ----------------------------------------------------------------------------
 //! Brass on top, steel under it, both glowing red when very hot.
 // ----------------------------------------------------------------------------
-static constexpr char const* METAL = R"(in float vHeat;
-in float vBrass;
+static constexpr char const* METAL = R"(struct MetalV2F
+{
+    float heat;
+    float brass;
+};
+in MetalV2F metal;
 
 void surface(inout Surface s)
 {
-    s.albedo = mix(vec3(0.45, 0.47, 0.5), vec3(0.75, 0.55, 0.2), vBrass);
-    float glow = smoothstep(350.0, 800.0, vHeat);
+    s.albedo = mix(vec3(0.45, 0.47, 0.5), vec3(0.75, 0.55, 0.2), metal.brass);
+    float glow = smoothstep(350.0, 800.0, metal.heat);
     s.emission = 0.6 * glow * mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.5, 0.1), glow);
 }
 )";

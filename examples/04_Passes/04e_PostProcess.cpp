@@ -26,22 +26,30 @@ in vec2 uv;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 void main()
 {
-    vUV = uv;
+    v2f.uV = uv;
     gl_Position = projection * view * model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr char const* SCENE_FS = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D texID;
 out vec4 oColor;
 void main()
 {
-    oColor = texture(texID, vUV);
+    oColor = texture(texID, v2f.uV);
 }
 )";
 
@@ -49,17 +57,25 @@ void main()
 constexpr char const* SCREEN_VS = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 void main()
 {
-    vUV = uv;
+    v2f.uV = uv;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr char const* SCREEN_FS = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D texID;
 uniform float time;
 uniform float screen_width;
@@ -69,9 +85,9 @@ void main()
 {
     // The sample is shifted by a sine of time and of the pixel, which is
     // the wave. The scene itself is already in the texture.
-    oColor = vec4(texture(texID, vUV +
-                          0.005 * vec2(sin(time + screen_width * vUV.x),
-                                       cos(time + screen_height * vUV.y))).xyz,
+    oColor = vec4(texture(texID, v2f.uV +
+                          0.005 * vec2(sin(time + screen_width * v2f.uV.x),
+                                       cos(time + screen_height * v2f.uV.y))).xyz,
                   1.0);
 }
 )";

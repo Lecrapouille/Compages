@@ -17,20 +17,28 @@ constexpr int STEPS_PER_FRAME = 8;
 
 // ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
     vec2 position = corners[gl_VertexID];
-    vUV = position * 0.5 + 0.5;
+    v2f.uV = position * 0.5 + 0.5;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* STEP_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D previous;
 uniform vec2 texel;
 out vec4 oColor;
@@ -39,12 +47,12 @@ void main()
 {
     // U in red, V in green. The laplacian is this cell against its four
     // neighbors: diffusion, before the reaction.
-    vec2 centre = texture(previous, vUV).rg;
+    vec2 centre = texture(previous, v2f.uV).rg;
     vec2 laplacian = -centre;
-    laplacian += texture(previous, vUV + vec2(texel.x, 0.0)).rg;
-    laplacian += texture(previous, vUV - vec2(texel.x, 0.0)).rg;
-    laplacian += texture(previous, vUV + vec2(0.0, texel.y)).rg;
-    laplacian += texture(previous, vUV - vec2(0.0, texel.y)).rg;
+    laplacian += texture(previous, v2f.uV + vec2(texel.x, 0.0)).rg;
+    laplacian += texture(previous, v2f.uV - vec2(texel.x, 0.0)).rg;
+    laplacian += texture(previous, v2f.uV + vec2(0.0, texel.y)).rg;
+    laplacian += texture(previous, v2f.uV - vec2(0.0, texel.y)).rg;
 
     // Feed U, kill V, and turn U into V where they meet.
     const float F = 0.037;
@@ -62,13 +70,17 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr const char* SHOW_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D image;
 out vec4 oColor;
 
 void main()
 {
-    float v = texture(image, vUV).g;
+    float v = texture(image, v2f.uV).g;
     oColor = vec4(0.5 + 0.5 * cos(3.2 + v * 6.5 + vec3(0.1, 0.7, 1.1)), 1.0);
 }
 )";

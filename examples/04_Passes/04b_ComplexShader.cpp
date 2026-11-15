@@ -17,10 +17,14 @@ namespace examples
 constexpr char const* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec2 uv;
-out vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+out V2F v2f;
 void main()
 {
-    vUv = uv;
+    v2f.uv = uv;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
@@ -29,7 +33,11 @@ void main()
 // Port of legacy 11_ComplexShader.fs (ShaderFrog Universe Nursery).
 // ----------------------------------------------------------------------------
 constexpr char const* FRAGMENT = R"(#version 450 core
-in vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+in V2F v2f;
 uniform vec3 color;
 uniform float time;
 uniform float twinkleSpeed;
@@ -41,7 +49,7 @@ out vec4 oColor;
 void main()
 {
     // Drift the sample so the field scrolls with time.
-    vec2 uv = vUv + 0.5;
+    vec2 uv = v2f.uv + 0.5;
     uv.x += time * speed * 0.1;
 
     vec3 dir = vec3(uv * 2.0, 1.0);
@@ -77,7 +85,7 @@ void main()
 
     // Soften the bright edges, or the stars alias into lines.
     float intensity = min(starColor.r + starColor.g + starColor.b, 0.7);
-    vec2 sgn = vUv * 2.0 - 1.0;
+    vec2 sgn = v2f.uv * 2.0 - 1.0;
     vec2 gradient = vec2(dFdx(intensity) * sgn.x, dFdy(intensity) * sgn.y);
     float cutoff = max(max(gradient.x, gradient.y) - 0.1, 0.0);
     starColor *= max(1.0 - cutoff * 6.0, 0.3);

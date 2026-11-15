@@ -30,28 +30,36 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vNormal;
-out vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vNormal = mat3(model) * normal;
-    vColor = color;
+    v2f.normal = mat3(model) * normal;
+    v2f.color = color;
     gl_Position = projection * view * model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* SCENE_FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in vec3 vColor;
+struct V2F
+{
+    vec3 normal;
+    vec3 color;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
 {
     const vec3 toLight = normalize(vec3(0.4, 0.8, 0.6));
-    float lit = 0.25 + (0.75 * max(dot(normalize(vNormal), toLight), 0.0));
-    oColor = vec4(vColor * lit, 1.0);
+    float lit = 0.25 + (0.75 * max(dot(normalize(v2f.normal), toLight), 0.0));
+    oColor = vec4(v2f.color * lit, 1.0);
 }
 )";
 
@@ -61,26 +69,34 @@ void main()
 //! offscreen picture stretches it over the pass.
 // ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
     vec2 position = corners[gl_VertexID];
-    vUV = position * 0.5 + 0.5;
+    v2f.uV = position * 0.5 + 0.5;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* BLIT_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D image;
 out vec4 oColor;
 
 void main()
 {
-    oColor = texture(image, vUV);
+    oColor = texture(image, v2f.uV);
 }
 )";
 
@@ -90,7 +106,11 @@ void main()
 //! drawn here, only the texture it left behind.
 // ----------------------------------------------------------------------------
 constexpr const char* PROCESS_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D image;
 out vec4 oColor;
 
@@ -98,9 +118,9 @@ void main()
 {
     // Red from the right, blue from the left, green from this pixel.
     vec2 shift = vec2(0.008, 0.0);
-    float red = texture(image, vUV + shift).r;
-    float green = texture(image, vUV).g;
-    float blue = texture(image, vUV - shift).b;
+    float red = texture(image, v2f.uV + shift).r;
+    float green = texture(image, v2f.uV).g;
+    float blue = texture(image, v2f.uV - shift).b;
     oColor = vec4(red, green, blue, 1.0);
 }
 )";

@@ -59,7 +59,7 @@ This is the main idea of the demo. The vertex shader puts each corner at its tex
 
 ```glsl
 vec4 world = model * vec4(position, 1.0);
-vWorldPos = world.xyz;
+v2f.worldPos = world.xyz;
 gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
 ```
 
@@ -73,7 +73,7 @@ Gravity along the skin is the part of gravity $\mathbf{g}$ that is not along the
 \mathbf{s} = \mathbf{g} - (\mathbf{g}\cdot\mathbf{n})\,\mathbf{n}
 ```
 
-The water moves in texels, so the slope must be written in the frame of the UV map. In this pass, $\mathbf{p}_u$ = `dFdx(vWorldPos)` is the piece of skin one texel to the right covers, and $\mathbf{p}_v$ = `dFdy` the one above: the two tangents of the map. We want $(a, b)$ with $\mathbf{s} \approx a\,\mathbf{p}_u + b\,\mathbf{p}_v$, the best fit (least squares):
+The water moves in texels, so the slope must be written in the frame of the UV map. In this pass, $\mathbf{p}_u$ = `dFdx(v2f.worldPos)` is the piece of skin one texel to the right covers, and $\mathbf{p}_v$ = `dFdy` the one above: the two tangents of the map. We want $(a, b)$ with $\mathbf{s} \approx a\,\mathbf{p}_u + b\,\mathbf{p}_v$, the best fit (least squares):
 
 ```math
 \begin{pmatrix} \mathbf{p}_u\cdot\mathbf{p}_u & \mathbf{p}_u\cdot\mathbf{p}_v \\ \mathbf{p}_u\cdot\mathbf{p}_v & \mathbf{p}_v\cdot\mathbf{p}_v \end{pmatrix}
@@ -85,8 +85,8 @@ The water moves in texels, so the slope must be written in the frame of the UV m
 A 2 × 2 system, solved by its determinant:
 
 ```glsl
-vec3 pu = dFdx(vWorldPos);
-vec3 pv = dFdy(vWorldPos);
+vec3 pu = dFdx(v2f.worldPos);
+vec3 pv = dFdy(v2f.worldPos);
 vec3 slope = gravity - dot(gravity, n) * n;
 // Solve slope = a pu + b pv: the same move, counted in texels.
 float e = dot(pu, pu);
@@ -109,12 +109,12 @@ Each texel computes what its eight neighbours send to it, from their own state o
 A left click finds the skin under the mouse (a ray against the triangles kept in step 1). A box is placed in front of it, turned at random, as `DecalGeometry` of three.js does. The UV pass draws the skin again, and keeps only the texels inside the box:
 
 ```glsl
-vec3 d = vWorldPos - center;
+vec3 d = v2f.worldPos - center;
 vec3 box = vec3(dot(d, right) / dot(right, right),
                 dot(d, up) / dot(up, up),
                 dot(d, forward) / dot(forward, forward));
 if (any(greaterThan(abs(box), vec3(1.0))) ||
-    dot(normalize(vNormal), -normalize(forward)) < 0.2)
+    dot(normalize(v2f.normal), -normalize(forward)) < 0.2)
 {
     discard;
 }

@@ -106,18 +106,26 @@ constexpr const char* VERTEX = R"(#version 450 core
 in vec2 position;
 in vec4 color;
 uniform float aspect;   // width / height: a circle stays round
-out vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vColor = color;
+    v2f.color = color;
     gl_PointSize = 2.2;
     gl_Position = vec4(position.x / aspect, position.y, 0.0, 1.0);
 }
 )";
 
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec4 vColor;
+struct V2F
+{
+    vec4 color;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
@@ -130,7 +138,7 @@ void main()
     {
         discard;
     }
-    oColor = vec4(vColor.rgb * fade, vColor.a * fade);
+    oColor = vec4(v2f.color.rgb * fade, v2f.color.a * fade);
 }
 )";
 

@@ -20,20 +20,28 @@ constexpr std::uint32_t SIZE = 256u;
 //! \brief A triangle covering the target, made from gl_VertexID: no vertices.
 // ----------------------------------------------------------------------------
 constexpr const char* SCREEN_VERTEX = R"(#version 450 core
-out vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
     vec2 position = corners[gl_VertexID];
-    vUV = position * 0.5 + 0.5;
+    v2f.uV = position * 0.5 + 0.5;
     gl_Position = vec4(position, 0.0, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* STEP_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D previous;
 uniform vec2 texel;
 out vec4 oColor;
@@ -51,12 +59,12 @@ void main()
             {
                 continue;
             }
-            neighbors += int(texture(previous, vUV + (vec2(x, y) * texel)).r > 0.5);
+            neighbors += int(texture(previous, v2f.uV + (vec2(x, y) * texel)).r > 0.5);
         }
     }
 
     // Stay alive with two or three neighbors, be born with three.
-    bool alive = texture(previous, vUV).r > 0.5;
+    bool alive = texture(previous, v2f.uV).r > 0.5;
     bool next = alive ? ((neighbors == 2) || (neighbors == 3))
                       : (neighbors == 3);
     oColor = vec4(next ? 1.0 : 0.0);
@@ -65,13 +73,17 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr const char* SHOW_FRAGMENT = R"(#version 450 core
-in vec2 vUV;
+struct V2F
+{
+    vec2 uV;
+};
+in V2F v2f;
 uniform sampler2D image;
 out vec4 oColor;
 
 void main()
 {
-    float cell = texture(image, vUV).r;
+    float cell = texture(image, v2f.uV).r;
     oColor = vec4(vec3(0.06, 0.08, 0.1) + (vec3(0.35, 0.85, 0.45) * cell), 1.0);
 }
 )";

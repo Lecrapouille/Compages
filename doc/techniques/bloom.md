@@ -65,8 +65,8 @@ You write no GLSL for the bloom. These are the passes of the Renderer, in [src/R
 **Down**: the mean of four pixels, and, on the first level only, the light above the threshold. The colour is scaled, not cut, so that it keeps its hue:
 
 ```glsl
-vec3 c = 0.25 * (texture(source, vUv + t * vec2(-0.5, -0.5)).rgb + texture(source, vUv + t * vec2(0.5, -0.5)).rgb +
-                 texture(source, vUv + t * vec2(-0.5, 0.5)).rgb + texture(source, vUv + t * vec2(0.5, 0.5)).rgb);
+vec3 c = 0.25 * (texture(source, v2f.uv + t * vec2(-0.5, -0.5)).rgb + texture(source, v2f.uv + t * vec2(0.5, -0.5)).rgb +
+                 texture(source, v2f.uv + t * vec2(-0.5, 0.5)).rgb + texture(source, v2f.uv + t * vec2(0.5, 0.5)).rgb);
 float bright = max(c.r, max(c.g, c.b));
 oColor = vec4(c * (max(bright - threshold, 0.0) / max(bright, 1e-4)), 1.0);
 ```
@@ -74,18 +74,18 @@ oColor = vec4(c * (max(bright - threshold, 0.0) / max(bright, 1e-4)), 1.0);
 **Up**: a 3 × 3 "tent" (weights 1-2-1 in each direction, divided by 16), added to the larger level (the pass blends; it does not clear):
 
 ```glsl
-vec3 c = 4.0 * texture(source, vUv).rgb;
-c += 2.0 * (texture(source, vUv + vec2(t.x, 0.0)).rgb + texture(source, vUv - vec2(t.x, 0.0)).rgb +
-            texture(source, vUv + vec2(0.0, t.y)).rgb + texture(source, vUv - vec2(0.0, t.y)).rgb);
-c += texture(source, vUv + t).rgb + texture(source, vUv - t).rgb + texture(source, vUv + vec2(t.x, -t.y)).rgb +
-     texture(source, vUv + vec2(-t.x, t.y)).rgb;
+vec3 c = 4.0 * texture(source, v2f.uv).rgb;
+c += 2.0 * (texture(source, v2f.uv + vec2(t.x, 0.0)).rgb + texture(source, v2f.uv - vec2(t.x, 0.0)).rgb +
+            texture(source, v2f.uv + vec2(0.0, t.y)).rgb + texture(source, v2f.uv - vec2(0.0, t.y)).rgb);
+c += texture(source, v2f.uv + t).rgb + texture(source, v2f.uv - t).rgb + texture(source, v2f.uv + vec2(t.x, -t.y)).rgb +
+     texture(source, v2f.uv + vec2(-t.x, t.y)).rgb;
 oColor = vec4(c / 16.0, 1.0);
 ```
 
 **Present**: the light, plus its halo, then the tone curve and the sRGB colours of the screen:
 
 ```glsl
-vec3 c = texture(screenColor, vUv).rgb + bloomStrength * texture(bloomMap, vUv).rgb;
+vec3 c = texture(screenColor, v2f.uv).rgb + bloomStrength * texture(bloomMap, v2f.uv).rgb;
 oColor = vec4(toSrgb(toneCurve(max(c, 0.0))), 1.0);
 ```
 

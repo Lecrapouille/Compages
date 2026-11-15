@@ -112,7 +112,7 @@ compages::Status Thermometers::setUp()
     // background would turn grey). The hook "main" of the PBR shader reads
     // the picture the look above gave the board.
     compages::renderer::shaders::ShaderPair screen = compages::renderer::shaders::pbr();
-    screen.fragment().hook("main", "void main() { oColor = vec4(screen(texture(baseColorMap, vUv).rgb), opacity); }");
+    screen.fragment().hook("main", "void main() { oColor = vec4(screen(texture(baseColorMap, v2f.uv).rgb), opacity); }");
     compages::renderer::MaterialId shown;
     COMPAGES_TRY_ASSIGN(shown,
                         m_scene.assets().createMaterial(

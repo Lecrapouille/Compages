@@ -19,15 +19,19 @@ namespace compages::renderer
 namespace
 {
 
-// One triangle larger than the screen; vUv goes from 0 to 1 across the part
+// One triangle larger than the screen; v2f.uv goes from 0 to 1 across the part
 // drawn into.
 constexpr char const* SCREEN_VERTEX = R"(#version 450 core
-out vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+out V2F v2f;
 
 void main()
 {
     vec2 corners[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
-    vUv = 0.5 * corners[gl_VertexID] + 0.5;
+    v2f.uv = 0.5 * corners[gl_VertexID] + 0.5;
     gl_Position = vec4(corners[gl_VertexID], 0.0, 1.0);
 }
 )";
@@ -35,7 +39,11 @@ void main()
 // Half the size: the mean of four pixels, keeping only the light above the
 // threshold (zero keeps all of it).
 constexpr char const* DOWN_FRAGMENT = R"(#version 450 core
-in vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+in V2F v2f;
 uniform sampler2D source;
 uniform float threshold;
 out vec4 oColor;
@@ -43,8 +51,8 @@ out vec4 oColor;
 void main()
 {
     vec2 t = 1.0 / vec2(textureSize(source, 0));
-    vec3 c = 0.25 * (texture(source, vUv + t * vec2(-0.5, -0.5)).rgb + texture(source, vUv + t * vec2(0.5, -0.5)).rgb +
-                     texture(source, vUv + t * vec2(-0.5, 0.5)).rgb + texture(source, vUv + t * vec2(0.5, 0.5)).rgb);
+    vec3 c = 0.25 * (texture(source, v2f.uv + t * vec2(-0.5, -0.5)).rgb + texture(source, v2f.uv + t * vec2(0.5, -0.5)).rgb +
+                     texture(source, v2f.uv + t * vec2(-0.5, 0.5)).rgb + texture(source, v2f.uv + t * vec2(0.5, 0.5)).rgb);
     float bright = max(c.r, max(c.g, c.b));
     oColor = vec4(c * (max(bright - threshold, 0.0) / max(bright, 1e-4)), 1.0);
 }
@@ -53,25 +61,33 @@ void main()
 // Twice the size: a tent of 3 x 3 pixels, added to what the larger level
 // holds. The halo widens at each level.
 constexpr char const* UP_FRAGMENT = R"(#version 450 core
-in vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+in V2F v2f;
 uniform sampler2D source;
 out vec4 oColor;
 
 void main()
 {
     vec2 t = 1.0 / vec2(textureSize(source, 0));
-    vec3 c = 4.0 * texture(source, vUv).rgb;
-    c += 2.0 * (texture(source, vUv + vec2(t.x, 0.0)).rgb + texture(source, vUv - vec2(t.x, 0.0)).rgb +
-                texture(source, vUv + vec2(0.0, t.y)).rgb + texture(source, vUv - vec2(0.0, t.y)).rgb);
-    c += texture(source, vUv + t).rgb + texture(source, vUv - t).rgb + texture(source, vUv + vec2(t.x, -t.y)).rgb +
-         texture(source, vUv + vec2(-t.x, t.y)).rgb;
+    vec3 c = 4.0 * texture(source, v2f.uv).rgb;
+    c += 2.0 * (texture(source, v2f.uv + vec2(t.x, 0.0)).rgb + texture(source, v2f.uv - vec2(t.x, 0.0)).rgb +
+                texture(source, v2f.uv + vec2(0.0, t.y)).rgb + texture(source, v2f.uv - vec2(0.0, t.y)).rgb);
+    c += texture(source, v2f.uv + t).rgb + texture(source, v2f.uv - t).rgb + texture(source, v2f.uv + vec2(t.x, -t.y)).rgb +
+         texture(source, v2f.uv + vec2(-t.x, t.y)).rgb;
     oColor = vec4(c / 16.0, 1.0);
 }
 )";
 
 // The last pass: the light, its bloom, the tone curve and the sRGB encoding.
 constexpr char const* PRESENT_FRAGMENT = R"(#version 450 core
-in vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+in V2F v2f;
 uniform sampler2D screenColor;
 uniform sampler2D bloomMap;
 uniform float bloomStrength;
@@ -80,14 +96,18 @@ out vec4 oColor;
 
 void main()
 {
-    vec3 c = texture(screenColor, vUv).rgb + bloomStrength * texture(bloomMap, vUv).rgb;
+    vec3 c = texture(screenColor, v2f.uv).rgb + bloomStrength * texture(bloomMap, v2f.uv).rgb;
     oColor = vec4(toSrgb(toneCurve(max(c, 0.0))), 1.0);
 }
 )";
 
 // What every filter has before its text, and the main() after it.
 constexpr char const* FILTER_HEAD = R"(#version 450 core
-in vec2 vUv;
+struct V2F
+{
+    vec2 uv;
+};
+in V2F v2f;
 uniform sampler2D screenColor;
 uniform sampler2D screenDepth;
 uniform vec2 screenSize;
@@ -97,7 +117,7 @@ out vec4 oColor;
 constexpr char const* FILTER_TAIL = R"(
 void main()
 {
-    oColor = vec4(effect(vUv), 1.0);
+    oColor = vec4(effect(v2f.uv), 1.0);
 }
 )";
 

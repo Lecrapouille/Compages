@@ -18,14 +18,14 @@ namespace
 // The hook "surface" receives the surface as the shape describes it (its
 // colour, its normal...) and changes what it wants. Here: the paint of a
 // machine, worn down to the steel along the edges of each face, where tools
-// and hands rub it. vUv goes from 0 to 1 across each face of a box, so the
+// and hands rub it. v2f.uv goes from 0 to 1 across each face of a box, so the
 // distance to the nearest edge of the face is the smallest of four numbers.
 // Only the colour changes: s.metallic and s.roughness count only for an
 // instance that uses the metallic-roughness model of glTF.
 constexpr char const* WORN_PAINT = R"(
 void surface(inout Surface s)
 {
-    float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+    float edge = min(min(v2f.uv.x, 1.0 - v2f.uv.x), min(v2f.uv.y, 1.0 - v2f.uv.y));
     float paint = smoothstep(0.02, 0.08, edge);
     s.albedo = mix(vec3(0.55, 0.56, 0.58), s.albedo, paint);
 }

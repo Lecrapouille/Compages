@@ -255,11 +255,15 @@ in float value;
 uniform float aspect;
 uniform float scale;
 uniform float pixels;
-out float vValue;
+struct V2F
+{
+    float value;
+};
+out V2F v2f;
 
 void main()
 {
-    vValue = value;
+    v2f.value = value;
     gl_PointSize = pixels;
     gl_Position = vec4(position.x * scale / aspect, position.y * scale, 0.0, 1.0);
 }
@@ -267,7 +271,11 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr char const* PLANE_FRAGMENT = R"(#version 450 core
-in float vValue;
+struct V2F
+{
+    float value;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
@@ -275,8 +283,8 @@ void main()
     // Blue for class 0, orange for class 1, dark where the network hesitates.
     vec3 zero = vec3(0.15, 0.35, 0.75);
     vec3 one = vec3(0.85, 0.45, 0.12);
-    float sure = abs(vValue - 0.5) * 2.0;
-    oColor = vec4(mix(zero, one, vValue) * (0.25 + 0.45 * sure), 1.0);
+    float sure = abs(v2f.value - 0.5) * 2.0;
+    oColor = vec4(mix(zero, one, v2f.value) * (0.25 + 0.45 * sure), 1.0);
 }
 )";
 
@@ -286,11 +294,15 @@ in vec2 position;
 in float label;
 uniform float aspect;
 uniform float scale;
-out float vLabel;
+struct V2F
+{
+    float label;
+};
+out V2F v2f;
 
 void main()
 {
-    vLabel = label;
+    v2f.label = label;
     gl_PointSize = 8.0;
     gl_Position = vec4(position.x * scale / aspect, position.y * scale, 0.0, 1.0);
 }
@@ -298,7 +310,11 @@ void main()
 
 // ----------------------------------------------------------------------------
 constexpr char const* DOT_FRAGMENT = R"(#version 450 core
-in float vLabel;
+struct V2F
+{
+    float label;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
@@ -308,7 +324,7 @@ void main()
     {
         discard;
     }
-    vec3 color = (vLabel > 0.5) ? vec3(1.0, 0.65, 0.3) : vec3(0.4, 0.65, 1.0);
+    vec3 color = (v2f.label > 0.5) ? vec3(1.0, 0.65, 0.3) : vec3(0.4, 0.65, 1.0);
     oColor = vec4((r > 0.38) ? vec3(1.0) : color, 1.0);
 }
 )";

@@ -30,21 +30,29 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vNormal;
-out float vHeight;
+struct V2F
+{
+    vec3 normal;
+    float height;
+};
+out V2F v2f;
 
 void main()
 {
-    vNormal = mat3(model) * normal;
-    vHeight = position.y;
+    v2f.normal = mat3(model) * normal;
+    v2f.height = position.y;
     gl_Position = projection * view * model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec3 vNormal;
-in float vHeight;
+struct V2F
+{
+    vec3 normal;
+    float height;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
@@ -52,10 +60,10 @@ void main()
     // Height paints the colour, the normal paints the light, so a wave reads
     // as a surface and not as a flat gradient.
     const vec3 toLight = normalize(vec3(0.35, 0.8, 0.45));
-    float lit = 0.2 + (0.8 * max(dot(normalize(vNormal), toLight), 0.0));
+    float lit = 0.2 + (0.8 * max(dot(normalize(v2f.normal), toLight), 0.0));
     vec3 low = vec3(0.15, 0.25, 0.45);
     vec3 high = vec3(0.85, 0.75, 0.45);
-    float t = clamp(vHeight * 2.5 + 0.45, 0.0, 1.0);
+    float t = clamp(v2f.height * 2.5 + 0.45, 0.0, 1.0);
     oColor = vec4(mix(low, high, t) * lit, 1.0);
 }
 )";

@@ -32,23 +32,31 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vColor;
+struct V2F
+{
+    vec3 color;
+};
+out V2F v2f;
 
 void main()
 {
-    vColor = color;
+    v2f.color = color;
     gl_Position = projection * view * model * vec4(position, 1.0);
 }
 )";
 
 // ----------------------------------------------------------------------------
 constexpr const char* FRAGMENT = R"(#version 450 core
-in vec3 vColor;
+struct V2F
+{
+    vec3 color;
+};
+in V2F v2f;
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(vColor, 1.0);
+    oColor = vec4(v2f.color, 1.0);
 }
 )";
 

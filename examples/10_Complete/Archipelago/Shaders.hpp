@@ -66,19 +66,19 @@ vec3 grain(sampler2D p_map, vec2 p_at)
 
 void main()
 {
-    vec4 texel = hasBaseColorMap ? texture(baseColorMap, vUv) : vec4(1.0);
+    vec4 texel = hasBaseColorMap ? texture(baseColorMap, v2f.uv) : vec4(1.0);
     vec3 base = texel.rgb * baseColorFactor;
-    vec2 p = vWorldPos.xz;
-    float near = 1.0 - smoothstep(250.0, 1600.0, length(cameraPos - vWorldPos));
+    vec2 p = v2f.worldPos.xz;
+    float near = 1.0 - smoothstep(250.0, 1600.0, length(cameraPos - v2f.worldPos));
     if (texel.a > 0.97)
     {
-        vec3 n = normalize(vNormal);
-        float sand = 1.0 - smoothstep(2.0, 6.0, vWorldPos.y);
+        vec3 n = normalize(v2f.normal);
+        float sand = 1.0 - smoothstep(2.0, 6.0, v2f.worldPos.y);
         float rock = smoothstep(0.22, 0.42, 1.0 - n.y) * (1.0 - sand);
         float grass = max(1.0 - sand - rock, 0.0);
         vec3 ground = (grain(grassMap, p) * grass) + (grain(sandMap, p) * sand) + (grain(rockMap, p) * rock);
         base *= mix(vec3(1.0), ground, 0.9 * near);
-        oColor = vec4(present(applyFog(matte(base, n, vWorldPos), vWorldPos)), opacity);
+        oColor = vec4(present(applyFog(matte(base, n, v2f.worldPos), v2f.worldPos)), opacity);
         return;
     }
     bool river = texel.a > 0.915;
@@ -86,7 +86,7 @@ void main()
     vec3 up = vec3(0.0, 1.0, 0.0);
     // The sea bed: sand in the shallows.
     base *= mix(vec3(1.0), grain(sandMap, p), 0.6 * near * (1.0 - smoothstep(0.0, 0.3, depth)));
-    vec3 bed = shade(base, up, vWorldPos);
+    vec3 bed = shade(base, up, v2f.worldPos);
     vec2 slope = vec2(0.0);
     for (int i = river ? 5 : 0; i < SWELL_COUNT; ++i)
     {
@@ -100,11 +100,11 @@ void main()
     // the wind; a noise, not a grid of sines.
     slope *= 0.55 + 0.9 * swellNoise((p - vec2(8.0, 6.0) * time) / 700.0, 300u);
     vec3 n = normalize(vec3(-slope.x, 1.0, -slope.y));
-    vec3 toEye = normalize(cameraPos - vWorldPos);
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
     vec3 toLight = normalize(-lightDir);
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(normalize(n + up), toEye), 0.0), 5.0);
     vec3 water = mix(bed, fogColor * 1.1, 0.7 * fresnel);
-    float sun = sunVisibility(up, toLight, vWorldPos);
+    float sun = sunVisibility(up, toLight, v2f.worldPos);
     water += lightColor * (2.5 * sun * pow(max(dot(reflect(-toLight, n), toEye), 0.0), 240.0));
     if (!river)
     {
@@ -118,7 +118,7 @@ void main()
     float open = (river || surfaceRadius <= 0.0)
                      ? 1.0
                      : smoothstep(0.7 * surfaceRadius, surfaceRadius, length(p - surfaceCentre));
-    oColor = vec4(present(applyFog(mix(bed, water, open), vWorldPos)), opacity);
+    oColor = vec4(present(applyFog(mix(bed, water, open), v2f.worldPos)), opacity);
 }
 )";
 
@@ -135,7 +135,11 @@ uniform float time;
 uniform sampler2D baseColorMap;
 uniform float gridStep;
 
-out float vCrest;
+struct WaveV2F
+{
+    float crest;
+};
+out WaveV2F wave;
 
 vec3 gWaveNormal;
 
@@ -145,7 +149,7 @@ vec4 displace(vec4 p_world)
     float calm = (water > 0.91) ? 0.0 : smoothstep(0.0, 0.08, 1.0 - water / 0.9);
     vec3 offset = vec3(0.0);
     vec3 normal = vec3(0.0, 1.0, 0.0);
-    vCrest = 0.0;
+    wave.crest = 0.0;
     for (int i = 0; i < SWELL_COUNT; ++i)
     {
         vec2 d = normalize(SWELLS[i].xy);
@@ -158,7 +162,7 @@ vec4 displace(vec4 p_world)
         offset.y += amplitude * sin(phase);
         normal.xz -= d * (k * amplitude * cos(phase));
         normal.y -= Q * k * amplitude * sin(phase);
-        vCrest += k * amplitude * sin(phase);
+        wave.crest += k * amplitude * sin(phase);
     }
     gWaveNormal = normalize(normal);
     return vec4(p_world.xyz + offset, 1.0);
@@ -180,11 +184,15 @@ uniform float time;
 uniform vec2 surfaceCentre;
 uniform float surfaceRadius;
 
-in float vCrest;
+struct WaveV2F
+{
+    float crest;
+};
+in WaveV2F wave;
 
 void main()
 {
-    vec2 p = vWorldPos.xz;
+    vec2 p = v2f.worldPos.xz;
     vec4 texel = hasBaseColorMap ? texture(baseColorMap, p / MAP_SIZE + 0.5) : vec4(0.0);
     if (texel.a > 0.91)
     {
@@ -202,24 +210,24 @@ void main()
         slope += d * (SWELLS[i].w * swellGroup(i, p, time) * cos(phase) *
                       (1.0 - smoothstep(0.3, 1.2, fwidth(phase))));
     }
-    vec3 n = normalize(normalize(vNormal) + vec3(-slope.x, 0.0, -slope.y));
-    vec3 toEye = normalize(cameraPos - vWorldPos);
+    vec3 n = normalize(normalize(v2f.normal) + vec3(-slope.x, 0.0, -slope.y));
+    vec3 toEye = normalize(cameraPos - v2f.worldPos);
     vec3 toLight = normalize(-lightDir);
-    float sun = sunVisibility(up, toLight, vWorldPos);
+    float sun = sunVisibility(up, toLight, v2f.worldPos);
     vec3 body = shade(mix(vec3(0.05, 0.32, 0.38), vec3(0.01, 0.06, 0.14), smoothstep(0.0, 0.6, depth)) * baseColorFactor,
-                      up, vWorldPos);
+                      up, v2f.worldPos);
     float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, toEye), 0.0), 5.0);
     vec3 water = mix(body, fogColor * 1.1, fresnel);
     water += lightColor * (3.0 * sun * pow(max(dot(reflect(-toLight, n), toEye), 0.0), 200.0));
     float shallow = 1.0 - smoothstep(0.0, 0.07, depth);
     float bands = sin(depth * 260.0 + time * 1.4);
     float broken = swellNoise((p + vec2(0.0, 3.0) * time) / 40.0, 301u);
-    float foam = clamp(shallow * smoothstep(0.55, 0.95, bands) * broken + smoothstep(0.16, 0.24, vCrest) * 0.6, 0.0, 1.0);
+    float foam = clamp(shallow * smoothstep(0.55, 0.95, bands) * broken + smoothstep(0.16, 0.24, wave.crest) * 0.6, 0.0, 1.0);
     water = mix(water, vec3(0.9, 0.95, 0.95) * (0.6 + 0.4 * sun), foam);
     float alpha = mix(0.3, 0.92, smoothstep(0.0, 0.35, depth));
     alpha = max(alpha, max(fresnel, foam));
     alpha *= 1.0 - smoothstep(0.7 * surfaceRadius, surfaceRadius, length(p - surfaceCentre));
-    oColor = vec4(present(applyFog(water, vWorldPos)), alpha * opacity);
+    oColor = vec4(present(applyFog(water, v2f.worldPos)), alpha * opacity);
 }
 )";
 

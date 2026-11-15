@@ -36,11 +36,13 @@ It receives what the material instance gives (its colour and picture, its normal
 ```glsl
 void surface(inout Surface s)
 {
-    s.albedo = mix(STEEL, BRASS, vBrass);
-    float glow = smoothstep(350.0, 800.0, vHeat);
+    s.albedo = mix(STEEL, BRASS, metal.brass);
+    float glow = smoothstep(350.0, 800.0, metal.heat);
     s.emission = 0.6 * glow * mix(RED, ORANGE, glow);   // light of its own, after the lamps
 }
 ```
+
+`metal` is a struct of the material itself, `struct MetalV2F { float heat; float brass; }`: its `deform` hook writes it for each corner, and `surface` reads it for each pixel. It sits next to the `v2f` of the PBR shader, never inside it ([shaders reference](../reference/shaders.md)).
 
 `10f_FlowingWater` projects a picture along the three axes and blends by the normal (**triplanar mapping**), so long walls need no texture coordinates:
 
@@ -52,18 +54,18 @@ void surface(inout Surface s)
 {
     vec3 w = pow(abs(s.normal), vec3(4.0));
     w /= (w.x + w.y + w.z);
-    vec3 p = vWorldPos / tileMetres;
+    vec3 p = v2f.worldPos / tileMetres;
     vec3 c = texture(surfaceMap, p.zy).rgb * w.x + texture(surfaceMap, p.xz).rgb * w.y
            + texture(surfaceMap, p.xy).rgb * w.z;
     s.albedo = c * baseColorFactor;
 }
 ```
 
-The hook sees what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`.
+The hook sees what the PBR shader declares: `v2f.worldPos`, `v2f.normal`, `v2f.uv`, `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`.
 
 ## 💡 2. Then light, for another model of light
 
-The surface stays; only the way light falls on it changes. The [cel shading technique](../techniques/cel-shading.md) cuts the sun into flat tones this way. `light` reads `lightDir`, `lightColor`, `ambient`, `cameraPos`, `vWorldPos` and may call `sunVisibility(…)`, `pointLightsContribution(…)`, `shade(…)`, `shadePbr(…)` or `sceneLight(s)` (to change the light of the scene, not replace it).
+The surface stays; only the way light falls on it changes. The [cel shading technique](../techniques/cel-shading.md) cuts the sun into flat tones this way. `light` reads `lightDir`, `lightColor`, `ambient`, `cameraPos`, `v2f.worldPos` and may call `sunVisibility(…)`, `pointLightsContribution(…)`, `shade(…)`, `shadePbr(…)` or `sceneLight(s)` (to change the light of the scene, not replace it).
 
 ## 🎨 3. main, for what is not a lit surface
 

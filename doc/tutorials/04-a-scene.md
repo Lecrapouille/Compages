@@ -4,9 +4,33 @@
 
 ![13a_Workshop](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13a_Workshop.png)
 
-The third layer draws a World. A `compages::renderer::Scene` gives entities a shape and a look, adds a camera and lights, and draws the picture with the GPU layer. You will build the workshop around the arm of the last page, give the arm its shapes, and then draw the whole scene in a window that your own program opens.
+You can now compute the arm's position. To see it, you need shapes, a camera and light. A `compages::renderer::Scene` supplies those drawing resources for a World and uses the GPU layer to render it.
 
-## 🏠 The room
+## 🎯 Goal
+
+Give the arm visible shapes and build a lit workshop around it. You will first run the scene in the gallery, then draw it in your own GLFW window with a frame loop.
+
+## ▶ Start from the moving arm
+
+```sh
+./build/linux-gcc-debug/bin/Compages-examples 13a_Workshop
+```
+
+Find the two links, their joints, the table and the blue part. Use **F6** to pause and **F7** to advance one frame. The same `buildArm()` from chapter 3 moves the joints; it still contains no drawing code.
+
+Open [13a_Workshop.hpp](../../examples/13_Workshop/13a_Workshop.hpp). The demo keeps a World and a Scene as members:
+
+```cpp
+compages::world::World m_world;
+compages::renderer::Scene m_scene{ m_world };
+workshop::Arm m_arm;
+```
+
+`workshop::Arm` is `examples::workshop::Arm` inside the demo's namespace. The Scene uses this World, which must outlive it. The declaration order makes the Scene be destroyed before the World. A joint has a position and an angle; adding a visible child gives you something to draw there.
+
+The next excerpts belong to existing workshop functions. Edit those source files to try each step. A complete window program follows afterward. In `Room.cpp`, `color` means `compages::renderer::color`; the file imports that name. `TABLE_TOP` and the arm lengths come from [Arm.hpp](../../examples/13_Workshop/Workshop/Arm.hpp).
+
+## 🏠 Step 1: choose a view and build the room
 
 The room is one function, `buildRoom()`, in [Workshop/Room.cpp](../../examples/13_Workshop/Workshop/Room.cpp).
 
@@ -64,7 +88,9 @@ p_scene.sphere("Bulb", compages::renderer::unlit(1.0f, 0.9f, 0.7f))
 
 A lamp lights round it, up to 3 m here. The lamp itself is invisible, so the bulb is a small sphere, its child. Its look is **unlit**: no light changes its colour, as for a real bulb. The last two lines say that the bulb casts no shadow. Without them, a small dark spot appears on the table under it.
 
-## 🦾 The shapes of the arm
+Before adding detail, change the floor colour in `Room.cpp` to `color(0.1f, 0.1f, 0.1f)`. Rebuild with `make` and run `13a_Workshop` again. The floor darkens; the arm's movement stays the same. Restore the colour. You have changed appearance without changing the World routine.
+
+## 🦾 Step 2: hang shapes under the joints
 
 The arm of the last page has joints and no shapes. `dressArm()`, in [Workshop/ArmShapes.cpp](../../examples/13_Workshop/Workshop/ArmShapes.cpp), hangs shapes under the joints:
 
@@ -86,7 +112,9 @@ workshop::dressArm(m_scene, m_arm);    // the Renderer
 return m_scene.prepare();
 ```
 
-and at each frame, `m_scene.draw(p_frame)`. `prepare()` checks the whole scene once, before the first frame, and returns the first error. `draw(frame)` updates the World (the routine of the arm runs there), then draws it.
+The `workshop::` functions above are example helpers, not library calls. They assemble the room and the arm from the public API you have been reading.
+
+At each frame, the demo calls `m_scene.draw(p_frame)`. `prepare()` checks the whole scene once, before the first frame, and returns the first error. `draw(frame)` updates the World (the routine of the arm runs there), then draws it.
 
 ## ▶ Run it
 
@@ -97,6 +125,8 @@ and at each frame, `m_scene.draw(p_frame)`. `prepare()` checks the whole scene o
 The arm moves its tip along the table, as the numbers of page 3 said. Drag with the right mouse button to turn round the table. **F6** pauses and **F7** advances one frame.
 
 ## 🪟 The same scene in your own window
+
+Once the room and joint shapes make sense, move the same scene into its own program. There are no new objects to model in this step. You take responsibility for the clock, the drawing destination and resource lifetime.
 
 The gallery opens the window and calls `draw()` for you. Your own program does it itself. Compages never opens a window: it draws into the window your program made, here with GLFW (SDL or Qt work the same way). Save this as `workshop.cpp` in the `Compages` folder:
 
@@ -201,6 +231,8 @@ g++ -std=c++20 workshop.cpp examples/13_Workshop/Workshop/Room.cpp \
 ```
 
 The workshop appears in a window of 1024 by 768 pixels, and the arm moves. The camera does not turn: `Orbit` reads the mouse from `frame.input`, and this program does not fill it. The gallery does, in [examples/Common/Window.cpp](../../examples/Common/Window.cpp).
+
+`ViewFrame` extends the simulation `Frame` with the target size and input used by a view. The framebuffer size is measured in pixels; it can differ from the window's logical size on a high-density display. `RenderPass` scopes the drawing destination. Here it uses the window framebuffer.
 
 The order of the steps matters:
 

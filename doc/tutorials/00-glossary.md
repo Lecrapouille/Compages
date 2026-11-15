@@ -2,7 +2,7 @@
 
 [⏫ Tutorials](README.md) · [Next: install and run ▶](01-install.md)
 
-3D programming has its own words, and the tutorials use them from the first page. Read this page once before you start: ten minutes are enough. You do not need to remember everything. When a tutorial uses a word you do not know, come back here.
+3D programming has its own words, and the tutorials use them from the first page. Start with coordinates and units below. Read the GPU, World, Renderer and Fields entries when their chapters use them. You do not need to remember everything. When a tutorial uses a word you do not know, come back here.
 
 ## 📐 Places, directions and time
 
@@ -16,6 +16,15 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Scale** | A change of size, maybe different along each axis. |
 | **Local / world** | A local position is measured from the parent; a world position includes every parent. A wheel at x = 1 on a car at x = 2 is at world x = 3. |
 | **Frame** | One step of the program. `frame.elapsed` is the time since the previous step, `frame.total` the time since the start. A speed of 2 m/s moves a thing by `2 × elapsed` metres at each frame, so the speed does not depend on the frame rate. |
+
+```mermaid
+flowchart LR
+    O["Origin (0, 0, 0)"] --> X["+x: right"]
+    O --> Y["+y: up"]
+    O --> Z["+z: toward the viewer"]
+```
+
+These are the workshop axes before the camera turns. Turning the camera changes the picture, not these axes. For a child entity, its parent's rotation also turns its local axes.
 
 ## 📏 Units
 
@@ -44,9 +53,9 @@ The suffixes need one line at the top of your file: `using namespace compages::s
 | **Texture** | A picture the shader reads, through a **sampler**. |
 | **Buffer** | A block of GPU memory: vertices, indices, any array. |
 | **Storage buffer** | A buffer a shader may write as well as read. |
-| **Draw call** | One order "draw these triangles with this shader". Fewer is faster. |
+| **Draw call** | One order "draw these triangles with this shader". Each call has a cost, separate from the cost of drawing the triangles. |
 | **Compute shader** | A shader that draws nothing: it computes, once per item of a grid. |
-| **Barrier** | The order "the next reader waits until these writes are done". The GPU does not wait by itself. |
+| **Barrier** | Makes earlier GPU writes visible to a later GPU reader. It does not bring the data back to the CPU. |
 | **CPU mirror** | The copy of a buffer kept in normal memory. You change it; Compages sends the changed part at the next draw. |
 | **Render pass** | A drawing session: it chooses the destination picture and its size. |
 | **Framebuffer** | A destination of drawing other than the window: one or more textures. |
@@ -64,6 +73,7 @@ The suffixes need one line at the top of your file: `using namespace compages::s
 | **World matrix** | Where an entity finally is in the world, computed from all its parents. |
 | **Joint** | A child that moves one way only: a **revolute** joint turns (an elbow), a **prismatic** joint slides. |
 | **Forward kinematics** | Computing where the end of a chain of joints is, from the angles of its joints. |
+| **Inverse kinematics** | Choosing joint angles to place the end of a chain at a target point. Some targets cannot be reached. |
 | **Routine** | A small piece of code attached to one entity, called at each step (`update`, `fixedUpdate`…). |
 | **Headless** | Running without a window. The World needs no graphics context at all; drawing without a screen still needs one. |
 

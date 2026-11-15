@@ -49,7 +49,7 @@ namespace compages::renderer::shaders
 //!   surface in linear units, before its emission, the fog and the tone
 //!   curve. By default \c sceneLight(s) (sun, sky, lamps, shadows). This is
 //!   the hook for another model of light (cel shading, a rim): it reads
-//!   \c lightDir, \c lightColor, \c ambient, \c cameraPos, \c vWorldPos and
+//!   \c lightDir, \c lightColor, \c ambient, \c cameraPos, \c v2f.worldPos and
 //!   calls \c sunVisibility(), \c pointLightsContribution().
 //! - \c main (fragment): the whole main() writing \c oColor, for what is
 //!   not a lit surface (a debug view, a picture shown as it is). It may
