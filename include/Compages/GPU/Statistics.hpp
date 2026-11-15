@@ -138,6 +138,34 @@ struct ResourceStatistics
 void resetFrameStatistics();
 
 // ----------------------------------------------------------------------------
+//! \brief Start measuring how long the GPU takes for the work sent until
+//! endGpuTimer(): one measure per frame, not nested.
+//!
+//! The GPU runs behind the CPU, so the time is read a few frames later,
+//! without waiting for it: gpuMilliseconds() gives the last one ready. This
+//! is the time the card works, not the time the CPU spends sending.
+//!
+//! \code
+//! compages::gpu::beginGpuTimer();
+//! scene.draw(frame);
+//! compages::gpu::endGpuTimer();
+//! ImGui::Text("GPU %.2f ms", compages::gpu::gpuMilliseconds());
+//! \endcode
+// ----------------------------------------------------------------------------
+void beginGpuTimer();
+
+// ----------------------------------------------------------------------------
+//! \brief Stop the measure begun by beginGpuTimer().
+// ----------------------------------------------------------------------------
+void endGpuTimer();
+
+// ----------------------------------------------------------------------------
+//! \brief The GPU time of the last frame measured and ready, in milliseconds;
+//! a negative value before the first one.
+// ----------------------------------------------------------------------------
+[[nodiscard]] double gpuMilliseconds();
+
+// ----------------------------------------------------------------------------
 //! \brief What the device is holding right now, counted when called. A
 //! copy, so it can be kept and compared later.
 //! \return the counts at the time of the call.

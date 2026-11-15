@@ -7,6 +7,7 @@
 
 #include "GPU/Backends/GL45/GL45.hpp"
 
+#include <array>
 #include <string>
 
 namespace compages::gpu::backend
@@ -233,9 +234,53 @@ Status init(LoadProc p_load, DeviceInfo& p_info)
     return success();
 }
 
+namespace
+{
+
+//! \brief The timestamp queries, made at the first writeTimestamp().
+std::array<GLuint, TIMESTAMP_SLOTS> g_timestamps{};
+bool g_timestamps_made = false;
+
+} // namespace
+
+void writeTimestamp(std::uint32_t p_slot)
+{
+    if (!g_timestamps_made)
+    {
+        glCreateQueries(GL_TIMESTAMP, GLsizei(TIMESTAMP_SLOTS), g_timestamps.data());
+        g_timestamps_made = true;
+    }
+    glQueryCounter(g_timestamps[p_slot % TIMESTAMP_SLOTS], GL_TIMESTAMP);
+}
+
+bool readTimestamp(std::uint32_t p_slot, std::uint64_t& p_nanoseconds)
+{
+    if (!g_timestamps_made)
+    {
+        return false;
+    }
+    const GLuint query = g_timestamps[p_slot % TIMESTAMP_SLOTS];
+    GLint ready = 0;
+    glGetQueryObjectiv(query, GL_QUERY_RESULT_AVAILABLE, &ready);
+    if (ready == 0)
+    {
+        return false;
+    }
+    GLuint64 value = 0u;
+    glGetQueryObjectui64v(query, GL_QUERY_RESULT, &value);
+    p_nanoseconds = std::uint64_t(value);
+    return true;
+}
+
 void shutdown()
 {
     detail::clearVertexArrayCache();
+    if (g_timestamps_made)
+    {
+        glDeleteQueries(GLsizei(TIMESTAMP_SLOTS), g_timestamps.data());
+        g_timestamps = {};
+        g_timestamps_made = false;
+    }
 
     if (glDebugMessageCallback != nullptr)
     {

@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -546,7 +547,12 @@ void Gallery::runExample()
                          compages::gpu::PassDesc{ .color = BACKGROUND });
         }
         compages::gpu::resetFrameStatistics();
+        const auto start = std::chrono::steady_clock::now();
+        compages::gpu::beginGpuTimer();
         m_current->draw(frame);
+        compages::gpu::endGpuTimer();
+        const std::chrono::duration<double, std::milli> spent = std::chrono::steady_clock::now() - start;
+        m_cpu_milliseconds += 0.1 * (spent.count() - m_cpu_milliseconds);
         m_frame_statistics = compages::gpu::frameStatistics();
     }
 

@@ -233,6 +233,23 @@ void dispatch(std::uint32_t p_groups_x,
 void memoryBarrier(Barrier p_what);
 
 // ----------------------------------------------------------------------------
+//! \brief How many timestamps the backend keeps (writeTimestamp() slots).
+// ----------------------------------------------------------------------------
+inline constexpr std::uint32_t TIMESTAMP_SLOTS = 8u;
+
+// ----------------------------------------------------------------------------
+//! \brief Ask the GPU to note its clock in a slot when the work sent before
+//! is done. The queries are made at the first call and freed by shutdown().
+// ----------------------------------------------------------------------------
+void writeTimestamp(std::uint32_t p_slot);
+
+// ----------------------------------------------------------------------------
+//! \brief The clock noted in a slot, in nanoseconds, without waiting.
+//! \return false when the GPU has not reached it yet.
+// ----------------------------------------------------------------------------
+[[nodiscard]] bool readTimestamp(std::uint32_t p_slot, std::uint64_t& p_nanoseconds);
+
+// ----------------------------------------------------------------------------
 //! \brief Put a buffer on a numbered binding point, where whichever programs
 //! declare a block on that number will read it.
 //!

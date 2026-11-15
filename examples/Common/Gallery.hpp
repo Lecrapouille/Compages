@@ -263,6 +263,9 @@ private:
     std::string m_leak;
     //! \brief What the last frame of the example cost, read by the panels.
     compages::gpu::FrameStatistics m_frame_statistics;
+    //! \brief Milliseconds the CPU spent in draw() of the example (sending
+    //! the work, not doing it), smoothed over a few frames.
+    double m_cpu_milliseconds = 0.0;
 
     // The viewport: the example drawn into a texture shown by a panel.
     compages::gpu::Texture m_view_color;

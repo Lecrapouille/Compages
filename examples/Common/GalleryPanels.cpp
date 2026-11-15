@@ -261,6 +261,8 @@ void Gallery::drawStatusBar()
             ImGui::Text("%.0f fps  %.2f ms", static_cast<double>(m_window.framesPerSecond()),
                         static_cast<double>(m_window.elapsed()) * 1000.0);
             ImGui::Separator();
+            ImGui::Text("CPU %.2f ms  GPU %.2f ms", m_cpu_milliseconds, compages::gpu::gpuMilliseconds());
+            ImGui::Separator();
             ImGui::Text("%zu draws", m_frame_statistics.draw_calls);
             if (m_debug.paused)
             {
@@ -619,6 +621,8 @@ void Gallery::drawInspectorPanel()
                 static_cast<double>(m_window.elapsed()) * 1000.0,
                 static_cast<double>(m_example_time));
     ImGui::Text("Viewport %u x %u", m_view_width, m_view_height);
+    ImGui::Text("CPU %.2f ms (draw, sending)  GPU %.2f ms (drawing)", m_cpu_milliseconds,
+                compages::gpu::gpuMilliseconds());
     ImGui::Text("Draws %zu  Passes %zu  Dispatches %zu", m_frame_statistics.draw_calls,
                 m_frame_statistics.passes, m_frame_statistics.dispatches);
     ImGui::Text("Vertices %zu  Instances %zu", m_frame_statistics.vertices,

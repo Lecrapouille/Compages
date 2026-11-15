@@ -38,4 +38,10 @@ void countPass();
 // ----------------------------------------------------------------------------
 void countDispatch();
 
+// ----------------------------------------------------------------------------
+//! \brief Forget the measures of the GPU timer: its queries are gone
+//! (shutdown).
+// ----------------------------------------------------------------------------
+void forgetGpuTimer();
+
 } // namespace compages::gpu::detail

@@ -8,6 +8,7 @@
 #include "Compages/GPU/Device.hpp"
 #include "GPU/Backends/Backend.hpp"
 #include "GPU/Internal/Pools.hpp"
+#include "GPU/Internal/Statistics.hpp"
 
 #include <iostream>
 
@@ -101,6 +102,7 @@ void shutdown()
     // While the context is still current, and before the backend lets go of the
     // driver: this is the last moment at which the device can free anything.
     detail::releaseAllResources();
+    detail::forgetGpuTimer();
 
     backend::shutdown();
     s.info = DeviceInfo{};

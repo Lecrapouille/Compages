@@ -757,6 +757,28 @@ TEST_F(DrawTest, CountsTheWorkOfAFrame)
     ASSERT_EQ(compages::gpu::frameStatistics().vertices, 0u);
 }
 
+// The GPU time of a frame is read a few frames later, without waiting: after
+// a few frames and a finish, a measure is there, and it is a time.
+TEST_F(DrawTest, TimesTheWorkOfTheGpu)
+{
+    auto vertices = compages::gpu::VertexBuffer<Corner>::from(
+                        BIG_TRIANGLE,
+                        compages::gpu::BufferUsage::Static)
+                        .take();
+    for (int frame = 0; frame < 6; ++frame)
+    {
+        compages::gpu::RenderPass pass(wholeTarget());
+        ASSERT_TRUE(pass.open()) << compages::gpu::takeFrameError();
+        compages::gpu::beginGpuTimer();
+        ASSERT_TRUE(bool(compages::gpu::attempt([&] { compages::gpu::draw(pipeline(), vertices); })));
+        compages::gpu::endGpuTimer();
+        auto picture = compages::gpu::readPixels(); // waits for the GPU
+        ASSERT_TRUE(bool(picture)) << picture.error();
+    }
+    EXPECT_GE(compages::gpu::gpuMilliseconds(), 0.0);
+    EXPECT_LT(compages::gpu::gpuMilliseconds(), 10000.0);
+}
+
 // The counters that must come back to where they started. This is the leak test
 // the examples gallery runs continuously.
 TEST_F(DrawTest, CountsWhatTheDeviceIsHolding)
