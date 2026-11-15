@@ -1,6 +1,6 @@
-# Reference
+# 📖 Reference
 
-[Documentation](../../README.md#-documentation)
+[⏫ Documentation](../../README.md#-documentation)
 
 - [API](api.md): the calls of the GPU, World, Renderer and Fields, by task.
 - [Shader library](shaders.md): the GLSL pieces of the Renderer, their includes, the hooks, the uniforms it sets.

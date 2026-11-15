@@ -1,6 +1,6 @@
-# 10e_Archipelago: a world made from a graph
+# 🏝 10e_Archipelago: a world made from a graph
 
-[Case studies](README.md)
+[⏫ Case studies](README.md)
 
 ![10e_Archipelago](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10e_Archipelago.png)
 
@@ -22,7 +22,7 @@ The map is 16 km wide. Every size is written with its unit (`toMetres(1.4_km)`),
 
 Land generation happens on the CPU; displaying its result happens on the GPU. The background thread produces data. The main thread turns that data into meshes and textures while its graphics context is current.
 
-## Step 1 — A recipe, a thread, a progress bar
+## 👣 Step 1 — A recipe, a thread, a progress bar
 
 Making the land takes seconds. `setUp()` must not wait: it starts the work in a thread and returns. `Job<T>` (`Archipelago/Job.hpp`) is a `std::jthread` and a `std::future`:
 
@@ -63,7 +63,7 @@ flowchart LR
 
 The same seed gives the same map: Try it → Seed, Erosion steps, Generate.
 
-## Step 2 — Cells: a Voronoi diagram on a Grid2D
+## 🗺 Step 2 — Cells: a Voronoi diagram on a Grid2D
 
 As the thesis asks, after A. Patel's polygon maps, the map is made of **cells**: the places nearest to each of 96 x 96 points (a **Voronoi diagram**). There is one point (the **site**) per square of a grid, moved by up to 0.3 square:
 
@@ -79,11 +79,11 @@ inline const compages::Grid2D CELL_GRID{
 
 So the nearest site of a point is always among the 3 x 3 squares around it, and the neighbours of a cell are `CELL_GRID.neighbours8(c)`. Each value of a cell is a `Field` on this grid: `sites` (`Field<Vector2f>`), `elevations`, `islands_of`, `regions_of`, `parts_of`. No graph library, no million entities.
 
-## Step 3 — Islands around the graph
+## 👣 Step 3 — Islands around the graph
 
 The layout puts the islands far apart and their links close together. Each island gets a disc whose area is its share of the links, where the layout put it; the discs are pushed apart until a strait separates them. The land is the union of round shapes on the graph (discs on the nodes, capsules along the edges island → region → link), on coordinates bent by noise for the coasts. Each land cell belongs to the region of the nearest link of its island, so related links stay side by side. Water closed in by land is filled.
 
-## Step 4 — Relief: uplift against erosion
+## 👣 Step 4 — Relief: uplift against erosion
 
 The land is not drawn by hand. It grows by a simple geological model on the graph of the cells (Cordonnier et al. 2016). The plate rises under the islands (about 1 mm a year, more inland, 1.8 times more on the borders between regions, which become ridges), and the rivers cut it down by the **stream power law**:
 
@@ -106,25 +106,25 @@ p_making.drainage = erode(land.sites, p_making.ground, uplift, outlet,
 
 `erode()` returns the **drainage**: for each cell, the cell its water goes to, the order from the sea upward, and the area it drains. The next steps read it.
 
-## Step 5 — Rivers, regions, links
+## 👣 Step 5 — Rivers, regions, links
 
 The thesis maps contents "as loci along a strand": a river is a strand of places. Here an island is structured by its main river, the largest basin the erosion made. A region is a basin between ridges, drained by its tributary, which runs from its highest cell down to a river or the sea. A link is a cell of the region near the tributary, in the order of the layout along it, marked by a pin of the colour of the island.
 
 Only these rivers are drawn: a smooth Catmull-Rom spline through their cells (the thesis tried Bézier, Catmull-Rom and B-splines), meanders of about eleven widths, a width that grows with the square root of the area drained. They dig their valley (a smooth V) and their bed into the mesh. The edges of the cells are faint inside a region, firmer around a link, bold between regions.
 
-## Step 6 — From cells to a mesh and a picture
+## 🖼 Step 6 — From cells to a mesh and a picture
 
 A `Patch` is a square of the map, ready for the GPU: its heights are a `Field<float>` (one per corner of its quads), its picture is the painted map. The ground at any point comes from one function, `Land::heightAt(x, z)` (the cells blended smoothly, a little roughness). A patch becomes a mesh by hand (chapter 12 §5) and a texture (§4).
 
-## Step 7 — Levels of detail
+## 👣 Step 7 — Levels of detail
 
 One mesh for 16 km at 2 m would be far too heavy. The map is cut into 8 x 8 tiles of 2 km. From afar, one coarse mesh (a quad every 31 m) and one picture (16 m a pixel). Near the camera, `FineTiles` asks two threads for finer tiles (8 m, 2 m a pixel), which take the place of the coarse ones. A **skirt** (a strip hanging down along the edges) hides the cracks between a fine tile and a coarse one. At most twelve fine tiles live at once. Since the heights come from one function, a coarse and a fine tile agree.
 
 Near the camera, the ground shader adds real pictures of grass, sand and rock (ambientCG, CC0), read at two scales and divided by their mean colour, so the colours of the map stay: sand on the beaches, rock on the steep slopes, grass elsewhere.
 
-## Step 8 — The sea: one table of swells for the GPU and the CPU
+## 🟧 Step 8 — The sea: one table of swells for the GPU and the CPU
 
-Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` ([write a material](../guides/write-a-material.md#4-deform-to-move-the-vertices)) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. For swells of direction $\mathbf{d}_k$, wave number $k_k = 2\pi/\lambda_k$ and amplitude $A_k$:
+Near the camera, a grid of 160 x 160 quads follows the camera. The hook `deform` ([write a material](../guides/write-a-material.md#-4-deform-to-move-the-vertices)) lifts it with **Gerstner waves** (GPU Gems 1, chapter 1): a point of the water goes round a small circle, so the crests are sharp and the troughs wide. For swells of direction $\mathbf{d}_k$, wave number $k_k = 2\pi/\lambda_k$ and amplitude $A_k$:
 
 ```math
 \phi_k = k_k\,(\mathbf{d}_k\cdot\mathbf{x}) - \omega_k\,t, \qquad
@@ -145,10 +145,10 @@ inline constexpr std::array SWELLS = { Swell{ 0.80f, 0.60f, 233.0f, 0.062f },
 
 The table lives once in C++. `swellsGlsl()` writes it as GLSL, given to the shaders by `include("archipelago/swells.glsl", …)`. `swellHeight()` computes the same sum on the CPU, so the boats ride the waves that are drawn. The surface is see-through: the sea bed shows in the shallows, foam on the steep crests and in the surf. Farther away, the ground shader makes the waves in its normals only, and the two fade into each other.
 
-## Step 9 — Life and interface
+## 👣 Step 9 — Life and interface
 
-Boats sail round the islands where the water is deep enough, gulls circle in flocks along the coasts, fish jump in the lagoons. Boats and fish are drawn at least as large as a part of their distance to the camera, like the icons of a map. The names are written on signs over their places (`Signs`, with `ImGui::GetWindowDrawList()` over the picture), and `Panels` opens the windows of IslandedBrowser through `Example::overlay()`. The keys are in [chapter 9](../reference/gallery.md#12-10--complete-everything-together).
+Boats sail round the islands where the water is deep enough, gulls circle in flocks along the coasts, fish jump in the lagoons. Boats and fish are drawn at least as large as a part of their distance to the camera, like the icons of a map. The names are written on signs over their places (`Signs`, with `ImGui::GetWindowDrawList()` over the picture), and `Panels` opens the windows of IslandedBrowser through `Example::overlay()`. The keys are in [chapter 9](../reference/gallery.md#-12-10--complete-everything-together).
 
-## See also
+## 🔗 See also
 
-[Make pictures and meshes](../guides/make-pictures-and-meshes.md) · [Write a material: `deform`](../guides/write-a-material.md#4-deform-to-move-the-vertices) · [Move the camera: fly to a place](../guides/move-the-camera.md#fly-to-a-place) · [Text on the picture](../guides/text-on-the-picture.md)
+[◀ Make pictures and meshes](../guides/make-pictures-and-meshes.md) · [Write a material: `deform`](../guides/write-a-material.md#-4-deform-to-move-the-vertices) · [Move the camera: fly to a place](../guides/move-the-camera.md#-fly-to-a-place) · [Text on the picture](../guides/text-on-the-picture.md)

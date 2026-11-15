@@ -1,6 +1,6 @@
-# Show a field
+# 🌡 Show a field
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Show values on a grid as colours, as a relief, as arrows, as a see-through volume, as curves over time; read the value under the mouse; give the values to a shader of your own.
 
@@ -8,7 +8,7 @@ Show values on a grid as colours, as a relief, as arrows, as a see-through volum
 
 What a grid and a field are: [fields and grids](../concepts/fields-and-grids.md). The first steps: [values on a grid](../tutorials/05-values-on-a-grid.md).
 
-## Colours and relief
+## 🎨 Colours and relief
 
 ```cpp
 compages::renderer::FieldLook look{ .colors = compages::renderer::ColorMap::Inferno,
@@ -32,7 +32,7 @@ COMPAGES_TRY(m_scene.show(m_surface, m_heights[m_now], m_look));
 
 `11b_RippleTank` steps the wave equation this way.
 
-## The value under the mouse
+## 🖱 The value under the mouse
 
 `scene.probe(field, look, pixel)` follows the ray of a pixel of the last picture down to the field as drawn (with its relief), and returns the point and the value there, or nothing:
 
@@ -45,7 +45,7 @@ if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
 
 `11c_FieldProbe` writes the altitude of an island next to the mouse.
 
-## Vectors and streamlines
+## ➡ Vectors and streamlines
 
 A `Field<Vector2f>` (a wind, a speed: x and y of each vector along x and z) is shown as arrows coloured by their length, one point in `every`:
 
@@ -56,7 +56,7 @@ m_arrows = m_scene.show(m_wind, compages::renderer::ArrowLook{ .colors = compage
 
 `compages::streamline(field, start, step, steps)` (`<Compages/Fields/Streamline.hpp>`) gives the line a speck would follow; draw it with `scene.debug().line()`. `show()` also takes fields on a `CurvilinearGrid`: the mesh follows the points of the grid, so the edge of a column is round, not a staircase. `11g_FlowAroundCylinder` compares the two ([its case study](../case-studies/flow-around-cylinder.md)).
 
-## Volumes
+## 🧊 Volumes
 
 A `Field<float, Grid3D>` is shown as a see-through box: along each ray, the colours of the values add up. It goes to the GPU as a 3D texture. `compages::slice(volume, Axis::Y, layer)` cuts one layer as a 2D field; `compages::isosurface(volume, level)` gives the triangles where the volume crosses a level, and `meshOf(surface)` a mesh of them.
 
@@ -68,7 +68,7 @@ m_cut.position(0.0f, m_heat.grid().point(0, layer, 0).y, 0.0f);
 
 `11f_Volume` shows the warm air of a room this way, with the surface of the air at 30 degrees.
 
-## Curves over time
+## 📈 Curves over time
 
 A `Chart` (`<Compages/Renderer/Visualization/Chart.hpp>`) draws curves of values over time into a `CanvasTexture`, to put on any mesh:
 
@@ -85,7 +85,7 @@ COMPAGES_TRY(m_chart.draw());
 
 A grid on round numbers and the numbers of both axes are drawn with it. `ChartScale::Fixed` keeps `low` to `high`; `FollowValues` follows the values. `11h_Thermometers` follows two points of a heated plate.
 
-## The values in your own shader
+## 🚚 The values in your own shader
 
 When your shader needs the field, send it as a texture. A `Field` numbers its points like the texels of a texture, so the values go as they are:
 
@@ -100,6 +100,6 @@ flow->texture.write(std::as_bytes(m_bake.packed().values()));
 
 `float` gives R32F, `Vector2f` RG32F, `Vector4f` RGBA32F; a `Field<T, Grid3D>` a 3D texture. The shader reads a point at the centre of its texel: `uv = ((p - origin) / spacing + 0.5) / cells`. The texture is a copy: after a change of the field, write it again. The CPU still reads the field with `sample()`, with no upload. [Flow mapping](../techniques/flow-mapping.md) does this.
 
-## See also
+## 🔗 See also
 
-[Fields and grids](../concepts/fields-and-grids.md) · [Case studies](../case-studies/README.md) (the `11_Science` demos) · [Reference: fields](../reference/api.md#6-fields)
+[◀ Fields and grids](../concepts/fields-and-grids.md) · [Case studies](../case-studies/README.md) (the `11_Science` demos) · [Reference: fields](../reference/api.md#-6-fields)

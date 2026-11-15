@@ -1,6 +1,6 @@
-# The gallery
+# 🖼 The gallery
 
-[Reference](README.md)
+[⏫ Reference](README.md)
 
 One binary, `Compages-examples`, holds every demo: viewport, list, inspector, source, console, GPU leak checks. It is the living manual of the project. The sources are written to be read in the order of the folders; each `description()` explains the idea the demo adds.
 
@@ -29,7 +29,7 @@ A short guide of the folders is in [examples/README.md](../../examples/README.md
 
 ---
 
-## 1. The window
+## 🎛 1. The window
 
 The viewport draws the demo into a texture: the panels never hide part of the image.
 
@@ -69,12 +69,12 @@ Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) d
 
 ---
 
-## 2. The folders and the layers
+## 🧭 2. The folders and the layers
 
 | Folder | Question | Layer | Read |
 |--------|----------|-------|------|
 | `01_FirstSteps/` | How do I draw? | 🟧 GPU | [The GPU alone](../tutorials/02-the-gpu.md), [the GPU layer](../concepts/the-gpu-layer.md) |
-| `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [The GPU layer](../concepts/the-gpu-layer.md#who-owns-the-vertices) |
+| `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [The GPU layer](../concepts/the-gpu-layer.md#-who-owns-the-vertices) |
 | `03_Images/` | Textures and 3D on the raw GPU | 🟧 GPU | [Draw in several passes](../guides/draw-in-several-passes.md) |
 | `04_Passes/` | Pixels computed by a shader, several passes | 🟧 GPU | [Draw in several passes](../guides/draw-in-several-passes.md) |
 | `05_Simulation/` | Make the GPU compute | 🟧 GPU | [Compute on the GPU](../guides/compute-on-the-gpu.md) |
@@ -93,7 +93,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 3. 01 — First steps: how do I draw?
+## 👣 3. 01 — First steps: how do I draw?
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -106,7 +106,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 4. 02 — Changing data: how do I send what changes?
+## 🗃 4. 02 — Changing data: how do I send what changes?
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -117,7 +117,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 5. 03 — Images: textures and 3D on the raw GPU
+## 🟧 5. 03 — Images: textures and 3D on the raw GPU
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -129,7 +129,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 6. 04 — Passes: pixels computed by a shader, several passes
+## 🔍 6. 04 — Passes: pixels computed by a shader, several passes
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -141,7 +141,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 7. 05 — Simulation: make the GPU compute
+## 🟧 7. 05 — Simulation: make the GPU compute
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -165,7 +165,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 8. 06 — Scene: compose a scene, like Three.js
+## 🟩 8. 06 — Scene: compose a scene, like Three.js
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -187,7 +187,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 9. 07 — World: things that move by themselves
+## 🟦 9. 07 — World: things that move by themselves
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -199,7 +199,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 10. 08 — Assets: load files
+## 🟩 10. 08 — Assets: load files
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -210,7 +210,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 11. 09 — Performance: draw a lot
+## ⚡ 11. 09 — Performance: draw a lot
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -220,7 +220,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 12. 10 — Complete: everything together
+## 🎮 12. 10 — Complete: everything together
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -243,7 +243,7 @@ The camera is a `Rig`: left drag moves the map, right drag turns it, the wheel z
 
 `10f_FlowingWater`: the flow maps of Portal 2 (A. Grimes, GDC 2011; A. Vlachos, SIGGRAPH 2010) in a concrete pool under sodium lamps, with a pipe spitting water. [The flow mapping page](../techniques/flow-mapping.md) explains the shader trick; [the case study](../case-studies/flowing-water.md) rebuilds the whole demo step by step. Try it → Show goes through each step of the paper (the flow map, the pop, the crawling edges, two phases, the masks); Arrows and Features show the flow and its upwellings and vortices; the Bake sliders make the flow map again. A left click on the water adds an upwelling (or a vortex), right drag turns the camera.
 
-## 13. 11 — Science: fields, computed and shown
+## 🗺 13. 11 — Science: fields, computed and shown
 
 Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](../guides/show-a-field.md)). [The case studies](../case-studies/README.md) explains each demo: its equation, its loop on the grid, its calls.
 
@@ -258,7 +258,7 @@ Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on 
 | `11g_FlowAroundCylinder` | the wind around a turning column: a `Field<Vector2f>` as arrows (`scene.show(field, ArrowLook)`), streamlines (`compages::streamline()`), the pressure under them; the Magnus effect; a regular `Grid2D` or a `CurvilinearGrid` fitted round the column (an O-grid) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11g_FlowAroundCylinder.png" alt="11g_FlowAroundCylinder" width="200"> |
 | `11h_Thermometers` | follow values over time: two thermometers on a heated plate, their curves on a board (`Chart`, a `CanvasTexture`); a click moves one (`scene.probe`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11h_Thermometers.png" alt="11h_Thermometers" width="200"> |
 
-## 14. 12 — Effects: filters of the picture
+## 🖼 14. 12 — Effects: filters of the picture
 
 A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), passed through its filters and its bloom, and only then given the tone curve ([Renderer, screen effects](../guides/screen-effects.md)). Each view chooses: another camera stays as it was.
 
@@ -269,7 +269,7 @@ A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), pass
 
 ---
 
-## 15. 13 — Workshop: the tutorials
+## 🎓 15. 13 — Workshop: the tutorials
 
 One program in four steps. The arm and its routine are in the World (`Workshop/Arm.cpp`, run without a screen in [tutorial 3](../tutorials/03-the-world.md)); the other files of `13_Workshop/Workshop/` add the Renderer, one idea per step.
 
@@ -282,7 +282,7 @@ One program in four steps. The arm and its routine are in the World (`Workshop/A
 
 ---
 
-## 16. Window, ImGui and physics
+## 🪟 16. Window, ImGui and physics
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.

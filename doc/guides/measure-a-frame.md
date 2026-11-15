@@ -1,12 +1,12 @@
-# Measure a frame
+# ⏱ Measure a frame
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Know where the time of a frame goes, CPU or GPU, and what the GPU was asked to do.
 
 ![09b_ManyCubes](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/09b_ManyCubes.png)
 
-## CPU or GPU?
+## ⏱ CPU or GPU?
 
 The CPU *sends* the work (extraction, sorting, uniforms, draw calls); the GPU *does* it, later, in parallel. A slow frame is slow on one side or the other, and the cure is not the same.
 
@@ -26,7 +26,7 @@ The timer is read a few frames later, without making the CPU wait for the GPU. M
 
 Compare the same demo before and after a change, on the same machine. llvmpipe (Mesa without a GPU) gives times, not a measure of a card.
 
-## What the GPU was asked to do
+## 🔢 What the GPU was asked to do
 
 ```cpp
 compages::gpu::resetFrameStatistics();
@@ -37,6 +37,6 @@ compages::gpu::FrameStatistics const stats = compages::gpu::frameStatistics();
 
 The gallery shows these counters too. `09b_ManyCubes` (1,728 cubes) shows the draw calls fall as culling removes what the camera does not see.
 
-## See also
+## 🔗 See also
 
-[One frame](../concepts/one-frame.md) · [A black window](debug-a-black-window.md)
+[◀ One frame](../concepts/one-frame.md) · [A black window](debug-a-black-window.md)

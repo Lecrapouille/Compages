@@ -1,6 +1,6 @@
-# Make pictures and meshes
+# 🧱 Make pictures and meshes
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Build a texture from pixels your program computes (noise, a normal map, concrete), and a shape from triangles your program builds (a tube, a terrain, a tile).
 
@@ -8,7 +8,7 @@ Build a texture from pixels your program computes (noise, a normal map, concrete
 
 Every picture and the jet of water of `10f_FlowingWater` are made this way: no file is read.
 
-## A picture made by the program
+## 🖼 A picture made by the program
 
 From [FlowingWater/Pictures.cpp](../../examples/10_Complete/FlowingWater/Pictures.cpp): describe the texture, write the pixels, build the smaller copies used from afar (**mipmaps**), and give it to the catalog of the Scene:
 
@@ -32,7 +32,7 @@ return p_scene.assets().addTexture(p_name, std::move(asset));
 - `Wrap::Repeat` and a picture that **tiles**: its right edge meets its left edge. The noise of `10f` wraps its lattice every `period` cells, so it has no seam.
 - Rows start from the bottom, as in OpenGL.
 
-## A mesh made by hand
+## 🔺 A mesh made by hand
 
 A mesh is a list of corners (**vertices**: position, normal, texture coordinates) and a list of triangles (three indices into the corners). The jet of water of `10f` is a tube along the path of a thrown body, one ring of corners after another, from [FlowingWater/Spout.cpp](../../examples/10_Complete/FlowingWater/Spout.cpp):
 
@@ -59,6 +59,6 @@ m_jet_body = m_scene.mesh(flowing::jetMesh(m_jet, LEVEL), "Water jet");
 - The corners stay on the CPU in `source_vertices`: `10f` reads them back to find where the scene meets the water.
 - A field becomes a mesh with `compages::renderer::meshOf(…)`: an isosurface of a volume, for instance ([show a field](show-a-field.md)).
 
-## See also
+## 🔗 See also
 
 [Write a material](write-a-material.md) (read the picture in your shader) · [Paint a texture](paint-a-texture.md) (a picture that changes) · [Flowing water](../case-studies/flowing-water.md)

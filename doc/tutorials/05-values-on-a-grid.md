@@ -1,12 +1,12 @@
-# 5. Values on a grid
+# 🗺 5. Values on a grid
 
-[A scene](04-a-scene.md) · [Tutorials](README.md) · [Next: a look of your own](06-a-look-of-your-own.md)
+[◀ A scene](04-a-scene.md) · [⏫ Tutorials](README.md) · [Next: a look of your own ▶](06-a-look-of-your-own.md)
 
 ![13b_HotPlate](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13b_HotPlate.png)
 
 The tip of the arm is hot: 300 degrees. Where it touches the steel plate on the table, the plate heats; the heat spreads around and fades. You will store the temperature of the plate as one number per point of a grid, compute it at each frame, and show it in colours with one call.
 
-## A grid and a field
+## 🗺 A grid and a field
 
 A **grid** says where the points are. A **field** holds one value per point. From [Workshop/HotPlate.cpp](../../examples/13_Workshop/Workshop/HotPlate.cpp):
 
@@ -20,7 +20,7 @@ There are 41 columns along x and 61 rows along z, with one point every 1.5 cm. T
 
 A `Grid2D` and a `Field` are plain C++ data in the `compages` namespace, in `<Compages/Fields/…>`. They do not need the World, the GPU or a screen: a unit test or a solver uses them as they are. The concept page [fields and grids](../concepts/fields-and-grids.md) has the whole picture.
 
-## One step of heat
+## ♨ One step of heat
 
 At each frame, each point moves toward the mean of its four neighbours: this is the heat equation, in its simplest discrete form. It also loses a little heat to the air, and the points under the tip take its temperature:
 
@@ -53,7 +53,7 @@ m_plate.step(std::min(p_frame.elapsed, 0.05f), m_arm.tool.worldPosition()); // t
 
 `worldPosition()` is the place of the tip in the room, through the whole chain of joints of page 3. `Scene::draw()` is `update()` then `render()`; the demo calls the two halves, with its own work in between.
 
-## Show it
+## 🎨 Show it
 
 ```cpp
 m_shown = p_scene.show(m_temperature, m_look, "Plate");   // once
@@ -76,7 +76,7 @@ Inferno goes from black (20 degrees, `low`) through purple and orange to pale ye
 
 The first `show()` makes an entity that draws the field, lying flat on the ground of its grid; `position()` lifts it 3 mm above the table, so that the two surfaces do not fight for the same pixels. The next calls send the new values only. The GPU turns them into colours; the mesh is never rebuilt.
 
-## Run it
+## ▶ Run it
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples 13b_HotPlate
@@ -84,7 +84,7 @@ The first `show()` makes an entity that draws the field, lying flat on the groun
 
 A glowing trail follows the tip and fades to purple, then black. The demo runs twelve seconds of work before its first frame (`warmUp()`), so that the trail is there at once.
 
-## Try
+## 🧪 Try
 
 - Set `.colors` to `ColorMap::Viridis`: the same values in colours a colour-blind eye reads well.
 - Set `.relief = 0.0005f`: the hot points rise, half a millimetre per degree.
@@ -95,4 +95,4 @@ Most scientific data has this shape: one value per point of a space. In Compages
 
 ---
 
-[A scene](04-a-scene.md) · [Tutorials](README.md) · [Next: a look of your own](06-a-look-of-your-own.md)
+[◀ A scene](04-a-scene.md) · [⏫ Tutorials](README.md) · [Next: a look of your own ▶](06-a-look-of-your-own.md)

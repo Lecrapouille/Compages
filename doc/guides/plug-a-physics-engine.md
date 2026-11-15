@@ -1,6 +1,6 @@
-# Plug a physics engine
+# ⚙ Plug a physics engine
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Let MuJoCo, Bullet, Jolt or your own engine move the entities, and Compages draw them.
 
@@ -8,7 +8,7 @@ Let MuJoCo, Bullet, Jolt or your own engine move the entities, and Compages draw
 
 Compages has **no physics engine**, and will not get one: a real engine does this job better. The engine keeps its bodies; Compages keeps the poses and draws them. Three steps.
 
-### 1. Tell Compages who moves the entity
+### 📄 1. Tell Compages who moves the entity
 
 A `PoseDriver` set to `External` means: no system of Compages writes this pose, only your code.
 
@@ -50,10 +50,10 @@ void onMessage(compages::world::Message const& p_message) override
 
 `07e_ExternalPhysics` does this with a tiny engine of a few lines (gravity, bounces, balls against balls), written without any Compages type; a `Squash` routine on each ball swells at a shock. RobotIK does the same with MuJoCo.
 
-### Very large worlds
+### 🟦 Very large worlds
 
-Keep the simulation in `double`, outside Compages, and write into the World the positions relative to a moving origin ([very large scenes](very-large-scenes.md#floating-origin)).
+Keep the simulation in `double`, outside Compages, and write into the World the positions relative to a moving origin ([very large scenes](very-large-scenes.md#-floating-origin)).
 
-## See also
+## 🔗 See also
 
-[The World: who may move an entity](../concepts/the-world.md#who-may-move-an-entity-posedriver) · [Write routines](write-routines.md)
+[The World: who may move an entity](../concepts/the-world.md#-who-may-move-an-entity-posedriver) · [Write routines](write-routines.md)

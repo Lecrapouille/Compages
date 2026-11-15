@@ -1,6 +1,6 @@
-# Guides
+# 🧭 Guides
 
-[Documentation](../../README.md#-documentation)
+[⏫ Documentation](../../README.md#-documentation)
 
 Each guide shows how to do one task, with the code and a picture of the result. They assume that you have read the first [tutorials](../tutorials/README.md).
 

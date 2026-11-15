@@ -1,12 +1,12 @@
-# 2. The GPU
+# 🟧 2. The GPU
 
-[Install and run](01-install.md) · [Tutorials](README.md) · [Next: the World](03-the-world.md)
+[◀ Install and run](01-install.md) · [⏫ Tutorials](README.md) · [Next: the World ▶](03-the-world.md)
 
 ![01c_Triangle](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png)
 
 The bottom layer of Compages talks to the graphics card. It knows shaders, buffers and textures, and nothing else: no objects, no camera, no scene. You will draw one triangle with a shader of your own, then make the GPU compute on a list of numbers.
 
-## A triangle
+## 🔺 A triangle
 
 A **shader** is a small program that runs on the GPU. The **vertex shader** places each corner of a shape. The **fragment shader** gives each pixel its colour. From [01c_Triangle.cpp](../../examples/01_FirstSteps/01c_Triangle.cpp):
 
@@ -59,7 +59,7 @@ The positions go from −1 to 1 across the window, so no camera is needed. `m_tr
 
 A wrong name such as `m_triangle["colour"]` does not crash the program. Compages keeps the error, with the names the shader really declares, and `prepare()` returns it before the first frame. [Errors](../concepts/errors.md) explains when each kind of error comes back.
 
-## A shader that computes
+## 🧮 A shader that computes
 
 A **compute shader** draws nothing. The GPU runs it once per item, on many items at the same time. From [05a_Compute.cpp](../../examples/05_Simulation/05a_Compute.cpp), twelve numbers, each moved by its own index plus one:
 
@@ -93,7 +93,7 @@ m_values.download();                          // bring the numbers back to the C
 
 The numbers live in a **storage buffer**: GPU memory that a shader can read and write. `dispatch()` runs the shader once per number. `download()` copies the result back to the CPU. It makes the CPU wait for the GPU. This is fine for twelve numbers in a lesson. For a million numbers at each frame, keep them on the GPU and draw them from there: `05f_Galaxy` moves eight thousand stars this way and never reads them back.
 
-## Run them
+## ▶ Run them
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples 01c_Triangle
@@ -102,7 +102,7 @@ The numbers live in a **storage buffer**: GPU memory that a shader can read and 
 
 In `05a_Compute`, press **dispatch() once** in the panel. The GPU moves the numbers, and the bars turn orange because the copy on the CPU is now old. Press **download()** to bring the numbers back.
 
-## Try
+## 🧪 Try
 
 - In `01c_Triangle.cpp`, move the top corner to `{ 0.0f, 0.3f }`. The triangle gets flatter.
 - Write `m_triangle["colour"]`. The console of the gallery lists the names the shader declares.
@@ -112,4 +112,4 @@ The Scene of the next pages uses this layer underneath, with shaders it writes f
 
 ---
 
-[Install and run](01-install.md) · [Tutorials](README.md) · [Next: the World](03-the-world.md)
+[◀ Install and run](01-install.md) · [⏫ Tutorials](README.md) · [Next: the World ▶](03-the-world.md)

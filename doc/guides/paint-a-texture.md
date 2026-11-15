@@ -1,6 +1,6 @@
-# Paint a texture
+# 🖌 Paint a texture
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Change a texture while the program runs: a robot that paints a canvas, a height-field editor, a CPU simulation shown on a quad.
 
@@ -38,8 +38,8 @@ scene.draw(frame);
 - Mirrored or upside down? Flip U or V in `setMapping`.
 - After local stamps, `sync()` sends only the **dirty rectangle**; `clear()` marks everything. The texture uses nearest filtering, with no mipmaps to rebuild each frame. For a 4K canvas, sync less often.
 
-The same picture can be drawn into with lines and filled pixels (`paintPixelLine`, `fillPixels`): a `Chart` draws its curves this way ([show a field](show-a-field.md#curves-over-time)).
+The same picture can be drawn into with lines and filled pixels (`paintPixelLine`, `fillPixels`): a `Chart` draws its curves this way ([show a field](show-a-field.md#-curves-over-time)).
 
-## See also
+## 🔗 See also
 
-[Pick with the mouse](pick-with-the-mouse.md) · [Make pictures and meshes](make-pictures-and-meshes.md) (a texture written once)
+[◀ Pick with the mouse](pick-with-the-mouse.md) · [Make pictures and meshes](make-pictures-and-meshes.md) (a texture written once)

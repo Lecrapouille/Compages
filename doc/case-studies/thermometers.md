@@ -1,6 +1,6 @@
-# 11h_Thermometers: values over time
+# 📈 11h_Thermometers: values over time
 
-[Case studies](README.md)
+[⏫ Case studies](README.md)
 
 ![11h_Thermometers](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11h_Thermometers.png)
 
@@ -27,6 +27,6 @@ COMPAGES_TRY(m_chart.draw());
 
 The board shows the picture as it is, like a screen: a hook `main` that only reads the picture, so the sun does not light it.
 
-## See also
+## 🔗 See also
 
-[Show a field: curves over time](../guides/show-a-field.md#curves-over-time) · [Paint a texture](../guides/paint-a-texture.md)
+[Show a field: curves over time](../guides/show-a-field.md#-curves-over-time) · [Paint a texture](../guides/paint-a-texture.md)

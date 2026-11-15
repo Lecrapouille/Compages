@@ -1,12 +1,12 @@
-# 3. The World
+# 🟦 3. The World
 
-[The GPU](02-the-gpu.md) · [Tutorials](README.md) · [Next: a scene](04-a-scene.md)
+[◀ The GPU](02-the-gpu.md) · [⏫ Tutorials](README.md) · [Next: a scene ▶](04-a-scene.md)
 
 ![13a_Workshop](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13a_Workshop.png)
 
 The second layer holds the things of a simulation and moves them. It draws nothing and never touches the GPU. You will build the robot arm of the picture above in a `compages::world::World`, move its tip along the table, and print where the tip is. No window opens: the picture is for the next page, where the Renderer draws this same arm.
 
-## A chain of joints
+## 🔗 A chain of joints
 
 A robot arm is a chain. The base turns and carries the shoulder. The shoulder tilts and carries the elbow. The elbow bends and carries the tip. In the World, each joint is an **entity**, and each one is the **child** of the one before. When a parent turns, its children turn with it. From [Workshop/Arm.cpp](../../examples/13_Workshop/Workshop/Arm.cpp):
 
@@ -26,7 +26,7 @@ flowchart LR
     E --> T["Tool<br/>the tip"]
 ```
 
-## A routine moves the joints
+## ⏱ A routine moves the joints
 
 A joint has an angle, and something must set it. Here a **routine** does: a small piece of code attached to one entity, called at each update of the World.
 
@@ -81,7 +81,7 @@ elbow.joint().angle(radian_t(-bend));
 
 Since the path is given for the tip, the tip can never go into the table, whatever the path.
 
-## Run it without a screen
+## ▶ Run it without a screen
 
 This program builds the arm, moves time forward by half a second at each step, and prints where the tip is. Save it as `arm.cpp` in the `Compages` folder:
 
@@ -131,14 +131,14 @@ At the start the tip is at 0.783 m: 3 mm above the table top. Then it lifts and 
 
 No OpenGL context was made. The same code runs in a unit test, on a server, or inside a robot controller.
 
-## Try
+## 🧪 Try
 
 - Replace `0.5 * t` by `2.0 * t` in the turn of the base. The tip moves sideways four times faster.
 - Set `lift` to `0.0`. The tip stays at 0.783 m: it slides on the table.
 - Give the shoulder limits: `.revolute({ 0.0f, 0.0f, 1.0f }, units::angle::radian_t(-0.5), units::angle::radian_t(0.5))`. The shoulder cannot lean far enough, and the tip stays above the table. A joint keeps an angle outside its limits at the limit.
 
-[The World](../concepts/the-world.md) explains how the scene graph and the ECS share one container. [Write routines](../guides/write-routines.md) shows fixed steps, timers and messages. When thousands of entities share the same behaviour, components and `world.each` are a better tool than a routine on each ([where does my data live?](../concepts/three-layers.md#where-does-my-data-live)).
+[The World](../concepts/the-world.md) explains how the scene graph and the ECS share one container. [Write routines](../guides/write-routines.md) shows fixed steps, timers and messages. When thousands of entities share the same behaviour, components and `world.each` are a better tool than a routine on each ([where does my data live?](../concepts/three-layers.md#-where-does-my-data-live)).
 
 ---
 
-[The GPU](02-the-gpu.md) · [Tutorials](README.md) · [Next: a scene](04-a-scene.md)
+[◀ The GPU](02-the-gpu.md) · [⏫ Tutorials](README.md) · [Next: a scene ▶](04-a-scene.md)

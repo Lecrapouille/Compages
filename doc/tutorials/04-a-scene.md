@@ -1,12 +1,12 @@
-# 4. A scene
+# 🟩 4. A scene
 
-[The World](03-the-world.md) · [Tutorials](README.md) · [Next: values on a grid](05-values-on-a-grid.md)
+[◀ The World](03-the-world.md) · [⏫ Tutorials](README.md) · [Next: values on a grid ▶](05-values-on-a-grid.md)
 
 ![13a_Workshop](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13a_Workshop.png)
 
 The third layer draws a World. A `compages::renderer::Scene` gives entities a shape and a look, adds a camera and lights, and draws the picture with the GPU layer. You will build the workshop around the arm of the last page, give the arm its shapes, and then draw the whole scene in a window that your own program opens.
 
-## The room
+## 🏠 The room
 
 The room is one function, `buildRoom()`, in [Workshop/Room.cpp](../../examples/13_Workshop/Workshop/Room.cpp).
 
@@ -64,7 +64,7 @@ p_scene.sphere("Bulb", compages::renderer::unlit(1.0f, 0.9f, 0.7f))
 
 A lamp lights round it, up to 3 m here. The lamp itself is invisible, so the bulb is a small sphere, its child. Its look is **unlit**: no light changes its colour, as for a real bulb. The last two lines say that the bulb casts no shadow. Without them, a small dark spot appears on the table under it.
 
-## The shapes of the arm
+## 🦾 The shapes of the arm
 
 The arm of the last page has joints and no shapes. `dressArm()`, in [Workshop/ArmShapes.cpp](../../examples/13_Workshop/Workshop/ArmShapes.cpp), hangs shapes under the joints:
 
@@ -88,7 +88,7 @@ return m_scene.prepare();
 
 and at each frame, `m_scene.draw(p_frame)`. `prepare()` checks the whole scene once, before the first frame, and returns the first error. `draw(frame)` updates the World (the routine of the arm runs there), then draws it.
 
-## Run it
+## ▶ Run it
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples 13a_Workshop
@@ -96,7 +96,7 @@ and at each frame, `m_scene.draw(p_frame)`. `prepare()` checks the whole scene o
 
 The arm moves its tip along the table, as the numbers of page 3 said. Drag with the right mouse button to turn round the table. **F6** pauses and **F7** advances one frame.
 
-## The same scene in your own window
+## 🪟 The same scene in your own window
 
 The gallery opens the window and calls `draw()` for you. Your own program does it itself. Compages never opens a window: it draws into the window your program made, here with GLFW (SDL or Qt work the same way). Save this as `workshop.cpp` in the `Compages` folder:
 
@@ -209,7 +209,7 @@ The order of the steps matters:
 3. At each frame, fill a `ViewFrame` with the time and the size of the window, open a `RenderPass` (where to draw), call `draw`, then show the picture.
 4. At the end, leave `run()` first, so the scene frees its GPU objects, then call `gpu::shutdown()` while OpenGL still exists.
 
-## Try
+## 🧪 Try
 
 - Move the table: `position(0.5f, TABLE_TOP, 0.0f)` in `buildRoom()`. The top, the legs and the part follow. The arm and the lamp stay, because they are not children of the table.
 - Set the range of the lamp to `0.5f`. Its light no longer reaches the table.
@@ -219,4 +219,4 @@ The World holds where things are; the Scene adds what they look like and draws t
 
 ---
 
-[The World](03-the-world.md) · [Tutorials](README.md) · [Next: values on a grid](05-values-on-a-grid.md)
+[◀ The World](03-the-world.md) · [⏫ Tutorials](README.md) · [Next: values on a grid ▶](05-values-on-a-grid.md)

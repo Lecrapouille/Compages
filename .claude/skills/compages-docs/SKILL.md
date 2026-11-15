@@ -74,7 +74,7 @@ Put a fact in one place and link to it. Code comments point to pages
     kinds of page", "What happened", "Choose a path"); no table of "When you
     want to…" rows; bold only for the one word a reader must not miss; no
     "**Label:** text" lists; no horizontal rule between every section; no
-    emoji in headings or body text.
+    emoji in body text (emojis in headings are the house style: see Format).
   - Fix by rewriting the paragraph around its point, not by swapping words.
     Vary sentence length. Prose first; a list only for a real enumeration, a
     table only for a real comparison.
@@ -140,8 +140,15 @@ picture → limits.
 
 ## Format
 
-- No emoji in the headings of doc/ (a sign of machine writing, and it
-  breaks anchors); 🟧 GPU, 🟦 World, 🟩 Renderer may tag a table cell.
+- One emoji at the start of every heading (`# 🎓 Tutorials`, `## 🧪 Try`),
+  as in the existing pages: it is the style of Compages, keep it. Pick one
+  that says what the section is about; reuse the usual ones (🔗 See also,
+  🧪 Try, ▶ Run it, 🚧 Limits, 📏 Cost, 📁 Source). 🟧 GPU, 🟦 World,
+  🟩 Renderer mark the layers. Navigation lines use `[◀ Previous](…) ·
+  [⏫ Folder](README.md) · [Next: … ▶](…)`.
+- GitHub drops the emoji from a heading id and keeps the space as a hyphen:
+  `## 🧪 Try` → `#-try`. Never use an emoji with U+FE0F (⚠️ 🖥️ 🛠️ ▶️ …) in a
+  heading: the selector stays in the id and links break. Use ▶, not ▶️.
 - Namespaces in snippets: `compages::Vector3f`, `compages::world::...`,
   `compages::renderer::...`, `compages::gpu::...`.
 - Relative links between pages; check that every target exists.

@@ -1,12 +1,12 @@
-# Pick with the mouse
+# 🖱 Pick with the mouse
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Know which shape is under the mouse and where the ray hits it; or where the mouse points on a plane.
 
 ![06i_CameraPick](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06i_CameraPick.png)
 
-## A shape under a pixel
+## 🎯 A shape under a pixel
 
 `scene.pick(pixel)` gives the nearest shape under a pixel and the world point it hits, as the **last render** saw it:
 
@@ -30,7 +30,7 @@ if (p_frame.input.mouse_left)
 
 `06i_CameraPick` shows the box of what you picked; `06l_CanvasPaint` paints where you click.
 
-## A point on a plane
+## 📐 A point on a plane
 
 When you want a plane rather than a shape (the water of `10f`, the ground of a map), make the ray yourself from the camera of the last render, two points of the pixel unprojected:
 
@@ -39,8 +39,8 @@ const compages::Vector4f eye = camera.inverse_projection * compages::Vector4f(x,
 const compages::Vector4f world = camera.inverse_view * compages::Vector4f(eye.x / eye.w, eye.y / eye.w, eye.z / eye.w, 1.0f);
 ```
 
-`scene.lastCamera()` holds these matrices; it is empty before the first render (check `viewport_width`). For a field, `scene.probe()` does all of this and returns the value too ([show a field](show-a-field.md#the-value-under-the-mouse)).
+`scene.lastCamera()` holds these matrices; it is empty before the first render (check `viewport_width`). For a field, `scene.probe()` does all of this and returns the value too ([show a field](show-a-field.md#-the-value-under-the-mouse)).
 
-## See also
+## 🔗 See also
 
-[Paint a texture](paint-a-texture.md) · [Move the camera](move-the-camera.md)
+[◀ Paint a texture](paint-a-texture.md) · [Move the camera](move-the-camera.md)

@@ -1,12 +1,12 @@
-# Several views of one world
+# 🪟 Several views of one world
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Draw the same world from several cameras in one frame: a split screen, a minimap, the camera of a robot, a picture read by your program.
 
 ![06j_SplitViews](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png)
 
-## Update once, render many times
+## 🔁 Update once, render many times
 
 ```cpp
 scene.update(frame);   // the world moves once
@@ -16,7 +16,7 @@ scene.render(top);     // another camera of the same Scene
 
 `draw(frame)` is `update(frame)` plus `render()`. With several views, call the two halves: one update, then one render per view. Calling `update` twice would move the world twice.
 
-## Where each view goes
+## ▭ Where each view goes
 
 **A part of the window**: the viewport of the camera, in fractions of the target. A camera whose viewport covers part of the target clears and draws only that part:
 
@@ -53,10 +53,10 @@ scene.render();
 map.render(top);
 ```
 
-## What a sensor must not see
+## 🤖 What a sensor must not see
 
 Set `sees_helpers = false` on the camera of a sensor: it leaves out the grids, the axes, the debug lines and the meshes marked `RenderFlags::Helper` ([draw helpers](draw-helpers.md)). [What the robot sees](../tutorials/07-what-the-robot-sees.md) does all of this in the workshop.
 
-## See also
+## 🔗 See also
 
-[One frame](../concepts/one-frame.md) · [Run without a screen](run-without-a-screen.md) (a picture into a file) · [Screen effects](screen-effects.md)
+[◀ One frame](../concepts/one-frame.md) · [Run without a screen](run-without-a-screen.md) (a picture into a file) · [Screen effects](screen-effects.md)

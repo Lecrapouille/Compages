@@ -1,4 +1,4 @@
-# Tutorials
+# 🎓 Tutorials
 
 ![The workshop at the last step](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13d_RobotEye.png)
 

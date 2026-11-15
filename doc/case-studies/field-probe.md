@@ -1,6 +1,6 @@
-# 11c_FieldProbe: what is under the mouse
+# 🏝 11c_FieldProbe: what is under the mouse
 
-[Case studies](README.md)
+[⏫ Case studies](README.md)
 
 ![11c_FieldProbe](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11c_FieldProbe.png)
 
@@ -21,10 +21,10 @@ if (const auto found = m_scene.probe(m_altitude, m_look, p_frame.input.mouse))
 }
 ```
 
-## Limits
+## 🚧 Limits
 
 The walk steps by half a grid step: a peak thinner than that can be crossed without being seen. It reads the relief as drawn, so a look with no relief gives the flat ground.
 
-## See also
+## 🔗 See also
 
-[Show a field: the value under the mouse](../guides/show-a-field.md#the-value-under-the-mouse) · [Pick with the mouse](../guides/pick-with-the-mouse.md)
+[Show a field: the value under the mouse](../guides/show-a-field.md#-the-value-under-the-mouse) · [Pick with the mouse](../guides/pick-with-the-mouse.md)

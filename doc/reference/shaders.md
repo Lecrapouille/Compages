@@ -1,10 +1,10 @@
-# Shader library
+# 🔍 Shader library
 
-[Reference](README.md)
+[⏫ Reference](README.md)
 
 The Renderer draws with GLSL that Compages writes for you, in [src/Renderer/Procedural/ShaderLib.cpp](../../src/Renderer/Procedural/ShaderLib.cpp). This page shows how this GLSL is cut into pieces, which pieces include which, where you can put your own code, and which uniforms the Renderer fills. The calls are in [ShaderLib.hpp](../../include/Compages/Renderer/Procedural/ShaderLib.hpp); how to use the hooks is in [write a material](../guides/write-a-material.md).
 
-## The shaders
+## 🔍 The shaders
 
 `compages::renderer::shaders` returns each shader as a `ShaderPair`: its vertex stage and its fragment stage, as `gpu::ShaderSource` text that you may change before it is compiled.
 
@@ -21,7 +21,7 @@ The Renderer draws with GLSL that Compages writes for you, in [src/Renderer/Proc
 
 The **family** of a material says which uniforms the Renderer sets for it. A material made with `createMaterial()` takes the family of the shader it starts from.
 
-## The pieces
+## 🧩 The pieces
 
 A piece is a named block of GLSL that a shader includes with `#include <compages/….glsl>`. Your own shaders, and the compute shaders made with `compute()`, can include the same pieces. In a compute shader, `COMPAGES_COMPUTE` is defined, and the parts that need a pixel are left out.
 
@@ -49,7 +49,7 @@ pbr() fragment stage
 
 `lit()` includes `fog`, `shade` and `present` the same way, with no hooks. Each piece is included once, even when several pieces ask for it.
 
-## The four hooks of the PBR shader
+## 🔍 The four hooks of the PBR shader
 
 The default `main()` of the fragment stage is these steps:
 
@@ -82,7 +82,7 @@ water.vertex()
     .hook("deform", SURFACE_WAVES);
 ```
 
-## What the Renderer sets
+## 🟩 What the Renderer sets
 
 For every draw, if the shader declares them:
 
@@ -104,6 +104,6 @@ The textures and storage buffers listed in `MaterialDesc::textures` and `::buffe
 
 A uniform that the shader declares but never uses is removed by the GLSL compiler. Setting it then is a frame error: use what you declare.
 
-## Screen filters
+## ✨ Screen filters
 
 A [screen filter](../guides/screen-effects.md) is not a hook of the PBR shader. It is one function, `vec3 effect(vec2 uv)`, that Compages wraps in a full-screen pass. It reads `screenColor`, `screenDepth`, `screenSize` and its own `uniform float` values.

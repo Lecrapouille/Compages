@@ -1,6 +1,6 @@
-# Text on the picture
+# 🔤 Text on the picture
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Write the name of a thing next to it, a box of lines that points at it, or a caption at a fixed place of a view.
 
@@ -36,16 +36,16 @@ region.set(compages::renderer::Tooltip{ .title = "Astronomie",
 
 The letters keep their size in pixels at any distance. Change the `text` of a caption each frame for numbers that move; set a tooltip to show it and remove it to hide it (`10e_Archipelago` shows the links of the region under the mouse). Each view of a split screen has its own caption.
 
-### Rules
+### 📐 Rules
 
 A label that would cover text already written (a caption, a tooltip, another label) is not written, so names stay readable where things crowd. A label is not hidden by what is in front of its point. `hide_closer_than` removes the name when the thing is near enough to be seen: `10d_EarthMoon` gives each planet 50 times its radius. A tooltip faces the camera, sits above its point or below when there is no room, and slides sideways to stay inside the picture.
 
-### How
+### 🔤 How
 
 The letters are drawn the way of Glumpy: the font is baked once into a picture of **distance fields** (stb_truetype), where each pixel says how far it is from the edge of the letter. The shader cuts at the edge with a smooth step of one pixel, so a letter is sharp at any size; a second cut a little outside gives a dark halo, readable on a bright planet. All the text is drawn in one call, after everything else, and after the [screen effects](screen-effects.md).
 
 In the gallery, `dataPath()` comes from `examples/Common/DataPath.hpp`; in your program, give a path that exists.
 
-## See also
+## 🔗 See also
 
-[Draw helpers](draw-helpers.md) · [Very large scenes](very-large-scenes.md)
+[◀ Draw helpers](draw-helpers.md) · [Very large scenes](very-large-scenes.md)

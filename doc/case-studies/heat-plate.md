@@ -1,6 +1,6 @@
-# 11a_HeatPlate: the heat equation
+# 🔥 11a_HeatPlate: the heat equation
 
-[Case studies](README.md)
+[⏫ Case studies](README.md)
 
 ![11a_HeatPlate](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11a_HeatPlate.png)
 
@@ -37,7 +37,7 @@ m_next(i, j) = edge ? ROOM
                               m_temperature(i, j - 1) + m_temperature(i, j + 1) - (4.0f * t)));
 ```
 
-### One step with real numbers
+### 👣 One step with real numbers
 
 Take the centre value 100, four neighbours at 20 and $r = 0.1$. The update gives $100 + 0.1(20 + 20 + 20 + 20 - 4 \times 100) = 68$. A hotter point cools toward its neighbours. This is one local update; heaters and edge rules may hold some other points fixed.
 
@@ -47,11 +47,11 @@ Take the centre value 100, four neighbours at 20 and $r = 0.1$. The update gives
 
 Try it: the colour map, the relief (the temperature as a height), the speed of time.
 
-## Limits
+## 🚧 Limits
 
 - The explicit step is stable only while $r = \alpha\,\Delta t / h^2 \le \tfrac14$. Halving the step $h$ of the grid gives four times the points and four times the steps: sixteen times the work. An implicit solver would take large steps; it is not in Compages.
 - The CPU loop is fine for 96 × 96 points. For a much larger grid at every frame, compute on the GPU: [the ripple tank](ripple-tank.md).
 
-## See also
+## 🔗 See also
 
 [Values on a grid](../tutorials/05-values-on-a-grid.md) (the same loop, on the workshop table) · [Show a field](../guides/show-a-field.md) · [Fields and grids](../concepts/fields-and-grids.md)

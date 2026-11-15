@@ -1,12 +1,12 @@
-# API reference
+# 📖 API reference
 
-[Reference](README.md)
+[⏫ Reference](README.md)
 
 The entry points and the common calls of Compages, by task, on one page. Rows show the shape of a call, not complete programs: names such as `Scene`, `Routine` and `Field` are shortened. For the why, see the [concepts](../concepts/README.md); for working code, the [tutorials](../tutorials/README.md) and the [guides](../guides/README.md). The Doxygen comments of the headers in `include/Compages/` have the details.
 
 Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, matrices, `Frame`, `Status`, `Result<T>`, grids and fields are directly in `compages` (`compages::Vector3f`).
 
-## 1. Includes
+## 📎 1. Includes
 
 ```cpp
 #include <Compages/Compages.hpp>         // the whole stack
@@ -18,7 +18,7 @@ Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, m
 
 ---
 
-## 2. Errors
+## 🚨 2. Errors
 
 ```cpp
 COMPAGES_TRY(expr);                      // returns the error of a Status / Result
@@ -37,7 +37,7 @@ const std::string err = compages::gpu::takeFrameError();  // "" when no error
 
 For a visual program, initialize a graphics context and the GPU, create resources, check `prepare()`, draw inside a `RenderPass`, then release resources before shutdown. A World-only program skips all graphics setup.
 
-## 3. GPU
+## 🟧 3. GPU
 
 | Action | Call |
 |--------|------|
@@ -63,7 +63,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ---
 
-## 4. World
+## 🟦 4. World
 
 | Action | Call |
 |--------|------|
@@ -89,7 +89,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ---
 
-## 5. Renderer
+## 🟩 5. Renderer
 
 | Action | Call |
 |--------|------|
@@ -128,7 +128,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 
 ---
 
-## 6. Fields
+## 🗺 6. Fields
 
 Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.hpp>` gives the three).
 
@@ -149,7 +149,7 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 
 ---
 
-## 7. Time
+## ⏰ 7. Time
 
 | Type | Holds |
 |------|-------|
@@ -165,7 +165,7 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 
 ---
 
-## 8. Gallery
+## 📷 8. Gallery
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples
@@ -175,6 +175,6 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 
-Keys: [the window](gallery.md#1-the-window).
+Keys: [the window](gallery.md#-1-the-window).
 
 Next: [the gallery](gallery.md).

@@ -1,10 +1,10 @@
-# Glossary
+# 📖 Glossary
 
-[Concepts](README.md)
+[⏫ Concepts](README.md)
 
 The words of 3D programming that the documentation uses, in plain terms. Other pages link here the first time they use a word; you do not need to read this page from top to bottom.
 
-## Places, directions and time
+## 📐 Places, directions and time
 
 A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3D tools, **y goes up**; x goes sideways and z toward you along the floor. The point (0, 0, 0) is the **origin**. Distances are in metres: keep the same unit in your own data.
 
@@ -17,7 +17,7 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Local / world** | A local position is measured from the parent; a world position includes every parent. A wheel at x = 1 on a car at x = 2 is at world x = 3. |
 | **Frame** | One step of the program. A speed of 2 m/s moves a thing by `2 × elapsed` metres at each frame, so the speed does not depend on the frame rate. |
 
-## On the GPU side
+## 🟧 On the GPU side
 
 | Word | Meaning |
 |------|---------|
@@ -38,7 +38,7 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Framebuffer** | A destination of drawing other than the window: one or more textures. |
 | **Graphics context** | The state of the driver, made by the program before any OpenGL call. It belongs to a window or to an offscreen program. |
 
-## On the World side
+## 🟦 On the World side
 
 | Word | Meaning |
 |------|---------|
@@ -53,7 +53,7 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Routine** | A small piece of code attached to one entity, called at each step (`update`, `fixedUpdate`…). |
 | **Headless** | Running without a window. The World needs no graphics context at all; drawing without a screen still needs one. |
 
-## On the Renderer side
+## 🟩 On the Renderer side
 
 | Word | Meaning |
 |------|---------|
@@ -74,7 +74,7 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Helper** | A line or a shape drawn for the person at the screen (a grid, axes, a marker), not part of the world. |
 | **Tone curve** | The last step of a picture: light, which may be brighter than white, becomes colours the screen can show. |
 
-## On the Fields side
+## 🗺 On the Fields side
 
 | Word | Meaning |
 |------|---------|

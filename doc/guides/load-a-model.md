@@ -1,12 +1,12 @@
-# Load a model
+# 📂 Load a model
 
-[Guides](README.md)
+[⏫ Guides](README.md)
 
 Put a glTF model, an STL mesh or a URDF robot into a scene, play its animations, make copies, and save the scene.
 
 ![08a_GltfModel](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08a_GltfModel.png)
 
-## One call
+## 📥 One call
 
 ```cpp
 compages::world::Entity duck;
@@ -19,7 +19,7 @@ scene.camera().add<compages::world::Orbit>(centre);
 
 A `.gltf` may keep its textures in files beside it: copy them together. A `.glb` holds the model and its resources in one file. In your own program, give a path that exists from the working directory, or an absolute one; the gallery finds its assets through `examples/Common/DataPath.hpp` and `COMPAGES_DATA_PATH`, which are gallery code.
 
-## The catalog, and copies
+## 🗃 The catalog, and copies
 
 | Call | Effect |
 |------|--------|
@@ -31,7 +31,7 @@ A `.gltf` may keep its textures in files beside it: copy them together. A `.glb`
 
 Meshes, textures and materials live once in the catalog (`AssetManager`), whatever the number of copies; an entity holds their ids.
 
-## Animations
+## 🎬 Animations
 
 ```cpp
 auto names = scene.clips(soldier);   // the names of its clips, in file order
@@ -40,20 +40,20 @@ scene.play(soldier, "Walk");
 
 `08b_GltfAnimation` plays the clips of `Soldier.glb` with keys 1, 2, 3. Clips are applied after the routines and before the joints, at each `update()` ([one frame](../concepts/one-frame.md)).
 
-## A robot from URDF
+## 🦾 A robot from URDF
 
 A URDF describes a robot's links and joints. The World builds the chain (it runs headless: `compages::world::loadUrdf(world, path)`), and the Renderer adds the visible shapes of the links when the Scene loads the same file. `08d_RobotArm` loads an ABB IRB 2400: one entity per link, one revolute joint between each, and sliders that set the angles within their limits.
 
-## Save a scene
+## 💾 Save a scene
 
 `08c_PrefabAndSave` places a prefab three times, moves each copy alone, then writes the scene to `/tmp/compages_prefab_scene.json`. The JSON keeps asset **names**, not GPU ids, so it loads back on another run.
 
-## Common problems
+## 🧯 Common problems
 
 - The model is black or white. A glTF material uses metallic and roughness with its base colour; check that its textures were copied beside it.
 - The model is huge or tiny. glTF is in metres; a file exported in centimetres is 100 times too large. `frameAll()` shows it whole either way.
 - Nothing shows. Check the `Result` of `loadFile`, then call `frameAll()`: the model may be behind the camera.
 
-## See also
+## 🔗 See also
 
-[Write a material](write-a-material.md) for your own shading of a loaded mesh · [The World](../concepts/the-world.md#joints) for joints · [Reference](../reference/api.md#5-renderer)
+[Write a material](write-a-material.md) for your own shading of a loaded mesh · [The World](../concepts/the-world.md#-joints) for joints · [Reference](../reference/api.md#-5-renderer)

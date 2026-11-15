@@ -1,6 +1,6 @@
-# Concepts
+# 💡 Concepts
 
-[Documentation](../../README.md#-documentation)
+[⏫ Documentation](../../README.md#-documentation)
 
 These pages explain why Compages is built the way it is. Each one starts from a problem, describes the choice made, and says what this choice costs. Read [three layers](three-layers.md) first.
 

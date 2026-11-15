@@ -1,12 +1,12 @@
-# 7. What the robot sees
+# 📷 7. What the robot sees
 
-[A look of your own](06-a-look-of-your-own.md) · [Tutorials](README.md)
+[◀ A look of your own](06-a-look-of-your-own.md) · [⏫ Tutorials](README.md)
 
 ![13d_RobotEye](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13d_RobotEye.png)
 
 A robot that works on a part must see it. You will put a camera on a mast of the arm, draw what it sees in a corner of the window, and draw it again into a small picture that the program reads pixel by pixel, as a vision program would. Look at the corner of the picture above: the robot sees the plate, the part and its own arm, but not the grid on the floor.
 
-## A second camera
+## 🎥 A second camera
 
 A camera is an entity like the others. It has a place, and it can be the child of a joint. From [Workshop/Eye.cpp](../../examples/13_Workshop/Workshop/Eye.cpp):
 
@@ -25,7 +25,7 @@ The `Camera` component holds the lens. `near_plane` and `far_plane` say which di
 
 The first camera made in a Scene, the one of `buildRoom()`, stays the camera that `render()` uses. This one is drawn only when the program asks.
 
-## Two pictures of the same view
+## 🖼 Two pictures of the same view
 
 In the window, the camera draws into a corner. Its **viewport** is a rectangle of the target, given in fractions of the target: from 66 % to 98 % of the width, and from 64 % to 98 % of the height.
 
@@ -64,7 +64,7 @@ m_seen = float(blue) / float(m_picture.width() * m_picture.height());
 
 The demo writes the share over the picture: "The robot sees the part: … % of its picture". The number changes as the arm turns, and when the forearm hides the part.
 
-## The frame, in order
+## 🔁 The frame, in order
 
 ```cpp
 m_scene.update(p_frame);                    // the arm moves
@@ -77,13 +77,13 @@ m_eye.show(m_scene);                        // the view of the robot, in its cor
 
 The World moves once. Then three pictures are drawn from it. Drawing never moves anything: it only reads where things are.
 
-## Run it
+## ▶ Run it
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples 13d_RobotEye
 ```
 
-## Try
+## 🧪 Try
 
 - Set `sees_helpers` to `true`. The grid appears in the corner.
 - Paint the part red in `buildRoom()`. The share falls to zero, because the robot looks for blue.
@@ -95,4 +95,4 @@ This is the end of the tutorials. The [guides](../guides/README.md) answer one t
 
 ---
 
-[A look of your own](06-a-look-of-your-own.md) · [Tutorials](README.md)
+[◀ A look of your own](06-a-look-of-your-own.md) · [⏫ Tutorials](README.md)
