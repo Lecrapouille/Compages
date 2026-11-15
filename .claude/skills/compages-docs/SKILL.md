@@ -27,11 +27,26 @@ in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
 | 11-Credits.md | technical lessons, inspirations, third parties, license (the story is in README.md) |
 | 12-Going-Further.md | the tutorial continued: one important call per step (own shader, pictures, meshes, see-through, deform, Field, fromField, passes, picking), from real demo code |
 | 14-Science-With-Fields.md | the 11_Science demos: equations (LaTeX ```math blocks), discrete loops, mermaid diagrams, the Fields calls |
+| techniques/README.md | the list of techniques (lettier order, status ✅ 🕓 🚧) and how a page reads |
+| techniques/<slug>.md | one effect per page (cel-shading, bloom, flow-mapping…), the template below |
 | 13-Complete-Demos.md | 10c, 10e, 10f rebuilt step by step (the technique lives here; 09 keeps the idea, the keys and a link) |
 
 Put a fact in one place and link to it. README.md and doc/README.md hold the
 chapter tables: keep them in sync. Code comments point to chapters
 (`doc/01-Introduction.md`, `doc/06-Renderer-Layer.md §5`): update them on rename.
+
+## Technique pages (doc/techniques/)
+
+One effect, one page, one demo. Inspired by lettier's *3D Game Shaders For
+Beginners* for the structure only: never copy its text or pictures. Order:
+title, nav line (`[◀ Prev](x.md) · [⏫ Techniques](README.md) · [Next ▶](y.md)`),
+screenshot, card table (Demo | Layer | Your C++ | Your GLSL | Passes added),
+then 🎯 The problem · 💡 The idea (maths + one mermaid) · 🧩 In Compages (real
+lines of the demo) · 🔍 The shader · 📏 Cost (passes, textures, memory) ·
+🚧 Limits · 🧪 Try it (the demo's own controls) · 📁 Source, and the nav line
+again. "Your C++" counts only the lines that switch the effect on and set it.
+A new page: add it to techniques/README.md (status ✅), relink its neighbours'
+nav lines, link it from the demo's row in 09-Examples.md.
 
 ## Rules
 

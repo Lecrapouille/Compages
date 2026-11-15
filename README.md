@@ -159,7 +159,7 @@ Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels.
 
 ## 📚 Documentation
 
-Start with chapters 1 to 3, then open the chapter of the layer you need. Chapters 12 to 14 continue the tutorial up to the large demos and the science demos.
+[doc/README.md](doc/README.md) offers three paths: **use** Compages (chapters 1–3, then the layers), **make effects and simulations** (chapter 12, the techniques, the science demos), **understand and extend** the engine (architecture, debugging).
 
 | # | Chapter | Contents |
 |---|---------|----------|
@@ -176,6 +176,7 @@ Start with chapters 1 to 3, then open the chapter of the layer you need. Chapter
 | 10 | [Debugging](doc/10-Debugging.md) | 🐞 Errors, driver messages, apitrace, RenderDoc |
 | 11 | [Credits](doc/11-Credits.md) | 🙏 Inspirations, third parties |
 | 12 | [Going further](doc/12-Going-Further.md) | 🎓 The calls that matter, step by step |
+| — | [Techniques](doc/techniques/README.md) | 🎨 One effect per page: cel shading, bloom, flow mapping… |
 | 13 | [Three complete demos](doc/13-Complete-Demos.md) | 🏗 Sweat, an archipelago and flowing water, rebuilt step by step |
 | 14 | [Science with fields](doc/14-Science-With-Fields.md) | 🔬 Heat, waves, fluids, volumes, ideal flow: equations and grids |
 
