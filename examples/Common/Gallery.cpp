@@ -946,6 +946,7 @@ Gallery::SourceFile const& Gallery::sourceFile(std::string const& p_relative)
             }
         }
     }
+    source.colours = colourSource(lines);
     return m_sources.emplace(p_relative, std::move(source)).first->second;
 }
 

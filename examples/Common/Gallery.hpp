@@ -9,6 +9,7 @@
 
 #include "Common/Console.hpp"
 #include "Common/Example.hpp"
+#include "Common/SourceView.hpp"
 #include "Common/Window.hpp"
 
 #include <functional>
@@ -228,6 +229,8 @@ private:
         //! \brief The number of the first line kept, the licence skipped.
         std::size_t first = 1u;
         std::vector<std::string> lines;
+        //! \brief The colours of each line, cut once when the file is read.
+        std::vector<SourceSpans> colours;
     };
 
     //! \brief A file of examples/, read once.

@@ -30,7 +30,6 @@ const ImVec4 RED(1.0f, 0.42f, 0.42f, 1.0f);
 const ImVec4 ORANGE(1.0f, 0.70f, 0.30f, 1.0f);
 const ImVec4 GREEN(0.45f, 0.85f, 0.45f, 1.0f);
 const ImVec4 GREY(0.45f, 0.48f, 0.52f, 1.0f);
-const ImVec4 COMMENT(0.50f, 0.72f, 0.50f, 1.0f);
 
 //! \brief What the Console panel shows, kept between frames.
 struct ConsoleView
@@ -81,16 +80,6 @@ static void dot(ImVec4 const& p_color)
         ImGui::GetColorU32(p_color));
     ImGui::Dummy(ImVec2(size, size));
     ImGui::SameLine(0.0f, 2.0f);
-}
-
-//! \brief Is this line of C++ a comment, once its indentation is skipped?
-static bool isComment(std::string const& p_line)
-{
-    const std::size_t first = p_line.find_first_not_of(" \t");
-    return (first != std::string::npos) &&
-           ((p_line.compare(first, 2u, "//") == 0) ||
-            (p_line.compare(first, 2u, "/*") == 0) ||
-            (p_line.compare(first, 1u, "*") == 0));
 }
 
 // ----------------------------------------------------------------------------
@@ -712,14 +701,7 @@ void Gallery::drawSourcePanel()
                     std::string const& line = lines[static_cast<std::size_t>(i)];
                     ImGui::TextDisabled("%4zu", source.first + static_cast<std::size_t>(i));
                     ImGui::SameLine();
-                    if (isComment(line))
-                    {
-                        ImGui::TextColored(COMMENT, "%s", line.c_str());
-                    }
-                    else
-                    {
-                        ImGui::TextUnformatted(line.c_str());
-                    }
+                    drawSourceLine(line, source.colours[static_cast<std::size_t>(i)]);
                 }
             }
             ImGui::EndChild();
