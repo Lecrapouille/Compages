@@ -48,6 +48,29 @@ TEST(Grid2D, NumbersItsPointsRowAfterRow)
     EXPECT_FALSE(GRID.contains(0, -1));
 }
 
+TEST(Grid2D, CountsNoPointForAWrongSize)
+{
+    const Grid2D negative{ .columns = -3, .rows = 4 };
+    EXPECT_EQ(negative.count(), 0u);
+    EXPECT_FALSE(negative.valid());
+    EXPECT_FALSE((Grid2D{ .columns = 4, .rows = 0 }.valid()));
+    EXPECT_FALSE((Grid2D{ .columns = 4, .rows = 3, .spacing = 0.0f }.valid()));
+    EXPECT_FALSE((Grid2D{ .columns = 4, .rows = 3, .spacing = -1.0f }.valid()));
+    EXPECT_TRUE(GRID.valid());
+
+    // A field on a wrong grid is empty, not four billion values.
+    const Field<float> empty(negative, 1.0f);
+    EXPECT_EQ(empty.values().size(), 0u);
+}
+
+TEST(Grid3D, CountsNoPointForAWrongSize)
+{
+    const compages::Grid3D flat{ .columns = 4, .rows = 3, .layers = -1 };
+    EXPECT_EQ(flat.count(), 0u);
+    EXPECT_FALSE(flat.valid());
+    EXPECT_TRUE((compages::Grid3D{ .columns = 1, .rows = 1, .layers = 1 }.valid()));
+}
+
 TEST(Grid2D, PlacesItsPointsInThePlane)
 {
     EXPECT_TRUE(same(GRID.point(1, 2), Vector2f(12.0f, 24.0f)));

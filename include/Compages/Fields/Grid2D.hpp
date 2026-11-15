@@ -63,10 +63,24 @@ struct Grid2D
     //! \brief The distance between two neighbour points.
     float spacing = 1.0f;
 
-    //! \brief How many points.
+    //! \brief How many points: zero when a dimension is zero or negative, so
+    //! a Field made on a wrong grid is empty instead of huge.
     [[nodiscard]] std::size_t count() const
     {
+        if ((columns <= 0) || (rows <= 0))
+        {
+            return 0u;
+        }
         return std::size_t(columns) * std::size_t(rows);
+    }
+
+    //! \brief At least one point on each axis, and a spacing that is a finite
+    //! positive number. Check it where a grid comes from outside (a file, a
+    //! user): the other calls take a valid grid.
+    [[nodiscard]] bool valid() const
+    {
+        return (columns > 0) && (rows > 0) && std::isfinite(spacing) && (spacing > 0.0f) &&
+               std::isfinite(origin.x) && std::isfinite(origin.y);
     }
 
     //! \brief True when (i, j) is a point of the grid.
