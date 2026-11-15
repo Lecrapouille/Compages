@@ -14,7 +14,7 @@ namespace examples
 {
 
 // ****************************************************************************
-//! \brief Step 5: a camera on the arm, drawn in a corner and read by the
+//! \brief Step 5: a camera on a mast of the arm, drawn in a corner and read by the
 //! program (doc/tutorials/06-what-the-robot-sees.md).
 // ****************************************************************************
 class WorkshopEye final: public Example

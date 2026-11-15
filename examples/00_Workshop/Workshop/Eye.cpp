@@ -40,8 +40,8 @@ compages::Status RobotEye::create(compages::renderer::Scene& p_scene, Arm const&
 
 // ----------------------------------------------------------------------------
 //! Four times a second, draw what the robot sees into its own picture and
-//! count the blue pixels (the part): readColor() waits for the GPU, so a sensor reads at
-//! its own rate, not at each frame.
+//! count the blue pixels (the part). readColor() waits for the GPU: a
+//! sensor reads at its own rate, not at each frame.
 // ----------------------------------------------------------------------------
 compages::Status RobotEye::look(compages::renderer::Scene& p_scene, float p_elapsed)
 {

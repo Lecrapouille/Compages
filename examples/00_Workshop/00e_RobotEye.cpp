@@ -18,7 +18,7 @@ namespace examples
 // ----------------------------------------------------------------------------
 std::string WorkshopEye::description() const
 {
-    return "Step 5: a camera on the forearm. Top right, what the robot sees: no "
+    return "Step 5: a camera on a mast of the arm. Top right, what the robot sees: no "
            "grid on the floor, since its camera does not see the helps drawn "
            "for you (sees_helpers). Four times a second it also draws into a "
            "RenderTarget of 160 x 120 pixels, and the program counts the blue "
