@@ -7,23 +7,23 @@
 
 #pragma once
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 #include "Common/Example.hpp"
 
 namespace examples
 {
 
 // ****************************************************************************
-//! \brief Step 2: an arm of three joints, moved by a routine
-//! (doc/tutorials/03-make-it-move.md).
+//! \brief The heat the tip leaves on a steel plate, a Field on a Grid2D
+//! (doc/tutorials/05-values-on-a-grid.md).
 // ****************************************************************************
-class WorkshopArm final: public Example
+class WorkshopHeat final: public Example
 {
 public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "00b_RobotArm";
+        return "13b_HotPlate";
     }
 
     [[nodiscard]] std::string description() const override;
@@ -35,6 +35,7 @@ private:
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
     workshop::Arm m_arm;
+    workshop::HotPlate m_plate;
 };
 
 } // namespace examples

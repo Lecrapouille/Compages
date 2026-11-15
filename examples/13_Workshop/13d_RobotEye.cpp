@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/00e_RobotEye.hpp"
+#include "13_Workshop/13d_RobotEye.hpp"
 
 #include "Compages/GPU/Errors.hpp"
 
@@ -18,8 +18,8 @@ namespace examples
 // ----------------------------------------------------------------------------
 std::string WorkshopEye::description() const
 {
-    return "Step 5: a camera on a mast of the arm. Top right, what the robot sees: no "
-           "grid on the floor, since its camera does not see the helps drawn "
+    return "A camera on a mast of the arm. Top right, what the robot sees: no "
+           "grid on the floor, since its camera does not see the helpers drawn "
            "for you (sees_helpers). Four times a second it also draws into a "
            "RenderTarget of 160 x 120 pixels, and the program counts the blue "
            "pixels of the part: what a vision program would read.";
@@ -29,10 +29,10 @@ std::string WorkshopEye::description() const
 compages::Status WorkshopEye::setUp()
 {
     workshop::buildRoom(m_scene);
-    m_arm = workshop::buildArm(m_scene);
+    m_arm = workshop::buildArm(m_world);
+    COMPAGES_TRY(workshop::paintArm(m_scene, workshop::dressArm(m_scene, m_arm)));
     m_plate.create(m_scene);
     m_plate.warmUp(m_scene, m_arm, 12.0f);
-    COMPAGES_TRY(workshop::paintArm(m_scene, m_arm));
     COMPAGES_TRY(m_eye.create(m_scene, m_arm));
     return m_scene.prepare();
 }
@@ -50,7 +50,7 @@ void WorkshopEye::draw(compages::world::ViewFrame const& p_frame)
     {
         compages::gpu::reportError(seen.error());
     }
-    m_scene.render();   // the active camera: the first one made
+    m_scene.render();    // the active camera: the first one made
     m_eye.show(m_scene); // then the robot, in its corner
 }
 

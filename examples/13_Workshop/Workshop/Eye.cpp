@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 
 #include <cstddef>
 
@@ -14,7 +14,7 @@ namespace examples::workshop
 
 // ----------------------------------------------------------------------------
 //! The camera stands on a mast on the base of the arm and looks down at
-//! where the tool works: it turns with the arm. It does not see the helps
+//! where the tip works: it turns with the arm. It does not see the helpers
 //! drawn for the person at the screen (the grid on the floor), as a real
 //! camera would not.
 // ----------------------------------------------------------------------------
@@ -23,13 +23,13 @@ compages::Status RobotEye::create(compages::renderer::Scene& p_scene, Arm const&
     // The mast and the box of the camera, children of the base.
     p_scene.cylinder("Mast", compages::renderer::color(0.25f, 0.25f, 0.27f))
         .parent(p_arm.base)
-        .position(-0.1f, 0.5f, 0.0f)
-        .scale(0.03f, 1.0f, 0.03f);
-    p_scene.box("Camera box", compages::renderer::color(0.1f, 0.1f, 0.1f)).parent(p_arm.base).position(-0.1f, 1.02f, 0.0f).scale(0.08f);
+        .position(-0.1f, 0.375f, 0.0f)
+        .scale(0.03f, 0.75f, 0.03f);
+    p_scene.box("Camera box", compages::renderer::color(0.1f, 0.1f, 0.1f)).parent(p_arm.base).position(-0.1f, 0.77f, 0.0f).scale(0.08f);
     // lookAt() takes a point in the axes of the parent: the work area, in
     // front of the base.
     m_camera = p_scene.camera("Robot eye");
-    m_camera.parent(p_arm.base).position(-0.04f, 1.02f, 0.0f).lookAt(0.75f, 0.0f, 0.0f);
+    m_camera.parent(p_arm.base).position(-0.04f, 0.77f, 0.0f).lookAt(0.7f, 0.0f, 0.0f);
     compages::world::Camera& lens = m_camera.get<compages::world::Camera>();
     lens.sees_helpers = false;
     lens.near_plane = 0.02f;

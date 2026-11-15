@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/00c_HotTable.hpp"
+#include "13_Workshop/13c_PaintedArm.hpp"
 
 #include "Compages/GPU/Errors.hpp"
 
@@ -15,28 +15,28 @@ namespace examples
 {
 
 // ----------------------------------------------------------------------------
-std::string WorkshopHeat::description() const
+std::string WorkshopPaint::description() const
 {
-    return "Step 3: the tool of the arm is hot. Where it touches the steel plate, "
-           "the plate heats; the heat spreads and cools. The temperature is a "
-           "Field<float> on a Grid2D, computed by the CPU each frame and shown "
-           "by scene.show() in the colours of Inferno (20 to 300 degrees).";
+    return "The arm gets a look of its own: orange paint worn down to the steel "
+           "along the edges of each face. The hook \"surface\" of the PBR "
+           "shader changes the colour, the metal and the roughness; the sun, "
+           "the lamp, the shadows and the fog stay those of the Scene.";
 }
 
 // ----------------------------------------------------------------------------
-compages::Status WorkshopHeat::setUp()
+compages::Status WorkshopPaint::setUp()
 {
     workshop::buildRoom(m_scene);
-    m_arm = workshop::buildArm(m_scene);
+    m_arm = workshop::buildArm(m_world);
+    COMPAGES_TRY(workshop::paintArm(m_scene, workshop::dressArm(m_scene, m_arm)));
     m_plate.create(m_scene);
     m_plate.warmUp(m_scene, m_arm, 12.0f);
     return m_scene.prepare();
 }
 
 // ----------------------------------------------------------------------------
-void WorkshopHeat::draw(compages::world::ViewFrame const& p_frame)
+void WorkshopPaint::draw(compages::world::ViewFrame const& p_frame)
 {
-    // Move the arm first, then heat where its tool is now.
     m_scene.update(p_frame);
     m_plate.step(std::min(p_frame.elapsed, 0.05f), m_arm.tool.worldPosition());
     if (const compages::Status shown = m_plate.show(m_scene); !shown)

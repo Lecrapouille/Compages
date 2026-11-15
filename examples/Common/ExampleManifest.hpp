@@ -9,11 +9,6 @@
 
 #include "Common/Gallery.hpp"
 
-#include "00_Workshop/00a_Workshop.hpp"
-#include "00_Workshop/00b_RobotArm.hpp"
-#include "00_Workshop/00c_HotTable.hpp"
-#include "00_Workshop/00d_PaintedArm.hpp"
-#include "00_Workshop/00e_RobotEye.hpp"
 #include "01_FirstSteps/01a_Dummy.hpp"
 #include "01_FirstSteps/01b_ClearScreen.hpp"
 #include "01_FirstSteps/01c_Triangle.hpp"
@@ -84,16 +79,15 @@
 #include "11_Science/11h_Thermometers.hpp"
 #include "12_Effects/12a_ScreenFilters.hpp"
 #include "12_Effects/12b_Bloom.hpp"
+#include "13_Workshop/13a_Workshop.hpp"
+#include "13_Workshop/13b_HotPlate.hpp"
+#include "13_Workshop/13c_PaintedArm.hpp"
+#include "13_Workshop/13d_RobotEye.hpp"
 
 // One record per active source, in gallery order:
 // type, runtime name, chapter folder, source, former demos covered,
 // budget, functions included in that budget.
 #define COMPAGES_EXAMPLE_MANIFEST(X)                                           \
-    X(WorkshopRoom, "00a_Workshop", "00_Workshop", "00_Workshop/00a_Workshop.cpp", "-", 0, "-") \
-    X(WorkshopArm, "00b_RobotArm", "00_Workshop", "00_Workshop/00b_RobotArm.cpp", "-", 0, "-") \
-    X(WorkshopHeat, "00c_HotTable", "00_Workshop", "00_Workshop/00c_HotTable.cpp", "-", 0, "-") \
-    X(WorkshopPaint, "00d_PaintedArm", "00_Workshop", "00_Workshop/00d_PaintedArm.cpp", "-", 0, "-") \
-    X(WorkshopEye, "00e_RobotEye", "00_Workshop", "00_Workshop/00e_RobotEye.cpp", "-", 0, "-") \
     X(Dummy, "01a_Dummy", "01_FirstSteps", "01_FirstSteps/01a_Dummy.cpp", "-", 0, "-") \
     X(ClearScreen, "01b_ClearScreen", "01_FirstSteps", "01_FirstSteps/01b_ClearScreen.cpp", "01_ClearScreen", 0, "-") \
     X(Triangle, "01c_Triangle", "01_FirstSteps", "01_FirstSteps/01c_Triangle.cpp", "02_Triangle", 30, "Triangle::setUp|Triangle::draw") \
@@ -163,7 +157,11 @@
     X(FlowAroundCylinder, "11g_FlowAroundCylinder", "11_Science", "11_Science/11g_FlowAroundCylinder.cpp", "-", 0, "-") \
     X(Thermometers, "11h_Thermometers", "11_Science", "11_Science/11h_Thermometers.cpp", "-", 0, "-") \
     X(ScreenFilters, "12a_ScreenFilters", "12_Effects", "12_Effects/12a_ScreenFilters.cpp", "-", 0, "-") \
-    X(BloomDemo, "12b_Bloom", "12_Effects", "12_Effects/12b_Bloom.cpp", "-", 0, "-")
+    X(BloomDemo, "12b_Bloom", "12_Effects", "12_Effects/12b_Bloom.cpp", "-", 0, "-") \
+    X(WorkshopRoom, "13a_Workshop", "13_Workshop", "13_Workshop/13a_Workshop.cpp", "-", 0, "-") \
+    X(WorkshopHeat, "13b_HotPlate", "13_Workshop", "13_Workshop/13b_HotPlate.cpp", "-", 0, "-") \
+    X(WorkshopPaint, "13c_PaintedArm", "13_Workshop", "13_Workshop/13c_PaintedArm.cpp", "-", 0, "-") \
+    X(WorkshopEye, "13d_RobotEye", "13_Workshop", "13_Workshop/13d_RobotEye.cpp", "-", 0, "-")
 
 namespace examples
 {

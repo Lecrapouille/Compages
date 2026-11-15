@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
 #include "Compages/World/Controllers/Controls.hpp"
@@ -24,7 +24,7 @@ Room buildRoom(compages::renderer::Scene& p_scene)
     p_scene.sun("Sun", { 1.0f, 0.96f, 0.9f }, 1.0f).position(3.0f, 6.0f, 2.0f).lookAt(0.0f, 0.0f, 0.0f);
 
     // The floor, and a grid on it: a help to judge sizes, that a robot
-    // camera does not see (step 5).
+    // camera does not see (doc/tutorials/07-what-the-robot-sees.md).
     p_scene.box("Floor", color(0.42f, 0.42f, 0.44f)).position(0.0f, -0.05f, 0.0f).scale(6.0f, 0.1f, 6.0f);
     p_scene.grid(6.0f, 12u);
 
@@ -44,8 +44,8 @@ Room buildRoom(compages::renderer::Scene& p_scene)
         }
     }
 
-    // The part the robot works on, and a lamp above the table.
-    room.part = p_scene.box("Part", color(0.10f, 0.30f, 0.90f)).parent(room.table).position(0.02f, 0.05f, -0.12f).scale(0.18f, 0.1f, 0.12f);
+    // A part beyond the reach of the arm, and a lamp above the table.
+    room.part = p_scene.box("Part", color(0.10f, 0.30f, 0.90f)).parent(room.table).position(0.55f, 0.05f, 0.2f).scale(0.18f, 0.1f, 0.12f);
     compages::world::Entity lamp = p_scene.lamp("Lamp", { 1.0f, 0.85f, 0.6f }, 2.0f, 3.0f).position(0.2f, 1.5f, 0.3f);
     // The bulb lets the light of the sun through: no shadow.
     p_scene.sphere("Bulb", compages::renderer::unlit(1.0f, 0.9f, 0.7f))

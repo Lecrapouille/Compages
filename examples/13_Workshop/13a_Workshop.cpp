@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/00a_Workshop.hpp"
+#include "13_Workshop/13a_Workshop.hpp"
 
 namespace examples
 {
@@ -13,15 +13,18 @@ namespace examples
 // ----------------------------------------------------------------------------
 std::string WorkshopRoom::description() const
 {
-    return "The robot workshop of the tutorials, step 1: a floor, a table, a blue "
-           "part, a lamp, the sun and a camera, each made by the Scene in one "
-           "line. Right drag turns the camera, the wheel zooms.";
+    return "The robot workshop of the tutorials. The arm is made in the World, "
+           "with three joints and a routine that moves its tip along the "
+           "table; the Scene only gives it shapes and draws it. Right drag "
+           "turns the camera, the wheel zooms.";
 }
 
 // ----------------------------------------------------------------------------
 compages::Status WorkshopRoom::setUp()
 {
     workshop::buildRoom(m_scene);
+    m_arm = workshop::buildArm(m_world);
+    workshop::dressArm(m_scene, m_arm);
     return m_scene.prepare();
 }
 

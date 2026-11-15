@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/00d_PaintedArm.hpp"
+#include "13_Workshop/13b_HotPlate.hpp"
 
 #include "Compages/GPU/Errors.hpp"
 
@@ -15,28 +15,29 @@ namespace examples
 {
 
 // ----------------------------------------------------------------------------
-std::string WorkshopPaint::description() const
+std::string WorkshopHeat::description() const
 {
-    return "Step 4: the arm gets a look of its own. The hook \"surface\" of the "
-           "PBR shader paints black stripes across the colour of each link; "
-           "the sun, the lamp, the shadows and the fog stay what the Scene "
-           "gives. Ten lines of GLSL, one material.";
+    return "The tip of the arm is hot. Where it touches the steel plate, the "
+           "plate heats; the heat spreads and cools. The temperature is a "
+           "Field<float> on a Grid2D, computed by the CPU each frame and shown "
+           "by scene.show() in the colours of Inferno (20 to 300 degrees).";
 }
 
 // ----------------------------------------------------------------------------
-compages::Status WorkshopPaint::setUp()
+compages::Status WorkshopHeat::setUp()
 {
     workshop::buildRoom(m_scene);
-    m_arm = workshop::buildArm(m_scene);
+    m_arm = workshop::buildArm(m_world);
+    workshop::dressArm(m_scene, m_arm);
     m_plate.create(m_scene);
     m_plate.warmUp(m_scene, m_arm, 12.0f);
-    COMPAGES_TRY(workshop::paintArm(m_scene, m_arm));
     return m_scene.prepare();
 }
 
 // ----------------------------------------------------------------------------
-void WorkshopPaint::draw(compages::world::ViewFrame const& p_frame)
+void WorkshopHeat::draw(compages::world::ViewFrame const& p_frame)
 {
+    // Move the arm first, then heat where its tip is now.
     m_scene.update(p_frame);
     m_plate.step(std::min(p_frame.elapsed, 0.05f), m_arm.tool.worldPosition());
     if (const compages::Status shown = m_plate.show(m_scene); !shown)

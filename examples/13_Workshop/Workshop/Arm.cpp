@@ -5,10 +5,9 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Arm.hpp"
 
-#include "Compages/World/Routines/Routine.hpp"
-
+#include <algorithm>
 #include <cmath>
 
 namespace examples::workshop
@@ -17,13 +16,21 @@ namespace examples::workshop
 namespace
 {
 
+//! \brief The height of the shoulder above the floor.
+constexpr double SHOULDER_HEIGHT = double(TABLE_TOP) + 0.12;
+
 // ****************************************************************************
-//! \brief Moves the three joints from the total time: the arm sweeps the
-//! table, and its tool goes down to touch it and up again.
+//! \brief Moves the tip of the arm along a path on the table: the base turns
+//! slowly from side to side, the tip goes away and back, and sometimes lifts.
+//!
+//! The path is given for the tip, not for the joints. The routine finds the
+//! angles of the shoulder and the elbow that put the tip there (inverse
+//! kinematics of two links in the plane of the arm). So the tip never goes
+//! into the table, whatever the path.
 // ****************************************************************************
-struct Sweep: compages::world::Routine
+struct FollowPath: compages::world::Routine
 {
-    Sweep(compages::world::Entity p_shoulder, compages::world::Entity p_elbow)
+    FollowPath(compages::world::Entity p_shoulder, compages::world::Entity p_elbow)
         : shoulder(p_shoulder), elbow(p_elbow)
     {
     }
@@ -32,9 +39,28 @@ struct Sweep: compages::world::Routine
     {
         using units::angle::radian_t;
         const double t = frame().total;
-        entity().joint().angle(radian_t(0.7 * std::sin(0.5 * t)));
-        shoulder.joint().angle(radian_t(-1.0 - 0.12 * std::sin(0.9 * t)));
-        elbow.joint().angle(radian_t(-1.5 - 0.18 * std::sin(1.3 * t)));
+
+        // Where the tip goes: how far from the base, how high, and the turn
+        // of the base. It touches the table, and lifts off now and then.
+        const double reach = 0.62 + 0.08 * std::sin(0.7 * t);
+        const double lift = 0.06 * std::max(0.0, std::sin(0.45 * t));
+        const double height = double(TABLE_TOP) + 0.003 + lift - SHOULDER_HEIGHT;
+        entity().joint().angle(radian_t(0.6 * std::sin(0.5 * t)));
+
+        // Two links L1, L2 reach a point at distance d: the law of cosines
+        // gives the bend of the elbow, then the shoulder aims below the point
+        // by the angle the bend makes. Angles are measured from the vertical.
+        const double l1 = double(UPPER_ARM);
+        const double l2 = double(FOREARM);
+        const double d = std::hypot(reach, height);
+        const double cos_bend = std::clamp((d * d - l1 * l1 - l2 * l2) / (2.0 * l1 * l2), -1.0, 1.0);
+        const double bend = std::acos(cos_bend);
+        const double aim = std::atan2(reach, height);
+        const double lean = aim - std::atan2(l2 * std::sin(bend), l1 + l2 * cos_bend);
+
+        // The joints turn round +z: a negative angle leans toward +x.
+        shoulder.joint().angle(radian_t(-lean));
+        elbow.joint().angle(radian_t(-bend));
     }
 
     compages::world::Entity shoulder;
@@ -44,30 +70,19 @@ struct Sweep: compages::world::Routine
 } // namespace
 
 // ----------------------------------------------------------------------------
-Arm buildArm(compages::renderer::Scene& p_scene)
+Arm buildArm(compages::world::World& p_world)
 {
-    using compages::renderer::color;
-    const compages::renderer::Look orange = color(0.95f, 0.45f, 0.08f);
-    const compages::renderer::Look grey = color(0.25f, 0.25f, 0.27f);
-
-    // The joints are empty entities, each a child of the one before: turning
-    // one turns everything after it. A revolute joint turns round one axis.
+    // A revolute joint turns round one axis, in the axes of its parent. The
+    // base turns round the vertical (y); the shoulder and the elbow round z,
+    // so the arm swings in its own vertical plane.
     Arm arm;
-    arm.base = p_scene.world().entity("Arm").position(-0.45f, TABLE_TOP, 0.0f).revolute({ 0.0f, 1.0f, 0.0f });
+    arm.base = p_world.entity("Arm").position(-0.45f, TABLE_TOP, 0.0f).revolute({ 0.0f, 1.0f, 0.0f });
     arm.shoulder = arm.base.child("Shoulder").position(0.0f, 0.12f, 0.0f).revolute({ 0.0f, 0.0f, 1.0f });
-    arm.elbow = arm.shoulder.child("Elbow").position(0.0f, 0.5f, 0.0f).revolute({ 0.0f, 0.0f, 1.0f });
-    arm.tool = arm.elbow.child("Tool").position(0.0f, 0.44f, 0.0f);
+    arm.elbow = arm.shoulder.child("Elbow").position(0.0f, UPPER_ARM, 0.0f).revolute({ 0.0f, 0.0f, 1.0f });
+    arm.tool = arm.elbow.child("Tool").position(0.0f, FOREARM, 0.0f);
 
-    // The shapes hang under their joint. A link is moved half its length up,
-    // so that it turns round its end and not round its middle.
-    arm.links.push_back(p_scene.cylinder("Foot", grey).parent(arm.base).position(0.0f, 0.05f, 0.0f).scale(0.24f, 0.1f, 0.24f));
-    arm.links.push_back(p_scene.box("Upper arm", orange).parent(arm.shoulder).position(0.0f, 0.25f, 0.0f).scale(0.08f, 0.5f, 0.08f));
-    arm.links.push_back(p_scene.box("Forearm", orange).parent(arm.elbow).position(0.0f, 0.2f, 0.0f).scale(0.06f, 0.4f, 0.06f));
-    p_scene.sphere("Elbow joint", grey).parent(arm.elbow).scale(0.1f);
-    p_scene.cone("Tip", grey).parent(arm.tool).position(0.0f, -0.02f, 0.0f).scale(0.05f, -0.06f, 0.05f);
-
-    // The routine runs at each update of the World, inside Scene::draw().
-    arm.base.add<Sweep>(arm.shoulder, arm.elbow);
+    // The routine runs at each update of the World.
+    arm.base.add<FollowPath>(arm.shoulder, arm.elbow);
     return arm;
 }
 

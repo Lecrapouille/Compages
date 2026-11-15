@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 
 #include "Compages/Renderer/Procedural/ShaderLib.hpp"
 
@@ -15,38 +15,40 @@ namespace examples::workshop
 namespace
 {
 
-// The hook "surface": it receives the surface as the shape describes it (its
-// colour, its normal...) and changes what it wants. Here: black stripes
-// across the colour of the shape, like the warning paint of a machine, and a
-// paint a little shiny. The Renderer then lights it as any other surface.
-constexpr char const* STRIPES = R"(
+// The hook "surface" receives the surface as the shape describes it (its
+// colour, its normal...) and changes what it wants. Here: the paint of a
+// machine, worn down to the steel along the edges of each face, where tools
+// and hands rub it. vUv goes from 0 to 1 across each face of a box, so the
+// distance to the nearest edge of the face is the smallest of four numbers.
+// Only the colour changes: s.metallic and s.roughness count only for an
+// instance that uses the metallic-roughness model of glTF.
+constexpr char const* WORN_PAINT = R"(
 void surface(inout Surface s)
 {
-    float stripe = step(0.5, fract((vUv.x + vUv.y) * 4.0));
-    s.albedo = mix(s.albedo, vec3(0.03), stripe);
-    s.metallic = 0.2;
-    s.roughness = 0.35;
+    float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+    float paint = smoothstep(0.02, 0.08, edge);
+    s.albedo = mix(vec3(0.55, 0.56, 0.58), s.albedo, paint);
 }
 )";
 
 } // namespace
 
 // ----------------------------------------------------------------------------
-compages::Status paintArm(compages::renderer::Scene& p_scene, Arm const& p_arm)
+compages::Status paintArm(compages::renderer::Scene& p_scene, std::vector<compages::world::Entity> const& p_links)
 {
     compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
-    shaders.fragment().hook("surface", STRIPES);
+    shaders.fragment().hook("surface", WORN_PAINT);
     compages::renderer::MaterialId paint;
     COMPAGES_TRY_ASSIGN(paint,
                         p_scene.assets().createMaterial(
-                            "Warning paint", { .family = compages::renderer::ShaderFamily::PbrMinimal,
-                                               .shaders = std::move(shaders),
-                                               .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
-                                               .see_through = std::nullopt }));
-    // The two links of the arm wear it; each keeps its own colour.
-    for (std::size_t k = 1u; k < p_arm.links.size(); ++k)
+                            "Worn paint", { .family = compages::renderer::ShaderFamily::PbrMinimal,
+                                            .shaders = std::move(shaders),
+                                            .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
+                                            .see_through = std::nullopt }));
+    // Each link keeps its own colour: it arrives in s.albedo.
+    for (compages::world::Entity const& link : p_links)
     {
-        p_scene.look(p_arm.links[k], paint);
+        p_scene.look(link, paint);
     }
     return compages::success();
 }

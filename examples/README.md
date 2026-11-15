@@ -5,16 +5,16 @@
 ```sh
 make -j"$(nproc)"
 ./build/linux-gcc-debug/bin/Compages-examples
-./build/linux-gcc-debug/bin/Compages-examples 00a_Workshop
+./build/linux-gcc-debug/bin/Compages-examples 13a_Workshop
 ./build/linux-gcc-debug/bin/Compages-examples --check
-./build/linux-gcc-debug/bin/Compages-examples --check 00a_Workshop     # one demo only
+./build/linux-gcc-debug/bin/Compages-examples --check 13a_Workshop     # one demo only
 ```
 
 Read the folders in order: each folder answers one question, and each demo adds one idea to the previous one (`05b` is chapter 5, step b).
 
 | Folder | Question | Layer | Read |
 |--------|----------|-------|------|
-| `00_Workshop/` | The tutorials, step by step: a robot workshop | the three layers | [Tutorials](../doc/tutorials/README.md) |
+| `13_Workshop/` | The tutorials, step by step: a robot workshop | the three layers | [Tutorials](../doc/tutorials/README.md) |
 | `01_FirstSteps/` | How do I draw? | 🟧 GPU | [The GPU layer](../doc/concepts/the-gpu-layer.md) |
 | `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [The GPU layer](../doc/concepts/the-gpu-layer.md) |
 | `03_Images/` | Textures and 3D on the raw GPU | 🟧 GPU | [Draw in several passes](../doc/guides/draw-in-several-passes.md) |

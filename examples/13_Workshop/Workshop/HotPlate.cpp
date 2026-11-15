@@ -5,7 +5,7 @@
 // for users who cannot use the GPL, under a commercial license.
 // See LICENSING.md for details.
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -33,7 +33,7 @@ constexpr float COOLING = 0.08f;
 //! every 1.5 cm. The grid lies on the ground (x, z); its entity is lifted to
 //! the top of the table.
 // ----------------------------------------------------------------------------
-void HotTable::create(compages::renderer::Scene& p_scene)
+void HotPlate::create(compages::renderer::Scene& p_scene)
 {
     const compages::Grid2D grid{ .columns = 41, .rows = 61, .origin = { -0.25f, -0.45f }, .spacing = 0.015f };
     m_temperature = compages::Field<float>(grid, ROOM);
@@ -47,11 +47,11 @@ void HotTable::create(compages::renderer::Scene& p_scene)
 //! equation, one explicit step) and toward the air. The points under the tip
 //! take its temperature when it touches the plate.
 // ----------------------------------------------------------------------------
-void HotTable::step(float p_seconds, compages::Vector3f const& p_tool)
+void HotPlate::step(float p_seconds, compages::Vector3f const& p_tool)
 {
     compages::Grid2D const& grid = m_temperature.grid();
     const float rate = DIFFUSIVITY * p_seconds / (grid.spacing * grid.spacing); // < 0.25 to stay stable
-    const bool touches = (p_tool.y < TABLE_TOP + 0.07f);
+    const bool touches = (p_tool.y < TABLE_TOP + 0.01f);
     for (int j = 1; j < grid.rows - 1; ++j)
     {
         for (int i = 1; i < grid.columns - 1; ++i)
@@ -71,7 +71,7 @@ void HotTable::step(float p_seconds, compages::Vector3f const& p_tool)
 //! Before the first frame: the World moves the arm in small steps of time,
 //! and the tool heats the plate at each one, so a trail shows at once.
 // ----------------------------------------------------------------------------
-void HotTable::warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, float p_seconds)
+void HotPlate::warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, float p_seconds)
 {
     compages::world::ViewFrame frame;
     frame.elapsed = 0.05f;
@@ -83,7 +83,7 @@ void HotTable::warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, floa
 }
 
 // ----------------------------------------------------------------------------
-compages::Status HotTable::show(compages::renderer::Scene& p_scene)
+compages::Status HotPlate::show(compages::renderer::Scene& p_scene)
 {
     return p_scene.show(m_shown, m_temperature, m_look);
 }

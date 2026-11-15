@@ -7,23 +7,23 @@
 
 #pragma once
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 #include "Common/Example.hpp"
 
 namespace examples
 {
 
 // ****************************************************************************
-//! \brief Step 4: warning stripes on the arm, from the hook "surface" of the
-//! PBR shader (doc/tutorials/05-your-own-look.md).
+//! \brief The robot workshop, drawn: a table, a lamp, and the arm of the World
+//! dressed with shapes (doc/tutorials/04-a-scene.md).
 // ****************************************************************************
-class WorkshopPaint final: public Example
+class WorkshopRoom final: public Example
 {
 public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "00d_PaintedArm";
+        return "13a_Workshop";
     }
 
     [[nodiscard]] std::string description() const override;
@@ -35,7 +35,6 @@ private:
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
     workshop::Arm m_arm;
-    workshop::HotTable m_plate;
 };
 
 } // namespace examples

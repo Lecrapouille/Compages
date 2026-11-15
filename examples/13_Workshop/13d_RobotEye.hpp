@@ -7,15 +7,15 @@
 
 #pragma once
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 #include "Common/Example.hpp"
 
 namespace examples
 {
 
 // ****************************************************************************
-//! \brief Step 5: a camera on a mast of the arm, drawn in a corner and read by the
-//! program (doc/tutorials/06-what-the-robot-sees.md).
+//! \brief A camera on a mast of the arm, drawn in a corner and read by the
+//! program (doc/tutorials/07-what-the-robot-sees.md).
 // ****************************************************************************
 class WorkshopEye final: public Example
 {
@@ -23,7 +23,7 @@ public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "00e_RobotEye";
+        return "13d_RobotEye";
     }
 
     [[nodiscard]] std::string description() const override;
@@ -36,7 +36,7 @@ private:
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
     workshop::Arm m_arm;
-    workshop::HotTable m_plate;
+    workshop::HotPlate m_plate;
     workshop::RobotEye m_eye;
 };
 

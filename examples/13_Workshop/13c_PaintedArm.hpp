@@ -7,23 +7,23 @@
 
 #pragma once
 
-#include "00_Workshop/Workshop/Workshop.hpp"
+#include "13_Workshop/Workshop/Workshop.hpp"
 #include "Common/Example.hpp"
 
 namespace examples
 {
 
 // ****************************************************************************
-//! \brief The workshop of the tutorials, step 1: a table, a part, a lamp
-//! (doc/tutorials/02-first-scene.md).
+//! \brief Orange paint worn at the edges of the links, from the hook "surface"
+//! of the PBR shader (doc/tutorials/06-a-look-of-your-own.md).
 // ****************************************************************************
-class WorkshopRoom final: public Example
+class WorkshopPaint final: public Example
 {
 public:
 
     [[nodiscard]] std::string name() const override
     {
-        return "00a_Workshop";
+        return "13c_PaintedArm";
     }
 
     [[nodiscard]] std::string description() const override;
@@ -34,6 +34,8 @@ private:
 
     compages::world::World m_world;
     compages::renderer::Scene m_scene{ m_world };
+    workshop::Arm m_arm;
+    workshop::HotPlate m_plate;
 };
 
 } // namespace examples

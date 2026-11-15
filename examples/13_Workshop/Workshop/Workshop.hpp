@@ -9,17 +9,20 @@
 
 // ****************************************************************************
 //! \file
-//! \brief The robot workshop of the tutorials (doc/tutorials/): one function
-//! or class per step, each step adding one idea to the steps before it.
+//! \brief The robot workshop of the tutorials (doc/tutorials/), on the side
+//! of the Renderer: the room, the shapes of the arm, the hot plate, the
+//! paint, the camera of the robot. The arm itself, its joints and its
+//! routine, is in Arm.hpp and needs only the World.
 //!
-//! | Step | Adds                                   | Demo            |
-//! |------|----------------------------------------|-----------------|
-//! | 1    | buildRoom(): a table, a part, a lamp   | 00a_Workshop    |
-//! | 2    | buildArm(): joints and a routine       | 00b_RobotArm    |
-//! | 3    | HotTable: values on a grid             | 00c_HotTable    |
-//! | 4    | paintArm(): a look of your own         | 00d_PaintedArm  |
-//! | 5    | RobotEye: what the robot sees          | 00e_RobotEye    |
+//! | Step | Adds                                         | Demo           |
+//! |------|----------------------------------------------|----------------|
+//! | 1    | buildRoom(), dressArm(): the scene drawn     | 13a_Workshop   |
+//! | 2    | HotPlate: values on a grid                   | 13b_HotPlate   |
+//! | 3    | paintArm(): a look of your own               | 13c_PaintedArm |
+//! | 4    | RobotEye: what the robot sees                | 13d_RobotEye   |
 // ****************************************************************************
+
+#include "13_Workshop/Workshop/Arm.hpp"
 
 #include "Compages/Fields/Field.hpp"
 #include "Compages/Renderer/Render/RenderTarget.hpp"
@@ -28,47 +31,33 @@
 namespace examples::workshop
 {
 
-//! \brief The height of the top of the table, in metres.
-inline constexpr float TABLE_TOP = 0.78f;
-
 // ----------------------------------------------------------------------------
 //! \brief What the room is made of, for the steps after it.
 // ----------------------------------------------------------------------------
 struct Room
 {
     compages::world::Entity table;
-    //! \brief The blue part on the table: what the robot works on.
+    //! \brief The blue part on the table, beyond the reach of the arm:
+    //! what its camera looks for (step 4).
     compages::world::Entity part;
 };
 
 // ----------------------------------------------------------------------------
-//! \brief Step 1: the floor, a table, a blue part, a lamp, the sun, a camera.
+//! \brief The floor, a table, a blue part, a lamp, the sun, a camera.
 // ----------------------------------------------------------------------------
 Room buildRoom(compages::renderer::Scene& p_scene);
 
 // ----------------------------------------------------------------------------
-//! \brief The joints of the arm, from its base to its tool.
+//! \brief Give the joints of \c p_arm their shapes: a foot, two links, a
+//! sphere at the elbow, a tip. Returns the two links, for a look of their own.
 // ----------------------------------------------------------------------------
-struct Arm
-{
-    compages::world::Entity base;     //!< turns round the vertical
-    compages::world::Entity shoulder; //!< tilts the upper arm
-    compages::world::Entity elbow;    //!< bends the forearm
-    compages::world::Entity tool;     //!< the hot tip, at the end
-    //! \brief The boxes and cylinders of the arm, for a look of their own.
-    std::vector<compages::world::Entity> links;
-};
-
-// ----------------------------------------------------------------------------
-//! \brief Step 2: an arm of three joints on the table, moved by a routine.
-// ----------------------------------------------------------------------------
-Arm buildArm(compages::renderer::Scene& p_scene);
+std::vector<compages::world::Entity> dressArm(compages::renderer::Scene& p_scene, Arm const& p_arm);
 
 // ****************************************************************************
-//! \brief Step 3: the temperature of the top of the table, a Field on a
-//! Grid2D. The tool heats it where it touches; the heat spreads and cools.
+//! \brief Step 2: the temperature of a steel plate on the table, a Field on
+//! a Grid2D. The tool heats it where it touches; the heat spreads and cools.
 // ****************************************************************************
-class HotTable
+class HotPlate
 {
 public:
 
@@ -94,13 +83,15 @@ private:
 };
 
 // ----------------------------------------------------------------------------
-//! \brief Step 4: yellow and black stripes on the arm, from the hook
-//! "surface" of the PBR shader. The lights, shadows and fog stay.
+//! \brief Step 3: orange paint worn down to the steel along the edges of
+//! the links, from the hook "surface" of the PBR shader. The lights, the
+//! shadows and the fog stay those of the Scene.
 // ----------------------------------------------------------------------------
-[[nodiscard]] compages::Status paintArm(compages::renderer::Scene& p_scene, Arm const& p_arm);
+[[nodiscard]] compages::Status paintArm(compages::renderer::Scene& p_scene,
+                                        std::vector<compages::world::Entity> const& p_links);
 
 // ****************************************************************************
-//! \brief Step 5: a camera on the tool. It is drawn in a corner of the
+//! \brief Step 4: a camera on a mast of the arm. It is drawn in a corner of the
 //! window, and into a picture of its own that the program reads: how much of
 //! the blue part does the robot see?
 // ****************************************************************************
