@@ -9,6 +9,11 @@
 
 #include "Common/Gallery.hpp"
 
+#include "00_Workshop/00a_Workshop.hpp"
+#include "00_Workshop/00b_RobotArm.hpp"
+#include "00_Workshop/00c_HotTable.hpp"
+#include "00_Workshop/00d_PaintedArm.hpp"
+#include "00_Workshop/00e_RobotEye.hpp"
 #include "01_FirstSteps/01a_Dummy.hpp"
 #include "01_FirstSteps/01b_ClearScreen.hpp"
 #include "01_FirstSteps/01c_Triangle.hpp"
@@ -84,6 +89,11 @@
 // type, runtime name, chapter folder, source, former demos covered,
 // budget, functions included in that budget.
 #define COMPAGES_EXAMPLE_MANIFEST(X)                                           \
+    X(WorkshopRoom, "00a_Workshop", "00_Workshop", "00_Workshop/00a_Workshop.cpp", "-", 0, "-") \
+    X(WorkshopArm, "00b_RobotArm", "00_Workshop", "00_Workshop/00b_RobotArm.cpp", "-", 0, "-") \
+    X(WorkshopHeat, "00c_HotTable", "00_Workshop", "00_Workshop/00c_HotTable.cpp", "-", 0, "-") \
+    X(WorkshopPaint, "00d_PaintedArm", "00_Workshop", "00_Workshop/00d_PaintedArm.cpp", "-", 0, "-") \
+    X(WorkshopEye, "00e_RobotEye", "00_Workshop", "00_Workshop/00e_RobotEye.cpp", "-", 0, "-") \
     X(Dummy, "01a_Dummy", "01_FirstSteps", "01_FirstSteps/01a_Dummy.cpp", "-", 0, "-") \
     X(ClearScreen, "01b_ClearScreen", "01_FirstSteps", "01_FirstSteps/01b_ClearScreen.cpp", "01_ClearScreen", 0, "-") \
     X(Triangle, "01c_Triangle", "01_FirstSteps", "01_FirstSteps/01c_Triangle.cpp", "02_Triangle", 30, "Triangle::setUp|Triangle::draw") \
