@@ -1,10 +1,12 @@
-# 🙏 11. Credits
+# 🙏 Credits
 
-This reference page explains the design lessons behind Compages and credits the projects, techniques and assets it uses. It is optional reading after the tutorials. The project history lives in the main README; this chapter keeps the technical sources in one place.
+[⏫ Reference](README.md)
+
+The design lessons behind Compages, and the projects, papers and assets it learned from or uses. The history of the project is in the main README; this page keeps the technical sources in one place.
 
 ## 📜 1. Where Compages comes from
 
-The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compages) is told in the [README](../README.md#-the-story). Two technical lessons of OpenGLCppWrapper shaped the three layers of [chapter 1](01-Introduction.md#-3-three-layers):
+The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compages) is told in the [README](../../README.md#-the-story). Two technical lessons of OpenGLCppWrapper shaped the [three layers](../concepts/three-layers.md):
 
 1. **One mesh, several shaders.** "One vertex array per program" copied the vertices for nothing. [bgfx](https://github.com/bkaradzic/bgfx), [sokol_gfx](https://github.com/floooh/sokol) and [regl](https://github.com/regl-project/regl) declare the vertex layout in application code. Compages does the same with `VertexBuffer<Vertex>`: several `Drawable` borrow one buffer (`04c_MultiPassMesh`), and `Pipeline` does the same one level lower.
 2. **Simulating and showing are two jobs.** OpenGLCppWrapper had a node tree with a virtual `onDraw()`: handy for demos, but GPU buffers lived in the nodes, a node could not move without breaking them, and nothing ran in a test without an OpenGL context. Splitting the world (what exists and moves), the renderer (catalog and snapshots) and the GPU (shaders and uploads) follows the generational ids of ECS engines such as [Bevy](https://github.com/bevyengine/bevy), and the short scene code of [Three.js](https://github.com/mrdoob/three.js).
@@ -23,6 +25,11 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 - [Three.js](https://github.com/mrdoob/three.js) — short scene building
 - [Bevy](https://github.com/bevyengine/bevy) — ECS, extracting a view for drawing
 - [scg3](https://github.com/vahlers/scg3) — a scene graph for teaching OpenGL
+
+**Documentation**
+
+- [3D Game Shaders For Beginners](https://github.com/lettier/3d-game-shaders-for-beginners) (David Lettier) — the list and the shape of the [technique pages](../techniques/README.md): one effect per page, a picture first, the code that matters. Its text and pictures are not covered by its license; the technique pages are written for Compages, with their own screenshots.
+- [Diátaxis](https://diataxis.fr/) — tutorials, guides, explanations and reference kept apart
 
 **Demos ported from other projects**
 
@@ -52,7 +59,7 @@ The demos rebuild published techniques from the papers and talks below, with cod
 
 ## 📦 3. Third-party libraries
 
-The list and the install are in [chapter 2](02-Getting-Started.md#-2-build). In short: EnTT, units, cgltf, nlohmann/json, stb, pugixml, ImGui (gallery), glad (private to the backend), GLFW (gallery and tests).
+The list and the install are in [build and install](../guides/build-and-install.md#-build). In short: EnTT, units, cgltf, nlohmann/json, stb, pugixml, ImGui (gallery), glad (private to the backend), GLFW (gallery and tests).
 
 Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), fetched by `make` with the other third parties.
 
@@ -60,6 +67,6 @@ Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), fet
 
 ## 📝 4. License
 
-Compages is dual-licensed: GNU GPL v3 or later, or a commercial license for those who cannot use the GPL. See [LICENSING.md](../LICENSING.md). The scripts of `.makefile` carry their own header (MIT for the third-party download scripts).
+Compages is dual-licensed: GNU GPL v3 or later, or a commercial license for those who cannot use the GPL. See [LICENSING.md](../../LICENSING.md). The scripts of `.makefile` carry their own header (MIT for the third-party download scripts).
 
-Next: return to [the reading guide](README.md) to choose a project or a layer to study.
+Back to the [documentation map](../README.md).

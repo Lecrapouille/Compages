@@ -42,7 +42,7 @@ class Scene;
 //! COMPAGES_TRY(canvas.sync());
 //! \endcode
 //!
-//! See doc/06-Renderer-Layer.md §5 and example \c 06l_CanvasPaint.
+//! See doc/guides/paint-a-texture.md and example \c 06l_CanvasPaint.
 // ****************************************************************************
 class CanvasTexture
 {

@@ -34,7 +34,7 @@
 //!
 //! Nothing here exposes the graphics API in use. That is deliberate and
 //! enforced: the only file allowed to include glad is the private header of the
-//! backend. See doc/01-Introduction.md and doc/07-Architecture.md.
+//! backend. See doc/concepts/three-layers.md and doc/concepts/architecture.md.
 //!
 //! The headers, from the most used:
 //! - Drawable.hpp: a shape, its look and how to draw it, in one object.

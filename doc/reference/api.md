@@ -1,12 +1,10 @@
-# 📖 8. API reference
+# 📖 API reference
 
-The entry points and the common calls of the three layers on one page. For the context, see [4. GPU](04-GPU-Layer.md), [5. World](05-World-Layer.md), [6. Renderer](06-Renderer-Layer.md); for a walkthrough, [3. Tutorial](03-Tutorial.md).
+[⏫ Reference](README.md)
 
-Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, matrices, `Frame`, `Status` and `Result<T>` are directly in `compages` (`compages::Vector3f`).
+The entry points and the common calls of Compages, by task, on one page. Rows show the shape of a call, not complete programs: names such as `Scene`, `Routine` and `Field` are shortened. For the why, see the [concepts](../concepts/README.md); for working code, the [tutorials](../tutorials/README.md) and the [guides](../guides/README.md). The Doxygen comments of the headers in `include/Compages/` have the details.
 
----
-
-This is a lookup page after [the tutorial](03-Tutorial.md). Rows show call shapes, not complete programs: names such as `Scene`, `Routine` and `Field` are shortened in the tables. Use the full namespaces from the tutorial and include the header for the layer. For explanations and working context, use [GPU](04-GPU-Layer.md), [World](05-World-Layer.md), [Renderer](06-Renderer-Layer.md) and [Fields](14-Science-With-Fields.md).
+Namespaces: `compages::gpu`, `compages::world`, `compages::renderer`; vectors, matrices, `Frame`, `Status`, `Result<T>`, grids and fields are directly in `compages` (`compages::Vector3f`).
 
 ## 📎 1. Includes
 
@@ -177,6 +175,6 @@ Structured data, directly in `compages` (`#include <Compages/Fields/HeightField.
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples
 ```
 
-Keys: [chapter 9 §1](09-Examples.md#-1-the-window).
+Keys: [the window](gallery.md#-1-the-window).
 
-Next: [09-Examples.md](09-Examples.md).
+Next: [the gallery](gallery.md).

@@ -31,4 +31,4 @@ The generated `gl.c` is copied as `gl.cpp`. glad's output is written to be valid
 
 ## Note on the OpenGL version
 
-The loader is generated for 4.6 but the backend only uses features up to 4.5, the version that introduced Direct State Access. `gpu::init()` checks the version actually granted by the driver and refuses to run below 4.5. See `doc/01-Introduction.md` for why 4.5 is the floor.
+The loader is generated for 4.6 but the backend only uses features up to 4.5, the version that introduced Direct State Access. `gpu::init()` checks the version actually granted by the driver and refuses to run below 4.5. See `doc/concepts/architecture.md` for why 4.5 is the floor.

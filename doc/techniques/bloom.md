@@ -35,7 +35,7 @@ flowchart LR
 
 ## 🧩 In Compages
 
-Bloom is a part of `ScreenEffects`, a component you put **on a camera** ([chapter 6, screen effects](../06-Renderer-Layer.md#screen-effects-filters-and-bloom)). The Renderer makes the pictures, the passes and the framebuffers, and resizes them with the window. From [12b_Bloom.cpp](../../examples/12_Effects/12b_Bloom.cpp):
+Bloom is a part of `ScreenEffects`, a component you put **on a camera** ([screen effects](../guides/screen-effects.md)). The Renderer makes the pictures, the passes and the framebuffers, and resizes them with the window. From [12b_Bloom.cpp](../../examples/12_Effects/12b_Bloom.cpp):
 
 ```cpp
 m_camera.set(compages::renderer::ScreenEffects{
@@ -56,7 +56,7 @@ compages::renderer::Bloom& bloom = m_camera.get<compages::renderer::ScreenEffect
 ImGui::SliderFloat("Threshold", &bloom.threshold, 0.0f, 4.0f, "%.2f");
 ```
 
-Each camera chooses: in a split view ([chapter 6, several views](../06-Renderer-Layer.md#several-views-of-one-world)), one view can bloom and the other not.
+Each camera chooses: in a split view ([several views](../guides/several-views.md)), one view can bloom and the other not.
 
 ## 🔍 The shader
 

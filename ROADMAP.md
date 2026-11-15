@@ -180,7 +180,7 @@ In rough order. Each item should make a demo shorter or possible.
 ## TODO: public techniques of games
 
 Published techniques of game studios, rebuilt with code, pictures and
-scenes of our own (credits in doc/11-Credits.md). From the simplest to the
+scenes of our own (credits in doc/reference/credits.md). From the simplest to the
 most complex: each step reuses what the ones before it built.
 
 - [x] Flow maps (Valve, Grimes GDC 2011, Vlachos SIGGRAPH 2010):

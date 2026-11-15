@@ -134,7 +134,7 @@ concept AttributeValues =
 //! - from a struct: setVertices(data), editVertex(), emplace_back();
 //! - one attribute at a time: drawable["name"] = { ... };
 //! - borrowed: borrowVertices(buffer), the Buffer you own.
-//! The same table, with demos, is in doc/04-GPU-Layer.md §3.
+//! The same table, with demos, is in doc/concepts/the-gpu-layer.md.
 //!
 //! **Uniforms and textures, by name too.** A uniform is written immediately
 //! and keeps its value until written again. A texture is given a texture unit

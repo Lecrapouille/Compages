@@ -54,7 +54,7 @@ flowchart LR
 
 Three things: a flow map as a texture, a material whose `main` reads it, and a few uniforms each frame.
 
-**The flow map.** In the demo it is computed on the CPU in a `Field<Vector4f>` (one value per point of a `Grid2D`, [chapter 12 §1](../12-Going-Further.md)), and sent to the GPU in one call. A painted image would come from `gpu::Texture::fromFile()` instead. From [10f_FlowingWater.cpp](../../examples/10_Complete/10f_FlowingWater.cpp):
+**The flow map.** In the demo it is computed on the CPU in a `Field<Vector4f>` (one value per point of a `Grid2D`, [fields and grids](../concepts/fields-and-grids.md)), and sent to the GPU in one call. A painted image would come from `gpu::Texture::fromFile()` instead. From [10f_FlowingWater.cpp](../../examples/10_Complete/10f_FlowingWater.cpp):
 
 ```cpp
 compages::renderer::TextureAsset flow;
@@ -140,7 +140,7 @@ The demo stores real speeds in metres per second, in a float texture. Portal 2 u
 ## 🚧 Limits
 
 - The flow does not react by itself: it is fixed when the map is made. The demo adds a swirl round each floating crate in the shader, from uniforms, so the water seems to answer them.
-- It is not a fluid simulation: no waves that travel, no water that rises. For those, see the wave equation of `11b_RippleTank` or the fluid of `11e_Smoke` ([chapter 14](../14-Science-With-Fields.md)).
+- It is not a fluid simulation: no waves that travel, no water that rises. For those, see the wave equation of `11b_RippleTank` or the fluid of `11e_Smoke` ([case studies](../case-studies/README.md)).
 - A shorter cycle stretches the picture less, but the pulse of the two layers shows more. A longer cycle hides the pulse but stretches more. The demo uses about 2 seconds.
 
 ## 🧪 Try it
@@ -153,7 +153,7 @@ The demo has a menu **Show** that shows each step of this page:
 - **3. Two phases blended**: the jump is gone.
 - **Cycle**: from 0.5 s to 8 s; watch the stretching grow.
 
-The whole demo is longer than this page: how the flow map is computed from the scene (the distance to the walls, the current that slides along them, the upwellings and vortices), the foam, the pipe. [Chapter 13 §3](../13-Complete-Demos.md#-3-10f_flowingwater-water-that-flows-round-things) follows it step by step.
+The whole demo is longer than this page: how the flow map is computed from the scene (the distance to the walls, the current that slides along them, the upwellings and vortices), the foam, the pipe. [The flowing water case study](../case-studies/flowing-water.md) follows it step by step.
 
 ## 📁 Source
 

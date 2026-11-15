@@ -1,4 +1,6 @@
-# 🖼 9. Examples: the gallery
+# 🖼 The gallery
+
+[⏫ Reference](README.md)
 
 One binary, `Compages-examples`, holds every demo: viewport, list, inspector, source, console, GPU leak checks. It is the living manual of the project. The sources are written to be read in the order of the folders; each `description()` explains the idea the demo adds.
 
@@ -9,20 +11,21 @@ make -j"$(nproc)"
 ./build/linux-gcc-debug/bin/Compages-examples --check
 ```
 
-For a first visit, start with `06a_FirstScene`: predict what changing the colour or rotation speed will do, read the Source panel, then edit the file and rebuild with `make`. The panel displays source; changes are made in your editor. **F5 restarts a demo; it does not recompile C++.**
+For a first visit, start with the workshop of the [tutorials](../tutorials/README.md), `00a_Workshop` to `00e_RobotEye`: predict what changing the colour or rotation speed will do, read the Source panel, then edit the file and rebuild with `make`. The panel displays source; changes are made in your editor. **F5 restarts a demo; it does not recompile C++.**
 
 Choose a short route before exploring the whole catalog:
 
 | Goal | Try these demos | What to watch |
 |------|-----------------|---------------|
+| Learn Compages | `00a_Workshop` → `00b_RobotArm` → `00c_HotTable` → `00d_PaintedArm` → `00e_RobotEye` | a scene, joints, a field, a hook, a second camera: the [tutorials](../tutorials/README.md) |
 | Build a visible scene | `06a_FirstScene` → `06b_Transforms` → `06c_Hierarchy` → `08a_GltfModel` | Shapes, placement, parent-child movement, then files |
 | Simulate objects | `07a_HeadlessWorld` → `07b_Routines` → `07c_MovingRobot` | Data loops, per-object code, then joints |
 | Learn GPU drawing | `01c_Triangle` → `02b_DynamicGeometry` → `03c_DepthAndTransforms` | Named inputs, changed vertices, then 3D |
 | Show scientific data | `11a_HeatPlate` → `11c_FieldProbe` → `11h_Thermometers` | A field, a value under the mouse, then a chart |
 
-Some demos deliberately show the CPU and GPU copies separately. Pause with F6 and advance with F7 to see one step at a time. Use [chapter 12](12-Going-Further.md) before the large complete demos.
+Some demos deliberately show the CPU and GPU copies separately. Pause with F6 and advance with F7 to see one step at a time. The large complete demos (`10_Complete/`) each have a [case study](../case-studies/README.md).
 
-A short guide of the folders is in [examples/README.md](../examples/README.md).
+A short guide of the folders is in [examples/README.md](../../examples/README.md).
 
 ---
 
@@ -58,7 +61,7 @@ This fills the [Compages-data](https://github.com/Lecrapouille/Compages-data) re
 
 The list of demos is the manifest, `examples/Common/ExampleManifest.hpp`: a new demo is a `.hpp`/`.cpp` pair in its folder plus one line there.
 
-Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) draws a scene into a PNG with **no screen at all**: an EGL context without surface, then `Scene::renderToFile`. It runs on a server or in CI, on a GPU or with Mesa llvmpipe ([chapter 6](06-Renderer-Layer.md)):
+Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) draws a scene into a PNG with **no screen at all**: an EGL context without surface, then `Scene::renderToFile`. It runs on a server or in CI, on a GPU or with Mesa llvmpipe ([run without a screen](../guides/run-without-a-screen.md)):
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-headless scene.png 1280 720
@@ -68,19 +71,21 @@ Next to the gallery, `Compages-headless` (`examples/Headless/main.cpp`, Linux) d
 
 ## 🧭 2. The folders and the layers
 
-| Folder | Question | Layer | Guide |
-|--------|----------|-------|-------|
-| `01_FirstSteps/` | How do I draw? | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `03_Images/` | Textures and 3D on the raw GPU | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `04_Passes/` | Pixels computed by a shader, several passes | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `05_Simulation/` | Make the GPU compute | 🟧 GPU | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `06_Scene/` | Compose a scene, like Three.js | 🟩 Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
-| `07_World/` | Things that move by themselves | 🟦 World | [doc/05-World-Layer.md](05-World-Layer.md) |
-| `08_Assets/` | Load files (glTF, URDF, prefabs) | 🟩 Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
-| `09_Performance/` | Draw a lot | GPU, then Renderer | [doc/04-GPU-Layer.md](04-GPU-Layer.md) |
-| `10_Complete/` | Everything together, up to a game | the three layers | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
-| `11_Science/` | Fields: compute them, show them, read them | Fields, then GPU and Renderer | [doc/06-Renderer-Layer.md](06-Renderer-Layer.md) |
+| Folder | Question | Layer | Read |
+|--------|----------|-------|------|
+| `00_Workshop/` | The tutorials, step by step | the three layers | [Tutorials](../tutorials/README.md) |
+| `01_FirstSteps/` | How do I draw? | 🟧 GPU | [The GPU alone](../tutorials/07-the-gpu-alone.md), [the GPU layer](../concepts/the-gpu-layer.md) |
+| `02_ChangingData/` | How do I send what changes? | 🟧 GPU | [The GPU layer](../concepts/the-gpu-layer.md#-who-owns-the-vertices) |
+| `03_Images/` | Textures and 3D on the raw GPU | 🟧 GPU | [Draw in several passes](../guides/draw-in-several-passes.md) |
+| `04_Passes/` | Pixels computed by a shader, several passes | 🟧 GPU | [Draw in several passes](../guides/draw-in-several-passes.md) |
+| `05_Simulation/` | Make the GPU compute | 🟧 GPU | [Compute on the GPU](../guides/compute-on-the-gpu.md) |
+| `06_Scene/` | Compose a scene, like Three.js | 🟩 Renderer | [A first scene](../tutorials/02-first-scene.md), [light the scene](../guides/light-the-scene.md) |
+| `07_World/` | Things that move by themselves | 🟦 World | [The World](../concepts/the-world.md), [write routines](../guides/write-routines.md) |
+| `08_Assets/` | Load files (glTF, URDF, prefabs) | 🟩 Renderer | [Load a model](../guides/load-a-model.md) |
+| `09_Performance/` | Draw a lot | GPU, then Renderer | [Measure a frame](../guides/measure-a-frame.md) |
+| `10_Complete/` | Everything together, up to a game | the three layers | [Case studies](../case-studies/README.md) |
+| `11_Science/` | Fields: compute them, show them, read them | Fields, then GPU and Renderer | [Case studies](../case-studies/README.md), [show a field](../guides/show-a-field.md) |
+| `12_Effects/` | Filters of the picture of a view | 🟩 Renderer | [Screen effects](../guides/screen-effects.md), [techniques](../techniques/README.md) |
 
 `07a_HeadlessWorld` ends before any `Scene` code.
 
@@ -88,7 +93,21 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 🟧 3. 01 — First steps: how do I draw?
+## 🎓 3. 00 — Workshop: the tutorials
+
+Five steps of one program, each adding one idea; the code of each step is a file of `00_Workshop/Workshop/`, reused by the steps after it.
+
+| Demo | Idea | Picture |
+|------|------|---------|
+| `00a_Workshop` | a table, a part, a lamp, the sun, a camera: one line each ([tutorial 2](../tutorials/02-first-scene.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00a_Workshop.png" alt="00a_Workshop" width="200"> |
+| `00b_RobotArm` | an arm of three revolute joints, moved by a routine ([tutorial 3](../tutorials/03-make-it-move.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00b_RobotArm.png" alt="00b_RobotArm" width="200"> |
+| `00c_HotTable` | the heat of the tool on a steel plate, a `Field<float>` shown in Inferno ([tutorial 4](../tutorials/04-values-on-a-grid.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00c_HotTable.png" alt="00c_HotTable" width="200"> |
+| `00d_PaintedArm` | warning stripes from the hook `surface` of the PBR shader ([tutorial 5](../tutorials/05-your-own-look.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00d_PaintedArm.png" alt="00d_PaintedArm" width="200"> |
+| `00e_RobotEye` | a camera on the arm that does not see the helpers, drawn in a corner and read with `readColor()` ([tutorial 6](../tutorials/06-what-the-robot-sees.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00e_RobotEye.png" alt="00e_RobotEye" width="200"> |
+
+---
+
+## 🟧 4. 01 — First steps: how do I draw?
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -101,7 +120,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 🟧 4. 02 — Changing data: how do I send what changes?
+## 🟧 5. 02 — Changing data: how do I send what changes?
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -112,7 +131,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 🟧 5. 03 — Images: textures and 3D on the raw GPU
+## 🟧 6. 03 — Images: textures and 3D on the raw GPU
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -124,7 +143,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 🟧 6. 04 — Passes: pixels computed by a shader, several passes
+## 🟧 7. 04 — Passes: pixels computed by a shader, several passes
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -136,7 +155,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 
 ---
 
-## 🧪 7. 05 — Simulation: make the GPU compute
+## 🧪 8. 05 — Simulation: make the GPU compute
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -160,7 +179,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 🟩 8. 06 — Scene: compose a scene, like Three.js
+## 🟩 9. 06 — Scene: compose a scene, like Three.js
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -178,11 +197,11 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
 | `06m_ManyLights` | two hundred coloured lamps in one picture: the Renderer sorts them into clusters (tiles × depth slices), each pixel reads the lamps of its cluster | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png" alt="06m_ManyLights" width="200"> |
 | `06n_VolumetricFog` | fog that the light crosses: sun shafts through the slats of a roof, halos and shadows of lamps in the air (froxels: a 3D picture that follows the camera, filled by two compute shaders) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png" alt="06n_VolumetricFog" width="200"> |
-| `06o_CelShading` | another model of light: the hook `light` of the PBR shader draws the sun in flat tones (cel shading); a black outline from a shell drawn inside out ([technique](techniques/cel-shading.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_CelShading.png" alt="06o_CelShading" width="200"> |
+| `06o_CelShading` | another model of light: the hook `light` of the PBR shader draws the sun in flat tones (cel shading); a black outline from a shell drawn inside out ([technique](../techniques/cel-shading.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_CelShading.png" alt="06o_CelShading" width="200"> |
 
 ---
 
-## 🟦 9. 07 — World: things that move by themselves
+## 🟦 10. 07 — World: things that move by themselves
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -194,7 +213,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 🟩 10. 08 — Assets: load files
+## 🟩 11. 08 — Assets: load files
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -205,7 +224,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## ⚡ 11. 09 — Performance: draw a lot
+## ⚡ 12. 09 — Performance: draw a lot
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -215,7 +234,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 ---
 
-## 🎮 12. 10 — Complete: everything together
+## 🎮 13. 10 — Complete: everything together
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -228,19 +247,19 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 `10b_DoomLike`: click to capture the mouse. WASD or arrows to move, Shift to run, Q and E to turn, left click to shoot, R to reload, F for the wall lamp aimed at, L for the lantern. Green boxes are rounds, white kits heal. The green light leaves the level. The surfaces are `DoomLike/Materials` (a hook `main`: colour, normal and roughness maps projected along the three axes, the lamps glinting where the roughness map says smooth); the textures and models are in `polyhaven/` of Compages-data.
 
-`10c_SweatAndDecals`: the head of the three.js `webgl_decals` demo (Lee Perry-Smith). The mesh is drawn into its own UV map, and four passes make the sweat and the decals there: [chapter 13 §1](13-Complete-Demos.md#-1-10c_sweatanddecals-a-simulation-on-the-skin) rebuilds it step by step. Left click paints a decal or drops water (Try it panel), right drag turns. Pitch and Roll tilt the head, and the drops change their way.
+`10c_SweatAndDecals`: the head of the three.js `webgl_decals` demo (Lee Perry-Smith). The mesh is drawn into its own UV map, and four passes make the sweat and the decals there: [the case study](../case-studies/sweat-and-decals.md) rebuilds it step by step. Left click paints a decal or drops water (Try it panel), right drag turns. Pitch and Roll tilt the head, and the drops change their way.
 
 ---
 
-`10e_Archipelago` is a new take on Chréage, the map of knowledge of I. Aberkane's thesis: islands of Voronoi cells grown by uplift and river erosion around the graph of your bookmarks ([IslandedBrowser](https://github.com/Lecrapouille/IslandedBrowser)), made in a thread behind a progress bar. [Chapter 13 §2](13-Complete-Demos.md#-2-10e_archipelago-a-world-made-from-a-graph) rebuilds it step by step. Try it: Seed, Erosion steps, Generate; `COMPAGES_ARCHIPELAGO` names another layout file.
+`10e_Archipelago` is a new take on Chréage, the map of knowledge of I. Aberkane's thesis: islands of Voronoi cells grown by uplift and river erosion around the graph of your bookmarks ([IslandedBrowser](https://github.com/Lecrapouille/IslandedBrowser)), made in a thread behind a progress bar. [The case study](../case-studies/archipelago.md) rebuilds it step by step. Try it: Seed, Erosion steps, Generate; `COMPAGES_ARCHIPELAGO` names another layout file.
 
 The camera is a `Rig`: left drag moves the map, right drag turns it, the wheel zooms toward the mouse. Over the picture, the names are written as Chréage writes them (`Archipelago/Signs`): an island or a region on a rounded sign, a tab of the colour of its island on its left, raised on a thin stem over its place (higher, or left out, when it would cover another one; the islands from afar, the nearest regions closer); the links of the region under the mouse or chosen on a circle around it, each joined to its pin by a dotted line, in the order of the pins round the circle so that the lines hardly cross. Also over the picture, `Example::overlay()` lets the demo draw Dear ImGui windows (the pointer over them and the keys typed into them do not reach `draw()`); `Signs` draws with `ImGui::GetWindowDrawList()` on the picture, and `Archipelago/Panels` opens the windows of the interface of IslandedBrowser: a tooltip next to the pointer (the title, the URL, where it is, what a click does), the details of the choice on the right (its links: a click goes there, Ctrl + click opens), a search of the titles and URLs (`/` or Ctrl + F), a status bar with the keys of the moment, short notifications, and a help (`H`). A click selects, a double click opens a link or flies to a region (`RigController::flyTo`), a middle or Ctrl click opens in the web browser (`$BROWSER`, else firefox; a region: its first 20 links); Enter opens the selection, Z flies to it, Home to the whole map, N, B and Space show the names, the borders, the animals.
 
-`10f_FlowingWater`: the flow maps of Portal 2 (A. Grimes, GDC 2011; A. Vlachos, SIGGRAPH 2010) in a concrete pool under sodium lamps, with a pipe spitting water. [The flow mapping page](techniques/flow-mapping.md) explains the shader trick; [chapter 13 §3](13-Complete-Demos.md#-3-10f_flowingwater-water-that-flows-round-things) rebuilds the whole demo step by step. Try it → Show goes through each step of the paper (the flow map, the pop, the crawling edges, two phases, the masks); Arrows and Features show the flow and its upwellings and vortices; the Bake sliders make the flow map again. A left click on the water adds an upwelling (or a vortex), right drag turns the camera.
+`10f_FlowingWater`: the flow maps of Portal 2 (A. Grimes, GDC 2011; A. Vlachos, SIGGRAPH 2010) in a concrete pool under sodium lamps, with a pipe spitting water. [The flow mapping page](../techniques/flow-mapping.md) explains the shader trick; [the case study](../case-studies/flowing-water.md) rebuilds the whole demo step by step. Try it → Show goes through each step of the paper (the flow map, the pop, the crawling edges, two phases, the masks); Arrows and Features show the flow and its upwellings and vortices; the Bake sliders make the flow map again. A left click on the water adds an upwelling (or a vortex), right drag turns the camera.
 
-## 🔬 13. 11 — Science: fields, computed and shown
+## 🔬 14. 11 — Science: fields, computed and shown
 
-Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](06-Renderer-Layer.md#show-a-field-heat-maps-and-coloured-reliefs)). [Chapter 14](14-Science-With-Fields.md) explains each demo: its equation, its loop on the grid, its calls.
+Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on the GPU, and shown as colours and relief by `scene.show()` ([Renderer, show a field](../guides/show-a-field.md)). [The case studies](../case-studies/README.md) explains each demo: its equation, its loop on the grid, its calls.
 
 | Demo | Idea | Picture |
 |------|------|---------|
@@ -253,21 +272,21 @@ Values on a grid (`compages::Field<T>` of `Fields/`), computed on the CPU or on 
 | `11g_FlowAroundCylinder` | the wind around a turning column: a `Field<Vector2f>` as arrows (`scene.show(field, ArrowLook)`), streamlines (`compages::streamline()`), the pressure under them; the Magnus effect; a regular `Grid2D` or a `CurvilinearGrid` fitted round the column (an O-grid) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11g_FlowAroundCylinder.png" alt="11g_FlowAroundCylinder" width="200"> |
 | `11h_Thermometers` | follow values over time: two thermometers on a heated plate, their curves on a board (`Chart`, a `CanvasTexture`); a click moves one (`scene.probe`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11h_Thermometers.png" alt="11h_Thermometers" width="200"> |
 
-## ✨ 14. 12 — Effects: filters of the picture
+## ✨ 15. 12 — Effects: filters of the picture
 
-A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), passed through its filters and its bloom, and only then given the tone curve ([Renderer, screen effects](06-Renderer-Layer.md#screen-effects-filters-and-bloom)). Each view chooses: another camera stays as it was.
+A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), passed through its filters and its bloom, and only then given the tone curve ([Renderer, screen effects](../guides/screen-effects.md)). Each view chooses: another camera stays as it was.
 
 | Demo | Idea | Picture |
 |------|------|---------|
 | `12a_ScreenFilters` | a filter is `vec3 effect(vec2 uv)` in a few lines; three in a row (outlines from the depth, sepia, vignette) on the right view only | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12a_ScreenFilters.png" alt="12a_ScreenFilters" width="200"> |
-| `12b_Bloom` | light brighter than the screen spills round it: bulbs at night, `bloom = { .enabled, .threshold, .strength }` ([technique](techniques/bloom.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png" alt="12b_Bloom" width="200"> |
+| `12b_Bloom` | light brighter than the screen spills round it: bulbs at night, `bloom = { .enabled, .threshold, .strength }` ([technique](../techniques/bloom.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png" alt="12b_Bloom" width="200"> |
 
 ---
 
-## 🪟 15. Window, ImGui and physics
+## 🪟 16. Window, ImGui and physics
 
 - Only `examples/Common/Window.cpp` talks to GLFW. The library receives a context that already exists.
 - The panels use ImGui (the `docking` branch of the manifest). After them, `gpu::forgetRenderState()` keeps the ImGui state from being taken for the state of the demo.
-- There is no physics engine in the library: `07e_ExternalPhysics` shows how to plug one in ([chapter 5](05-World-Layer.md#plug-in-a-physics-engine)).
+- There is no physics engine in the library: `07e_ExternalPhysics` shows how to plug one in ([plug a physics engine](../guides/plug-a-physics-engine.md)).
 
-Next: [10-Debugging.md](10-Debugging.md).
+When something goes wrong: [a black window](../guides/debug-a-black-window.md).

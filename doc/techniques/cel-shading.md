@@ -33,7 +33,7 @@ flowchart LR
 
 ## 🧩 In Compages
 
-The PBR shader of the Renderer has **hooks**: named functions you may replace with your own text ([chapter 6, hooks of the PBR shader](../06-Renderer-Layer.md#your-own-material-hooks-of-the-pbr-shader)). The hook `light` receives the surface (its colour, its normal) and returns the light it sends back. Replace it, and every other part of the shader (the surface, the shadows, the fog, the tone curve) stays.
+The PBR shader of the Renderer has **hooks**: named functions you may replace with your own text ([write a material](../guides/write-a-material.md)). The hook `light` receives the surface (its colour, its normal) and returns the light it sends back. Replace it, and every other part of the shader (the surface, the shadows, the fog, the tone curve) stays.
 
 **The tones**: take the PBR shader, replace its `light`, make a material, give it to a shape. From [06o_CelShading.cpp](../../examples/06_Scene/06o_CelShading.cpp):
 
@@ -110,7 +110,7 @@ void main()
 
 ## 🚧 Limits
 
-- The shell grows by the same factor everywhere: on a long thin shape the line is thicker at the ends. A shell pushed **along the normals** (hook `deform`, [chapter 12 §7](../12-Going-Further.md)) keeps the same width everywhere.
+- The shell grows by the same factor everywhere: on a long thin shape the line is thicker at the ends. A shell pushed **along the normals** (hook `deform`, [write a material](../guides/write-a-material.md#4-deform-to-move-the-vertices)) keeps the same width everywhere.
 - Lines appear only round the outside of a shape, not at its inner folds. A **screen filter** that looks for jumps in the depth draws those too: `12a_ScreenFilters` does it.
 - Only the sun is cut into tones. The lamps of the Scene are left out of this hook; add them in the same loop to cut their light too.
 

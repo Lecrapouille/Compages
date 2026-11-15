@@ -1,87 +1,47 @@
 # 📚 Compages documentation
 
-Start here if you want to learn Compages. By the end of the basic path, you will be able to build and run a program, create and move objects, draw a scene, and read errors when something goes wrong.
+![The robot workshop of the tutorials](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00e_RobotEye.png)
 
-You do not need to know 3D or OpenGL. To write the programs, you need basic C++: variables, functions, structs, and a loop. The code also uses lambdas (functions written inside another function) and templates such as `Field<float>` (a field whose values are floating-point numbers). You can explore the gallery before learning these C++ details.
+You do not need to know 3D or OpenGL. You need basic C++: variables, functions, structs, a loop, a lambda. Every 3D word is in the [glossary](concepts/glossary.md).
 
-Choose your path by what you want to do. Each path is a list to read in order; the reference chapters (4–11) are there when you need a fact.
+## 🧭 Choose a path
 
-![The three layers](logos/compages-layers.png)
+### 🚶 Use Compages
 
-## 🚶 Path 1: use Compages
+You want a program that shows a 3D scene: objects, light, a camera, things that move. Follow the **[tutorials](tutorials/README.md)**: they build a robot workshop step by step, from a table to an arm that sees, and each page ends with something new on the screen. Then pick the [guides](guides/README.md) you need: load a model, light the scene, move the camera, several views.
 
-Make a program that shows a 3D scene: install, a first window, objects, light, a camera, models, controls. You see a result from the second step.
+### 🎨 Make effects and simulations
 
-| Step | Read and do | You are ready to continue when… |
-|------|-------------|---------------------------------|
-| 1 | [Introduction](01-Introduction.md) | you can explain the difference between a world and its picture |
-| 2 | [Getting started](02-Getting-Started.md), open `06a_FirstScene` | you see the cube and can move the gallery camera |
-| 3 | [Your first programs](03-Tutorial.md) | you can change a speed, a colour and a position and predict the result |
-| 4 | [The Renderer layer](06-Renderer-Layer.md): scene, looks, camera, lights, files | you can load a model and light it |
-| 5 | [The World layer](05-World-Layer.md): entities, routines, joints | you can make things move without the GPU |
-| 6 | [Going further](12-Going-Further.md) §1–5, then [the small viewer](12-Going-Further.md#-practice-build-a-small-viewer) | your program creates, updates, draws and closes without an error |
+You want a look of your own, a field computed on a grid, water, fog, a fluid. After the first tutorials, read the **[techniques](techniques/README.md)** (one effect per page: the idea, the lines that switch it on, the shader, the cost) and the **[case studies](case-studies/README.md)** (whole demos, from the equation or the paper to the picture). The guides [write a material](guides/write-a-material.md), [show a field](guides/show-a-field.md) and [compute on the GPU](guides/compute-on-the-gpu.md) are the tools.
 
-## 🎨 Path 2: make effects and simulations
+### 🔧 Understand and extend the engine
 
-Change how things look and compute on the GPU: your own shaders, values on a grid, passes, ping-pong, water, fog, light. Read path 1 up to step 3 first.
+You want to know why Compages is built this way, or to change it. Read the **[concepts](concepts/README.md)**, starting with [three layers](concepts/three-layers.md), then [architecture](concepts/architecture.md), and [AGENTS.md](../AGENTS.md) for the conventions of the code.
 
-| Step | Read | What you get |
-|------|------|--------------|
-| 1 | [Going further](12-Going-Further.md) §6–9 | your own look (hooks), moving vertices, a field sent to a shader, passes |
-| 2 | [Techniques, one page each](techniques/README.md) | one effect per page: the idea, the lines that switch it on, the GLSL, the cost |
-| 3 | [The GPU layer](04-GPU-Layer.md) | shaders, buffers, compute, several passes, without the Renderer |
-| 4 | [Science with fields](14-Science-With-Fields.md) | heat, waves, fluids, volumes: an equation, its loop on a grid, its picture |
-| 5 | [Three complete demos](13-Complete-Demos.md) | three case studies, from their inputs to their final picture |
+## 🗂 The four kinds of page
 
-## 🔧 Path 3: understand and extend the engine
+| Folder | Kind | You read it to… |
+|--------|------|-----------------|
+| [tutorials/](tutorials/README.md) | tutorial | learn by doing, in order |
+| [guides/](guides/README.md) | how-to | do one task now |
+| [techniques/](techniques/README.md), [case-studies/](case-studies/README.md) | explanation by example | see one effect or one demo built, with its cost and limits |
+| [concepts/](concepts/README.md) | explanation | understand why |
+| [reference/](reference/README.md) | reference | look up a call, a demo, a credit |
 
-How Compages works inside: who includes whom, one frame from start to end, the lifetime of GPU objects, the ECS, the snapshot, profiling and tests.
+## ⚡ Quick answers
 
-| Step | Read | What you get |
-|------|------|--------------|
-| 1 | [Introduction §3](01-Introduction.md) and the three layer chapters (4, 5, 6) | what each layer leaves out, and why |
-| 2 | [Architecture](07-Architecture.md) | folders, includes, the frame, the entry points |
-| 3 | [Debugging](10-Debugging.md) | errors, driver messages, apitrace, RenderDoc, CI without a screen |
-| 4 | [AGENTS.md](../AGENTS.md) | the conventions and the rules that are easy to break |
-
-Keep the gallery open beside the text. For each example: run it, read the explanation, change one value, predict what will happen, then rebuild and compare. You do not need to understand every file of a large demo at once.
-
-## 🧭 Quick paths
-
-- *"I just want to see something."* → [2. Getting started](02-Getting-Started.md), then `./build/linux-gcc-debug/bin/Compages-examples`
-- *"I have a shader and numbers."* → [3. Tutorial §1](03-Tutorial.md#-1-a-triangle-named-by-the-shader), then [4. GPU](04-GPU-Layer.md)
-- *"I simulate things, no window needed."* → [3. Tutorial §2](03-Tutorial.md#-2-a-world-without-a-screen), then [5. World](05-World-Layer.md)
-- *"I want to build a 3D scene."* → [3. Tutorial §3](03-Tutorial.md#-3-a-picture-of-the-world), then [6. Renderer](06-Renderer-Layer.md)
+- *"I just want to see something."* → [Install and run](tutorials/01-install.md)
+- *"I want my own window."* → [A first scene](tutorials/02-first-scene.md#-the-same-scene-in-your-own-window)
+- *"I simulate things, no window needed."* → [Run without a screen](guides/run-without-a-screen.md), then [the World](concepts/the-world.md)
+- *"I have a shader and numbers."* → [The GPU alone](tutorials/07-the-gpu-alone.md), then [the GPU layer](concepts/the-gpu-layer.md)
+- *"I compute physics on a grid."* → [Values on a grid](tutorials/04-values-on-a-grid.md), then [the case studies](case-studies/README.md)
 - *"I want one effect: bloom, a cartoon look, flowing water."* → [Techniques](techniques/README.md)
-- *"I compute physics on a grid."* → [14. Science with fields](14-Science-With-Fields.md)
-- *"My window is black."* → [10. Debugging](10-Debugging.md)
-- *"I want to change Compages itself."* → [7. Architecture](07-Architecture.md), and [AGENTS.md](../AGENTS.md) for the conventions
+- *"My window is black."* → [A black window](guides/debug-a-black-window.md)
+- *"Where is the call that…?"* → [API reference](reference/api.md)
 
-## 📚 All chapters
+## 📷 Pictures
 
-**Tutorials** teach in order. **Techniques** and **case studies** explain one thing each. **Reference** chapters are for looking up a fact.
-
-| # | Chapter | Kind | Contents |
-|---|---------|------|----------|
-| 1 | [Introduction](01-Introduction.md) | tutorial | 🌱 3D words, the three layers and why they are separate |
-| 2 | [Getting started](02-Getting-Started.md) | tutorial | 🚀 Install, build, gallery, headless CI, system install |
-| 3 | [Your first programs](03-Tutorial.md) | tutorial | 🎓 Guided examples, terminal programs and a complete window application |
-| 12 | [Going further](12-Going-Further.md) | tutorial | 🎓 Fields and interaction first, then meshes, shaders and GPU passes |
-| — | [Techniques](techniques/README.md) | technique | 🎨 One effect per page: cel shading, bloom, flow mapping… |
-| 13 | [Three complete demos](13-Complete-Demos.md) | case study | 🏗 Sweat, an archipelago and flowing water, rebuilt step by step |
-| 14 | [Science with fields](14-Science-With-Fields.md) | case study | 🔬 Heat, waves, fluids, volumes, ideal flow: equations and grids |
-| 4 | [The GPU layer](04-GPU-Layer.md) | reference | 🟧 Drawable, buffers, compute, several passes |
-| 5 | [The World layer](05-World-Layer.md) | reference | 🟦 Scene graph, ECS, routines, joints |
-| 6 | [The Renderer layer](06-Renderer-Layer.md) | reference | 🟩 Scene, assets, frame, live textures |
-| 7 | [Architecture](07-Architecture.md) | reference | 🏗 Folders, includes, one frame |
-| 8 | [API reference](08-API-Reference.md) | reference | 📖 The calls of the three layers |
-| 9 | [Examples](09-Examples.md) | reference | 🖼 The gallery and its keys |
-| 10 | [Debugging](10-Debugging.md) | reference | 🐞 Errors, driver messages, apitrace, RenderDoc |
-| 11 | [Credits](11-Credits.md) | reference | 🙏 Inspirations, third parties |
-
-## 📷 Images
-
-The screenshots live in the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository, in `doc/examples/`, one per demo; the pages link to them there. They are written by:
+Every screenshot of these pages lives in the [Compages-data](https://github.com/Lecrapouille/Compages-data) repository, in `doc/examples/`, one per demo. They are written by the gallery itself, so they show what the code really draws:
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples

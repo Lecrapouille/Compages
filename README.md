@@ -65,14 +65,17 @@ The project stopped for several years. With the help of LLMs, I rebuilt it from 
 | Use only the part you need | ✅ three independent layers | — | ✅ | ❌ | ❌ | ✅ |
 | A library, not an editor | ✅ your window, your loop | ✅ | ✅ | ✅ | ❌ | ✅ |
 
-I know of no other C++ library that puts these together: the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time.
+Compages puts together the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time. That is a choice, and it has a price:
+
+- ✅ **A good fit** when you want to see a simulation you also run without a screen (robots, physics on a grid, agents), when you want to write shaders without the OpenGL state machine, or when you want to learn how a 3D engine works from code small enough to read.
+- ❌ **Look elsewhere** when you need an editor, a physics engine, sound, consoles or the web (Godot, Unity, Unreal, Three.js do this), or a renderer that runs on every graphics API (bgfx, sokol, Filament). Compages draws with OpenGL 4.5 only, on Linux.
 
 What this gives you:
 
 - 🔬 **Scientists** draw and compute on the GPU without learning the OpenGL state machine.
 - 🤖 **Robotics** gets a world that runs in unit tests and CI, and the same world drawn when you want to see it. [RobotIK](https://github.com/Lecrapouille/RobotIK) uses Compages for its world and its simulator.
 - 🎮 **Games** get Three.js-short scene code, glTF models, animations and cameras, in C++.
-- 🧑‍🏫 **Learners** get a gallery of more than forty small demos, each adding one idea, with its source shown next to the picture.
+- 🧑‍🏫 **Learners** get a gallery of more than seventy small demos, each adding one idea, with its source shown next to the picture, and tutorials that build a robot workshop step by step.
 
 ---
 
@@ -139,7 +142,7 @@ scene.draw(frame);
 
 ## 🚀 Quick start
 
-Details, Fedora, CI without screen, system install: [doc/02-Getting-Started.md](doc/02-Getting-Started.md).
+Details, Fedora, CI without screen, system install: [build and install](doc/guides/build-and-install.md).
 
 You need Linux, a C++20 compiler, Make, CMake, Git, `pkg-config`, GLFW and an **OpenGL 4.5** driver. **Note:** macOS stops at OpenGL 4.1 I will see how to manage this.
 
@@ -153,32 +156,24 @@ make
 make run-Compages-examples   # the gallery: every demo, its source, GPU counters
 ```
 
-Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels.
+Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels. Then follow [the tutorials](doc/tutorials/README.md).
 
 ---
 
 ## 📚 Documentation
 
-[doc/README.md](doc/README.md) offers three paths: **use** Compages (chapters 1–3, then the layers), **make effects and simulations** (chapter 12, the techniques, the science demos), **understand and extend** the engine (architecture, debugging).
+<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00e_RobotEye.png" alt="The robot workshop of the tutorials" width="480">
 
-| # | Chapter | Contents |
-|---|---------|----------|
-| | [doc/README.md](doc/README.md) | 🧭 Reading order and quick paths |
-| 1 | [Introduction](doc/01-Introduction.md) | 🌱 3D words, the three layers and why they are separate |
-| 2 | [Getting started](doc/02-Getting-Started.md) | 🚀 Install, build, gallery, headless CI, system install |
-| 3 | [Your first programs](doc/03-Tutorial.md) | 🎓 One program per layer, line by line |
-| 4 | [The GPU layer](doc/04-GPU-Layer.md) | 🟧 Drawable, buffers, compute, several passes |
-| 5 | [The World layer](doc/05-World-Layer.md) | 🟦 Scene graph, ECS, routines, joints |
-| 6 | [The Renderer layer](doc/06-Renderer-Layer.md) | 🟩 Scene, assets, frame, live textures |
-| 7 | [Architecture](doc/07-Architecture.md) | 🏗 Folders, includes, one frame |
-| 8 | [API reference](doc/08-API-Reference.md) | 📖 The calls of the three layers |
-| 9 | [Examples](doc/09-Examples.md) | 🖼 The gallery and its keys |
-| 10 | [Debugging](doc/10-Debugging.md) | 🐞 Errors, driver messages, apitrace, RenderDoc |
-| 11 | [Credits](doc/11-Credits.md) | 🙏 Inspirations, third parties |
-| 12 | [Going further](doc/12-Going-Further.md) | 🎓 The calls that matter, step by step |
-| — | [Techniques](doc/techniques/README.md) | 🎨 One effect per page: cel shading, bloom, flow mapping… |
-| 13 | [Three complete demos](doc/13-Complete-Demos.md) | 🏗 Sweat, an archipelago and flowing water, rebuilt step by step |
-| 14 | [Science with fields](doc/14-Science-With-Fields.md) | 🔬 Heat, waves, fluids, volumes, ideal flow: equations and grids |
+Start with the **[tutorials](doc/tutorials/README.md)**: they build the robot workshop above step by step, from a table to an arm that sees, and each page ends with something new on the screen. The [documentation map](doc/README.md) then offers three paths: use Compages, make effects and simulations, understand and extend the engine.
+
+| Folder | Kind | For |
+|--------|------|-----|
+| [Tutorials](doc/tutorials/README.md) | learn by doing | 🎓 install, a first scene, joints, a field, a shader hook, a second camera, the GPU alone |
+| [Guides](doc/guides/README.md) | one task each | 🧭 load a model, light the scene, several views, screen effects, compute on the GPU, debug a black window… |
+| [Techniques](doc/techniques/README.md) | one effect each | 🎨 cel shading, bloom, flow mapping…: the idea, the code, the cost |
+| [Case studies](doc/case-studies/README.md) | whole demos | 🔬 sweat on a face, an archipelago, flowing water, heat, waves, smoke |
+| [Concepts](doc/concepts/README.md) | why | 💡 three layers, the World, the GPU layer, one frame, fields, errors, architecture |
+| [Reference](doc/reference/README.md) | look up | 📖 the API, every demo of the gallery, credits |
 
 Coding agents: [AGENTS.md](AGENTS.md) and the skills of `.claude/skills/`.
 
