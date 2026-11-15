@@ -23,12 +23,14 @@ does not teach something.
 | `doc/guides/` | how-to | do one task now | goal → steps → code → result picture → see also |
 | `doc/concepts/` | explanation | understand why | the problem, the idea, the choice made and what it costs |
 | `doc/reference/` | reference | look up a fact | tables of calls, the gallery list, credits; no story |
-| `doc/techniques/` | technique | reproduce one effect | the fixed template below, one demo per page |
+| `doc/techniques/` | explanation | understand one rendering effect | algorithm, demo excerpts, cost and limits; the fixed template below |
 | `doc/case-studies/` | case study | see a whole demo built | 10c, 10e, 10f step by step; one fiche per `11_Science` demo |
 
 There is no `doc/README.md`: the "Documentation" section of the root
 `README.md` is the only map, a few lines long. Each folder has a `README.md`
 that lists its pages in reading order, as a plain list with one line each.
+
+Techniques are effect-specific explanations, not a fifth Diátaxis type. Guides own integration steps; technique pages explain the algorithm through a demo. Architectural decisions stay in concepts; source-folder and header lookup stays in reference/code-map.md.
 
 Do not mix the kinds. A tutorial does not explain theory at length: it links
 to a concept. A guide does not teach from zero: it links to the tutorial. A

@@ -107,3 +107,14 @@ A uniform that the shader declares but never uses is removed by the GLSL compile
 ## ✨ Screen filters
 
 A [screen filter](../guides/screen-effects.md) is not a hook of the PBR shader. It is one function, `vec3 effect(vec2 uv)`, that Compages wraps in a full-screen pass. It reads `screenColor`, `screenDepth`, `screenSize` and its own `uniform float` values.
+
+
+| Input | Type | Meaning |
+|-------|------|---------|
+| `uv` | `vec2` argument | Normalized coordinates across this view, from 0 to 1. |
+| `screenColor` | `sampler2D` | Linear view colour, or the previous filter's colour output. |
+| `screenDepth` | `sampler2D` | Original reversed depth: 1 near, 0 far and for background. |
+| `screenSize` | `vec2` | View dimensions in pixels. |
+| User values | `uniform float` | Parameters supplied by the filter's `values` entries. |
+
+Return a linear `vec3` colour. Filters execute in component list order, before bloom and final presentation. Built-in inputs are supplied by the Renderer; user float uniforms belong to that filter. [Screen-space filters](../techniques/screen-filters.md) explains depth edges and pass costs.

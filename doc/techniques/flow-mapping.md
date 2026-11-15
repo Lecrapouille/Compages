@@ -1,6 +1,6 @@
 # 🌊 Flow mapping
 
-[◀ Bloom](bloom.md) · [⏫ Techniques](README.md)
+[◀ Texture ping-pong](texture-ping-pong.md) · [⏫ Techniques](README.md)
 
 ![10f_FlowingWater](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10f_FlowingWater.png)
 
@@ -178,4 +178,4 @@ The whole demo is longer than this page: how the flow map is computed from the s
 
 ---
 
-[◀ Bloom](bloom.md) · [⏫ Techniques](README.md)
+[◀ Texture ping-pong](texture-ping-pong.md) · [⏫ Techniques](README.md)

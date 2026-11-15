@@ -2,23 +2,52 @@
 
 [⏫ Guides](README.md)
 
-Draw into a texture and use it in the next draw (post-processing, a mirror, a simulation), share one mesh between several shaders, write shaders in pieces, and reload them while the program runs.
+Draw into a texture and use the result in a later pass. Share one mesh between several shaders when the passes need the same geometry.
 
 ![04e_PostProcess](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/04e_PostProcess.png)
 
 For filters of the picture of a Scene, [screen effects](screen-effects.md) do it all; this guide is for passes of your own, with the GPU layer.
 
-## 🧰 When one Drawable is not enough
+## 🖼 Render once, read the texture afterward
 
-| Need | Types | Demo |
-|------|-------|------|
-| one mesh, several shaders | one `VertexBuffer<Vertex>`, borrowed by several `Drawable` | `04c_MultiPassMesh` |
-| draw into a picture | `Framebuffer`, `RenderPass`, `Texture` | `04d_RenderToTexture`, `04e_PostProcess` |
-| write a picture into a file | `texture.saveFile("out.png")` | `Compages-headless` |
-| a cellular automaton on a picture | `TexturePingPong` ([compute on the GPU](compute-on-the-gpu.md)) | `05b_GameOfLife` |
-| a height field computed on the CPU | dynamic vertices, fixed indices | `02c_HeightMap`, `03e_Terrain3D` |
+Open [04d_RenderToTexture.cpp](../../examples/04_Passes/04d_RenderToTexture.cpp). Setup creates a 512 × 512 colour texture, a depth texture, and `m_target`, a framebuffer referring to them. It prepares `m_cube` for the scene and `m_blit` and `m_process` for full-screen draws. The latter two sample the target colour texture through their `image` uniform.
 
-`04c_MultiPassMesh` is the milestone: one `VertexBuffer<Vertex>`, three drawables (lit, normals, wireframe) that borrow it. Each shader reads only the fields it needs; a field it does not declare is skipped, a field of the wrong type is an error. The layout is declared on the C++ side, so the shader does not guess it. Under the `Drawable`, the same is a `Program` and `Pipeline::create<Vertex>(program, state)`, which checks the struct against the shader, then `gpu::drawIndexed(pipeline, vertices, indices)` (`10c_SweatAndDecals`).
+After setting the cube's matrices, its frame loop does:
+
+```cpp
+// Into the texture. The pass covers the whole framebuffer and suspends
+// the window pass until the end of the scope.
+{
+    compages::gpu::RenderPass offscreen(
+        m_target, { .color = { 0.07f, 0.07f, 0.1f, 1.0f } });
+    m_cube.draw();
+}
+
+// Back on the window: the same texture, as it is on the left, treated on
+// the right. The cube is never drawn here.
+const std::uint32_t half = p_frame.width / 2u;
+{
+    compages::gpu::RenderPass left(
+        { .width = half, .height = p_frame.height });
+    m_blit.draw(3u);
+}
+{
+    compages::gpu::RenderPass right({ .x = half,
+                                      .width = p_frame.width - half,
+                                      .height = p_frame.height });
+    m_process.draw(3u);
+}
+```
+
+The cube is drawn once into the texture. The two window passes read that picture: unchanged on the left, processed on the right. Finish the offscreen pass before sampling its texture, and never sample a texture that is attached for writing in the same draw. `p_frame` comes from the gallery and gives the window target's dimensions.
+
+Run `./build/linux-gcc-debug/bin/Compages-examples 04d_RenderToTexture`. The processed side shifts the red and blue channels. Resize the window: the offscreen picture stays 512 × 512, while the two output viewports change size.
+
+## 🧬 Reuse geometry across passes
+
+[04c_MultiPassMesh.cpp](../../examples/04_Passes/04c_MultiPassMesh.cpp) keeps one `VertexBuffer<Vertex>` and three drawables that borrow it. Each shader reads the fields it needs. An undeclared field is skipped; a mismatched type is an error. Keep the borrowed buffer alive until those draws finish.
+
+Below `Drawable`, use a `Program` and `Pipeline::create<Vertex>(program, state)` to check the struct against each shader, then draw the shared buffers. The [GPU layer concept](../concepts/the-gpu-layer.md#-who-owns-the-vertices) explains ownership and the tradeoff.
 
 ## 🎚 Passes and state
 
@@ -29,40 +58,16 @@ For filters of the picture of a Scene, [screen effects](screen-effects.md) do it
 
 A pass that draws **over a picture of a Scene** and tests its depth must use the Scene's reversed depth ([very large scenes](very-large-scenes.md#-reversed-depth)).
 
-## 🧩 Shaders made of pieces: ShaderSource
+## 🧩 Share source between passes
 
-A long shader is easier to read and to share in pieces. A `ShaderSource` is the GLSL of one stage: a main text that says `#include "name"` or `#include <name>`. A name is looked for in the texts given with `include(name, text)` (GLSL in a string, or **made from C++ data**: the constants of a simulation written once for the CPU and the GPU), then, for `"name"`, beside the including file, then in each folder given with `directory(path)`. Each piece goes in once; a circle of includes is an error that shows it (`a -> b -> a`). `define(name, value)` adds a `#define` after the `#version`.
+Use [share and reload shader source](manage-shader-sources.md) when the passes need common GLSL functions, includes or hot reload. A source file's organisation does not determine where a pass draws.
 
-```cpp
-auto source = compages::gpu::ShaderSource::fromText("water.frag", R"(#version 450 core
-#include <waves.glsl>
-out vec4 oColor;
-void main() { oColor = vec4(wave(0.5), 1.0); }
-)");
-source.include("waves.glsl", "float wave(float x) { return sin(x * PI); }\n")
-      .define("PI", "3.14159");
-COMPAGES_TRY(program.load(vertex, source));
-```
+## 🧯 Common problems
 
-The driver numbers the pieces (`#line`), and Compages rewrites its log with their names: `1:1(28): error` becomes `waves.glsl:1(28): error`.
-
-A **hook** is a named place a shader of a library leaves open, with a default text: `#include <hook/deform>`. The library declares it with `declareHook(name, text)`; you replace it with `hook(name, text)` ([write a material](write-a-material.md)).
-
-## 🔄 Hot reload
-
-`gpu::ShaderWatch` watches the files of two stages (and their includes) and calls your load again when one is saved. A load that fails keeps what was there and `poll()` returns the log, so a typo while editing does not break the picture:
-
-```cpp
-auto load = [this](ShaderSource const& p_vertex, ShaderSource const& p_fragment) -> compages::Status
-{
-    COMPAGES_TRY(m_program.load(p_vertex, p_fragment));
-    COMPAGES_TRY_ASSIGN(m_pipeline, compages::gpu::Pipeline::create<Vertex>(m_program, m_state));
-    return compages::success();
-};
-COMPAGES_TRY(m_watch.watch(ShaderSource::fromFile("water.vert"), ShaderSource::fromFile("water.frag"), load));
-// each frame:
-if (compages::Status reloaded = m_watch.poll(); !reloaded) { std::cerr << reloaded.error(); }
-```
+- Keep the sampled textures alive: a framebuffer refers to attachments and does not own their lifetime.
+- Set the projection aspect ratio for the offscreen target, not the window.
+- If another library changes OpenGL state, call `gpu::forgetRenderState()` before drawing through Compages again.
+- For state updates that read neighbours, use [texture ping-pong](../techniques/texture-ping-pong.md).
 
 ## 🔗 See also
 

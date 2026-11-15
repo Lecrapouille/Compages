@@ -2,7 +2,7 @@
 
 [⏫ Guides](README.md)
 
-Choose the sky, the sun, the lamps and their shadows, the exposure, hundreds of lamps, and fog that the light crosses.
+Light an existing Scene with a sun and lamps, set exposure, and enable the shadows or fog it needs. Start from a prepared scene such as [the workshop](../tutorials/04-a-scene.md).
 
 ![06d_Lights](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06d_Lights.png)
 
@@ -19,18 +19,18 @@ The sun is far away: only its direction counts, the forward axis of its entity. 
 
 ## 🎨 Colours and exposure
 
-Every colour you give a Scene (looks, lights, ambient, fog) is **sRGB**, the colour of a colour picker. The Renderer turns it into **linear** light, where two lamps give twice the light, and computes in linear. At the end a **tone curve** turns the light, which has no upper limit, into a screen colour between 0 and 1.
+Give Scene colours as sRGB values from a colour picker. Set exposure and the tone curve through the environment:
 
 ```cpp
 scene.environment().tone_mapping = compages::renderer::ToneMapping::Aces;  // the default
 scene.environment().exposure = 1.5f;   // brighter, like opening the lens
 ```
 
-`Aces` (the film curve) keeps contrast and keeps bright colours coloured; `Reinhard` is softer; `None` clamps, so what is too bright turns flat white. `06d_Lights` has both settings in its panel. Pictures given with `texture()` are read as sRGB; glTF colour factors are already linear, as the format says. The background is written as it is.
+Adjust exposure while keeping the light setup fixed, then choose a tone curve. `None` clamps values above white; `Aces` is the default. [Light and screen colour](../concepts/light-and-colour.md) explains linear light, texture encoding and presentation.
 
 ## 🌑 Shadows
 
-**The sun** casts shadows by default. Before drawing, the Renderer draws the depth of the scene seen from the sun into a picture (`Environment::shadow_resolution`, 2048), fitted to the objects that cast; the materials read it with a 3 × 3 filter, so edges are soft. A floor should not cast (`RenderFlags::NoShadowCaster` on its `MeshRenderer`): it would stretch the fitted box and blur every shadow. `Environment::shadows = false` turns them off.
+The sun casts shadows by default. Change `scene.environment().shadow_resolution` to control its map size, or set `shadows = false` to disable sun shadows. Keep large receiving floors from casting by setting `RenderFlags::NoShadowCaster` on their `MeshRenderer`.
 
 **A lamp** casts shadows when you ask:
 
@@ -39,15 +39,15 @@ scene.lamp("Torch", { 1.0f, 0.55f, 0.22f }, 3.0f, 11.0f)
     .get<compages::world::PointLight>().shadows = true;
 ```
 
-A lamp shines in every direction, so the Renderer draws the distance to it six times, as six cameras of 90° (the faces of a cube). The faces of the four lamps nearest the camera sit in one atlas of `Environment::lamp_shadow_resolution` texels per face (512; zero turns them off). That is six more draws of the nearby scene per lamp: turn it on for the lamps that matter. Something that holds or surrounds a lamp (a bracket, a flame) must not cast, or it hides the lamp from everything. `10a_MvpDemo` and `10b_DoomLike` use them.
+Set `lamp_shadow_resolution` on the environment to control each lamp face's size; zero disables lamp shadow maps. Request shadows only on lamps that need them. A bulb enclosing a lamp must have `RenderFlags::NoShadowCaster`, or it can block its own light.
+
+Check `10a_MvpDemo` for a moving shadowed lamp. [Shadow mapping](../techniques/shadow-mapping.md) explains the depth comparisons, six lamp faces, bias and rendering cost.
 
 ## 🏮 Hundreds of lamps
 
-A scene may hold up to `LightClusters::MAX_LIGHTS` (256) lamps. The four nearest the camera get uniforms of their own and their shadows; the others are sorted into **clusters**: the picture is cut into 16 × 9 tiles and the depth into 24 slices that thicken with distance, and each lamp goes into every cluster its sphere of light may touch. A pixel reads only the lamps of its cluster, so the cost follows how many lamps reach a pixel, not how many the scene holds. These lamps cast no shadow. The clusters are three storage buffers at bindings 9, 10 and 11 of the lit shaders: keep these free in your own hooks.
+Create ordinary lamps with `scene.lamp(...)`; no additional setting enables the clustered path. Keep their `range` close to the region they should light. Large overlapping ranges increase work even when the lamps are dim.
 
-![06m_ManyLights](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png)
-
-`06m_ManyLights` flies two hundred lamps over a floor. The method is O. Olsson, M. Billeter and U. Assarsson, "Clustered Deferred and Forward Shading" (HPG 2012).
+Run `06m_ManyLights` to vary count and range. [Clustered lighting](../techniques/clustered-lighting.md) describes the view-dependent lists, capacity limits and reserved shader bindings. Only the four direct lamps can use lamp shadow maps.
 
 ## 🌫 Fog that the light crosses
 
@@ -60,9 +60,14 @@ fog.anisotropy = 0.6f;    // light sent mostly forward: bright toward the lights
 fog.noise = 0.5f;         // clumps, drifting with fog.wind
 ```
 
-![06n_VolumetricFog](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png)
+Use this effect when shafts or halos in the air matter. For distance haze, leave it disabled and set `fog_density` and `fog_color` instead. Tune density first, then falloff and anisotropy. The [volumetric fog technique](../techniques/volumetric-fog.md) explains the volume, integration cost and limits.
 
-Shafts of the sun between pillars, halos round the lamps, shadows in the air. The Renderer keeps a 3D picture that follows the camera, 128 × 72 tiles by 64 slices (a **froxel** is a voxel of the view); a compute shader fills each with the density and the light it sends toward the eye, a second one adds them up from the camera outward, and every lit shader reads the result at its pixel. It replaces the plain fog of `fog_density` while it is on. After B. Wronski, "Volumetric Fog" (SIGGRAPH 2014), and S. Hillaire, Frostbite (SIGGRAPH 2015). `06n_VolumetricFog` shows a hall lit through the slats of its roof.
+## 🧯 Common problems
+
+- If an untextured object is black, check its normals and the light direction before raising intensity.
+- If a lamp lights nothing, check its position and range. Its visible bulb is a separate object.
+- If the sky looks correct but the model stays dark, add ambient or direct light. A [skybox](../techniques/skybox.md) is a background.
+- If shadows are blurred, first check the extent of the casting objects, then increase resolution.
 
 ## 🔗 See also
 

@@ -29,7 +29,7 @@ flowchart LR
     S --> SHOW["scene.show(grid, buffer, look)"]
 ```
 
-The five kernels come from one GLSL text: `ShaderSource::define("STEP", n)` chooses the part ([shaders made of pieces](../guides/draw-in-several-passes.md#-shaders-made-of-pieces-shadersource)). Looking *back* (step 1) is what makes it stable at any $\Delta t$.
+The five kernels come from one GLSL text: `ShaderSource::define("STEP", n)` chooses the part ([shaders made of pieces](../guides/manage-shader-sources.md#-shaders-made-of-pieces-shadersource)). Looking *back* (step 1) is what makes it stable at any $\Delta t$.
 
 ## 🚧 Limits
 
@@ -39,4 +39,4 @@ The five kernels come from one GLSL text: `ShaderSource::define("STEP", n)` choo
 
 ## 🔗 See also
 
-[◀ Compute on the GPU](../guides/compute-on-the-gpu.md) · [Draw in several passes: shaders made of pieces](../guides/draw-in-several-passes.md#-shaders-made-of-pieces-shadersource)
+[◀ Compute on the GPU](../guides/compute-on-the-gpu.md) · [Share shader source](../guides/manage-shader-sources.md#-shaders-made-of-pieces-shadersource)

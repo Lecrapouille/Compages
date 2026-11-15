@@ -1,6 +1,6 @@
 # 💡 Bloom
 
-[◀ Cel shading](cel-shading.md) · [⏫ Techniques](README.md) · [Next: Flow mapping ▶](flow-mapping.md)
+[◀ Screen filters](screen-filters.md) · [⏫ Techniques](README.md) · [Next: Texture ping-pong ▶](texture-ping-pong.md)
 
 ![12b_Bloom](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png)
 
@@ -121,4 +121,4 @@ At 1920 × 1080:
 
 ---
 
-[◀ Cel shading](cel-shading.md) · [⏫ Techniques](README.md) · [Next: Flow mapping ▶](flow-mapping.md)
+[◀ Screen filters](screen-filters.md) · [⏫ Techniques](README.md) · [Next: Texture ping-pong ▶](texture-ping-pong.md)

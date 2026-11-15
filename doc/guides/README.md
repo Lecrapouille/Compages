@@ -2,7 +2,7 @@
 
 [⏫ Documentation](../../README.md#-documentation)
 
-Each guide shows how to do one task, with the code and a picture of the result. They assume that you have read the first [tutorials](../tutorials/README.md).
+Each guide helps you complete a task in an existing application. They assume the basics from the [tutorials](../tutorials/README.md). For the reasons behind a choice, read the linked [concepts](../concepts/README.md) or effect-specific [techniques](../techniques/README.md).
 
 Set up and check:
 
@@ -14,7 +14,7 @@ Set up and check:
 Build a scene:
 
 - [Load a model](load-a-model.md): glTF, STL, URDF, animations, copies, saving.
-- [Light the scene](light-the-scene.md): sun, lamps, shadows, exposure, hundreds of lamps, fog.
+- [Light the scene](light-the-scene.md): configure lights, exposure, shadows and fog; effect algorithms are in Techniques.
 - [Move the camera](move-the-camera.md): orbit, fly, drag a map, fly to a place.
 - [Several views](several-views.md): a split screen, a minimap, a picture read by the program.
 - [Draw helpers](draw-helpers.md): grids, axes, debug lines, hidden from a robot camera.
@@ -36,4 +36,5 @@ Compute and simulate:
 - [Write routines](write-routines.md): code on one entity, fixed steps, timers, messages.
 - [Plug a physics engine](plug-a-physics-engine.md): MuJoCo, Bullet or Jolt move the entities.
 - [Compute on the GPU](compute-on-the-gpu.md): compute shaders, ping-pong, barriers.
-- [Draw in several passes](draw-in-several-passes.md): render to a texture, one mesh for several shaders, shaders in pieces, hot reload.
+- [Draw in several passes](draw-in-several-passes.md): render to a texture and reuse one mesh across drawing passes.
+- [Share and reload shader source](manage-shader-sources.md): GLSL includes, shared definitions, compiler messages and hot reload.

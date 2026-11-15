@@ -22,7 +22,7 @@ The barrier makes the writes visible to the next reader. Choose the flag for **t
 
 ## 🏓 Ping-pong: read one copy, write the other
 
-A parallel step must not read and write the same state: one cell could read a neighbour that another cell has already changed. The GPU gives no error for this; the result changes from one run to the next. So keep two copies: `current()` to read (and to draw), `next()` to write, then `swap()` the roles. Nothing is copied.
+When a step reads neighbouring items, keep its input state separate from its output: one cell could otherwise read a neighbour that another cell has already changed. The GPU gives no error for this; the result changes from one run to the next. So keep two copies: `current()` to read (and to draw), `next()` to write, then `swap()` the roles. Nothing is copied.
 
 ```text
 step 1:   A -> B
@@ -61,7 +61,7 @@ m_field.swap();                                          // it becomes current
 m_show["image"] = m_field.current();
 ```
 
-`draw(3u)` with no vertices: the vertex shader makes three corners from `gl_VertexID`, one triangle covers the texture, and each pixel is one cell. A render pass makes its writes visible to the next pass by itself; only a compute dispatch needs the barrier. `05c_GrayScott` and `10c_SweatAndDecals` work this way.
+`draw(3u)` with no vertices: the vertex shader makes three corners from `gl_VertexID`, one triangle covers the texture, and each pixel is one cell. A render pass makes its writes visible to the next pass by itself; only a compute dispatch needs the barrier. `05c_GrayScott` and `10c_SweatAndDecals` work this way. [Texture ping-pong](../techniques/texture-ping-pong.md) explains the feedback hazard and the Game of Life update in detail.
 
 ## 🧱 Work groups and more
 

@@ -1,6 +1,6 @@
 # 🖍 Cel shading and outlines
 
-[⏫ Techniques](README.md) · [Next: Bloom ▶](bloom.md)
+[◀ Skybox](skybox.md) · [⏫ Techniques](README.md) · [Next: Screen filters ▶](screen-filters.md)
 
 ![06o_CelShading](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_CelShading.png)
 
@@ -131,4 +131,4 @@ void main()
 
 ---
 
-[⏫ Techniques](README.md) · [Next: Bloom ▶](bloom.md)
+[◀ Skybox](skybox.md) · [⏫ Techniques](README.md) · [Next: Screen filters ▶](screen-filters.md)

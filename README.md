@@ -175,13 +175,12 @@ Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels. Then follow [
 
 Start with the [tutorials](doc/tutorials/README.md). They follow the three stacked-layer: a shader and some numbers on the GPU, then a robot arm in a World with no screen, then the workshop above drawn by the Renderer, one idea per page.
 
-Then:
+The documentation follows [Diátaxis](https://diataxis.fr/): learn, complete a task, understand, or look up a fact.
 
-- the [guides](doc/guides/README.md) show how to do one task: load a model, light a scene, add a second view, compute on the GPU, find why a window is black;
-- the [techniques](doc/techniques/README.md) explain one effect each, with when to use it and what it costs;
-- the [case studies](doc/case-studies/README.md) follow a whole demo, from the equation or the paper to the picture;
-- the [concepts](doc/concepts/README.md) explain why Compages is built this way;
-- the [reference](doc/reference/README.md) lists the calls, the demos and the shader library.
+- [Tutorials](doc/tutorials/README.md) teach through a sequence of small programs and observable results.
+- [Guides](doc/guides/README.md) give steps for a task in an existing application.
+- Explanations cover design in [concepts](doc/concepts/README.md), rendering algorithms in [techniques](doc/techniques/README.md), and whole demos in [case studies](doc/case-studies/README.md).
+- [Reference](doc/reference/README.md) lists calls, shader interfaces, source locations and gallery options.
 
 Coding agents: [AGENTS.md](AGENTS.md) and the skills of `.claude/skills/`.
 

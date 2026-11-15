@@ -52,7 +52,7 @@ void onMessage(compages::world::Message const& p_message) override
 
 ### 🟦 Very large worlds
 
-Keep the simulation in `double`, outside Compages, and write into the World the positions relative to a moving origin ([very large scenes](very-large-scenes.md#-floating-origin)).
+Keep the simulation in `double`, outside Compages, and write into the World the positions relative to a moving origin ([very large scenes](very-large-scenes.md#-keep-the-simulation-precise)).
 
 ## 🔗 See also
 

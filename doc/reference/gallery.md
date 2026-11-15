@@ -146,7 +146,7 @@ Demos that read files need the `Compages-data` repository, fetched by `make` wit
 | Demo | Idea | Picture |
 |------|------|---------|
 | `05a_Compute` | one computation; `download()` brings the numbers back; a button prints them to the console | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05a_Compute.png" alt="05a_Compute" width="200"> |
-| `05b_GameOfLife` | one cell = one pixel, a `TexturePingPong` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05b_GameOfLife.png" alt="05b_GameOfLife" width="200"> |
+| `05b_GameOfLife` | one cell = one pixel, a `TexturePingPong` ([Texture ping-pong](../techniques/texture-ping-pong.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05b_GameOfLife.png" alt="05b_GameOfLife" width="200"> |
 | `05c_GrayScott` | the same ping-pong, with floats | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05c_GrayScott.png" alt="05c_GrayScott" width="200"> |
 | `05d_ComputeParticles` | compute writes the buffer, the draw reads it | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png" alt="05d_ComputeParticles" width="200"> |
 | `05e_SpiralGalaxy` | a formula of the time, computed in the vertex shader: no CPU loop, no compute shader. Port of the [Glumpy galaxy](https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py) (N. P. Rougier), after [Ingo Berg](https://github.com/beltoforion/Galaxy-Renderer) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05e_SpiralGalaxy.png" alt="05e_SpiralGalaxy" width="200"> |
@@ -176,13 +176,13 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `06e_TexturedSpheres` | color, photo, tinted photo, a see-through glass ball | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06e_TexturedSpheres.png" alt="06e_TexturedSpheres" width="200"> |
 | `06f_GeometryShowcase` | primitives: lit, textured, depth, normals | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06f_GeometryShowcase.png" alt="06f_GeometryShowcase" width="200"> |
 | `06g_TextureGallery` | nine images of the assets repository | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06g_TextureGallery.png" alt="06g_TextureGallery" width="200"> |
-| `06h_Skybox` | six faces; the sky turns with the camera | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06h_Skybox.png" alt="06h_Skybox" width="200"> |
+| `06h_Skybox` | six faces; the sky turns with the camera ([Skybox](../techniques/skybox.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06h_Skybox.png" alt="06h_Skybox" width="200"> |
 | `06i_CameraPick` | orbit or fly, click to select: the cube changes colour and shows its bounds | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06i_CameraPick.png" alt="06i_CameraPick" width="200"> |
 | `06j_SplitViews` | one world, two cameras, one update; the map draws what the left camera sees (`debug().frustum()`) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06j_SplitViews.png" alt="06j_SplitViews" width="200"> |
 | `06k_MiscLookAt` | a thousand cones look at a sphere | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06k_MiscLookAt.png" alt="06k_MiscLookAt" width="200"> |
 | `06l_CanvasPaint` | live albedo: a CPU brush, `CanvasTexture` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06l_CanvasPaint.png" alt="06l_CanvasPaint" width="200"> |
-| `06m_ManyLights` | two hundred coloured lamps in one picture: the Renderer sorts them into clusters (tiles × depth slices), each pixel reads the lamps of its cluster | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png" alt="06m_ManyLights" width="200"> |
-| `06n_VolumetricFog` | fog that the light crosses: sun shafts through the slats of a roof, halos and shadows of lamps in the air (froxels: a 3D picture that follows the camera, filled by two compute shaders) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png" alt="06n_VolumetricFog" width="200"> |
+| `06m_ManyLights` | two hundred coloured lamps in one picture: the Renderer sorts them into clusters (tiles × depth slices), each pixel reads the lamps of its cluster ([Clustered lighting](../techniques/clustered-lighting.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06m_ManyLights.png" alt="06m_ManyLights" width="200"> |
+| `06n_VolumetricFog` | fog that the light crosses: sun shafts through the slats of a roof, halos and shadows of lamps in the air (froxels: a 3D picture that follows the camera, filled by two compute shaders) ([Volumetric fog](../techniques/volumetric-fog.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06n_VolumetricFog.png" alt="06n_VolumetricFog" width="200"> |
 | `06o_CelShading` | another model of light: the hook `light` of the PBR shader draws the sun in flat tones (cel shading); a black outline from a shell drawn inside out ([technique](../techniques/cel-shading.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06o_CelShading.png" alt="06o_CelShading" width="200"> |
 
 ---
@@ -224,7 +224,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 
 | Demo | Idea | Picture |
 |------|------|---------|
-| `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10a_MvpDemo.png" alt="10a_MvpDemo" width="200"> |
+| `10a_MvpDemo` | falling cubes, a lamp that casts shadows, debug boxes ([Shadow mapping](../techniques/shadow-mapping.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10a_MvpDemo.png" alt="10a_MvpDemo" width="200"> |
 | `10b_DoomLike` | the game: photographed materials and props of Poly Haven (CC0), a bolt-action rifle, glTF soldiers and robots, particles, fog, shadows of the wall lamps, two levels | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png" alt="10b_DoomLike" width="200"> |
 | `10c_SweatAndDecals` | a head that sweats, with decals: GPU passes in the UV map of a mesh | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10c_SweatAndDecals.png" alt="10c_SweatAndDecals" width="200"> |
 | `10d_EarthMoon` | a rocket from Kourou to the Moon at the real scale: logarithmic zoom (Shift: faster), reversed depth, floating origin (untick it in Try it to see the 32 m steps); NASA textures | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10d_EarthMoon.png" alt="10d_EarthMoon" width="200"> |
@@ -264,7 +264,7 @@ A view whose camera has `ScreenEffects` is drawn in linear light (RGBA16F), pass
 
 | Demo | Idea | Picture |
 |------|------|---------|
-| `12a_ScreenFilters` | a filter is `vec3 effect(vec2 uv)` in a few lines; three in a row (outlines from the depth, sepia, vignette) on the right view only | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12a_ScreenFilters.png" alt="12a_ScreenFilters" width="200"> |
+| `12a_ScreenFilters` | a filter is `vec3 effect(vec2 uv)` in a few lines; three in a row (outlines from the depth, sepia, vignette) on the right view only ([Screen-space filters](../techniques/screen-filters.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12a_ScreenFilters.png" alt="12a_ScreenFilters" width="200"> |
 | `12b_Bloom` | light brighter than the screen spills round it: bulbs at night, `bloom = { .enabled, .threshold, .strength }` ([technique](../techniques/bloom.md)) | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png" alt="12b_Bloom" width="200"> |
 
 ---

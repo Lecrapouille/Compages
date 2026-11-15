@@ -120,6 +120,8 @@ scene.assets().material(m_concrete)->program.set("tileMetres", 4.0f);
 - A uniform you set is "unknown". The GLSL compiler drops a uniform that does not count in the result. Setting it is a frame error, and `--check` fails. Use it, or do not set it.
 - The clusters of lamps break. Bindings 9, 10 and 11 of the lit shaders hold the clustered lamps: keep them free in your hooks.
 
+For shared GLSL includes and file watching, use [share and reload shader source](manage-shader-sources.md).
+
 ## 🔗 See also
 
 [◀ A look of your own](../tutorials/06-a-look-of-your-own.md) · [Cel shading](../techniques/cel-shading.md) · [Flow mapping](../techniques/flow-mapping.md) · [Draw in several passes](draw-in-several-passes.md) (shaders made of pieces, hot reload)
