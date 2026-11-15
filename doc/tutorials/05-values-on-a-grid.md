@@ -48,7 +48,7 @@ The step needs to know where the tip is. The demo asks the World, after it moved
 
 ```cpp
 m_scene.update(p_frame);                                                     // the arm moves
-m_plate.step(std::min(p_frame.elapsed, 0.05f), m_arm.tool.worldPosition()); // then it heats
+m_plate.step(std::min(p_frame.elapsed, 0.05_s), m_arm.tool.worldPosition()); // then it heats
 ```
 
 `worldPosition()` is the place of the tip in the room, through the whole chain of joints of page 3. `Scene::draw()` is `update()` then `render()`; the demo calls the two halves, with its own work in between.

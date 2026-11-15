@@ -12,6 +12,8 @@
 #include <cmath>
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -140,8 +142,9 @@ compages::Status VertexSyntax::setUp()
 // ----------------------------------------------------------------------------
 void VertexSyntax::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float t = p_frame.total;
-    const float wave = 0.5f + 0.5f * std::sin(2.0f * t);
+    const compages::si::Seconds t = p_frame.total;
+    const float wave = 0.5f + 0.5f * units::math::sin(2.0_rad_per_s * t);
+    const compages::si::Radians turn = 1.0_rad_per_s * t;
 
     // 1. One value of one attribute, by name.
     m_by_name["color"].set(0u, compages::Vector3f(wave, 0.3f, 0.3f));
@@ -151,8 +154,8 @@ void VertexSyntax::draw(compages::world::ViewFrame const& p_frame)
     turned.reserve(POSITIONS.size());
     for (compages::Vector2f const& p : POSITIONS)
     {
-        turned.emplace_back(p.x * std::cos(t) - p.y * std::sin(t),
-                            p.x * std::sin(t) + p.y * std::cos(t));
+        turned.emplace_back(p.x * units::math::cos(turn) - p.y * units::math::sin(turn),
+                            p.x * units::math::sin(turn) + p.y * units::math::cos(turn));
     }
     m_whole_attribute["position"] = turned;
 

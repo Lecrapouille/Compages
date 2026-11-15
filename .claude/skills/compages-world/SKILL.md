@@ -58,6 +58,18 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 
 ## Rules
 
+- SI units first: a time, an angle or a speed is a `compages::si` type
+  (`Seconds`, `Radians`, `AngularVelocity`, `LinearVelocity`, `Length`…, in
+  `Core/Units.hpp`), not a bare `float`/`double`, above all in a public API.
+  Write values with `using namespace compages::si::literals;` (`0.5_s`,
+  `90.0_deg`, `1.2_rad_per_s`, `9.81_mps_sq`). A speed times `frame.elapsed`
+  gives the step (`spin * dt` is `Radians`). Trigonometry and maths on
+  quantities use the units library: `units::math::sin(2.0_rad_per_s * t)`,
+  `cos`, `atan2`, `hypot`, `abs`, `exp(-t / 5.0_s)`; never
+  `std::sin(compages::toSeconds(t) * 2.0f)`. `toSeconds`/`toRadians`/
+  `toMetres` only hand a number to code that takes floats. A
+  uniform takes a time or an angle as is (`drawable["time"] = frame.total`).
+  Positions, sizes and colours stay `float`/`Vector3f` (metres).
 - `world` includes only `Core`: no `gpu::` type, no mesh, no window here.
   Meshes/materials/clips belong to `compages::renderer`.
 - Store `EntityId` (generational) rather than raw pointers.

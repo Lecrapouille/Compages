@@ -294,7 +294,7 @@ public:
         {
             robot.parent(Entity(m_world, p_parent));
         }
-        robot.rotation(-0.5f * std::numbers::pi_v<float>,
+        robot.rotation(si::Radians(-0.5 * std::numbers::pi),
                        compages::Vector3f(1.0f, 0.0f, 0.0f));
         Status built = addLink(*root_link, robot.child(root_link->name));
         if (!built)

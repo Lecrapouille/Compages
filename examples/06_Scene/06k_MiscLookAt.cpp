@@ -12,6 +12,8 @@
 #include <cmath>
 #include <random>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -63,10 +65,10 @@ compages::Status MiscLookAt::setUp()
 void MiscLookAt::draw(compages::world::ViewFrame const& p_frame)
 {
     // A Lissajous path. Every cone is aimed at the same point.
-    const float t = p_frame.total;
-    const compages::Vector3f target(std::sin(t * 0.7f) * 900.0f - 25.0f,
-                                          std::cos(t * 0.5f) * 400.0f - 25.0f,
-                                          std::cos(t * 0.3f) * 900.0f - 25.0f);
+    const compages::si::Seconds t = p_frame.total;
+    const compages::Vector3f target(units::math::sin(0.7_rad_per_s * t) * 900.0f - 25.0f,
+                                          units::math::cos(0.5_rad_per_s * t) * 400.0f - 25.0f,
+                                          units::math::cos(0.3_rad_per_s * t) * 900.0f - 25.0f);
     m_sphere.position(target);
     for (compages::world::Entity& cone : m_cones)
     {

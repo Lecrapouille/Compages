@@ -101,7 +101,7 @@ void IndexedCube::draw(compages::world::ViewFrame const& p_frame)
 
     const compages::Matrix44f model =
         compages::rotate(identity,
-                         units::angle::radian_t(p_frame.total * 0.7f),
+                         0.7_rad_per_s * p_frame.total,
                          compages::Vector3f(0.3f, 1.0f, 0.2f));
 
     const compages::Matrix44f view =

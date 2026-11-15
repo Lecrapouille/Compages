@@ -15,6 +15,8 @@
 #include <cmath>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples::archipelago
 {
 
@@ -411,8 +413,8 @@ void Wildlife::fly(Bird& p_bird,
     // The lean of the turn, the V and the beat add up on the high wing:
     // kept under about 60 degrees, or the gull looks like a post.
     const float lift = 0.25f + (0.45f * flapping * beat);
-    p_bird.left.rotation(-lift, Vector3f(0.0f, 0.0f, 1.0f));
-    p_bird.right.rotation(lift, Vector3f(0.0f, 0.0f, 1.0f));
+    p_bird.left.rotation(compages::si::Radians(-lift), Vector3f(0.0f, 0.0f, 1.0f));
+    p_bird.right.rotation(compages::si::Radians(lift), Vector3f(0.0f, 0.0f, 1.0f));
 }
 
 // ----------------------------------------------------------------------------

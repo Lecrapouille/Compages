@@ -23,6 +23,8 @@
 #include <numbers>
 #include <span>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -205,7 +207,7 @@ compages::Status FlowingWater::makeWater()
 
     // A square standing in XY, laid on the water.
     m_water = m_scene.plane("Water");
-    m_water.rotation(-0.5f * PI, Vector3f(1.0f, 0.0f, 0.0f))
+    m_water.rotation(-90.0_deg, Vector3f(1.0f, 0.0f, 0.0f))
         .scale(2.0f * HALF_X, 2.0f * HALF_Z, 1.0f)
         .position(0.0f, LEVEL, 0.0f);
     m_scene.look(m_water, m_water_material);
@@ -329,7 +331,7 @@ void FlowingWater::buildPool()
         // A cylinder stands along Y: turned a quarter round Z, it lies along X.
         return solid(m_scene.cylinder(p_name)
                          .position(p_at)
-                         .rotation(0.5f * PI, Vector3f(0.0f, 0.0f, 1.0f))
+                         .rotation(90.0_deg, Vector3f(0.0f, 0.0f, 1.0f))
                          .scale(p_across, p_length, p_across),
                      p_material,
                      p_tint,
@@ -515,7 +517,7 @@ void FlowingWater::buildPool()
     {
         solid(m_scene.cylinder(p_name)
                   .position(m_jet.mouth.x, pipe_y, p_z)
-                  .rotation(0.5f * PI, Vector3f(1.0f, 0.0f, 0.0f))
+                  .rotation(90.0_deg, Vector3f(1.0f, 0.0f, 0.0f))
                   .scale(p_across, p_length, p_across),
               m_metal,
               p_tint,
@@ -545,7 +547,7 @@ void FlowingWater::buildPool()
     m_scene
         .cylinder("Drain hole", compages::renderer::unlit(0.01f, 0.01f, 0.01f))
         .position(m_jet.mouth.x, pipe_y, 6.3f)
-        .rotation(0.5f * PI, Vector3f(1.0f, 0.0f, 0.0f))
+        .rotation(90.0_deg, Vector3f(1.0f, 0.0f, 0.0f))
         .scale(0.56f, 0.02f, 0.56f);
 
     // A catwalk across the pool: its legs only touch the water.
@@ -730,7 +732,7 @@ void FlowingWater::drift(float p_dt)
         const float bob = 0.04f * std::sin((1.7f * m_time) + (2.1f * float(n)));
         floater.body
             .position(floater.at.x, LEVEL + floater.height + bob, floater.at.y)
-            .rotation(floater.yaw, Vector3f(0.0f, 1.0f, 0.0f));
+            .rotation(compages::si::Radians(floater.yaw), Vector3f(0.0f, 1.0f, 0.0f));
     }
 }
 
@@ -868,7 +870,7 @@ void FlowingWater::setUniforms()
 // ----------------------------------------------------------------------------
 void FlowingWater::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float dt = m_paused ? 0.0f : std::min(p_frame.elapsed, 0.1f);
+    const float dt = m_paused ? 0.0f : compages::toSeconds(std::min(p_frame.elapsed, 0.1_s));
     m_time += dt;
     click(p_frame);
     drift(dt);

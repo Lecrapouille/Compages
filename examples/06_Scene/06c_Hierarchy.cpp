@@ -10,6 +10,8 @@
 #include <cmath>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -29,7 +31,7 @@ compages::Status Hierarchy::setUp()
     m_scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.4f);
     // A plane stands in XY: lay it down.
     m_scene.plane("Ground", compages::renderer::color(0.3f, 0.35f, 0.3f))
-        .rotation(-std::numbers::pi_v<float> / 2.0f, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(10.0f);
 
     // The pivot, then the parts placed relative to it.
@@ -47,7 +49,7 @@ compages::Status Hierarchy::setUp()
             m_scene.cylinder("Wheel", black)
                 .parent(m_car)
                 .position(x, 0.3f, z)
-                .rotation(std::numbers::pi_v<float> / 2.0f, { 1.0f, 0.0f, 0.0f })
+                .rotation(90.0_deg, { 1.0f, 0.0f, 0.0f })
                 .scale(0.6f, 0.2f, 0.6f);
         }
     }
@@ -58,9 +60,9 @@ compages::Status Hierarchy::setUp()
 void Hierarchy::draw(compages::world::ViewFrame const& p_frame)
 {
     // Round a circle of radius 2.5, nose forward.
-    const float angle = 0.5f * p_frame.total;
-    m_car.position(2.5f * std::cos(angle), 0.0f, -2.5f * std::sin(angle))
-        .rotation(angle + (std::numbers::pi_v<float> / 2.0f), { 0.0f, 1.0f, 0.0f });
+    const compages::si::Radians angle = 0.5_rad_per_s * p_frame.total;
+    m_car.position(2.5f * units::math::cos(angle), 0.0f, -2.5f * units::math::sin(angle))
+        .rotation(angle + 90.0_deg, { 0.0f, 1.0f, 0.0f });
     m_scene.draw(p_frame);
 }
 

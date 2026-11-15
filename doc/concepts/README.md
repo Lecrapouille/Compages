@@ -11,4 +11,4 @@ These pages explain why Compages is built the way it is. Each one starts from a 
 - [Fields and grids](fields-and-grids.md): how a temperature or a wind is stored, computed and shown.
 - [Errors](errors.md): why some errors come back at once and others at the end of the frame.
 - [Architecture](architecture.md): the folders, who includes whom, where to start reading the code.
-- [Glossary](glossary.md): the 3D words used in this documentation.
+- [Glossary](../tutorials/00-glossary.md): the 3D words used in this documentation.

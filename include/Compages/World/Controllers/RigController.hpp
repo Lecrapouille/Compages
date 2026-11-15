@@ -54,7 +54,7 @@ struct RigInput
     //! \brief Width / height of the viewport.
     float aspect = 1.0f;
     //! \brief Vertical field of view, in radians.
-    float fov = 0.785398f;
+    si::Radians fov{ 0.785398 };
 };
 
 // ----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ struct RigInput
 //! \param[in] p_frame The viewport size.
 //! \param[in] p_fov Vertical field of view of the camera, in radians.
 // ----------------------------------------------------------------------------
-[[nodiscard]] RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, float p_fov);
+[[nodiscard]] RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, si::Radians p_fov);
 
 // ****************************************************************************
 //! \brief A strategy-game camera: it looks at a target on the ground, from a
@@ -106,9 +106,9 @@ public:
     //! \brief Wanted point looked at, on the ground.
     compages::Vector3f target{ 0.0f, 0.0f, 0.0f };
     //! \brief Wanted angle around the vertical axis (rad).
-    float yaw = 0.0f;
+    si::Radians yaw{ 0.0 };
     //! \brief Wanted angle above the horizon (rad), negative looks down.
-    float pitch = -0.6f;
+    si::Radians pitch{ -0.6 };
     //! \brief Wanted distance from the target.
     float distance = 5.0f;
 
@@ -119,19 +119,19 @@ public:
     //! \brief Key move speed, in distances per second (far: faster).
     float move_speed = 0.8f;
     //! \brief Key turn speed (rad/s).
-    float turn_speed = 1.5f;
+    si::AngularVelocity turn_speed{ 1.5 };
     //! \brief Key zoom speed: log of the distance change per second.
     float zoom_speed = 1.2f;
     //! \brief Factor of the speeds while \c boost is held.
     float boost = 3.0f;
     //! \brief Radians per pixel of mouse motion while rotating.
-    float look_sensitivity = 0.005f;
+    si::Radians look_sensitivity{ 0.005 };
     //! \brief Log of the distance change per notch of the wheel.
     float zoom_step = 0.12f;
     float min_distance = 0.2f;
     float max_distance = 100.0f;
-    float min_pitch = -1.55f;
-    float max_pitch = 0.3f;
+    si::Radians min_pitch{ -1.55 };
+    si::Radians max_pitch{ 0.3 };
     //! \brief Seconds of a flight per unit of its path: a path unit is a
     //! zoom by e (2.7 times) or a pan of one view width.
     float flight_pace = 0.8f;
@@ -147,7 +147,7 @@ public:
     //! \brief Consume one frame of input, glide and write the camera pose.
     //! \param[in] p_dt Seconds since the previous frame.
     // ------------------------------------------------------------------------
-    void apply(World& p_world, EntityId p_camera, RigInput const& p_input, float p_dt);
+    void apply(World& p_world, EntityId p_camera, RigInput const& p_input, si::Seconds p_dt);
 
     // ------------------------------------------------------------------------
     //! \brief Jump to the wanted pose now (no glide), and write it.
@@ -208,12 +208,12 @@ private:
 
     //! \brief Advance the flight by \p p_dt and write where it is in the
     //! pose now; forget it at its end.
-    void fly(float p_dt);
+    void fly(si::Seconds p_dt);
 
     //! Pose now: it glides toward the wanted one.
     compages::Vector3f m_target{ 0.0f, 0.0f, 0.0f };
-    float m_yaw = 0.0f;
-    float m_pitch = -0.6f;
+    si::Radians m_yaw{ 0.0 };
+    si::Radians m_pitch{ -0.6 };
     float m_distance = 5.0f;
     //! Point of the ground grabbed by the pan.
     compages::Vector3f m_grab{ 0.0f, 0.0f, 0.0f };

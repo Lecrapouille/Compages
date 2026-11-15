@@ -9,6 +9,8 @@
 
 #include "Compages/Renderer/Procedural/Primitives.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -26,12 +28,12 @@ compages::Status GeometryShowcase::setUp()
     // The camera turns around the plateau by itself.
     m_scene.background(0.06f, 0.07f, 0.10f).ambient(0.22f, 0.22f, 0.24f);
     m_scene.camera().position(0.0f, 7.0f, 14.0f).add<compages::world::Orbit>();
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.28f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.28_rad_per_s;
     m_scene.sun();
 
     // The plane stands in XY: turned a quarter around X, it lies flat.
     m_scene.plane("Plateau", compages::renderer::color(0.42f, 0.44f, 0.48f))
-        .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(16.0f, 12.0f, 1.0f);
 
     // The textured shader without a picture: it samples white.
@@ -77,7 +79,7 @@ compages::Status GeometryShowcase::setUp()
                         compages::renderer::makeTube(0.35f, 0.55f, 0.95f, 18u));
     m_scene.mesh(std::move(tube), "tube", compages::renderer::normals())
         .position(-3.0f, 0.48f, 3.0f)
-        .rotation(1.5707963f, { 1.0f, 0.0f, 0.0f });
+        .rotation(90.0_deg, { 1.0f, 0.0f, 0.0f });
     return m_scene.prepare();
 }
 
@@ -87,7 +89,7 @@ void GeometryShowcase::draw(compages::world::ViewFrame const& p_frame)
     // The shapes turn; the plateau stays.
     for (compages::world::Entity& prop : m_props)
     {
-        prop.rotate(0.45f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
+        prop.rotate(0.45_rad_per_s * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);
 }

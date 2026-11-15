@@ -43,7 +43,7 @@ struct RoutineList: compages::NotCopiable
 //! World::endStep(); see Routine for the order of the calls.
 //!
 //! \code
-//! world.routines().fixedStep(1.0f / 120.0f);   // fixedUpdate() at 120 Hz
+//! world.routines().fixedStep(si::Seconds(1.0 / 120.0));   // fixedUpdate() at 120 Hz
 //! auto* orbit = world.routines().find<compages::world::Orbit>(camera);
 //! \endcode
 // ****************************************************************************
@@ -110,10 +110,10 @@ public:
     }
 
     //! \brief The pace of fixedUpdate(), in seconds. 1/60 by default.
-    void fixedStep(float p_seconds);
+    void fixedStep(si::Seconds p_seconds);
 
     //! \brief The pace of fixedUpdate(), in seconds.
-    [[nodiscard]] float fixedStep() const
+    [[nodiscard]] si::Seconds fixedStep() const
     {
         return m_fixed_step;
     }
@@ -121,10 +121,10 @@ public:
     //! \brief onEnable(), onDisable() and start() where needed, then
     //! fixedUpdate() as many times as the elapsed time holds fixed steps, then
     //! update(). Called by World::step().
-    void update(float p_dt);
+    void update(si::Seconds p_dt);
 
     //! \brief lateUpdate() of the active routines. Called by World::endStep().
-    void lateUpdate(float p_dt);
+    void lateUpdate(si::Seconds p_dt);
 
     //! \brief onDisable() and onDestroy() of the routines of an entity, then
     //! drop them. Called by World::destroy() while the entity is alive.
@@ -154,7 +154,7 @@ private:
     void deliver(EntityId p_to, Message const& p_message);
     void refresh();
     //! \brief Advance the timers of a routine, calling those that are due.
-    void tick(Entry const& p_entry, float p_dt);
+    void tick(Entry const& p_entry, si::Seconds p_dt);
     //! \brief onDisable() if active, then onDestroy().
     static void retire(Routine& p_routine);
 
@@ -166,8 +166,8 @@ private:
     std::vector<Entry> m_order;
     bool m_sorted = true;
     std::uint64_t m_next_rank = 0u;
-    float m_fixed_step = 1.0f / 60.0f;
-    float m_accumulator = 0.0f;
+    si::Seconds m_fixed_step{ 1.0 / 60.0 };
+    si::Seconds m_accumulator{ 0.0 };
 };
 
 } // namespace compages::world

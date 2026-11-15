@@ -11,6 +11,8 @@
 
 #include <algorithm>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -30,7 +32,7 @@ compages::Status WorkshopHeat::setUp()
     m_arm = workshop::buildArm(m_world);
     workshop::dressArm(m_scene, m_arm);
     m_plate.create(m_scene);
-    m_plate.warmUp(m_scene, m_arm, 12.0f);
+    m_plate.warmUp(m_scene, m_arm, 12.0_s);
     return m_scene.prepare();
 }
 
@@ -39,7 +41,7 @@ void WorkshopHeat::draw(compages::world::ViewFrame const& p_frame)
 {
     // Move the arm first, then heat where its tip is now.
     m_scene.update(p_frame);
-    m_plate.step(std::min(p_frame.elapsed, 0.05f), m_arm.tool.worldPosition());
+    m_plate.step(std::min(p_frame.elapsed, 0.05_s), m_arm.tool.worldPosition());
     if (const compages::Status shown = m_plate.show(m_scene); !shown)
     {
         compages::gpu::reportError(shown.error());

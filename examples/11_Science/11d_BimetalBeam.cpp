@@ -16,6 +16,8 @@
 #include <cmath>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -205,7 +207,7 @@ compages::Status BimetalBeam::setUp()
     // A plane stands in x, y: laid down, facing up.
     m_scene.plane("Bench", compages::renderer::color(0.75f, 0.75f, 0.72f))
         .position(0.5f, -0.25f, 0.0f)
-        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(3.0f, 2.0f, 1.0f);
     return m_scene.prepare();
 }
@@ -259,7 +261,7 @@ void BimetalBeam::bend()
 // ----------------------------------------------------------------------------
 void BimetalBeam::draw(compages::world::ViewFrame const& p_frame)
 {
-    heat(m_speed * std::min(p_frame.elapsed, 0.05f));
+    heat(m_speed * compages::toSeconds(std::min(p_frame.elapsed, 0.05_s)));
     bend();
     m_line.write(m_slices);
     m_flame.enable(m_burning);

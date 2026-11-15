@@ -112,7 +112,7 @@ void Lorenz::draw(compages::world::ViewFrame const& p_frame)
 
     m_trail["model"] =
         compages::rotate(compages::Matrix44f(compages::matrix::Identity),
-                         units::angle::radian_t(p_frame.total * 0.35f),
+                         0.35_rad_per_s * p_frame.total,
                          compages::Vector3f(0.15f, 1.0f, 0.1f));
     m_trail["projection"] =
         compages::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);

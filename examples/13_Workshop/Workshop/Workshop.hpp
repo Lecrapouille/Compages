@@ -28,6 +28,8 @@
 #include "Compages/Renderer/Render/RenderTarget.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples::workshop
 {
 
@@ -64,9 +66,9 @@ public:
     //! \brief The field at room temperature, shown on the top of the table.
     void create(compages::renderer::Scene& p_scene);
     //! \brief \c p_seconds of heat: from \c p_tool if it touches, then spread.
-    void step(float p_seconds, compages::Vector3f const& p_tool);
+    void step(compages::si::Seconds p_seconds, compages::Vector3f const& p_tool);
     //! \brief Run \c p_seconds of work before the first frame.
-    void warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, float p_seconds);
+    void warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, compages::si::Seconds p_seconds);
     //! \brief Send the new values to the picture.
     [[nodiscard]] compages::Status show(compages::renderer::Scene& p_scene);
 
@@ -102,7 +104,7 @@ public:
     [[nodiscard]] compages::Status create(compages::renderer::Scene& p_scene, Arm const& p_arm);
     //! \brief Draw into the picture of the robot, and read it four times
     //! a second (\c p_elapsed: the seconds since the last frame).
-    [[nodiscard]] compages::Status look(compages::renderer::Scene& p_scene, float p_elapsed);
+    [[nodiscard]] compages::Status look(compages::renderer::Scene& p_scene, compages::si::Seconds p_elapsed);
     //! \brief Draw the view of the robot in its corner of the window.
     void show(compages::renderer::Scene& p_scene);
     //! \brief The share of the picture of the robot that is the blue part.
@@ -115,7 +117,7 @@ private:
 
     compages::world::Entity m_camera;
     compages::renderer::RenderTarget m_picture;
-    float m_wait = 0.0f;
+    compages::si::Seconds m_wait{ 0.0 };
     float m_seen = 0.0f;
 };
 

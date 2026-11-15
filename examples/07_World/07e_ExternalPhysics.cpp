@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -141,10 +143,10 @@ struct ExternalPhysics::Physics: compages::world::Routine
     {
     }
 
-    void fixedUpdate(float p_dt) override
+    void fixedUpdate(compages::si::Seconds p_dt) override
     {
         // 1. The engine moves its bodies.
-        engine.step(p_dt);
+        engine.step(compages::toSeconds(p_dt));
 
         // 2. Its result goes into the entities.
         for (std::size_t i = 0u; i < balls.size(); ++i)
@@ -190,9 +192,9 @@ struct ExternalPhysics::Squash: compages::world::Routine
         }
     }
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
-        swell = std::max(0.0f, swell - (3.0f * p_dt));
+        swell = std::max(0.0f, swell - (3.0f * compages::toSeconds(p_dt)));
         entity().scale(size * (1.0f + (0.6f * swell)));
     }
 
@@ -237,7 +239,7 @@ compages::Status ExternalPhysics::setUp()
     // The plane is built standing in XY: laid down, it is the floor y = 0.
     compages::world::Entity floor =
         m_scene.plane("Floor", compages::renderer::color(0.3f, 0.32f, 0.36f))
-            .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+            .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
             .scale(2.0f * m_engine.half_box);
 
     throwBalls();

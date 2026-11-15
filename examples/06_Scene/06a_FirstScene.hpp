@@ -26,7 +26,7 @@ namespace examples
 //! m_scene.sun();
 //! m_cube = m_scene.box("Cube", compages::renderer::color(0.9f, 0.2f, 0.1f));
 //! ...
-//! m_cube.rotate(p_frame.elapsed, { 0.4f, 1, 0 });
+//! m_cube.rotate(1.0_rad_per_s * p_frame.elapsed, { 0.4f, 1, 0 });
 //! m_scene.draw(p_frame);
 //! \endcode
 //!

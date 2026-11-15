@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -35,7 +37,7 @@ void ClearScreen::draw(compages::world::ViewFrame const& p_frame)
     // directions. The sine is -1 to +1, so scale and shift it to 0 to 1. The
     // pulse is faster than the frame counter, so that the two halves change
     // colour at different speeds.
-    const float pulse = 0.5f + (0.5f * std::sin(p_frame.total * 1.5f));
+    const float pulse = 0.5f + (0.5f * units::math::sin(1.5_rad_per_s * p_frame.total));
 
     // The whole window, in one call.
     compages::gpu::clear({ 0.05f, 0.05f, 0.08f });

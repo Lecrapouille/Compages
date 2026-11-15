@@ -8,6 +8,8 @@
 #include "06_Scene/06h_Skybox.hpp"
 #include "Common/DataPath.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -40,7 +42,7 @@ compages::Status Skybox::setUp()
     // The sky is part of the scene, not a second draw.
     m_scene.skybox(faces).ambient(0.18f, 0.18f, 0.20f);
     m_scene.camera().position(0.0f, 1.5f, 4.5f).add<compages::world::Orbit>();
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.15f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.15_rad_per_s;
     m_scene.sun();
     m_cube = m_scene.box("Cube", compages::renderer::color(0.85f, 0.55f, 0.25f))
                  .scale(1.2f);
@@ -51,8 +53,8 @@ compages::Status Skybox::setUp()
 void Skybox::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns. The sky only turns when the camera does.
-    m_cube.rotate(0.9f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f })
-        .rotate(0.5f * p_frame.elapsed, { 1.0f, 0.0f, 0.0f });
+    m_cube.rotate(0.9_rad_per_s * p_frame.elapsed, { 0.0f, 1.0f, 0.0f })
+        .rotate(0.5_rad_per_s * p_frame.elapsed, { 1.0f, 0.0f, 0.0f });
     m_scene.draw(p_frame);
 }
 

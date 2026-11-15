@@ -79,7 +79,7 @@ struct LocalTransform
 //! \code
 //! compages::world::LocalTransformView t = world.transform(entity);
 //! t.position = { 1, 0, 0 };
-//! t.rotateY(world.frame().elapsed);
+//! t.rotateY(1.0_rad_per_s * world.frame().elapsed);
 //! compages::Matrix44f M = compages::world::localMatrix(static_cast<compages::world::LocalTransform>(t));
 //! \endcode
 // ****************************************************************************
@@ -129,29 +129,29 @@ public:
     }
 
     //! \brief Rotate around an axis in the entity's local frame (three.js style).
-    LocalTransformView& rotate(float p_radians, compages::Vector3f const& p_axis)
+    LocalTransformView& rotate(si::Radians p_radians, compages::Vector3f const& p_axis)
     {
         rotation =
-            rotation * compages::Quatf::fromAngleAxis(units::angle::radian_t(p_radians),
+            rotation * compages::Quatf::fromAngleAxis(p_radians,
                                             compages::vector::normalize(p_axis));
         rotation.normalize();
         return *this;
     }
 
     //! \brief Turn around the entity's own y axis (like a spinning top).
-    LocalTransformView& rotateY(float p_radians)
+    LocalTransformView& rotateY(si::Radians p_radians)
     {
         return rotate(p_radians, compages::Vector3f(0.0f, 1.0f, 0.0f));
     }
 
     //! \brief Rotate around local +X.
-    LocalTransformView& rotateX(float p_radians)
+    LocalTransformView& rotateX(si::Radians p_radians)
     {
         return rotate(p_radians, compages::Vector3f(1.0f, 0.0f, 0.0f));
     }
 
     //! \brief Rotate around local +Z.
-    LocalTransformView& rotateZ(float p_radians)
+    LocalTransformView& rotateZ(si::Radians p_radians)
     {
         return rotate(p_radians, compages::Vector3f(0.0f, 0.0f, 1.0f));
     }

@@ -353,12 +353,6 @@ public:
             p_radians, compages::vector::normalize(p_axis)));
     }
 
-    //! \brief Set the orientation to an angle, in radians, around an axis.
-    Entity& rotation(float p_radians, compages::Vector3f const& p_axis)
-    {
-        return rotation(units::angle::radian_t(p_radians), p_axis);
-    }
-
     [[nodiscard]] compages::Quatf rotation() const
     {
         if (LocalTransform const* origin = joint().origin())
@@ -368,8 +362,8 @@ public:
         return world().transforms().rotation(m_id);
     }
 
-    //! \brief Turn by an angle, in radians, around an axis of the entity.
-    Entity& rotate(float p_radians, compages::Vector3f const& p_axis)
+    //! \brief Turn by an angle around an axis of the entity.
+    Entity& rotate(si::Radians p_radians, compages::Vector3f const& p_axis)
     {
         place().rotate(p_radians, p_axis);
         return *this;

@@ -39,14 +39,14 @@ struct DoomLike::Flicker: compages::world::Routine
 {
     explicit Flicker(float p_phase) : phase(p_phase) {}
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
-        const float t = frame().total + phase;
+        const compages::si::Seconds t = frame().total + compages::si::Seconds(phase);
         compages::world::PointLight& light = entity().get<compages::world::PointLight>();
         // A hum of two unrelated speeds; a short drop about one second in
         // twelve, at a moment that changes with the lamp.
-        const float hum = 3.0f + (0.15f * std::sin(t * 13.0f)) + (0.1f * std::sin(t * 7.3f));
-        const float slot = std::floor(t * 6.0f);
+        const float hum = 3.0f + (0.15f * units::math::sin(13.0_rad_per_s * t)) + (0.1f * units::math::sin(7.3_rad_per_s * t));
+        const float slot = units::math::floor(6.0_Hz * t);
         const float chance = std::fmod(std::abs(std::sin((slot * 12.9898f) + (phase * 78.233f)) * 43758.5453f), 1.0f);
         light.intensity = (chance > 0.985f) ? (0.25f * hum) : hum;
     }
@@ -335,7 +335,7 @@ compages::Status DoomLike::placeCell(char p_cell, std::size_t p_column, std::siz
                                                  { "old_military_crate_a", "old_military_crate_lid_a",
                                                    "old_military_crate_loop_a", "old_military_crate_latch_a",
                                                    "old_military_crate_cloth_a" }));
-            const float turn = float((p_column * 7u) + p_row);
+            const compages::si::Radians turn(float((p_column * 7u) + p_row));
             crate.position(at.x, doom::CRATE, at.z)
                 .rotation(turn, compages::Vector3f(0.0f, 1.0f, 0.0f))
                 .scale(1.4f);
@@ -353,7 +353,7 @@ compages::Status DoomLike::placeCell(char p_cell, std::size_t p_column, std::siz
             compages::world::Entity barrel;
             COMPAGES_TRY_ASSIGN(barrel, placeProp(m_content.barrel_prefab, {}));
             barrel.position(at.x, 0.0f, at.z)
-                .rotation(float(p_column + p_row), compages::Vector3f(0.0f, 1.0f, 0.0f))
+                .rotation(compages::si::Radians(float(p_column + p_row)), compages::Vector3f(0.0f, 1.0f, 0.0f))
                 .scale(1.2f);
             m_cast.barrels.emplace_back(barrel, at);
             break;
@@ -412,7 +412,7 @@ void DoomLike::placeTubes(std::size_t p_column, std::size_t p_row)
     {
         return;
     }
-    const float turn = ((p_column + p_row) % 2u == 0u) ? 0.0f : 0.5f * PI;
+    const compages::si::Radians turn = ((p_column + p_row) % 2u == 0u) ? 0.0_deg : 90.0_deg;
     fixture.value()
         .position(at.x, WALL_HEIGHT, at.z)
         .rotation(turn, compages::Vector3f(0.0f, 1.0f, 0.0f))
@@ -476,7 +476,7 @@ void DoomLike::placeTorch(std::size_t p_column, std::size_t p_row)
     // The sconce of the file faces +z from its wall at z = 0: turn it to face
     // away from the wall.
     const compages::Vector3f wall = post ? at : (at + (toward * (CELL * 0.5f)));
-    const float yaw = std::atan2(-toward.x, -toward.z);
+    const compages::si::Radians yaw(std::atan2(-toward.x, -toward.z));
     compages::world::Entity sconce;
     if (auto placed = placeProp(m_content.sconce_prefab, { "industrial_caged_sconce_a" }))
     {
@@ -582,7 +582,7 @@ void DoomLike::playOnce(compages::world::EntityId p_model,
             m_level_scene.world->tryGet<compages::renderer::Animator>(p_model))
     {
         animator->loop = false;
-        animator->time = 0.0f;
+        animator->time = 0.0_s;
         animator->playing = true;
     }
 }
@@ -612,7 +612,7 @@ float DoomLike::clipLength(compages::world::EntityId p_model,
                 m_content.assets.animation(id);
             if ((clip != nullptr) && (clip->name == p_clip))
             {
-                return clip->duration;
+                return compages::toSeconds(clip->duration);
             }
         }
     }
@@ -735,7 +735,7 @@ void DoomLike::drawAimCrosshair()
 // ----------------------------------------------------------------------------
 void DoomLike::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float dt = p_frame.elapsed;
+    const float dt = compages::toSeconds(p_frame.elapsed);
     tickTimers(dt);
 
     if (m_session.state == State::Playing)

@@ -1,8 +1,8 @@
 # 📖 Glossary
 
-[⏫ Concepts](README.md)
+[⏫ Tutorials](README.md) · [Next: install and run ▶](01-install.md)
 
-The words of 3D programming that the documentation uses, in plain terms. Other pages link here the first time they use a word; you do not need to read this page from top to bottom.
+3D programming has its own words, and the tutorials use them from the first page. Read this page once before you start: ten minutes are enough. You do not need to remember everything. When a tutorial uses a word you do not know, come back here.
 
 ## 📐 Places, directions and time
 
@@ -15,7 +15,21 @@ A point in space has three coordinates, **(x, y, z)**. In Compages, as in most 3
 | **Rotation** | A turn round an axis. Angles are in radians (a full turn is about 6.283) unless written `90.0_deg`. |
 | **Scale** | A change of size, maybe different along each axis. |
 | **Local / world** | A local position is measured from the parent; a world position includes every parent. A wheel at x = 1 on a car at x = 2 is at world x = 3. |
-| **Frame** | One step of the program. A speed of 2 m/s moves a thing by `2 × elapsed` metres at each frame, so the speed does not depend on the frame rate. |
+| **Frame** | One step of the program. `frame.elapsed` is the time since the previous step, `frame.total` the time since the start. A speed of 2 m/s moves a thing by `2 × elapsed` metres at each frame, so the speed does not depend on the frame rate. |
+
+## 📏 Units
+
+A number alone does not say if it is seconds, metres or radians. In Compages, a time, an angle or a speed carries its unit in its type, from the `compages::si` namespace (SI is the international system of units). If you give metres where the code wants an angle, the program does not compile.
+
+| Type | Unit | Written as |
+|------|------|------------|
+| `compages::si::Seconds` | second | `0.5_s` |
+| `compages::si::Radians` | radian (a full turn is about 6.283) | `1.2_rad`, or `90.0_deg` (converted) |
+| `compages::si::AngularVelocity` | radian per second | `1.2_rad_per_s` |
+| `compages::si::LinearVelocity` | metre per second | `2.0_mps` |
+| `compages::si::Length` | metre | `0.5_m`, `12.0_cm` |
+
+The suffixes need one line at the top of your file: `using namespace compages::si::literals;`. The units also do the arithmetic: a speed of `1.2_rad_per_s` times `frame.elapsed` is an angle. For a sine or a cosine, use the functions of the units library: `units::math::sin(2.0_rad_per_s * t)` turns at 2 rad/s, and `units::math::abs`, `exp`, `atan2` and `hypot` work the same way. When code of your own takes plain `float` numbers, `compages::toSeconds(t)`, `compages::toRadians(a)` and `compages::toMetres(d)` give them. Positions and sizes stay plain `float` numbers, in metres.
 
 ## 🟧 On the GPU side
 

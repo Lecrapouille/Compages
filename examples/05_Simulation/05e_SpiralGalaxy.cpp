@@ -324,7 +324,7 @@ compages::Status SpiralGalaxy::setUp()
 void SpiralGalaxy::draw(compages::world::ViewFrame const& p_frame)
 {
     // The only thing written each frame.
-    m_years = std::fmod(m_years + (YEARS_PER_SECOND * p_frame.elapsed),
+    m_years = std::fmod(m_years + (YEARS_PER_SECOND * compages::toSeconds(p_frame.elapsed)),
                         YEARS_PER_TURN);
     m_points["years"] = m_years;
     m_points["projection"] =

@@ -176,7 +176,7 @@ Picture ripplePicture()
         }
     }
     auto at = [&](int x, int y) { return height[std::size_t((wrap(y, SIZE) * SIZE) + wrap(x, SIZE))]; };
-    return paint(SIZE, [&](float u, float v) -> std::array<float, 4> {
+    return paint(SIZE, [&](float u, float v) noexcept -> std::array<float, 4> {
         const int x = int(u * float(SIZE));
         const int y = int(v * float(SIZE));
         const float steep = 18.0f;

@@ -25,7 +25,7 @@ int main()
     compages::world::Entity hand = shoulder.child("Hand").position(0.0f, 0.0f, 1.0f);
 
     compages::Frame step;
-    step.elapsed = 1.0f / 60.0f;
+    step.elapsed = compages::si::Seconds(1.0 / 60.0);
     for (auto angle : { 0.0_deg, 90.0_deg, 120.0_deg })
     {
         shoulder.joint().angle(angle);

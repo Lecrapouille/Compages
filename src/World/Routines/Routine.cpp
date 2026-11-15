@@ -12,18 +12,18 @@
 namespace compages::world
 {
 
-Routine::TimerId Routine::after(float p_seconds, std::function<void()> p_call)
+Routine::TimerId Routine::after(si::Seconds p_seconds, std::function<void()> p_call)
 {
     const TimerId id = m_next_timer++;
-    m_timers.push_back(Timer{ id, p_seconds, 0.0f, std::move(p_call) });
+    m_timers.push_back(Timer{ id, p_seconds, si::Seconds(0.0), std::move(p_call) });
     return id;
 }
 
-Routine::TimerId Routine::every(float p_seconds, std::function<void()> p_call)
+Routine::TimerId Routine::every(si::Seconds p_seconds, std::function<void()> p_call)
 {
     const TimerId id = m_next_timer++;
     // A period of zero would call it at every step; keep it a period.
-    const float period = std::max(p_seconds, 1.0e-6f);
+    const si::Seconds period = std::max(p_seconds, si::Seconds(1.0e-6));
     m_timers.push_back(Timer{ id, period, period, std::move(p_call) });
     return id;
 }

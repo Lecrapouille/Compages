@@ -9,6 +9,8 @@
 
 #include <array>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -27,7 +29,7 @@ compages::Status ManyCubes::setUp()
     // view sweeps past the grid.
     m_scene.background(0.03f, 0.05f, 0.10f).ambient(0.12f, 0.13f, 0.17f);
     m_scene.camera().position(0.0f, 30.0f, 80.0f).add<compages::world::Orbit>();
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.2f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.2_rad_per_s;
     m_scene.sun();
 
     // One cube of each colour, that all the others copy.

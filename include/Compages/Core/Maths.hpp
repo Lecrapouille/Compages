@@ -222,6 +222,29 @@ template <Quantity T>
     return static_cast<float>(p_length.value());
 }
 
+//! \brief A duration as a plain float, in seconds, for code that only takes
+//! floats (a simulation step written in floats).
+//!
+//! For a sine of the time, do not convert: make an angle and use the
+//! functions of the units library, \c units::math::sin(2.0_rad_per_s * t).
+//! \code
+//! m_plate.step(compages::toSeconds(p_frame.elapsed));
+//! \endcode
+[[nodiscard]] constexpr float toSeconds(units::time::second_t const p_time)
+{
+    return static_cast<float>(p_time.value());
+}
+
+//! \brief An angle as a plain float, in radians, for code that only takes
+//! floats. For a sine, use \c units::math::sin(angle): no conversion.
+//! \code
+//! const float yaw = compages::toRadians(camera.yaw);   // to print it
+//! \endcode
+[[nodiscard]] constexpr float toRadians(units::angle::radian_t const p_angle)
+{
+    return static_cast<float>(p_angle.value());
+}
+
 //! \brief Default tolerance, in ULPs, used by almostEqual().
 inline constexpr std::uint32_t DEFAULT_MAX_ULPS = 6u;
 

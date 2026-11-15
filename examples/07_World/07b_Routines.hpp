@@ -25,7 +25,7 @@ namespace examples
 //! struct Spin : compages::world::Routine
 //! {
 //!     explicit Spin(float p_speed) : speed(p_speed) {}
-//!     void update(float p_dt) override { transform().rotateY(speed * p_dt); }
+//!     void update(compages::si::Seconds p_dt) override { transform().rotateY(speed * p_dt); }
 //!     float speed;
 //! };
 //!

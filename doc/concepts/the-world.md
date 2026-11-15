@@ -45,11 +45,11 @@ int main()
     world.entity("rock").set(Position{ { 0, 5, 0 } });   // no Velocity: the loop skips it
 
     compages::Frame step;
-    step.elapsed = 1.0f / 60.0f;
+    step.elapsed = compages::si::Seconds(1.0 / 60.0);
     for (int i = 0; i < 60; ++i)
     {
         world.each<Position, Velocity>([&](compages::world::Entity, Position& p, Velocity& v)
-                                       { p.value += v.value * step.elapsed; });
+                                       { p.value += v.value * compages::toSeconds(step.elapsed); });
         world.update(step);
     }
     compages::Vector3f const& x = world.lookup("player").get<Position>().value;

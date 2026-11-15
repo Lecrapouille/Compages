@@ -21,6 +21,8 @@
 #include <cmath>
 #include <cstdio>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -172,7 +174,7 @@ void Thermometers::draw(compages::world::ViewFrame const& p_frame)
             m_spots[0] = compages::Vector2f(found->point.x, found->point.z);
         }
     }
-    spread(m_speed * std::min(p_frame.elapsed, 0.05f));
+    spread(m_speed * compages::toSeconds(std::min(p_frame.elapsed, 0.05_s)));
     for (std::size_t k = 0u; k < 2u; ++k)
     {
         m_chart.add(m_curves[k], m_time, m_temperature.sample(m_spots[k]));

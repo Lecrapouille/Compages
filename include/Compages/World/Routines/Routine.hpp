@@ -32,14 +32,14 @@ class Entity;
 //! \code
 //! struct Spin: compages::world::Routine
 //! {
-//!     explicit Spin(float p_speed) : speed(p_speed) {}
+//!     explicit Spin(si::AngularVelocity p_speed) : speed(p_speed) {}
 //!
-//!     void update(float p_dt) override
+//!     void update(si::Seconds p_dt) override
 //!     {
 //!         transform().rotateY(speed * p_dt);
 //!     }
 //!
-//!     float speed;
+//!     si::AngularVelocity speed;   // speed * p_dt is an angle
 //! };
 //!
 //! cube.add<Spin>(2.0f);    // turns two radians a second
@@ -85,14 +85,14 @@ public:
     //! simulation the same whatever the frame rate: a controller, a physics
     //! engine, a behavior tree.
     //! \param[in] p_dt RoutineSystem::fixedStep(), in seconds.
-    virtual void fixedUpdate(float p_dt)
+    virtual void fixedUpdate(si::Seconds p_dt)
     {
         (void)p_dt;
     }
 
     //! \brief Called once per step.
     //! \param[in] p_dt the seconds since the previous step.
-    virtual void update(float p_dt)
+    virtual void update(si::Seconds p_dt)
     {
         (void)p_dt;
     }
@@ -100,7 +100,7 @@ public:
     //! \brief Called once per step, after the joints, the animation and the
     //! world matrices: what a camera following an object needs.
     //! \param[in] p_dt the seconds since the previous step.
-    virtual void lateUpdate(float p_dt)
+    virtual void lateUpdate(si::Seconds p_dt)
     {
         (void)p_dt;
     }
@@ -178,19 +178,19 @@ protected:
     //! stops while the routine is not active.
     //!
     //! \code
-    //! after(2.0f, [this] { entity().destroy(); });   // gone in two seconds
+    //! after(2.0_s, [this] { entity().destroy(); });   // gone in two seconds
     //! \endcode
     // ------------------------------------------------------------------------
-    TimerId after(float p_seconds, std::function<void()> p_call);
+    TimerId after(si::Seconds p_seconds, std::function<void()> p_call);
 
     // ------------------------------------------------------------------------
     //! \brief Call a function every some seconds, until cancel().
     //!
     //! \code
-    //! every(0.5f, [this] { blink(); });
+    //! every(0.5_s, [this] { blink(); });
     //! \endcode
     // ------------------------------------------------------------------------
-    TimerId every(float p_seconds, std::function<void()> p_call);
+    TimerId every(si::Seconds p_seconds, std::function<void()> p_call);
 
     //! \brief Stop a timer. Nothing happens for a timer already done.
     void cancel(TimerId p_timer);
@@ -212,9 +212,9 @@ private:
     {
         TimerId id;
         //! \brief Seconds before the next call.
-        float remaining;
+        si::Seconds remaining;
         //! \brief Seconds between two calls; zero for a single call.
-        float period;
+        si::Seconds period;
         std::function<void()> call;
     };
 

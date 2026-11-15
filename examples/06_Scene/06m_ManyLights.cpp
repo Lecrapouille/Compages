@@ -17,6 +17,8 @@
 #include <numbers>
 #include <random>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -45,7 +47,7 @@ compages::Status ManyLights::setUp()
     m_scene.camera().position(0.0f, 7.0f, 13.0f).add<compages::world::Orbit>(compages::Vector3f(0.0f, 0.0f, 0.0f));
 
     m_scene.plane("Floor", compages::renderer::color(0.55f, 0.55f, 0.58f))
-        .rotation(-0.5f * PI, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(24.0f);
     // Pillars and balls, for the light to fall on.
     for (int i = -3; i <= 3; ++i)
@@ -97,7 +99,7 @@ void ManyLights::draw(compages::world::ViewFrame const& p_frame)
 {
     if (m_moving)
     {
-        m_time += std::min(p_frame.elapsed, 0.1f);
+        m_time += compages::toSeconds(std::min(p_frame.elapsed, 0.1_s));
     }
     for (std::size_t n = 0u; n < m_flies.size(); ++n)
     {

@@ -61,18 +61,19 @@ void main()
 )";
 
 // ----------------------------------------------------------------------------
-static float heightAt(float p_x, float p_z, float p_time)
+static float heightAt(float p_x, float p_z, compages::si::Seconds p_time)
 {
-    return (0.18f * std::sin((6.0f * p_x) + p_time) *
-            std::cos((6.0f * p_z) + (p_time * 0.7f))) +
-           (0.07f * std::sin((12.0f * p_x * p_z) + (p_time * 1.3f)));
+    using compages::si::Radians;
+    return (0.18f * units::math::sin(Radians(6.0f * p_x) + (1.0_rad_per_s * p_time)) *
+            units::math::cos(Radians(6.0f * p_z) + (0.7_rad_per_s * p_time))) +
+           (0.07f * units::math::sin(Radians(12.0f * p_x * p_z) + (1.3_rad_per_s * p_time)));
 }
 
 // ----------------------------------------------------------------------------
 //! \brief The normal of the surface, from the function itself: the lighting
 //! follows the waves without a second pass over the neighbors.
 // ----------------------------------------------------------------------------
-static compages::Vector3f normalAt(float p_x, float p_z, float p_time)
+static compages::Vector3f normalAt(float p_x, float p_z, compages::si::Seconds p_time)
 {
     const float y = heightAt(p_x, p_z, p_time);
     const compages::Vector3f dx(
@@ -146,7 +147,7 @@ void HeightMap::draw(compages::world::ViewFrame const& p_frame)
 {
     // Every vertex, in place. Taking the span is what marks the whole range
     // dirty, so the next draw sends all of them and none of the indices.
-    const float t = p_frame.total;
+    const compages::si::Seconds t = p_frame.total;
     for (Vertex& v : m_surface.editVertices<Vertex>())
     {
         v.position.y = heightAt(v.position.x, v.position.z, t);
@@ -155,7 +156,7 @@ void HeightMap::draw(compages::world::ViewFrame const& p_frame)
 
     m_surface["model"] =
         compages::rotate(compages::Matrix44f(compages::matrix::Identity),
-                         units::angle::radian_t(t * 0.25f),
+                         0.25_rad_per_s * t,
                          compages::Vector3f(0.0f, 1.0f, 0.0f));
     m_surface["projection"] =
         compages::perspective(50.0_deg, aspect(p_frame), 0.1f, 20.0f);

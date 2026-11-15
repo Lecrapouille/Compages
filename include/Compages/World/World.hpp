@@ -105,7 +105,7 @@ struct ViewFrame;
 //! compages::world::Entity arm = world.entity("Arm").revolute({ 0.0f, 1.0f, 0.0f });
 //! arm.child("Tool").position(0.0f, 0.5f, 0.0f);
 //! compages::Frame step;
-//! step.elapsed = 1.0f / 60.0f;
+//! step.elapsed = compages::si::Seconds(1.0 / 60.0);
 //! world.update(step);
 //! compages::Vector3f tip = world.lookup("Arm/Tool").worldPosition();
 //! \endcode

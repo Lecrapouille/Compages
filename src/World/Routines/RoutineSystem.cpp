@@ -104,9 +104,9 @@ void RoutineSystem::clear()
     m_order.clear();
 }
 
-void RoutineSystem::fixedStep(float p_seconds)
+void RoutineSystem::fixedStep(si::Seconds p_seconds)
 {
-    assert((p_seconds > 0.0f) && "the fixed step must be positive");
+    assert((p_seconds > si::Seconds(0.0)) && "the fixed step must be positive");
     m_fixed_step = p_seconds;
 }
 
@@ -175,7 +175,7 @@ void RoutineSystem::refresh()
     }
 }
 
-void RoutineSystem::update(float p_dt)
+void RoutineSystem::update(si::Seconds p_dt)
 {
     // A routine may create or destroy entities, or add routines: the order is
     // only rebuilt between two passes, and an entry is checked before use.
@@ -218,7 +218,7 @@ void RoutineSystem::update(float p_dt)
     }
 }
 
-void RoutineSystem::tick(Entry const& p_entry, float p_dt)
+void RoutineSystem::tick(Entry const& p_entry, si::Seconds p_dt)
 {
     // A call may add or cancel timers, or remove the routine itself: the
     // timers are found again by id, and the routine checked, after each call.
@@ -226,7 +226,7 @@ void RoutineSystem::tick(Entry const& p_entry, float p_dt)
     for (Routine::Timer& timer : p_entry.routine->m_timers)
     {
         timer.remaining -= p_dt;
-        if (timer.remaining <= 0.0f)
+        if (timer.remaining <= si::Seconds(0.0))
         {
             due.push_back(timer.id);
         }
@@ -245,10 +245,10 @@ void RoutineSystem::tick(Entry const& p_entry, float p_dt)
             continue; // cancelled by an earlier call
         }
         std::function<void()> call = timer->call;
-        if (timer->period > 0.0f)
+        if (timer->period > si::Seconds(0.0))
         {
             // A slow step calls it once, not once per period it missed.
-            timer->remaining = std::max(timer->remaining + timer->period, 0.0f);
+            timer->remaining = std::max(timer->remaining + timer->period, si::Seconds(0.0));
         }
         else
         {
@@ -274,7 +274,7 @@ void RoutineSystem::deliver(EntityId p_to, Message const& p_message)
     }
 }
 
-void RoutineSystem::lateUpdate(float p_dt)
+void RoutineSystem::lateUpdate(si::Seconds p_dt)
 {
     for (Entry const& entry : m_order)
     {

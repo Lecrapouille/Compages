@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -87,7 +89,7 @@ void Mandelbrot::draw(compages::world::ViewFrame const& p_frame)
     // frame, then the view is placed so that the same number is still under the
     // mouse at the new scale. Moving the cursor without zooming does nothing;
     // time is what closes in, and the cursor is what chooses where.
-    const float scale = 1.5f * std::exp(-0.18f * p_frame.total);
+    const float scale = 1.5f * units::math::exp(-0.18_Hz * p_frame.total);
     const compages::Vector2f mouse =
         p_frame.input.mouse_over ? compages::world::mouseInClipSpace(p_frame)
                                  : compages::Vector2f(0.0f, 0.0f);

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
+#include "Compages/Core/Units.hpp"
 #include "Compages/World/EntityId.hpp"
 
 #include <string>
@@ -48,13 +49,13 @@ public:
 
     //! \brief Sample clips, update transforms, then pose skinned meshes.
     [[nodiscard]] static Status
-    tick(compages::world::World& p_world, AssetManager& p_assets, float p_dt);
+    tick(compages::world::World& p_world, AssetManager& p_assets, si::Seconds p_dt);
 
     //! \brief Advance \c compages::renderer::Animator time and write local TRS
     //! from clips.
     [[nodiscard]] static Status sample(compages::world::World& p_world,
                                        AssetManager const& p_assets,
-                                       float p_dt);
+                                       si::Seconds p_dt);
 
     //! \brief Fill \c compages::world::SkinInstance::pose after world matrices
     //! are current.

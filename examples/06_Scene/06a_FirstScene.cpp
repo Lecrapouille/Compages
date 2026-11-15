@@ -7,6 +7,8 @@
 
 #include "06_Scene/06a_FirstScene.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -34,7 +36,7 @@ compages::Status FirstScene::setUp()
 void FirstScene::draw(compages::world::ViewFrame const& p_frame)
 {
     // The cube turns; the orbit routine turns the camera from the mouse.
-    m_cube.rotate(p_frame.elapsed, { 0.4f, 1.0f, 0.0f });
+    m_cube.rotate(1.0_rad_per_s * p_frame.elapsed, { 0.4f, 1.0f, 0.0f });
     m_scene.draw(p_frame);
 }
 

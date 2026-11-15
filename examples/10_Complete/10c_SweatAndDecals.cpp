@@ -21,6 +21,8 @@
 #include <limits>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -869,10 +871,10 @@ void SweatAndDecals::draw(compages::world::ViewFrame const& p_frame)
 
     computeForces();
     // The first frame runs a few seconds of sweat: the face is already wet.
-    simulate(m_warm ? p_frame.elapsed : 6.0f);
+    simulate(m_warm ? compages::toSeconds(p_frame.elapsed) : 6.0f);
     if (m_warm)
     {
-        wash(p_frame.elapsed);
+        wash(compages::toSeconds(p_frame.elapsed));
     }
     m_warm = true;
 

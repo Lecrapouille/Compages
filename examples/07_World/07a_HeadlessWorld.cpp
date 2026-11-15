@@ -8,6 +8,8 @@
 #include "07_World/07a_HeadlessWorld.hpp"
 #include "Compages/World/Entity.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -24,7 +26,7 @@ struct Velocity
 //! \brief How many frames a routine has seen.
 struct Ticks: compages::world::Routine
 {
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         ++count;
     }
@@ -69,13 +71,13 @@ void HeadlessWorld::draw(compages::world::ViewFrame const& p_frame)
         [&p_frame](compages::world::Entity,
                    Position& p_position,
                    Velocity const& p_velocity)
-        { p_position.value += p_velocity.value * p_frame.elapsed; });
+        { p_position.value += p_velocity.value * compages::toSeconds(p_frame.elapsed); });
     m_world.update(p_frame); // the routines, then the transforms
 
     // The gallery has no scene to look at, so the checks are the picture:
     // the player must have moved, and the worker must still have its routine.
     compages::world::Entity player = m_world.lookup("player");
-    if ((p_frame.total > 0.5f) && (player.get<Position>().value.x <= 0.0f))
+    if ((p_frame.total > 0.5_s) && (player.get<Position>().value.x <= 0.0f))
     {
         compages::gpu::reportError(
             "the movement system did not move the player");

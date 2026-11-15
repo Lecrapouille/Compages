@@ -53,7 +53,7 @@ Put a fact in one place and link to it. Code comments point to pages
   costs ("the world never sees a GPU type, so it runs in a test without a
   screen").
 - **Write plainly**: short sentences, present tense, common words, no idioms
-  (French readers). Define a 3D word once, in `concepts/glossary.md`, and
+  (French readers). Define a 3D word once, in `tutorials/00-glossary.md` (the first page a reader opens), and
   link to it. Prose first; a list only for real enumerations, a table only
   for real comparisons.
 - **No signs of machine writing** (after Wikipedia, *Signs of AI writing*, and

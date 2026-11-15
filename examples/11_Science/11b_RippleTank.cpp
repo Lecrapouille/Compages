@@ -13,6 +13,8 @@
 
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -129,7 +131,7 @@ compages::Status RippleTank::step(compages::Vector3f p_drop)
 void RippleTank::draw(compages::world::ViewFrame const& p_frame)
 {
     std::uniform_real_distribution<float> place(10.0f, float(POINTS - 10));
-    m_next_drop -= p_frame.elapsed;
+    m_next_drop -= compages::toSeconds(p_frame.elapsed);
     for (int k = 0; k < STEPS; ++k)
     {
         compages::Vector3f drop(0.0f, 0.0f, 0.0f);

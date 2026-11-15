@@ -11,6 +11,8 @@
 
 #include <iostream>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -89,7 +91,7 @@ void IntroCompute::step()
 void IntroCompute::draw(compages::world::ViewFrame const& p_frame)
 {
     // Four steps a second when running, so that each one can be followed.
-    m_since_step += p_frame.elapsed;
+    m_since_step += compages::toSeconds(p_frame.elapsed);
     if (m_running && (m_since_step >= 0.25f))
     {
         m_since_step = 0.0f;

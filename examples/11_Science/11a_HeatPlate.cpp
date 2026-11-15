@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -108,7 +110,7 @@ void HeatPlate::spread(float p_seconds, float p_time)
 // ----------------------------------------------------------------------------
 void HeatPlate::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float seconds = m_speed * std::min(p_frame.elapsed, 0.05f);
+    const float seconds = m_speed * compages::toSeconds(std::min(p_frame.elapsed, 0.05_s));
     m_time += seconds;
     spread(seconds, m_time);
     if (const compages::Status shown = m_scene.show(m_plate, m_temperature, m_look); !shown)

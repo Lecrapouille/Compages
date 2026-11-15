@@ -10,6 +10,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -28,14 +30,14 @@ struct MovingRobot::Walk: compages::world::Routine
         right = entity().lookup("Body/RightShoulder");
     }
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         // Posed from the total time, so a pause and a resume do not drift,
         // and the three robots stay out of step by their phase.
-        const float t = frame().total + phase;
-        const float swing = 0.95f * std::sin(3.2f * t);
-        entity().rotation(0.6f * t, { 0.0f, 1.0f, 0.0f });
-        head.rotation(0.5f * std::sin(1.4f * t), { 0.0f, 1.0f, 0.0f });
+        const compages::si::Seconds t = frame().total + compages::si::Seconds(phase);
+        const compages::si::Radians swing = 0.95_rad * units::math::sin(3.2_rad_per_s * t);
+        entity().rotation(0.6_rad_per_s * t, { 0.0f, 1.0f, 0.0f });
+        head.rotation(0.5_rad * units::math::sin(1.4_rad_per_s * t), { 0.0f, 1.0f, 0.0f });
         left.rotation(swing, { 1.0f, 0.0f, 0.0f });
         right.rotation(-swing, { 1.0f, 0.0f, 0.0f });
     }

@@ -23,17 +23,14 @@ namespace
 
 //! \brief Rotation of a camera turned by \p p_yaw about Y, then \p p_pitch
 //! about X: forward is \c rotation * (0, 0, -1).
-compages::Quatf yawPitch(float p_yaw, float p_pitch)
+compages::Quatf yawPitch(si::Radians p_yaw, si::Radians p_pitch)
 {
-    const compages::Quatf q_yaw = compages::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_yaw)), compages::Vector3f(0.0f, 1.0f, 0.0f));
-    const compages::Quatf q_pitch = compages::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_pitch)), compages::Vector3f(1.0f, 0.0f, 0.0f));
-    return q_yaw * q_pitch;
+    return compages::Quatf::fromAngleAxis(p_yaw, compages::Vector3f(0.0f, 1.0f, 0.0f)) *
+           compages::Quatf::fromAngleAxis(p_pitch, compages::Vector3f(1.0f, 0.0f, 0.0f));
 }
 
 //! \brief Eye of a camera looking at \p p_target from \p p_distance.
-compages::Vector3f eyeOf(compages::Vector3f const& p_target, float p_yaw, float p_pitch, float p_distance)
+compages::Vector3f eyeOf(compages::Vector3f const& p_target, si::Radians p_yaw, si::Radians p_pitch, float p_distance)
 {
     const compages::Vector3f forward = yawPitch(p_yaw, p_pitch) * compages::Vector3f(0.0f, 0.0f, -1.0f);
     return p_target - (forward * p_distance);
@@ -42,13 +39,13 @@ compages::Vector3f eyeOf(compages::Vector3f const& p_target, float p_yaw, float 
 //! \brief Where the ray of the camera through the clip point \p p_mouse
 //! meets the plane \c y = \p p_ground, or nothing (the ray looks up).
 std::optional<compages::Vector3f> groundUnder(compages::Vector3f const& p_target,
-                                                    float p_yaw,
-                                                    float p_pitch,
+                                                    si::Radians p_yaw,
+                                                    si::Radians p_pitch,
                                                     float p_distance,
                                                     RigInput const& p_input,
                                                     float p_ground)
 {
-    const float half = std::tan(p_input.fov * 0.5f);
+    const float half = static_cast<float>(units::math::tan(p_input.fov * 0.5));
     const compages::Vector3f local(p_input.mouse.x * half * p_input.aspect, p_input.mouse.y * half, -1.0f);
     const compages::Vector3f ray = yawPitch(p_yaw, p_pitch) * local;
     const compages::Vector3f eye = eyeOf(p_target, p_yaw, p_pitch, p_distance);
@@ -78,14 +75,14 @@ double smootherstep(double p_x)
 
 //! \brief Part of the way left a glide covers in \p p_dt: never more than
 //! all of it, the same path at any frame rate.
-float glide(float p_sharpness, float p_dt)
+float glide(float p_sharpness, si::Seconds p_dt)
 {
-    return 1.0f - std::exp(-p_sharpness * std::max(p_dt, 0.0f));
+    return 1.0f - std::exp(-p_sharpness * std::max(compages::toSeconds(p_dt), 0.0f));
 }
 
 } // namespace
 
-RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, float p_fov)
+RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, si::Radians p_fov)
 {
     RigInput rig;
     rig.aspect = compages::aspect(p_frame);
@@ -114,7 +111,7 @@ RigInput rigInput(Input const& p_input, compages::Frame const& p_frame, float p_
     return rig;
 }
 
-void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_input, float p_dt)
+void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_input, si::Seconds p_dt)
 {
     const float fast = p_input.boost ? boost : 1.0f;
 
@@ -169,14 +166,14 @@ void RigController::apply(World& p_world, EntityId p_camera, RigInput const& p_i
     }
 
     // --- The keys ---------------------------------------------------------
-    const compages::Vector3f ahead(-std::sin(yaw), 0.0f, -std::cos(yaw));
-    const compages::Vector3f side(std::cos(yaw), 0.0f, -std::sin(yaw));
-    const float step = move_speed * fast * distance * p_dt;
+    const compages::Vector3f ahead(-units::math::sin(yaw), 0.0f, -units::math::cos(yaw));
+    const compages::Vector3f side(units::math::cos(yaw), 0.0f, -units::math::sin(yaw));
+    const float step = move_speed * fast * distance * compages::toSeconds(p_dt);
     const float forward = float(p_input.forward) - float(p_input.back);
     const float sideways = float(p_input.right) - float(p_input.left);
     target = target + (ahead * (forward * step)) + (side * (sideways * step));
     yaw += (float(p_input.turn_left) - float(p_input.turn_right)) * turn_speed * fast * p_dt;
-    distance *= std::exp((float(p_input.zoom_out) - float(p_input.zoom_in)) * zoom_speed * fast * p_dt);
+    distance *= std::exp((float(p_input.zoom_out) - float(p_input.zoom_in)) * zoom_speed * fast * compages::toSeconds(p_dt));
 
     distance = std::clamp(distance, min_distance, max_distance);
     pitch = std::clamp(pitch, min_pitch, max_pitch);
@@ -234,10 +231,10 @@ void RigController::flyTo(compages::Vector3f const& p_target, float p_distance)
     m_flight = flight;
 }
 
-void RigController::fly(float p_dt)
+void RigController::fly(si::Seconds p_dt)
 {
     Flight& flight = *m_flight;
-    flight.time += std::max(p_dt, 0.0f);
+    flight.time += std::max(compages::toSeconds(p_dt), 0.0f);
     const double x = std::min(double(flight.time / flight.duration), 1.0);
     const double eased = smootherstep(x);
     const double w0 = double(flight.w0);
@@ -286,7 +283,7 @@ void RigController::writePose(World& p_world, EntityId p_camera) const
 {
     LocalTransformView local = p_world.transform(p_camera);
     compages::Vector3f eye = eyeOf(m_target, m_yaw, m_pitch, m_distance);
-    float looking = m_pitch;
+    si::Radians looking = m_pitch;
     if (height_at)
     {
         const float lowest = height_at(eye.x, eye.z) + clearance;
@@ -294,7 +291,7 @@ void RigController::writePose(World& p_world, EntityId p_camera) const
         {
             eye.y = lowest;
             const float across = std::hypot(eye.x - m_target.x, eye.z - m_target.z);
-            looking = -std::atan2(eye.y - m_target.y, across);
+            looking = si::Radians(-std::atan2(eye.y - m_target.y, across));
         }
     }
     local.position = eye;

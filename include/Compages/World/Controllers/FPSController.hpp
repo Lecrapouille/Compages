@@ -31,20 +31,20 @@ class FPSController
 {
 public:
 
-    float yaw = 0.0f;
-    float pitch = 0.0f;
+    si::Radians yaw{ 0.0 };
+    si::Radians pitch{ 0.0 };
     float eye_height = 1.7f;
-    float look_sensitivity = 0.005f;
-    float move_speed = 8.0f;
+    si::Radians look_sensitivity{ 0.005 };
+    si::LinearVelocity move_speed{ 8.0 };
     float boost_multiplier = 2.0f;
-    float min_pitch = -1.4f;
-    float max_pitch = 1.4f;
+    si::Radians min_pitch{ -1.4 };
+    si::Radians max_pitch{ 1.4 };
 
     //! \brief Look with the mouse, walk on XZ, adjust height with Q/E.
     void apply(World& p_world,
                EntityId p_camera,
                CameraInput const& p_input,
-               float p_dt);
+               si::Seconds p_dt);
 };
 
 } // namespace compages::world

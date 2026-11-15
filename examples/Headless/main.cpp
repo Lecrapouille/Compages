@@ -27,6 +27,8 @@
 #include <iostream>
 #include <string>
 
+using namespace compages::si::literals;
+
 namespace
 {
 
@@ -159,7 +161,7 @@ compages::Status renderScene(std::string const& p_path,
     scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.4f);
     scene.box("Cube", compages::renderer::color(0.9f, 0.2f, 0.1f))
         .position(-1.2f, 0.0f, 0.0f)
-        .rotation(0.6f, { 0.0f, 1.0f, 0.0f });
+        .rotation(0.6_rad, { 0.0f, 1.0f, 0.0f });
     scene.sphere("Ball", compages::renderer::color(0.2f, 0.7f, 0.3f));
     scene.cone("Cone", compages::renderer::color(0.2f, 0.4f, 0.9f))
         .position(1.2f, 0.0f, 0.0f);

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "Compages/Core/Units.hpp"
+
 #include <cstdint>
 
 namespace compages
@@ -23,7 +25,7 @@ namespace compages
 //!
 //! \code
 //! compages::Frame step;
-//! step.elapsed = 1.0f / 60.0f;
+//! step.elapsed = si::Seconds(1.0 / 60.0);
 //! step.width = 800;
 //! step.height = 600;
 //! world.update(step);
@@ -37,10 +39,10 @@ struct Frame
     std::uint32_t width = 0u;
     //! \brief Viewport height in pixels.
     std::uint32_t height = 0u;
-    //! \brief Seconds since the previous step (multiply speeds by this).
-    float elapsed = 0.0f;
-    //! \brief Seconds since the simulation or example started.
-    float total = 0.0f;
+    //! \brief Time since the previous step: a speed times this is a step.
+    si::Seconds elapsed{ 0.0 };
+    //! \brief Time since the simulation or example started.
+    si::Seconds total{ 0.0 };
 };
 
 // ****************************************************************************

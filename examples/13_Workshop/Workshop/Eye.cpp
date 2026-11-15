@@ -9,6 +9,8 @@
 
 #include <cstddef>
 
+using namespace compages::si::literals;
+
 namespace examples::workshop
 {
 
@@ -43,14 +45,14 @@ compages::Status RobotEye::create(compages::renderer::Scene& p_scene, Arm const&
 //! count the blue pixels (the part). readColor() waits for the GPU: a
 //! sensor reads at its own rate, not at each frame.
 // ----------------------------------------------------------------------------
-compages::Status RobotEye::look(compages::renderer::Scene& p_scene, float p_elapsed)
+compages::Status RobotEye::look(compages::renderer::Scene& p_scene, compages::si::Seconds p_elapsed)
 {
     m_wait -= p_elapsed;
-    if (m_wait > 0.0f)
+    if (m_wait > 0.0_s)
     {
         return compages::success();
     }
-    m_wait = 0.25f;
+    m_wait = 0.25_s;
     m_camera.get<compages::world::Camera>().viewport = { 0.0f, 0.0f, 1.0f, 1.0f }; // the whole picture
     p_scene.render(m_camera, m_picture);
     std::vector<std::byte> pixels;

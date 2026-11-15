@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -92,7 +94,7 @@ compages::Vector3f DoomLike::aim() const
 void DoomLike::movePlayer(compages::world::ViewFrame const& p_frame)
 {
     compages::world::Input const& input = p_frame.input;
-    const float dt = p_frame.elapsed;
+    const float dt = compages::toSeconds(p_frame.elapsed);
     m_player.clock += dt;
 
     // Looking: the mouse alone once it is held by the picture, a right drag
@@ -241,7 +243,7 @@ void DoomLike::placeView(compages::world::ViewFrame const& p_frame)
 void DoomLike::useWeapon(compages::world::ViewFrame const& p_frame)
 {
     compages::world::Input const& input = p_frame.input;
-    m_player.gun_time += p_frame.elapsed;
+    m_player.gun_time += compages::toSeconds(p_frame.elapsed);
 
     // A shot, then a reload, last a fixed time.
     if (m_player.gun == Gun::Firing)
@@ -491,7 +493,7 @@ void DoomLike::pickUp(float p_dt)
                       0.25f + (0.08f *
                               std::sin((m_player.clock * 2.5f) + pickup.at.x)),
                       pickup.at.z)
-            .rotation(m_player.clock * 1.5f,
+            .rotation(compages::si::Radians(m_player.clock * 1.5f),
                       compages::Vector3f(0.0f, 1.0f, 0.0f));
         if (flatLength(m_player.position - pickup.at) > 1.0f)
         {

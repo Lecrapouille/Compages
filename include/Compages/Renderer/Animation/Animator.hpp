@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/Units.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 #include "Compages/World/EntityId.hpp"
 
@@ -34,7 +35,7 @@ struct Animator
     std::vector<AnimationClipId> clips;
     //! \brief Prefab-node index to compages::world::EntityId mapping for this instance.
     std::vector<compages::world::EntityId> targets;
-    float time = 0.0f;
+    si::Seconds time{ 0.0 };
     float speed = 1.0f;
     bool loop = true;
     bool playing = true;

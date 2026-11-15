@@ -95,7 +95,7 @@ void PointSphere::draw(compages::world::ViewFrame const& p_frame)
                          compages::Vector3f(0.0f, 1.0f, 0.0f));
     const compages::Matrix44f model =
         compages::rotate(compages::Matrix44f(compages::matrix::Identity),
-                         units::angle::radian_t(p_frame.total * 0.6f),
+                         0.6_rad_per_s * p_frame.total,
                          compages::Vector3f(0.0f, 1.0f, 0.0f));
     m_points["mvp"] = projection * view * model;
 

@@ -8,6 +8,8 @@
 #include "06_Scene/06e_TexturedSpheres.hpp"
 #include "Common/DataPath.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -29,7 +31,7 @@ compages::Status TexturedSpheres::setUp()
         .position(0.0f, 2.5f, 9.0f)
         .add<compages::world::Orbit>(
             compages::Vector3f(0.0f, 0.5f, 0.0f));
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.35f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.35_rad_per_s;
     m_scene.sun();
 
     // A colour, a picture, and the same picture multiplied by a tint.
@@ -63,7 +65,7 @@ void TexturedSpheres::draw(compages::world::ViewFrame const& p_frame)
     // Each sphere a little faster than the one before it.
     for (std::size_t i = 0u; i < m_spheres.size(); ++i)
     {
-        m_spheres[i].rotate((0.4f + 0.1f * float(i)) * p_frame.elapsed,
+        m_spheres[i].rotate(compages::si::AngularVelocity(0.4f + 0.1f * float(i)) * p_frame.elapsed,
                             { 0.0f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);

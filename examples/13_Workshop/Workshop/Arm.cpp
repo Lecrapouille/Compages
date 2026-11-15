@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples::workshop
 {
 
@@ -17,7 +19,7 @@ namespace
 {
 
 //! \brief The height of the shoulder above the floor.
-constexpr double SHOULDER_HEIGHT = double(TABLE_TOP) + 0.12;
+const compages::si::Length SHOULDER_HEIGHT(double(TABLE_TOP) + 0.12);
 
 // ****************************************************************************
 //! \brief Moves the tip of the arm along a path on the table: the base turns
@@ -35,32 +37,33 @@ struct FollowPath: compages::world::Routine
     {
     }
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
-        using units::angle::radian_t;
-        const double t = frame().total;
+        using compages::si::Length;
+        using compages::si::Radians;
+        const compages::si::Seconds t = frame().total;
 
         // Where the tip goes: how far from the base, how high, and the turn
         // of the base. It touches the table, and lifts off now and then.
-        const double reach = 0.62 + 0.08 * std::sin(0.7 * t);
-        const double lift = 0.06 * std::max(0.0, std::sin(0.45 * t));
-        const double height = double(TABLE_TOP) + 0.003 + lift - SHOULDER_HEIGHT;
-        entity().joint().angle(radian_t(0.6 * std::sin(0.5 * t)));
+        const Length reach = 0.62_m + 0.08_m * units::math::sin(0.7_rad_per_s * t);
+        const Length lift = 0.06_m * std::max(0.0, double(units::math::sin(0.45_rad_per_s * t)));
+        const Length height = Length(TABLE_TOP) + 3.0_mm + lift - SHOULDER_HEIGHT;
+        entity().joint().angle(0.6_rad * units::math::sin(0.5_rad_per_s * t));
 
         // Two links L1, L2 reach a point at distance d: the law of cosines
         // gives the bend of the elbow, then the shoulder aims below the point
         // by the angle the bend makes. Angles are measured from the vertical.
-        const double l1 = double(UPPER_ARM);
-        const double l2 = double(FOREARM);
-        const double d = std::hypot(reach, height);
-        const double cos_bend = std::clamp((d * d - l1 * l1 - l2 * l2) / (2.0 * l1 * l2), -1.0, 1.0);
-        const double bend = std::acos(cos_bend);
-        const double aim = std::atan2(reach, height);
-        const double lean = aim - std::atan2(l2 * std::sin(bend), l1 + l2 * cos_bend);
+        const Length l1(UPPER_ARM);
+        const Length l2(FOREARM);
+        const Length d = units::math::hypot(reach, height);
+        const double cos_bend = std::clamp(double((d * d - l1 * l1 - l2 * l2) / (2.0 * l1 * l2)), -1.0, 1.0);
+        const Radians bend = units::math::acos(units::dimensionless::scalar_t(cos_bend));
+        const Radians aim = units::math::atan2(reach, height);
+        const Radians lean = aim - units::math::atan2(l2 * units::math::sin(bend), l1 + l2 * units::math::cos(bend));
 
         // The joints turn round +z: a negative angle leans toward +x.
-        shoulder.joint().angle(radian_t(-lean));
-        elbow.joint().angle(radian_t(-bend));
+        shoulder.joint().angle(-lean);
+        elbow.joint().angle(-bend);
     }
 
     compages::world::Entity shoulder;

@@ -282,7 +282,7 @@ void PostProcess::draw(compages::world::ViewFrame const& p_frame)
     }
     m_cube["model"] =
         compages::rotate(compages::Matrix44f(compages::matrix::Identity),
-                         units::angle::radian_t(p_frame.total * 0.7f),
+                         0.7_rad_per_s * p_frame.total,
                          compages::Vector3f(0.0f, 1.0f, 0.0f));
 
     // Into the framebuffer, over the window pass.

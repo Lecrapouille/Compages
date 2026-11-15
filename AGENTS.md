@@ -50,6 +50,12 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
 
 ## Rules that are easy to break
 
+- SI units first: times, angles and speeds are `compages::si` types
+  (`Seconds`, `Radians`…, literals `0.5_s`, `90.0_deg`), not bare floats,
+  above all in a public API (`Frame::elapsed`, `Routine::update`,
+  `Entity::rotate`, controllers). Maths on them with `units::math::sin`,
+  `cos`, `abs`, `exp`… (`sin(2.0_rad_per_s * t)`), never `std::sin` of a
+  converted float; `toSeconds`/`toRadians`/`toMetres` only to feed float code.
 - Include direction: `Fields` includes only `Core`; `gpu` and `world`
   include only `Core` and `Fields`; `renderer` includes `world`, `gpu`,
   `Fields`, `Core`. `world` never sees a `gpu::` type; public

@@ -12,6 +12,8 @@
 #include <cmath>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -34,7 +36,7 @@ compages::Status Lights::setUp()
     m_scene.sun("Sun", { 1.0f, 1.0f, 1.0f }, 0.2f);
 
     m_scene.plane("Ground", compages::renderer::color(0.7f, 0.7f, 0.7f))
-        .rotation(-std::numbers::pi_v<float> / 2.0f, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(10.0f);
     for (int i = 0; i < 5; ++i)
     {
@@ -57,9 +59,9 @@ compages::Status Lights::setUp()
 // ----------------------------------------------------------------------------
 void Lights::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float angle = p_frame.total;
-    m_red.position(2.5f * std::cos(angle), 1.2f, 2.5f * std::sin(angle));
-    m_blue.position(-2.5f * std::cos(angle), 1.2f, -2.5f * std::sin(angle));
+    const compages::si::Radians angle = 1.0_rad_per_s * p_frame.total;
+    m_red.position(2.5f * units::math::cos(angle), 1.2f, 2.5f * units::math::sin(angle));
+    m_blue.position(-2.5f * units::math::cos(angle), 1.2f, -2.5f * units::math::sin(angle));
     m_scene.draw(p_frame);
 }
 

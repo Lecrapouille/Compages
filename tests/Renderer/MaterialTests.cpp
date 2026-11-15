@@ -20,6 +20,8 @@
 #include <filesystem>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 using namespace tests;
 
 namespace
@@ -206,7 +208,7 @@ TEST_F(MaterialTest, TheShadowFollowsTheHookDeform)
     // A plane stands in x, y: laid down, facing up.
     m_scene->plane("Floor", compages::renderer::color(1.0f, 1.0f, 1.0f))
         .position(0.0f, -1.0f, 0.0f)
-        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(20.0f, 20.0f, 1.0f);
     // The box flat above the floor, between the sun and the floor.
     m_box.position(0.0f, 2.0f, 0.0f).scale(1.5f, 0.1f, 1.5f);
@@ -236,7 +238,7 @@ TEST_F(MaterialTest, AnObjectOutOfViewCastsItsShadow)
     // A plane stands in x, y: laid down, facing up.
     m_scene->plane("Floor", compages::renderer::color(1.0f, 1.0f, 1.0f))
         .position(0.0f, -1.0f, 0.0f)
-        .rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(20.0f, 20.0f, 1.0f);
     m_box.position(0.0f, 2.0f, 0.0f).scale(1.5f, 0.1f, 1.5f);
     m_scene->look(m_box, compages::renderer::color(1.0f, 1.0f, 1.0f));

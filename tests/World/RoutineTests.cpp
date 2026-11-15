@@ -33,10 +33,10 @@ struct Counter : compages::world::Routine
         ++starts;
     }
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
         ++updates;
-        last_dt = p_dt;
+        last_dt = compages::toSeconds(p_dt);
     }
 };
 
@@ -44,9 +44,9 @@ struct Mover : compages::world::Routine
 {
     explicit Mover(float p_speed) : speed(p_speed) {}
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
-        transform().position.x += speed * p_dt;
+        transform().position.x += speed * compages::toSeconds(p_dt);
     }
 
     float speed;
@@ -54,7 +54,7 @@ struct Mover : compages::world::Routine
 
 struct SelfRemover : compages::world::Routine
 {
-    void update(float /*p_dt*/) override
+    void update(compages::si::Seconds /*p_dt*/) override
     {
         entity().remove<SelfRemover>();
     }
@@ -70,7 +70,7 @@ compages::Frame frameOf(float p_dt)
     compages::Frame frame;
     frame.width = 640u;
     frame.height = 480u;
-    frame.elapsed = p_dt;
+    frame.elapsed = compages::si::Seconds(p_dt);
     return frame;
 }
 
@@ -90,7 +90,7 @@ struct Logger : compages::world::Routine
 
     void onEnable() override { log->push_back(name + ".onEnable"); }
     void start() override { log->push_back(name + ".start"); }
-    void update(float) override { log->push_back(name + ".update"); }
+    void update(compages::si::Seconds) override { log->push_back(name + ".update"); }
     void onDisable() override { log->push_back(name + ".onDisable"); }
     void onDestroy() override { log->push_back(name + ".onDestroy"); }
     [[nodiscard]] int priority() const override { return rank; }
@@ -102,10 +102,10 @@ struct Logger : compages::world::Routine
 
 struct FixedCounter : compages::world::Routine
 {
-    void fixedUpdate(float p_dt) override
+    void fixedUpdate(compages::si::Seconds p_dt) override
     {
         ++calls;
-        last_dt = p_dt;
+        last_dt = compages::toSeconds(p_dt);
     }
 
     int calls = 0;
@@ -115,7 +115,7 @@ struct FixedCounter : compages::world::Routine
 //! \brief Reads, in lateUpdate(), where its entity is in the world.
 struct Follower : compages::world::Routine
 {
-    void lateUpdate(float) override
+    void lateUpdate(compages::si::Seconds) override
     {
         seen = entity().worldPosition();
     }
@@ -263,7 +263,7 @@ struct InputProbe : compages::world::Routine
     bool left = false;
     bool forward = false;
 
-    void update(float /*p_dt*/) override
+    void update(compages::si::Seconds /*p_dt*/) override
     {
         left = input().mouse_left;
         forward = input().down(compages::world::Key::W);
@@ -276,7 +276,7 @@ TEST(WorldInput, HeadlessUpdateDoesNotKeepTheInputOfTheLastViewFrame)
     compages::world::Entity probe = world.entity("Probe").add<InputProbe>();
 
     compages::world::ViewFrame view;
-    view.elapsed = 0.016f;
+    view.elapsed = compages::si::Seconds(0.016f);
     view.input.mouse_left = true;
     view.input.set(compages::world::Key::W, true);
     world.update(view);
@@ -292,7 +292,7 @@ TEST(WorldInput, HeadlessUpdateDoesNotKeepTheInputOfTheLastViewFrame)
 TEST(Routine, FixedUpdateKeepsItsPaceWhateverTheFrames)
 {
     compages::world::World world;
-    world.routines().fixedStep(0.1f);
+    world.routines().fixedStep(compages::si::Seconds(0.1));
     FixedCounter& counter = world.entity("e").add<FixedCounter>().get<FixedCounter>();
 
     world.update(frameOf(0.25f)); // 0.25 s: two steps, 0.05 s left
@@ -307,7 +307,7 @@ TEST(Routine, FixedUpdateKeepsItsPaceWhateverTheFrames)
 TEST(Routine, FixedUpdateDropsWhatASlowFrameCannotCatchUp)
 {
     compages::world::World world;
-    world.routines().fixedStep(0.01f);
+    world.routines().fixedStep(compages::si::Seconds(0.01));
     FixedCounter& counter = world.entity("e").add<FixedCounter>().get<FixedCounter>();
     world.update(frameOf(10.0f));
     EXPECT_EQ(counter.calls, 8);
@@ -425,8 +425,8 @@ struct Clock : compages::world::Routine
 {
     void start() override
     {
-        after(0.25f, [this] { ++once; });
-        tick = every(0.1f, [this] { ++ticks; });
+        after(compages::si::Seconds(0.25), [this] { ++once; });
+        tick = every(compages::si::Seconds(0.1), [this] { ++ticks; });
     }
 
     void stop()
@@ -443,8 +443,8 @@ struct SelfDestruct : compages::world::Routine
 {
     void start() override
     {
-        after(0.1f, [this] { entity().destroy(); });
-        after(0.1f, [this] { ++never; });
+        after(compages::si::Seconds(0.1), [this] { entity().destroy(); });
+        after(compages::si::Seconds(0.1), [this] { ++never; });
     }
 
     int never = 0;

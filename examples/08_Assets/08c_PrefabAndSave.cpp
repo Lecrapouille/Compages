@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -32,15 +34,15 @@ struct Wave: compages::world::Routine
         right = entity().lookup("Body/RightShoulder");
     }
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         // Each placed robot keeps the phase it was given, so the three waves
         // do not line up.
-        const float t = frame().total + phase;
-        const float swing = 0.55f * std::sin(1.8f * t);
+        const compages::si::Seconds t = frame().total + compages::si::Seconds(phase);
+        const compages::si::Radians swing = 0.55_rad * units::math::sin(1.8_rad_per_s * t);
         left.rotation(swing, { 0.0f, 0.0f, 1.0f });
         right.rotation(-swing, { 0.0f, 0.0f, 1.0f });
-        head.rotation(0.25f * std::sin(t), { 0.0f, 1.0f, 0.0f });
+        head.rotation(0.25_rad * units::math::sin(1.0_rad_per_s * t), { 0.0f, 1.0f, 0.0f });
     }
 
     float phase;
@@ -93,7 +95,7 @@ void PrefabAndSave::draw(compages::world::ViewFrame const& p_frame)
 {
     m_scene.draw(p_frame);
     // Once, after the first frames, so the file holds a scene that has run.
-    if (!m_saved && (p_frame.total > 0.1f))
+    if (!m_saved && (p_frame.total > 0.1_s))
     {
         compages::gpu::check(compages::renderer::saveScene(m_scene, SAVED));
         m_saved = true;

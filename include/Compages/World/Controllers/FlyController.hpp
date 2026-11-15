@@ -32,13 +32,13 @@ class FlyController
 {
 public:
 
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    float look_sensitivity = 0.005f;
-    float move_speed = 20.0f;
+    si::Radians yaw{ 0.0 };
+    si::Radians pitch{ 0.0 };
+    si::Radians look_sensitivity{ 0.005 };
+    si::LinearVelocity move_speed{ 20.0 };
     float boost_multiplier = 3.0f;
-    float min_pitch = -1.55f;
-    float max_pitch = 1.55f;
+    si::Radians min_pitch{ -1.55 };
+    si::Radians max_pitch{ 1.55 };
 
     //! \brief Update yaw/pitch from look input and move along camera axes.
     //! \param[in,out] p_world world whose transform store is written.
@@ -48,7 +48,7 @@ public:
     void apply(World& p_world,
                EntityId p_camera,
                CameraInput const& p_input,
-               float p_dt);
+               si::Seconds p_dt);
 };
 
 } // namespace compages::world

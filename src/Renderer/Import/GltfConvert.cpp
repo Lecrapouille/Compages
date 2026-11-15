@@ -546,7 +546,7 @@ importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
             }
             if (!curve.times.empty())
             {
-                clip.duration = std::max(clip.duration, curve.times.back());
+                clip.duration = std::max(clip.duration, si::Seconds(curve.times.back()));
             }
             clip.channels.emplace_back(std::move(curve));
         }

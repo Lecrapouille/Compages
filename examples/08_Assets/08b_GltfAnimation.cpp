@@ -10,6 +10,8 @@
 
 #include "Common/Gui.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -36,7 +38,7 @@ compages::Status GltfAnimation::setUp()
     COMPAGES_TRY_ASSIGN(m_soldier, m_scene.loadFile(path));
     // The model looks down -Z, away from a camera placed in front: half a turn
     // shows its face.
-    m_soldier.rotation(3.14159265f, compages::Vector3f(0.0f, 1.0f, 0.0f));
+    m_soldier.rotation(180.0_deg, compages::Vector3f(0.0f, 1.0f, 0.0f));
     if (!m_scene.play(m_soldier, "Walk"))
     {
         return compages::failure("Soldier.glb has no Walk clip");

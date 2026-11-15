@@ -15,6 +15,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -113,7 +115,7 @@ void Volume::draw(compages::world::ViewFrame const& p_frame)
 {
     if (m_moving)
     {
-        m_time += p_frame.elapsed;
+        m_time += compages::toSeconds(p_frame.elapsed);
         warm(m_time);
     }
     compages::Status shown = m_scene.show(m_room, m_heat, m_look);

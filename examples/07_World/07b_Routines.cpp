@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -21,15 +23,15 @@ namespace examples
 // ----------------------------------------------------------------------------
 struct Routines::Spin: compages::world::Routine
 {
-    explicit Spin(float p_speed) : speed(p_speed) {}
+    explicit Spin(compages::si::AngularVelocity p_speed) : speed(p_speed) {}
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
         // Around its own vertical axis, at the speed it was given.
         transform().rotateY(speed * p_dt);
     }
 
-    float speed;
+    compages::si::AngularVelocity speed;
 };
 
 // ----------------------------------------------------------------------------
@@ -42,10 +44,10 @@ struct Routines::Bob: compages::world::Routine
         rest = entity().position();
     }
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         // From the rest position recorded at start, so it does not drift up.
-        const float height = 0.25f * std::sin(frame().total * 2.0f);
+        const float height = 0.25f * units::math::sin(2.0_rad_per_s * frame().total);
         entity().position(rest + compages::Vector3f(0.0f, height, 0.0f));
     }
 
@@ -60,14 +62,14 @@ struct Routines::GrowOnSpace: compages::world::Routine
 {
     explicit GrowOnSpace(bool const& p_button) : button(p_button) {}
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
         // Ease toward the target so the change is a growth, not a jump.
         const float target =
             (input().down(compages::world::Key::Space) || button) ? 1.6f : 1.0f;
-        size += (target - size) * std::min(1.0f, 8.0f * p_dt);
+        size += (target - size) * std::min(1.0f, 8.0f * compages::toSeconds(p_dt));
         // A slow breath on top, so that it is alive even when nothing is held.
-        const float breath = 1.0f + (0.06f * std::sin(frame().total * 3.0f));
+        const float breath = 1.0f + (0.06f * units::math::sin(3.0_rad_per_s * frame().total));
         entity().scale(size * breath);
     }
 
@@ -96,10 +98,10 @@ compages::Status Routines::setUp()
     // One routine, two, or one that reads the keyboard.
     m_scene.box("Spinner", compages::renderer::color(0.18f, 0.55f, 0.95f))
         .position(-1.6f, 0.0f, 0.0f)
-        .add<Spin>(1.5f);
+        .add<Spin>(1.5_rad_per_s);
     m_scene.box("Floater", compages::renderer::color(0.95f, 0.65f, 0.15f))
         .add<Bob>()
-        .add<Spin>(-0.5f);
+        .add<Spin>(-0.5_rad_per_s);
     m_scene.box("Grower", compages::renderer::color(0.35f, 0.85f, 0.35f))
         .position(1.6f, 0.0f, 0.0f)
         .add<GrowOnSpace>(m_grow);

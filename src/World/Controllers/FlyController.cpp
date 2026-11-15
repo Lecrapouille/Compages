@@ -19,7 +19,7 @@ namespace compages::world
 void FlyController::apply(World& p_world,
                           EntityId p_camera,
                           CameraInput const& p_input,
-                          float p_dt)
+                          si::Seconds p_dt)
 {
     if (p_input.look)
     {
@@ -67,9 +67,9 @@ void FlyController::apply(World& p_world,
     const float length = compages::vector::norm(motion);
     if (length > 1.0e-6f)
     {
-        const float speed =
-            move_speed * (p_input.boost ? boost_multiplier : 1.0f);
-        local.position += rotation * ((motion / length) * speed * p_dt);
+        const float step = compages::toMetres(
+            move_speed * (p_input.boost ? boost_multiplier : 1.0f) * p_dt);
+        local.position += rotation * ((motion / length) * step);
     }
 }
 

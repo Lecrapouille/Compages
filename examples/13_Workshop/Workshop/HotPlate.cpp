@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples::workshop
 {
 
@@ -47,10 +49,11 @@ void HotPlate::create(compages::renderer::Scene& p_scene)
 //! equation, one explicit step) and toward the air. The points under the tip
 //! take its temperature when it touches the plate.
 // ----------------------------------------------------------------------------
-void HotPlate::step(float p_seconds, compages::Vector3f const& p_tool)
+void HotPlate::step(compages::si::Seconds p_seconds, compages::Vector3f const& p_tool)
 {
+    const float dt = compages::toSeconds(p_seconds);
     compages::Grid2D const& grid = m_temperature.grid();
-    const float rate = DIFFUSIVITY * p_seconds / (grid.spacing * grid.spacing); // < 0.25 to stay stable
+    const float rate = DIFFUSIVITY * dt / (grid.spacing * grid.spacing); // < 0.25 to stay stable
     const bool touches = (p_tool.y < TABLE_TOP + 0.01f);
     for (int j = 1; j < grid.rows - 1; ++j)
     {
@@ -61,7 +64,7 @@ void HotPlate::step(float p_seconds, compages::Vector3f const& p_tool)
             const float spread = m_temperature(i - 1, j) + m_temperature(i + 1, j) + m_temperature(i, j - 1) +
                                  m_temperature(i, j + 1) - (4.0f * t);
             const bool under = touches && (std::hypot(p.x - p_tool.x, p.y - p_tool.z) < TIP_RADIUS);
-            m_next(i, j) = under ? TIP : t + (rate * spread) - (COOLING * p_seconds * (t - ROOM));
+            m_next(i, j) = under ? TIP : t + (rate * spread) - (COOLING * dt * (t - ROOM));
         }
     }
     std::swap(m_temperature, m_next);
@@ -71,11 +74,11 @@ void HotPlate::step(float p_seconds, compages::Vector3f const& p_tool)
 //! Before the first frame: the World moves the arm in small steps of time,
 //! and the tool heats the plate at each one, so a trail shows at once.
 // ----------------------------------------------------------------------------
-void HotPlate::warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, float p_seconds)
+void HotPlate::warmUp(compages::renderer::Scene& p_scene, Arm const& p_arm, compages::si::Seconds p_seconds)
 {
     compages::world::ViewFrame frame;
-    frame.elapsed = 0.05f;
-    for (frame.total = 0.0f; frame.total < p_seconds; frame.total += frame.elapsed)
+    frame.elapsed = 0.05_s;
+    for (frame.total = 0.0_s; frame.total < p_seconds; frame.total += frame.elapsed)
     {
         p_scene.update(frame);
         step(frame.elapsed, p_arm.tool.worldPosition());

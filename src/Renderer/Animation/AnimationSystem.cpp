@@ -180,7 +180,7 @@ transformVector(compages::Matrix44f const& p_matrix,
 Status compages::renderer::AnimationSystem::sample(
     compages::world::World& p_world,
     compages::renderer::AssetManager const& p_assets,
-    float p_dt)
+    si::Seconds p_dt)
 {
     p_world.each<compages::renderer::Animator>(
         [&](compages::world::EntityId, compages::renderer::Animator& animator)
@@ -196,12 +196,12 @@ Status compages::renderer::AnimationSystem::sample(
                 return;
             }
             animator.time += p_dt * animator.speed;
-            if (clip->duration > 0.0f)
+            if (clip->duration > si::Seconds(0.0))
             {
                 if (animator.loop)
                 {
-                    animator.time = std::fmod(animator.time, clip->duration);
-                    if (animator.time < 0.0f)
+                    animator.time = units::math::fmod(animator.time, clip->duration);
+                    if (animator.time < si::Seconds(0.0))
                     {
                         animator.time += clip->duration;
                     }
@@ -228,7 +228,7 @@ Status compages::renderer::AnimationSystem::sample(
                 {
                     continue;
                 }
-                applyChannel(channel, animator.time, p_world.transform(target));
+                applyChannel(channel, compages::toSeconds(animator.time), p_world.transform(target));
             }
         });
     return success();
@@ -396,7 +396,7 @@ Status compages::renderer::AnimationSystem::skin(
 Status compages::renderer::AnimationSystem::tick(
     compages::world::World& p_world,
     compages::renderer::AssetManager& p_assets,
-    float p_dt)
+    si::Seconds p_dt)
 {
     COMPAGES_TRY(sample(p_world, p_assets, p_dt));
     p_world.update();
@@ -425,7 +425,7 @@ bool compages::renderer::AnimationSystem::play(
             if (!(animator->clip == id))
             {
                 animator->clip = id;
-                animator->time = 0.0f;
+                animator->time = si::Seconds(0.0);
             }
             animator->playing = true;
             return true;

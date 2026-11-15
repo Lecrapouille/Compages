@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -31,7 +33,7 @@ compages::Status Transforms::setUp()
 
     m_box = m_scene.box("Box", compages::renderer::color(0.9f, 0.2f, 0.1f))
                 .position(-1.5f, 0.0f, 0.0f)
-                .rotation(0.5f, { 0.0f, 1.0f, 0.0f });
+                .rotation(0.5_rad, { 0.0f, 1.0f, 0.0f });
     m_ball = m_scene.sphere("Ball", compages::renderer::color(0.2f, 0.7f, 0.3f));
     m_cone = m_scene.cone("Cone", compages::renderer::color(0.2f, 0.4f, 0.9f))
                  .position(1.5f, 0.0f, 0.0f)
@@ -47,10 +49,10 @@ compages::Status Transforms::setUp()
 // ----------------------------------------------------------------------------
 void Transforms::draw(compages::world::ViewFrame const& p_frame)
 {
-    const float t = p_frame.total;
-    m_box.rotate(p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
-    m_ball.position(0.0f, 0.5f * std::sin(2.0f * t), 0.0f);
-    m_cone.scale(0.6f, 1.2f + (0.3f * std::sin(3.0f * t)), 0.6f);
+    const compages::si::Seconds t = p_frame.total;
+    m_box.rotate(1.0_rad_per_s * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
+    m_ball.position(0.0f, 0.5f * units::math::sin(2.0_rad_per_s * t), 0.0f);
+    m_cone.scale(0.6f, 1.2f + (0.3f * units::math::sin(3.0_rad_per_s * t)), 0.6f);
     m_scene.draw(p_frame);
 }
 

@@ -23,6 +23,7 @@
 //! metres of the World by compages::toMetres().
 using units::literals::operator""_km;
 using units::literals::operator""_m;
+using units::literals::operator""_rad;
 
 namespace examples
 {
@@ -136,7 +137,7 @@ compages::Status Archipelago::setUp()
         m_camera.get<compages::world::Rig>().controller;
     rig.min_distance = toMetres(150.0_m);
     rig.max_distance = toMetres(60.0_km);
-    rig.max_pitch = -0.12f;
+    rig.max_pitch = -0.12_rad;
     // The camera never enters a hill nor the sea: the ground as the screen
     // shows it (fine tiles near the camera, else the coarse map), at least
     // the level of the sea, plus room for the waves.
@@ -424,7 +425,7 @@ void Archipelago::overlay(Overlay const& p_view)
 // ----------------------------------------------------------------------------
 void Archipelago::draw(compages::world::ViewFrame const& p_frame)
 {
-    m_time += p_frame.elapsed;
+    m_time += compages::toSeconds(p_frame.elapsed);
     m_browser.reap();
     // The land made in the thread, shown when it is ready.
     if (m_loading.ready())
@@ -454,7 +455,7 @@ void Archipelago::draw(compages::world::ViewFrame const& p_frame)
     if (m_view.animals)
     {
         m_wildlife.animate(m_map.base,
-                           p_frame.elapsed * m_view.time_scale,
+                           compages::toSeconds(p_frame.elapsed) * m_view.time_scale,
                            m_time,
                            m_camera.position());
     }

@@ -22,7 +22,7 @@ namespace compages::world
 //! \param[in] p_forward Direction in world or parent space (need not be unit).
 //! \param[out] p_yaw Horizontal angle; unchanged if \c p_forward is null.
 //! \param[out] p_pitch Vertical angle; unchanged if \c p_forward is null.
-static void yawPitchOf(compages::Vector3f p_forward, float& p_yaw, float& p_pitch)
+static void yawPitchOf(compages::Vector3f p_forward, si::Radians& p_yaw, si::Radians& p_pitch)
 {
     const float length =
         std::sqrt(p_forward.x * p_forward.x + p_forward.y * p_forward.y +
@@ -31,8 +31,8 @@ static void yawPitchOf(compages::Vector3f p_forward, float& p_yaw, float& p_pitc
     {
         return;
     }
-    p_pitch = std::asin(std::clamp(p_forward.y / length, -1.0f, 1.0f));
-    p_yaw = std::atan2(-p_forward.x, -p_forward.z);
+    p_pitch = si::Radians(std::asin(std::clamp(p_forward.y / length, -1.0f, 1.0f)));
+    p_yaw = si::Radians(std::atan2(-p_forward.x, -p_forward.z));
 }
 
 void Orbit::start()
@@ -54,7 +54,7 @@ void Orbit::start()
         controller.pitch, controller.min_pitch, controller.max_pitch);
 }
 
-void Orbit::update(float p_dt)
+void Orbit::update(si::Seconds p_dt)
 {
     const CameraInput camera = cameraInput(input());
     if (!camera.look)
@@ -78,12 +78,12 @@ void Rig::start()
     controller.snap(world(), entity());
 }
 
-void Rig::update(float p_dt)
+void Rig::update(si::Seconds p_dt)
 {
-    float fov = 0.785398f;
+    si::Radians fov = camera_defaults::kFov;
     if (Camera const* camera = entity().find<Camera>())
     {
-        fov = static_cast<float>(units::angle::radian_t(camera->fov).value());
+        fov = camera->fov;
     }
     controller.apply(world(), entity(), rigInput(input(), frame(), fov), p_dt);
 }
@@ -95,7 +95,7 @@ void Fly::start()
                controller.pitch);
 }
 
-void Fly::update(float p_dt)
+void Fly::update(si::Seconds p_dt)
 {
     controller.apply(world(), entity(), cameraInput(input()), p_dt);
 }

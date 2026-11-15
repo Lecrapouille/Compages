@@ -10,6 +10,8 @@
 #include <cmath>
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -123,7 +125,7 @@ void TexturedQuad::draw(compages::world::ViewFrame const& p_frame)
     // Between one and three copies of the texture across the quad, which is
     // what makes the repeating wrap visible. A uniform keeps its value until
     // written again, so this is the only one set per frame.
-    m_quad["scale"] = 2.0f + std::sin(p_frame.total * 0.7f);
+    m_quad["scale"] = 2.0f + units::math::sin(0.7_rad_per_s * p_frame.total);
 
     compages::gpu::clear({ 0.05f, 0.05f, 0.08f });
     m_quad.draw();

@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -85,7 +87,7 @@ compages::Status ScreenFilters::setUp()
     {
         const float a = 6.2831853f * float(i) / 7.0f;
         const compages::Vector3f at(6.0f * std::cos(a), 0.0f, 6.0f * std::sin(a));
-        const float turn = -a + 1.5707963f;
+        const compages::si::Radians turn = compages::si::Radians(-a) + 90.0_deg;
         m_scene.box("House", compages::renderer::color(0.85f, 0.75f - 0.05f * float(i % 3), 0.6f))
             .position(at.x, 1.0f, at.z)
             .rotation(turn, { 0.0f, 1.0f, 0.0f })

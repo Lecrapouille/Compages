@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -56,7 +58,7 @@ compages::Status SplitViews::setUp()
     m_top =
         m_scene.camera("Top")
             .position(0.0f, 120.0f, 0.0f)
-            .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+            .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
             .set(compages::world::Camera{
                 .projection = compages::world::Camera::Projection::Orthographic,
                 .ortho_half_height = 80.0f,
@@ -71,7 +73,7 @@ void SplitViews::draw(compages::world::ViewFrame const& p_frame)
 {
     // The pillar turns, the World moves once, then each camera draws its half.
     // draw() would update and render together, and there are two cameras.
-    m_pillar.rotate(0.6f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
+    m_pillar.rotate(0.6_rad_per_s * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
     m_scene.update(p_frame);
     m_scene.render(m_eye);
     // On the map, what the left camera sees (its half: half as wide), out

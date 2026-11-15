@@ -104,7 +104,7 @@ TEST(Kinematics, PrismaticAxisFollowsTheJointOrientation)
 {
     compages::world::World world;
     compages::world::Entity slider = world.entity("Slider")
-                               .rotation(0.5f * float(M_PI), compages::Vector3f(0, 0, 1))
+                               .rotation(0.5_rad * float(M_PI), compages::Vector3f(0, 0, 1))
                                .prismatic({ 1, 0, 0 });
     slider.joint().offset(2.0_m);
     world.update();

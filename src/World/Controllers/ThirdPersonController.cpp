@@ -21,15 +21,10 @@ namespace compages::world
 namespace
 {
 
-compages::Quatf yawPitch(float p_yaw, float p_pitch)
+compages::Quatf yawPitch(si::Radians p_yaw, si::Radians p_pitch)
 {
-    const compages::Quatf q_yaw = compages::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_yaw)),
-        compages::Vector3f(0.0f, 1.0f, 0.0f));
-    const compages::Quatf q_pitch = compages::Quatf::fromAngleAxis(
-        units::angle::radian_t(static_cast<double>(p_pitch)),
-        compages::Vector3f(1.0f, 0.0f, 0.0f));
-    return q_yaw * q_pitch;
+    return compages::Quatf::fromAngleAxis(p_yaw, compages::Vector3f(0.0f, 1.0f, 0.0f)) *
+           compages::Quatf::fromAngleAxis(p_pitch, compages::Vector3f(1.0f, 0.0f, 0.0f));
 }
 
 compages::Vector3f targetPoint(World const& p_world,
@@ -53,7 +48,7 @@ compages::Vector3f targetPoint(World const& p_world,
 void ThirdPersonController::apply(World& p_world,
                                   EntityId p_camera,
                                   CameraInput const& p_input,
-                                  float p_dt)
+                                  si::Seconds p_dt)
 {
     if (p_input.look)
     {
@@ -67,7 +62,7 @@ void ThirdPersonController::apply(World& p_world,
                           max_distance);
     // The log of the distance glides: a zoom looks even, near or far, and a
     // notch of the wheel is a smooth move rather than a jump.
-    const float k = 1.0f - std::exp(-sharpness * std::max(p_dt, 0.0f));
+    const float k = 1.0f - std::exp(-sharpness * std::max(compages::toSeconds(p_dt), 0.0f));
     m_distance =
         std::exp(std::log(shown) + ((std::log(distance) - std::log(shown)) * k));
     pitch = std::clamp(pitch, min_pitch, max_pitch);

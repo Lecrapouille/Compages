@@ -370,6 +370,31 @@ public:
     //! \param[in] p_value its new value, kept by the program until set again.
     // ------------------------------------------------------------------------
     void set(std::string_view p_name, float p_value);
+
+    //! \brief A duration is sent in seconds, an angle in radians, a number
+    //! without unit (\c units::math::sin(angle)) as it is, all as a float.
+    //! \param[in] p_name the uniform in GLSL.
+    //! \param[in] p_value a time (\c frame.total) or an angle (\c 90.0_deg).
+    template <compages::Quantity Q>
+    void set(std::string_view p_name, Q const& p_value)
+    {
+        static_assert(units::traits::is_time_unit<Q>::value ||
+                          units::traits::is_angle_unit<Q>::value ||
+                          units::traits::is_dimensionless_unit<Q>::value,
+                      "a uniform takes a time, an angle or a number; give other quantities as float");
+        if constexpr (units::traits::is_dimensionless_unit<Q>::value)
+        {
+            set(p_name, static_cast<float>(p_value));
+        }
+        else if constexpr (units::traits::is_time_unit<Q>::value)
+        {
+            set(p_name, compages::toSeconds(p_value));
+        }
+        else
+        {
+            set(p_name, compages::toRadians(p_value));
+        }
+    }
     //! \brief Set a vec2 uniform.
     //! \param[in] p_name the uniform in GLSL.
     //! \param[in] p_value its new value.

@@ -15,6 +15,8 @@
 #include <numbers>
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -191,7 +193,7 @@ compages::Status Smoke::setUp()
         compages::Vector3f(0.0f, 1.5f, 0.0f));
     // The field lies on the ground of its grid: stand it up, rows going up.
     m_view = m_scene.show(m_grid, m_smoke[m_current], m_look, "Smoke");
-    m_view.rotation(-0.5f * std::numbers::pi_v<float>, { 1.0f, 0.0f, 0.0f });
+    m_view.rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f });
 
     // A few seconds of smoke before the first picture.
     for (int k = 0; k < 120; ++k)
@@ -268,7 +270,7 @@ compages::Status Smoke::step(float p_dt)
 // ----------------------------------------------------------------------------
 void Smoke::draw(compages::world::ViewFrame const& p_frame)
 {
-    if (const compages::Status stepped = step(std::min(p_frame.elapsed, 1.0f / 30.0f)); !stepped)
+    if (const compages::Status stepped = step(compages::toSeconds(std::min(p_frame.elapsed, compages::si::Seconds(1.0 / 30.0)))); !stepped)
     {
         compages::gpu::reportError(stepped.error());
     }

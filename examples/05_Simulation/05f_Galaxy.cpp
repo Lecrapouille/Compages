@@ -19,6 +19,8 @@
 #include <random>
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -248,7 +250,7 @@ void Galaxy::draw(compages::world::ViewFrame const& p_frame)
         // Ping-pong: read current(), write next(), then swap. What was just
         // written becomes current(): the buffer the draw reads, and the next
         // step reads.
-        const float dt = std::min(p_frame.elapsed, 1.0f / 30.0f);
+        const float dt = compages::toSeconds(std::min(p_frame.elapsed, compages::si::Seconds(1.0 / 30.0)));
         m_step.set("dt", dt);
         if (!compages::gpu::check(compages::gpu::dispatch(
                 m_step, m_stars, { .read = "Input", .write = "Output" })))

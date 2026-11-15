@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -150,10 +152,10 @@ void CelShading::useCartoon(bool p_cartoon)
 // ----------------------------------------------------------------------------
 void CelShading::draw(compages::world::ViewFrame const& p_frame)
 {
-    m_time += std::min(p_frame.elapsed, 0.1f);
+    m_time += compages::toSeconds(std::min(p_frame.elapsed, 0.1_s));
     for (std::size_t i = 0; i < m_shells.size(); ++i)
     {
-        m_shapes[i + 1].rotation(0.5f * m_time + float(i), compages::Vector3f(0.0f, 1.0f, 0.0f));
+        m_shapes[i + 1].rotation(compages::si::Radians(0.5f * m_time + float(i)), compages::Vector3f(0.0f, 1.0f, 0.0f));
     }
     m_scene.assets().material(m_cel)->program.set("tones", float(m_tones));
     m_scene.draw(p_frame);

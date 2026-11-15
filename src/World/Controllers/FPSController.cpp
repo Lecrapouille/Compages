@@ -20,7 +20,7 @@ namespace compages::world
 void FPSController::apply(World& p_world,
                           EntityId p_camera,
                           CameraInput const& p_input,
-                          float p_dt)
+                          si::Seconds p_dt)
 {
     if (p_input.look)
     {
@@ -63,18 +63,18 @@ void FPSController::apply(World& p_world,
     local.rotation = q_yaw * q_pitch;
     if (p_input.up)
     {
-        eye_height += move_speed * p_dt;
+        eye_height += compages::toMetres(move_speed * p_dt);
     }
     if (p_input.down)
     {
-        eye_height = std::max(0.2f, eye_height - (move_speed * p_dt));
+        eye_height = std::max(0.2f, eye_height - compages::toMetres(move_speed * p_dt));
     }
     const float length = compages::vector::norm(walk);
     if (length > 1.0e-6f)
     {
-        const float speed =
-            move_speed * (p_input.boost ? boost_multiplier : 1.0f);
-        local.position += (walk / length) * speed * p_dt;
+        const float step = compages::toMetres(
+            move_speed * (p_input.boost ? boost_multiplier : 1.0f) * p_dt);
+        local.position += (walk / length) * step;
     }
     local.position.y = eye_height;
 }

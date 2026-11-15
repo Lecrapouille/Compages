@@ -185,7 +185,7 @@ void MultiPassMesh::draw(compages::world::ViewFrame const& p_frame)
     Transforms transforms;
     transforms.model =
         compages::rotate(identity,
-                         units::angle::radian_t(p_frame.total * 0.6f),
+                         0.6_rad_per_s * p_frame.total,
                          compages::Vector3f(0.35f, 1.0f, 0.15f));
 
     transforms.view = compages::lookAt(compages::Vector3f(0.0f, 0.0f, 2.6f),

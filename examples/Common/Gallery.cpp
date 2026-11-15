@@ -24,6 +24,8 @@
 #include <iostream>
 #include <optional>
 
+using namespace compages::si::literals;
+
 #if defined(__linux__)
 #    include <unistd.h>
 #endif
@@ -463,8 +465,8 @@ compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
     }
     m_debug.step = false;
     m_example_time += elapsed;
-    frame.elapsed = elapsed;
-    frame.total = m_example_time;
+    frame.elapsed = compages::si::Seconds(elapsed);
+    frame.total = compages::si::Seconds(m_example_time);
 
     // With the panels shown, the example gets the mouse while it is over the
     // viewport, and the keyboard while the viewport has focus or the mouse is

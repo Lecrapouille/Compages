@@ -25,8 +25,8 @@ TEST(OrbitController, PlacesTheCameraOppositeTheForwardAxis)
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
     orbit.target = compages::Vector3f(0.0f, 0.0f, 0.0f);
-    orbit.yaw = 0.0f;
-    orbit.pitch = 0.0f;
+    orbit.yaw = compages::si::Radians(0.0);
+    orbit.pitch = compages::si::Radians(0.0);
     orbit.distance = 10.0f;
     orbit.writePose(world, camera);
 
@@ -42,10 +42,10 @@ TEST(OrbitController, ZoomPullsTheCameraIn)
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
     orbit.distance = 20.0f;
-    orbit.pitch = 0.0f;
+    orbit.pitch = compages::si::Radians(0.0);
     compages::world::CameraInput input;
     input.zoom_delta = 2.0f;
-    orbit.apply(world, camera, input, 10.0f);
+    orbit.apply(world, camera, input, compages::si::Seconds(10.0f));
     // Two notches take the same part of the way, near or far.
     const float asked = 20.0f * std::exp(-2.0f * orbit.zoom_step);
     ASSERT_NEAR(orbit.distance, asked, 1.0e-4f);
@@ -59,10 +59,10 @@ TEST(OrbitController, ANotchOfTheWheelGlidesInsteadOfJumping)
     const compages::world::EntityId camera = world.create("cam");
     compages::world::OrbitController orbit;
     orbit.distance = 3.0f;
-    orbit.pitch = 0.0f;
+    orbit.pitch = compages::si::Radians(0.0);
     compages::world::CameraInput notch;
     notch.zoom_delta = 1.0f;
-    orbit.apply(world, camera, notch, 1.0f / 60.0f);
+    orbit.apply(world, camera, notch, compages::si::Seconds(1.0f / 60.0f));
 
     // After one frame, the camera has started to move but is far from the
     // end: no jump. Then it keeps gliding without any more input.
@@ -72,7 +72,7 @@ TEST(OrbitController, ANotchOfTheWheelGlidesInsteadOfJumping)
     EXPECT_GT(first - asked, 0.5f * (3.0f - asked));
     for (int i = 0; i < 120; ++i)
     {
-        orbit.apply(world, camera, compages::world::CameraInput{}, 1.0f / 60.0f);
+        orbit.apply(world, camera, compages::world::CameraInput{}, compages::si::Seconds(1.0f / 60.0f));
     }
     EXPECT_NEAR(world.transform(camera).position.z, asked, 1.0e-3f);
 }
@@ -83,12 +83,12 @@ TEST(FlyController, ForwardMovesAlongLook)
     const compages::world::EntityId camera = world.create("cam");
     world.transform(camera).position = compages::Vector3f(0.0f, 0.0f, 0.0f);
     compages::world::FlyController fly;
-    fly.yaw = 0.0f;
-    fly.pitch = 0.0f;
-    fly.move_speed = 10.0f;
+    fly.yaw = compages::si::Radians(0.0);
+    fly.pitch = compages::si::Radians(0.0);
+    fly.move_speed = compages::si::LinearVelocity(10.0);
     compages::world::CameraInput input;
     input.forward = true;
-    fly.apply(world, camera, input, 1.0f);
+    fly.apply(world, camera, input, compages::si::Seconds(1.0f));
     // Looking -Z, one second at 10 units/s.
     ASSERT_NEAR(world.transform(camera).position.z, -10.0f, 1.0e-3f);
 }
@@ -99,13 +99,13 @@ TEST(FPSController, WalksOnTheGroundWithoutClimbing)
     const compages::world::EntityId camera = world.create("cam");
     world.transform(camera).position = compages::Vector3f(0.0f, 1.7f, 0.0f);
     compages::world::FPSController fps;
-    fps.yaw = 0.0f;
-    fps.pitch = -0.4f;
+    fps.yaw = compages::si::Radians(0.0);
+    fps.pitch = compages::si::Radians(-0.4);
     fps.eye_height = 1.7f;
-    fps.move_speed = 5.0f;
+    fps.move_speed = compages::si::LinearVelocity(5.0);
     compages::world::CameraInput input;
     input.forward = true;
-    fps.apply(world, camera, input, 1.0f);
+    fps.apply(world, camera, input, compages::si::Seconds(1.0f));
     ASSERT_NEAR(world.transform(camera).position.y, 1.7f, 1.0e-4f);
     ASSERT_NEAR(world.transform(camera).position.z, -5.0f, 1.0e-3f);
 }
@@ -119,8 +119,8 @@ TEST(ThirdPersonController, FollowsTheTargetEntity)
     compages::world::ThirdPersonController follow;
     follow.target = target;
     follow.look_offset = compages::Vector3f(0.0f, 0.0f, 0.0f);
-    follow.yaw = 0.0f;
-    follow.pitch = 0.0f;
+    follow.yaw = compages::si::Radians(0.0);
+    follow.pitch = compages::si::Radians(0.0);
     follow.distance = 6.0f;
     follow.writePose(world, camera);
 
@@ -141,7 +141,7 @@ TEST(RigController, GlidesTheSameWayAtAnyFrameRate)
         rig.target = compages::Vector3f(1.0f, 0.0f, 0.0f);
         for (int i = 0; i < p_steps; ++i)
         {
-            rig.apply(world, camera, compages::world::RigInput{}, p_dt);
+            rig.apply(world, camera, compages::world::RigInput{}, compages::si::Seconds(p_dt));
         }
         return rig.currentTarget().x;
     };
@@ -157,7 +157,7 @@ TEST(RigController, StaysAboveTheReliefAndKeepsLookingAtTheTarget)
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
     compages::world::RigController rig;
-    rig.pitch = -0.2f;
+    rig.pitch = compages::si::Radians(-0.2);
     rig.distance = 10.0f;
     rig.snap(world, camera);
     // Without a relief, the eye is 10 * sin(0.2) = 2 high.
@@ -179,7 +179,7 @@ TEST(RigController, StaysAboveTheReliefAndKeepsLookingAtTheTarget)
     ASSERT_NEAR(compages::vector::dot(forward, to_target) / compages::vector::norm(to_target),
                 1.0f, 1.0e-4f);
     // The wanted pose did not change: the camera comes back down by itself.
-    ASSERT_NEAR(rig.pitch, -0.2f, 1.0e-6f);
+    ASSERT_NEAR(compages::toRadians(rig.pitch), -0.2f, 1.0e-6f);
     ASSERT_NEAR(rig.distance, 10.0f, 1.0e-6f);
 }
 
@@ -188,16 +188,16 @@ TEST(RigController, PanKeepsTheGrabbedGroundUnderTheMouse)
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
     compages::world::RigController rig;
-    rig.pitch = -0.8f;
+    rig.pitch = compages::si::Radians(-0.8);
     rig.distance = 4.0f;
     rig.snap(world, camera);
 
     compages::world::RigInput input;
     input.pan = true;
     input.mouse = compages::Vector2f(0.0f, 0.0f);
-    rig.apply(world, camera, input, 0.0f);   // grab the target point
+    rig.apply(world, camera, input, compages::si::Seconds(0.0f));   // grab the target point
     input.mouse = compages::Vector2f(0.5f, 0.0f);
-    rig.apply(world, camera, input, 0.0f);
+    rig.apply(world, camera, input, compages::si::Seconds(0.0f));
     const compages::Vector3f moved = rig.target;
     // Dragging the mouse to the right drags the ground to the right: the
     // target goes to the left of the camera (-X at yaw 0).
@@ -206,7 +206,7 @@ TEST(RigController, PanKeepsTheGrabbedGroundUnderTheMouse)
     // Holding the mouse still does not drift, while the camera catches up.
     for (int i = 0; i < 30; ++i)
     {
-        rig.apply(world, camera, input, 1.0f / 60.0f);
+        rig.apply(world, camera, input, compages::si::Seconds(1.0f / 60.0f));
     }
     ASSERT_NEAR(rig.target.x, moved.x, 1.0e-4f);
     ASSERT_NEAR(rig.target.z, moved.z, 1.0e-4f);
@@ -221,7 +221,7 @@ TEST(RigController, WheelZoomsByAFactor)
     rig.snap(world, camera);
     compages::world::RigInput input;
     input.zoom_delta = 1.0f;
-    rig.apply(world, camera, input, 0.0f);
+    rig.apply(world, camera, input, compages::si::Seconds(0.0f));
     ASSERT_NEAR(rig.distance, 10.0f * std::exp(-rig.zoom_step), 1.0e-4f);
 }
 
@@ -231,7 +231,7 @@ TEST(RigController, WheelKeepsThePointUnderTheMouse)
     compages::world::World world;
     const compages::world::EntityId camera = world.create("cam");
     compages::world::RigController rig;
-    rig.pitch = -0.9f;
+    rig.pitch = compages::si::Radians(-0.9);
     rig.distance = 10.0f;
     rig.snap(world, camera);
 
@@ -241,7 +241,7 @@ TEST(RigController, WheelKeepsThePointUnderTheMouse)
     auto under = [&]()
     {
         const compages::world::LocalTransformView pose = world.transform(camera);
-        const float half = std::tan(input.fov * 0.5f);
+        const float half = units::math::tan(input.fov * 0.5);
         const compages::Vector3f ray =
             compages::Quatf(pose.rotation) *
             compages::Vector3f(input.mouse.x * half * input.aspect, input.mouse.y * half, -1.0f);
@@ -250,7 +250,7 @@ TEST(RigController, WheelKeepsThePointUnderTheMouse)
     };
     const compages::Vector3f before = under();
     input.zoom_delta = 3.0f;
-    rig.apply(world, camera, input, 0.0f);
+    rig.apply(world, camera, input, compages::si::Seconds(0.0f));
     rig.snap(world, camera);
     ASSERT_LT(rig.distance, 10.0f);
     const compages::Vector3f after = under();
@@ -274,14 +274,14 @@ TEST(RigController, FlightEndsWhereAskedWithoutAJolt)
 
     // The first frame barely moves: no jolt at the start.
     const float dt = 1.0f / 60.0f;
-    rig.apply(world, camera, compages::world::RigInput{}, dt);
+    rig.apply(world, camera, compages::world::RigInput{}, compages::si::Seconds(dt));
     ASSERT_LT(rig.currentTarget().x, 1.0f);
 
     // On the way, the camera goes up to see both ends.
     float highest = 0.0f;
     for (int i = 0; i < 6000 && rig.flying(); ++i)
     {
-        rig.apply(world, camera, compages::world::RigInput{}, dt);
+        rig.apply(world, camera, compages::world::RigInput{}, compages::si::Seconds(dt));
         highest = std::max(highest, rig.currentDistance());
     }
     ASSERT_FALSE(rig.flying());
@@ -301,14 +301,14 @@ TEST(RigController, InputStopsTheFlightWhereItIs)
     rig.flyTo(compages::Vector3f(5000.0f, 0.0f, 0.0f), 100.0f);
     for (int i = 0; i < 150; ++i)
     {
-        rig.apply(world, camera, compages::world::RigInput{}, 1.0f / 60.0f);
+        rig.apply(world, camera, compages::world::RigInput{}, compages::si::Seconds(1.0f / 60.0f));
     }
     const compages::Vector3f now = rig.currentTarget();
     ASSERT_TRUE(rig.flying());
     ASSERT_GT(now.x, 100.0f);
     compages::world::RigInput input;
     input.rotate = true;
-    rig.apply(world, camera, input, 1.0f / 60.0f);
+    rig.apply(world, camera, input, compages::si::Seconds(1.0f / 60.0f));
     ASSERT_FALSE(rig.flying());
     ASSERT_NEAR(rig.target.x, now.x, 1.0e-3f);
 }

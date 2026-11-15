@@ -6,16 +6,16 @@ Attach behaviour to one entity (a door, a robot arm, a camera) with code that ru
 
 ![07b_Routines](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07b_Routines.png)
 
-A **routine** is code attached to one entity and run at each step of the World, like a `MonoBehaviour` in Unity. The workshop arm has one ([make it move](../tutorials/03-the-world.md)). Headers: `World/Routines/Routine.hpp` and `World/Routines/RoutineSystem.hpp`, both included by `World/Entity.hpp`.
+A **routine** is code attached to one entity and run at each step of the World, like a `MonoBehaviour` in Unity. The workshop arm has one ([make it move](../tutorials/03-the-world.md)). Headers: `World/Routines/Routine.hpp` and `World/Routines/RoutineSystem.hpp`, both included by `World/Entity.hpp`. Times are `compages::si::Seconds`; the suffixes `0.5_s`, `1.2_rad_per_s` need `using namespace compages::si::literals;` ([units](../tutorials/00-glossary.md#-units)).
 
 ## 🔄 1. Code at each frame
 
 ```cpp
 struct Spin: compages::world::Routine
 {
-    explicit Spin(float p_speed) : speed(p_speed) {}
-    void update(float p_dt) override { transform().rotateY(speed * p_dt); }
-    float speed;
+    explicit Spin(compages::si::AngularVelocity p_speed) : speed(p_speed) {}
+    void update(compages::si::Seconds p_dt) override { transform().rotateY(speed * p_dt); }
+    compages::si::AngularVelocity speed;   // 1.2_rad_per_s: speed * p_dt is an angle
 };
 
 ship.add<Spin>(2.0f);               // two radians a second; the arguments go to the constructor
@@ -41,7 +41,7 @@ Inside a routine: `entity()`, `transform()`, `world()`, `input()` (keys and mous
 `update(dt)` receives the time of the frame, which changes. A controller, a physics engine or a behaviour tree wants the same step each time. `fixedUpdate(dt)` is called 0, 1 or more times per step, with a constant `dt`:
 
 ```cpp
-world.routines().fixedStep(0.25f);   // fixedUpdate() at 4 Hz (1/60 s by default)
+world.routines().fixedStep(0.25_s);   // fixedUpdate() at 4 Hz (1/60 s by default)
 ```
 
 After a very slow frame, at most 8 run: the World drops the time it cannot catch up with instead of freezing.
@@ -61,8 +61,8 @@ Routines run by `priority()` (smaller first), then in the order they were added,
 ## ⏱ 6. Later: timers
 
 ```cpp
-after(2.0f, [this] { entity().destroy(); });       // once, in two seconds
-TimerId blink = every(0.5f, [this] { flip(); });   // every half second
+after(2.0_s, [this] { entity().destroy(); });       // once, in two seconds
+TimerId blink = every(0.5_s, [this] { flip(); });   // every half second
 cancel(blink);
 ```
 

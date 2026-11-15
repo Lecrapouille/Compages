@@ -6,76 +6,44 @@
 
 *Compages* is a Latin word: an assembly of parts that lock together into one whole. Here, three layers: GPU, world and renderer.
 
+Compages is used for real work: 
+- [RobotIK](https://github.com/Lecrapouille/RobotIK), a robot kinematics library, uses it for its world, its simulator and its painted canvases.
+
 ---
 
 ## 🤔 What is it for?
 
-A 3D program does two different jobs:
+A 3D program does two jobs:
 
-- **Simulate**: things exist and move. A robot arm turns its joints, particles fall, a character walks. This is numbers in memory: a unit test or a planner needs it, without any window.
+- **Simulate**: things exist and move. A robot arm turns its joints, heat spreads in a plate, a character walks. This is only numbers in memory, so it can run in a unit test, with no window.
 - **Show**: a camera looks at this world and the graphics card draws it, sixty times per second.
 
-Most 3D engines mix the two and give you everything at once: a window, an editor, a scene format, a physics engine. You wanted to draw a curve, and you got a game engine. Compages does the opposite. It is three stacked layers, and **you stop at the first one that does your job**:
+Most 3D engines do both jobs at once and give you everything: a window, an editor, a scene format, a physics engine. You wanted to draw a curve, and you got a game engine. Compages gives you three layers instead. **Use the lowest layer that does your job**:
 
-| Layer | When you have… | You write… | Inspired by |
-|-------|----------------|------------|------------|
+| Layer | Use it when you have… | You write… | Inspired by |
+|-------|-----------------------|------------|-------------|
 | 🟧 **GPU** | a shader and arrays of numbers | `drawable["position"] = list_of_points; drawable.draw();` | [Glumpy](https://glumpy.github.io/) |
-| 🟦 **World** | things that move, even with no screen | `world.entity("Ship").child("Gun")`, your structs as components | [Three.js](https://threejs.org/) + an ECS |
+| 🟦 **World** | things that move, with or without a screen | `world.entity("Ship").child("Gun")`, your structs as components | [Three.js](https://threejs.org/) + an ECS |
 | 🟩 **Renderer** | a world you want to see | `scene.box("Cube", color(1, 0, 0)); scene.draw(frame);` | [Three.js](https://threejs.org/) |
 
-- 🌌 A galaxy simulated on the GPU needs only the GPU layer.
-- 🤖 A robot planner, a server or a unit test needs only the World layer: no OpenGL context at all.
-- 🎮 A game or a robot simulator uses the three, and the types stay separate.
+Who it is for:
 
----
-
-## 📖 The story
-
-It started with [SimTaDyn](https://github.com/Lecrapouille/SimTaDyn), as student project, where I wanted to draw **maps**. I needed an OpenGL layer.
-
-With the old OpenGL (the "legacy" one, `glBegin` / `glEnd`), drawing was simple. Then OpenGL 3.3 *core* arrived: buffers, vertex arrays, attribute locations, shaders to compile and link, uniforms to look up by hand… dozens of calls before the first triangle, and one wrong call gives a black window with no message. **I never managed to get it right.**
-
-Then I found [Glumpy](https://glumpy.github.io/), in Python, and it was a revelation: the **shader names its data**, you fill `program["position"]`, you call `draw()`, and the copies between the CPU and the GPU are hidden. A whole OpenGL application in a few lines. I wrote a C++ version of this idea: **OpenGLCppWrapper**. But it hit walls:
-
-- 🔁 **No ping-pong.** GPU simulations draw into a texture, then read it in the next pass while writing into another one, and swap (the Game of Life, reaction-diffusion, particles). My copy of the Glumpy model could not express it.
-- 🌳 **No real scene graph.** I wanted to build scenes like in Three.js, `ship.child("Gun").position(0, 0.5, 0)`, and my API made it painful with materials paradoxically because of the abstraction layer.
-- 🧟 **Unity-style scripts, without Unity's inheritance.** I liked Unity's `MonoBehaviour` (a small script attached to an object, `Start()` once, `Update()` every frame), but not the deep class hierarchies that come with it, with virtual calls everywhere and data scattered in memory.
-
-The project stopped for several years. With the help of LLMs, I rebuilt it from scratch as **Compages**, and fixed what had blocked me:
-
-- ⚡ the GPU layer sends everything the CPU changed **in one pass** at `draw()`, with no virtual call and no `gl*` in your code;
-- 🧬 the world is an **ECS** ([EnTT](https://github.com/skypjack/entt)): an entity is an id, your data are plain structs packed in memory, and loops over thousands of entities stay **cache friendly**;
-- 🌳 the **scene graph** sits on the same entities, with the chained style of Three.js;
-- 🎬 **routines** give the comfort of `MonoBehaviour`, but they are optional small scripts attached to an entity, not a class tree you must inherit from;
-- 🔁 **ping-pong**, render-to-texture and compute shaders are first-class: the gallery has a Game of Life, a reaction-diffusion and an eight-thousand-star galaxy.
-
----
-
-## ✨ Why Compages?
-
-| | 🧱 Compages | Raw OpenGL | Glumpy | Three.js | Unity / Godot | bgfx / sokol |
-|---|---|---|---|---|---|---|
-| Language | C++20 | C | Python | JavaScript | C# / GDScript | C / C++ |
-| Triangle in a few lines | ✅ the shader names the data | ❌ dozens of calls | ✅ | ✅ | ✅ (in the editor) | ❌ you describe every buffer |
-| CPU → GPU copies hidden | ✅ one flush at `draw()` | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Compute shaders, ping-pong | ✅ | ✅ (by hand) | partly | WebGL limits | ✅ | ✅ (by hand) |
-| Scene graph in chained calls | ✅ | ❌ | ❌ | ✅ | ✅ (editor) | ❌ |
-| ECS, cache-friendly data | ✅ | — | ❌ | ❌ | Unity DOTS (separate) | — |
-| Simulation without any screen | ✅ a whole layer for it | — | ❌ | ❌ | partly | — |
-| Use only the part you need | ✅ three independent layers | — | ✅ | ❌ | ❌ | ✅ |
-| A library, not an editor | ✅ your window, your loop | ✅ | ✅ | ✅ | ❌ | ✅ |
-
-Compages puts together the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time. That is a choice, and it has a price:
-
-- ✅ **A good fit** when you want to see a simulation you also run without a screen (robots, physics on a grid, agents), when you want to write shaders without the OpenGL state machine, or when you want to learn how a 3D engine works from code small enough to read.
-- ❌ **Look elsewhere** when you need an editor, a physics engine, sound, consoles or the web (Godot, Unity, Unreal, Three.js do this), or a renderer that runs on every graphics API (bgfx, sokol, Filament). Compages draws with OpenGL 4.5 only, on Linux.
-
-What this gives you:
-
-- 🔬 **Scientists** draw and compute on the GPU without learning the OpenGL state machine.
-- 🤖 **Robotics** gets a world that runs in unit tests and CI, and the same world drawn when you want to see it. [RobotIK](https://github.com/Lecrapouille/RobotIK) uses Compages for its world and its simulator.
-- 🎮 **Games** get Three.js-short scene code, glTF models, animations and cameras, in C++.
+- 🔬 **Scientists** draw and compute on the GPU (a galaxy, heat in a plate) without learning the OpenGL state machine. The GPU layer is often enough.
+- 🤖 **Robotics** gets a world that runs in unit tests and CI with no OpenGL context at all, and the same world drawn when you want to see it.
+- 🎮 **Games** get short scene code like Three.js, glTF models, animations and cameras, in C++. They use all three layers.
 - 🧑‍🏫 **Learners** get a gallery of more than seventy small demos, each adding one idea, with its source shown next to the picture, and tutorials that build a robot workshop step by step.
+
+---
+
+## 🚫 What it is not for?
+
+Compages draws and simulates. It does not try to be a full game engine:
+
+- 🧲 **No physics engine.** Bring your own (Bullet, Jolt, PhysX, MuJoCo…): mark an entity `PoseDriver::External` and the engine writes its pose each frame. The demo `07e_ExternalPhysics` shows how, in a few lines.
+- 🔇 **No sound.** Use an audio library next to it (OpenAL, miniaudio…).
+- 🌐 **No network, no multiplayer.**
+- 🛠️ **No editor.** Your scene is code: your window, your loop.
+- 🖥️ **One platform.** OpenGL 4.5 only, on Linux. No consoles, no web, no Vulkan or Metal. For these, look at Godot, Unity, Unreal, Three.js, or a renderer on every graphics API (bgfx, sokol, Filament).
 
 ---
 
@@ -100,7 +68,7 @@ triangle.draw();
 
 <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/01c_Triangle.png" alt="Triangle" width="360"> <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png" alt="Galaxy" width="360">
 
-The same door leads to simulations: in `05f_Galaxy`, 8000 stars attract each other in a compute shader, and the drawable reads the buffer the computation just wrote. This screenshot on the right shows initial step of the galaxy simulation.
+The same door leads to simulations: in `05f_Galaxy`, only 300 lines are needed to simulate 8000 stars attract each other in a compute shader, and the drawable reads the buffer the computation just wrote. This screenshot on the right shows initial step of the galaxy simulation.
 
 ### 🟦 World — things that move, without any screen
 
@@ -112,7 +80,7 @@ compages::world::Entity ship = world.entity("Ship").set(Velocity{ { 1, 0, 0 } })
 ship.child("Gun").position(0.0f, 0.5f, 0.0f);             // the gun follows the ship
 
 world.each<Velocity>([&](compages::world::Entity e, Velocity& v) {   // a system: a plain loop
-    e.position(e.position() + v.value * step.elapsed);
+    e.position(e.position() + v.value * compages::toSeconds(step.elapsed));
 });
 world.update(step);                                       // routines, joints, matrices
 ```
@@ -122,6 +90,7 @@ This runs in a unit test, with no OpenGL. Joints too: `.revolute(axis, -90.0_deg
 ### 🟩 Renderer — a picture of that world
 
 ```cpp
+using namespace compages::si::literals;   // 1.0_rad_per_s, 0.5_s, 90.0_deg
 compages::renderer::Scene scene(world);
 
 // At setup
@@ -130,30 +99,70 @@ scene.sun("Sun", { 1.0f, 0.95f, 0.85f }, 1.4f);
 compages::world::Entity cube = scene.box("Cube", compages::renderer::color(0.9f, 0.18f, 0.12f));
 
 // Every frame
-cube.rotate(frame.elapsed, { 0.4f, 1.0f, 0.0f });
+cube.rotate(1.0_rad_per_s * frame.elapsed, { 0.4f, 1.0f, 0.0f });   // a speed times a time is an angle
 scene.draw(frame);
 ```
 
-<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png" alt="Cube" width="360"> <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10b_DoomLike.png" alt="Doom-like" width="360">
+<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/06a_FirstScene.png" alt="Cube" width="360"> <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08b_GltfAnimation.png" alt="gltf animation" width="360">
 
-`scene.loadFile(...)` reads some glTF files used for games but also files such as STL and URDF used in robotic (with their joints). The gallery goes up to a small Doom-like game or basic robot forward kinematic.
+On the right, in `08b_GltfAnimation`, the `scene.loadFile(...)` reads glTF files and animations (used in games). The gallery has a small Doom-like game. STL and URDF files (for robotics with their joints) can also be loaded. The gallery also has a robot arm example moved by its joints (forward kinematics).
 
 ---
 
-## 🚀 Quick start
+## 🎨 And bigger demos
 
-Details, Fedora, CI without screen, system install: [build and install](doc/guides/build-and-install.md).
+The same three layers are enough for science and for games. Two demos of the gallery:
 
-You need Linux, a C++20 compiler, Make, CMake, Git, `pkg-config`, GLFW and an **OpenGL 4.5** driver. **Note:** macOS stops at OpenGL 4.1 I will see how to manage this.
+| 🔬 Heat in a plate, with live charts | 🌊 Water flowing over a terrain |
+|---|---|
+| <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11h_Thermometers.png" alt="Thermometers" width="360"> | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10f_FlowingWater.png" alt="Flowing water" width="360"> |
+| `11h_Thermometers`: a heat equation on a `Field<float>`, probes and curves painted on a board. | `10f_FlowingWater`: water on a height field, with ripples and mist. |
+
+Run them with `./build/linux-gcc-debug/bin/Compages-examples 11h_Thermometers` (or `10f_FlowingWater`).
+
+---
+
+## ✨ Why Compages?
+
+| | 🧱 Compages | Raw OpenGL | Glumpy | Three.js | Unity / Godot |
+|---|---|---|---|---|---|
+| Language | C++20 | C | Python | JavaScript | C# / GDScript |
+| Triangle in a few lines | ✅ the shader names the data | ❌ dozens of calls | ✅ | ✅ | ✅ (in the editor) |
+| CPU → GPU copies hidden | ✅ one flush at `draw()` | ❌ | ✅ | ✅ | ✅ |
+| Compute shaders, ping-pong | ✅ | ✅ (by hand) | ❌ ping-pong only, no compute | WebGL limits | ✅ |
+| Scene graph in chained calls | ✅ | ❌ | ❌ | ✅ | ✅ (editor) |
+| ECS, cache-friendly data | ✅ | — | ❌ | ❌ | Unity DOTS (separate) |
+| Simulation without any screen | ✅ a whole layer for it | — | ❌ | ❌ | ✅ headless mode, but the whole engine |
+| Use only the part you need | ✅ three independent layers | — | ✅ | ❌ | ❌ |
+| A library, not an editor | ✅ your window, your loop | ✅ | ✅ | ✅ | ❌ |
+
+Compages puts together the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time.
+
+---
+
+## 🚀 Quick installation
+
+You need Linux, a C++20 compiler, Make, CMake, Git, `pkg-config`, GLFW and an **OpenGL 4.5** driver. 
+
+**Note:**
+
+- macOS stops at OpenGL 4.1 I will see how to manage this.
+- Compages does not use CMake directly but uses Makefile.
+
+All details (Fedora, CI without screen, system install) are given in the document [build and install](doc/guides/build-and-install.md).
 
 ```sh
 git clone --recurse-submodules https://github.com/Lecrapouille/Compages.git
 
 cd Compages
-
 make
+# Optional: sudo make install
+```
 
-make run-Compages-examples   # the gallery: every demo, its source, GPU counters
+You can run the demos:
+
+```sh
+./build/linux-gcc-debug/bin/Compages-examples
 ```
 
 Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels. Then follow [the tutorials](doc/tutorials/README.md).
@@ -164,7 +173,7 @@ Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels. Then follow [
 
 <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13d_RobotEye.png" alt="The robot workshop of the tutorials" width="480">
 
-Start with the [tutorials](doc/tutorials/README.md). They follow the three layers: a shader and some numbers on the GPU, then a robot arm in a World with no screen, then the workshop above drawn by the Renderer, one idea per page.
+Start with the [tutorials](doc/tutorials/README.md). They follow the three stacked-layer: a shader and some numbers on the GPU, then a robot arm in a World with no screen, then the workshop above drawn by the Renderer, one idea per page.
 
 Then:
 
@@ -175,6 +184,12 @@ Then:
 - the [reference](doc/reference/README.md) lists the calls, the demos and the shader library.
 
 Coding agents: [AGENTS.md](AGENTS.md) and the skills of `.claude/skills/`.
+
+---
+
+## 📖 The story
+
+Compages comes from [SimTaDyn](https://github.com/Lecrapouille/SimTaDyn), a student project to draw maps, and from **OpenGLCppWrapper**, a C++ version of the [Glumpy](https://glumpy.github.io/) idea: the shader names its data and `draw()` hides the copies to the GPU. That wrapper could not do ping-pong passes nor a real scene graph, and the project stopped for some years. Compages is the rewrite that fixes this, with an ECS world ([EnTT](https://github.com/skypjack/entt)) and Unity-like routines without class inheritance.
 
 ---
 

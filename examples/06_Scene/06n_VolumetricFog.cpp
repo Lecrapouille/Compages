@@ -16,6 +16,8 @@
 #include <cmath>
 #include <numbers>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -81,7 +83,7 @@ compages::Status VolumetricFogDemo::setUp()
     {
         m_scene.box("Crate", compages::renderer::color(0.6f, 0.45f, 0.3f))
             .position(-5.0f + (2.6f * float(i)), 0.5f, (i % 2 == 0) ? 1.5f : -1.0f)
-            .rotation(0.4f * float(i), compages::Vector3f(0.0f, 1.0f, 0.0f));
+            .rotation(0.4_rad * float(i), compages::Vector3f(0.0f, 1.0f, 0.0f));
     }
 
     // Two lamps going round, casting shadows (in the air too).
@@ -102,7 +104,7 @@ compages::Status VolumetricFogDemo::setUp()
 // ----------------------------------------------------------------------------
 void VolumetricFogDemo::draw(compages::world::ViewFrame const& p_frame)
 {
-    m_time += std::min(p_frame.elapsed, 0.1f);
+    m_time += compages::toSeconds(std::min(p_frame.elapsed, 0.1_s));
     const float a = 0.4f * m_time;
     m_red.position(4.0f * std::cos(a), 1.6f, 3.0f * std::sin(a));
     m_blue.position(4.0f * std::cos(a + PI), 2.2f, 3.0f * std::sin(a + PI));

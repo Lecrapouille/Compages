@@ -154,7 +154,7 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
     auto const first_skin = *skins.begin();
     bind = skins.get<compages::world::SkinInstance>(first_skin).pose;
 
-    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, 0.35f)));
+    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, compages::si::Seconds(0.35))));
 
     float worst = 0.0f;
     auto const& after = skins.get<compages::world::SkinInstance>(first_skin).pose;

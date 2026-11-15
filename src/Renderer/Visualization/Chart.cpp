@@ -190,7 +190,7 @@ void Chart::write(std::string const& p_text, float p_x, float p_y, bool p_right,
         {
             for (int column = 0; column < 3; ++column)
             {
-                if ((rows[std::size_t(row)] >> (2 - column)) & 1u)
+                if (((unsigned(rows[std::size_t(row)]) >> unsigned(2 - column)) & 1u) != 0u)
                 {
                     const int px = x + (column * m_dot);
                     const int py = y + ((4 - row) * m_dot);
@@ -227,13 +227,16 @@ void Chart::drawAxes()
         }
     }
     const float every = roundStep(m_desc.seconds / 5.0f);
-    for (float ago = 0.0f; ago <= m_desc.seconds + (0.001f * every); ago += every)
+    // An integer counts the ticks: the first one is "0" without comparing
+    // floats, and the steps do not add up rounding errors.
+    for (int tick = 0; float(tick) * every <= m_desc.seconds + (0.001f * every); ++tick)
     {
+        const float ago = float(tick) * every;
         const float x = pixelOf(m_now - ago, m_low).x;
         m_canvas.paintPixelLine({ x, m_bottom }, { x, m_top }, grid, thick);
         if (m_dot > 0)
         {
-            write((ago == 0.0f) ? std::string("0") : ("-" + number(ago, every) + "s"), x,
+            write((tick == 0) ? std::string("0") : ("-" + number(ago, every) + "s"), x,
                   m_bottom - float(7 * m_dot), false, ink);
         }
     }

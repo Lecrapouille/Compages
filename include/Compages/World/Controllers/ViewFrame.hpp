@@ -29,7 +29,7 @@ namespace compages::world
 //! compages::world::ViewFrame frame;
 //! frame.width = 1280;
 //! frame.height = 720;
-//! frame.elapsed = 1.0f / 60.0f;
+//! frame.elapsed = compages::si::Seconds(1.0 / 60.0);
 //! frame.input.set(compages::world::Key::W, true);
 //! world.update(frame);
 //! compages::world::aspect(frame);

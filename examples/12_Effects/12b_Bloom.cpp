@@ -16,6 +16,8 @@
 #include <array>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -72,7 +74,7 @@ compages::Status BloomDemo::setUp()
 // ----------------------------------------------------------------------------
 void BloomDemo::draw(compages::world::ViewFrame const& p_frame)
 {
-    m_time += std::min(p_frame.elapsed, 0.1f);
+    m_time += compages::toSeconds(std::min(p_frame.elapsed, 0.1_s));
     for (std::size_t i = 0; i < m_lamps.size(); ++i)
     {
         const float a = (0.5f * m_time) + (1.5707963f * float(i));

@@ -13,6 +13,8 @@
 #include <array>
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -33,28 +35,28 @@ struct Bounce: compages::world::Routine
         from = entity().position();
     }
 
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
         // Gravity, then a bounce that loses speed. Once it barely moves, it
         // is put back where it started.
         compages::Vector3f position = entity().position();
-        speed -= 9.81f * p_dt;
-        position.y += speed * p_dt;
+        speed -= 9.81_mps_sq * p_dt;
+        position.y += compages::toMetres(speed * p_dt);
         if (position.y < 0.5f)
         {
             position.y = 0.5f;
             speed = -0.7f * speed;
-            if (std::abs(speed) < 0.5f)
+            if (units::math::abs(speed) < 0.5_mps)
             {
                 position = from;
-                speed = 0.0f;
+                speed = 0.0_mps;
             }
         }
-        entity().position(position).rotate(p_dt, { 1.0f, 0.0f, 0.0f });
+        entity().position(position).rotate(1.0_rad_per_s * p_dt, { 1.0f, 0.0f, 0.0f });
     }
 
     compages::Vector3f from;
-    float speed = 0.0f;
+    compages::si::LinearVelocity speed{ 0.0 };
 };
 
 // ----------------------------------------------------------------------------
@@ -62,11 +64,11 @@ struct Bounce: compages::world::Routine
 // ----------------------------------------------------------------------------
 struct Circle: compages::world::Routine
 {
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         // A circle at a fixed height, from the total time.
-        const float angle = 0.8f * frame().total;
-        entity().position(6.0f * std::cos(angle), 6.0f, 6.0f * std::sin(angle));
+        const compages::si::Radians angle = 0.8_rad_per_s * frame().total;
+        entity().position(6.0f * units::math::cos(angle), 6.0f, 6.0f * units::math::sin(angle));
     }
 };
 
@@ -75,9 +77,9 @@ struct Circle: compages::world::Routine
 // ----------------------------------------------------------------------------
 struct MvpDemo::Spin: compages::world::Routine
 {
-    void update(float p_dt) override
+    void update(compages::si::Seconds p_dt) override
     {
-        transform().rotateY(0.9f * p_dt);
+        transform().rotateY(0.9_rad_per_s * p_dt);
     }
 };
 

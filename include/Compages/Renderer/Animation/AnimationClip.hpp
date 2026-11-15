@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/Units.hpp"
 #include "Compages/Renderer/Assets/AssetIds.hpp"
 
 #include <cstdint>
@@ -73,7 +74,7 @@ struct AnimationClip
     //! \brief Clip name from the asset (glTF animation name).
     std::string name;
     //! \brief Length of the clip in seconds (last key time).
-    float duration = 0.0f;
+    si::Seconds duration{ 0.0 };
     //! \brief All curves sampled together when the clip plays.
     std::vector<AnimationChannel> channels;
 };

@@ -10,6 +10,8 @@
 
 #include <cmath>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -35,23 +37,23 @@ struct AnimatedModel::Walk: compages::world::Routine
         right_shoulder = entity().lookup("Torso/RightShoulder");
     }
 
-    void update(float) override
+    void update(compages::si::Seconds) override
     {
         // Around the circle, facing the way it walks. Arms and legs swing in
         // opposite phase, which is what reads as a step.
-        const float time = frame().total + phase;
-        const float step = std::sin(2.4f * time);
-        const float path = 0.55f * time;
+        const compages::si::Seconds time = frame().total + compages::si::Seconds(phase);
+        const float step = units::math::sin(2.4_rad_per_s * time);
+        const compages::si::Radians path = 0.55_rad_per_s * time;
         entity()
-            .position(radius * std::sin(path),
+            .position(radius * units::math::sin(path),
                       0.04f * std::abs(step),
-                      radius * std::cos(path))
-            .rotation(path + 1.5707963f, { 0.0f, 1.0f, 0.0f });
-        left_hip.rotation(0.70f * step, { 1.0f, 0.0f, 0.0f });
-        right_hip.rotation(-0.70f * step, { 1.0f, 0.0f, 0.0f });
-        left_shoulder.rotation(-0.55f * step, { 1.0f, 0.0f, 0.0f });
-        right_shoulder.rotation(0.55f * step, { 1.0f, 0.0f, 0.0f });
-        head.rotation(0.15f * std::sin(1.2f * time), { 0.0f, 1.0f, 0.0f });
+                      radius * units::math::cos(path))
+            .rotation(path + 90.0_deg, { 0.0f, 1.0f, 0.0f });
+        left_hip.rotation(0.70_rad * step, { 1.0f, 0.0f, 0.0f });
+        right_hip.rotation(-0.70_rad * step, { 1.0f, 0.0f, 0.0f });
+        left_shoulder.rotation(-0.55_rad * step, { 1.0f, 0.0f, 0.0f });
+        right_shoulder.rotation(0.55_rad * step, { 1.0f, 0.0f, 0.0f });
+        head.rotation(0.15_rad * units::math::sin(1.2_rad_per_s * time), { 0.0f, 1.0f, 0.0f });
     }
 
     float radius;
@@ -123,11 +125,11 @@ compages::Status AnimatedModel::setUp()
     m_scene.camera()
         .position(0.0f, 3.6f, 8.5f)
         .add<compages::world::Orbit>(compages::Vector3f(0.0f, 0.6f, 0.0f));
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.22f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.22_rad_per_s;
     m_scene.sun();
 
     m_scene.plane("Ground", compages::renderer::color(0.40f, 0.44f, 0.40f))
-        .rotation(-1.5707963f, { 1.0f, 0.0f, 0.0f })
+        .rotation(-90.0_deg, { 1.0f, 0.0f, 0.0f })
         .scale(14.0f);
     // Two radii, out of step. The box, sphere and cylinder meshes are shared.
     makeWalker("WalkerA", compages::renderer::color(0.22f, 0.48f, 0.78f))

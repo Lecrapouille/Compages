@@ -11,6 +11,8 @@
 #include <random>
 #include <vector>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -159,8 +161,8 @@ void IndirectDraw::draw(compages::world::ViewFrame const& p_frame)
     const compages::Vector2f center =
         p_frame.input.mouse_over
             ? compages::world::mouseInClipSpace(p_frame)
-            : compages::Vector2f(0.55f * std::sin(p_frame.total * 0.7f),
-                                 0.40f * std::cos(p_frame.total * 0.5f));
+            : compages::Vector2f(0.55f * units::math::sin(0.7_rad_per_s * p_frame.total),
+                                 0.40f * units::math::cos(0.5_rad_per_s * p_frame.total));
 
     // No survivor yet: the compute pass counts them into vertex_count.
     m_command.write(compages::gpu::DrawIndirectCommand{ 0u, 1u, 0u, 0u }, 0u);

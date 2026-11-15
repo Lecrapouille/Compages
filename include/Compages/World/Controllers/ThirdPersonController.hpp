@@ -40,12 +40,12 @@ public:
 
     EntityId target{};
     compages::Vector3f look_offset{ 0.0f, 1.6f, 0.0f };
-    float yaw = 0.0f;
-    float pitch = -0.25f;
+    si::Radians yaw{ 0.0 };
+    si::Radians pitch{ -0.25 };
     //! \brief The distance the wheel asks for. The camera glides to it.
     float distance = 8.0f;
 
-    float look_sensitivity = 0.005f;
+    si::Radians look_sensitivity{ 0.005 };
     //! \brief Log of the distance change per notch of the wheel: each notch
     //! brings the camera the same part of the way closer (about 11 %),
     //! whether the scene is a room or a galaxy.
@@ -56,15 +56,15 @@ public:
     float sharpness = 12.0f;
     float min_distance = 1.5f;
     float max_distance = 40.0f;
-    float min_pitch = -1.2f;
-    float max_pitch = 0.6f;
+    si::Radians min_pitch{ -1.2 };
+    si::Radians max_pitch{ 0.6 };
 
     //! \brief Orbit \c target using mouse look and wheel zoom.
     //! \param[in] p_dt seconds since the last frame, for the zoom glide.
     void apply(World& p_world,
                EntityId p_camera,
                CameraInput const& p_input,
-               float p_dt);
+               si::Seconds p_dt);
 
     //! \brief Place the camera from yaw/pitch/distance without reading input.
     void writePose(World& p_world, EntityId p_camera) const;

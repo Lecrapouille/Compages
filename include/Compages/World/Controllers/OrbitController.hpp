@@ -39,12 +39,12 @@ class OrbitController
 public:
 
     compages::Vector3f target{ 0.0f, 0.0f, 0.0f };
-    float yaw = 0.0f;
-    float pitch = -0.35f;
+    si::Radians yaw{ 0.0 };
+    si::Radians pitch{ -0.35 };
     //! \brief The distance the wheel asks for. The camera glides to it.
     float distance = 40.0f;
 
-    float look_sensitivity = 0.005f;
+    si::Radians look_sensitivity{ 0.005 };
     //! \brief Log of the distance change per notch of the wheel: each notch
     //! brings the camera the same part of the way closer (about 11 %),
     //! whether the scene is a room or a galaxy.
@@ -59,8 +59,8 @@ public:
     float boost = 6.0f;
     float min_distance = 2.0f;
     float max_distance = 200.0f;
-    float min_pitch = -1.45f;
-    float max_pitch = 1.45f;
+    si::Radians min_pitch{ -1.45 };
+    si::Radians max_pitch{ 1.45 };
 
     // ------------------------------------------------------------------------
     //! \brief Consume one frame of input and write the camera pose.
@@ -69,7 +69,7 @@ public:
     void apply(World& p_world,
                EntityId p_camera,
                CameraInput const& p_input,
-               float p_dt);
+               si::Seconds p_dt);
 
     // ------------------------------------------------------------------------
     //! \brief Write the pose from the current yaw/pitch/distance, ignoring

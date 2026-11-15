@@ -51,3 +51,17 @@ using AngularAcceleration =
 using Force = ::units::force::newton_t;         //!< Force (N).
 using Torque = ::units::torque::newton_meter_t; //!< Torque (N.m).
 } // namespace compages::si
+
+// ****************************************************************************
+//! \brief The unit suffixes: \c 0.5_s, \c 90.0_deg, \c 1.2_rad_per_s, \c 2.0_m.
+//!
+//! \code
+//! using namespace compages::si::literals;
+//! cube.rotate(1.2_rad_per_s * frame.elapsed, { 0.0f, 1.0f, 0.0f });
+//! routine.after(0.5_s, [] { });
+//! \endcode
+// ****************************************************************************
+namespace compages::si::literals
+{
+using namespace ::units::literals;
+} // namespace compages::si::literals

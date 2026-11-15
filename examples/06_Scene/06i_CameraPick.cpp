@@ -7,6 +7,8 @@
 
 #include "06_Scene/06i_CameraPick.hpp"
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -45,7 +47,7 @@ compages::Status CameraPick::setUp()
     // Orbit to start with. Key 2 in draw() swaps it for a fly control.
     m_camera = m_scene.camera().position(0.0f, 8.0f, 22.0f);
     m_camera.add<compages::world::Orbit>(compages::Vector3f(0.0f, 1.0f, 0.0f));
-    m_camera.get<compages::world::Orbit>().spin = 0.35f;
+    m_camera.get<compages::world::Orbit>().spin = 0.35_rad_per_s;
     return m_scene.prepare();
 }
 
@@ -88,7 +90,7 @@ void CameraPick::draw(compages::world::ViewFrame const& p_frame)
 
     // Once at the start, the middle of the picture, so that a screenshot
     // shows a selection; then wherever the user clicks.
-    const bool first = !m_auto_picked && (p_frame.total > 0.05f);
+    const bool first = !m_auto_picked && (p_frame.total > 0.05_s);
     if (p_frame.input.mouse_left_pressed || first)
     {
         const compages::Vector2f where =

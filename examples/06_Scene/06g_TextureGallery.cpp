@@ -10,6 +10,8 @@
 
 #include <array>
 
+using namespace compages::si::literals;
+
 namespace examples
 {
 
@@ -44,7 +46,7 @@ compages::Status TextureGallery::setUp()
     // A slow orbit, so the boxes show more than their front face.
     m_scene.background(0.08f, 0.10f, 0.14f).ambient(0.16f, 0.16f, 0.18f);
     m_scene.camera().position(0.0f, 5.0f, 10.0f).add<compages::world::Orbit>();
-    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.35f;
+    m_scene.activeCamera().get<compages::world::Orbit>().spin = 0.35_rad_per_s;
     m_scene.sun();
 
     // Three by three. A missing file is a plain colour of the same family,
@@ -73,7 +75,7 @@ void TextureGallery::draw(compages::world::ViewFrame const& p_frame)
     // The same turn for every box, so the grid stays aligned.
     for (compages::world::Entity& box : m_boxes)
     {
-        box.rotate(0.5f * p_frame.elapsed, { 0.3f, 1.0f, 0.0f });
+        box.rotate(0.5_rad_per_s * p_frame.elapsed, { 0.3f, 1.0f, 0.0f });
     }
     m_scene.draw(p_frame);
 }
