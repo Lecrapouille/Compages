@@ -7,6 +7,7 @@
 
 #include "06_Scene/06j_SplitViews.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace examples
@@ -17,7 +18,8 @@ std::string SplitViews::description() const
 {
     return "One World drawn twice per frame: an orbiting perspective camera "
            "on the left, an orthographic top-down map on the right. The World "
-           "moves once; each camera draws into its own half.";
+           "moves once; each camera draws into its own half. The map shows "
+           "what the left camera sees: debug().frustum().";
 }
 
 // ----------------------------------------------------------------------------
@@ -72,6 +74,11 @@ void SplitViews::draw(compages::world::ViewFrame const& p_frame)
     m_pillar.rotate(0.6f * p_frame.elapsed, { 0.0f, 1.0f, 0.0f });
     m_scene.update(p_frame);
     m_scene.render(m_eye);
+    // On the map, what the left camera sees (its half: half as wide), out
+    // to the pillar and a bit beyond.
+    const float aspect = 0.5f * float(p_frame.width) / float(std::max(p_frame.height, 1u));
+    m_map.debug().frustum(m_eye.worldMatrix(), m_eye.get<compages::world::Camera>(), aspect, 120.0f,
+                          { 1.0f, 0.85f, 0.2f });
     m_map.render(m_top);
 }
 

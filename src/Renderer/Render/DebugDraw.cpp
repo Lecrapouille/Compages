@@ -10,8 +10,12 @@
 #include "Compages/GPU/VertexLayout.hpp"
 #include "Compages/GPU/Draw.hpp"
 #include "Compages/GPU/Shader.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
+#include "Offer.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace compages::renderer
 {
@@ -37,11 +41,12 @@ void main()
 
 constexpr char const* DEBUG_FRAGMENT = R"(#version 450 core
 in vec3 vColor;
+#include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(vColor, 1.0);
+    oColor = vec4(screen(vColor), 1.0);
 }
 )";
 
@@ -54,7 +59,9 @@ Status DebugDraw::ensureInitialized()
         return success();
     }
 
-    COMPAGES_TRY(m_program.loadSources(DEBUG_VERTEX, DEBUG_FRAGMENT));
+    compages::gpu::ResolvedSource fragment;
+    COMPAGES_TRY_ASSIGN(fragment, shaders::compute("debug-lines.frag", DEBUG_FRAGMENT).resolve());
+    COMPAGES_TRY(m_program.loadSources(DEBUG_VERTEX, fragment.text));
 
     const compages::gpu::VertexLayout layout =
         compages::gpu::VertexLayout::of<DebugVertex>();
@@ -136,7 +143,79 @@ void DebugDraw::ray(compages::Vector3f const& p_origin,
     line(p_origin, p_origin + (p_direction * p_length), p_color);
 }
 
-Status DebugDraw::flush(CameraFrame const& p_camera)
+void DebugDraw::polyline(std::span<const compages::Vector3f> p_points,
+                         compages::Vector3f const& p_color)
+{
+    for (std::size_t k = 1u; k < p_points.size(); ++k)
+    {
+        line(p_points[k - 1u], p_points[k], p_color);
+    }
+}
+
+void DebugDraw::arrow(compages::Vector3f const& p_from,
+                      compages::Vector3f const& p_to,
+                      compages::Vector3f const& p_color)
+{
+    line(p_from, p_to, p_color);
+    const float length = compages::vector::norm(p_to - p_from);
+    if (length <= 0.0f)
+    {
+        return;
+    }
+    const compages::Vector3f dir = (p_to - p_from) / length;
+    // Two directions across the arrow: any vector not along it, crossed.
+    const compages::Vector3f other = (std::abs(dir.y) < 0.9f) ? compages::Vector3f(0.0f, 1.0f, 0.0f)
+                                                               : compages::Vector3f(1.0f, 0.0f, 0.0f);
+    const compages::Vector3f side = compages::vector::normalize(compages::vector::cross(dir, other));
+    const compages::Vector3f up = compages::vector::cross(dir, side);
+    const float head = 0.2f * length;
+    const compages::Vector3f base = p_to - dir * head;
+    for (compages::Vector3f const& across : { side, side * -1.0f, up, up * -1.0f })
+    {
+        line(p_to, base + across * (0.4f * head), p_color);
+    }
+}
+
+void DebugDraw::frame(compages::Matrix44f const& p_pose, float p_length)
+{
+    const compages::Vector3f origin = compages::transformPoint(p_pose, { 0.0f, 0.0f, 0.0f });
+    line(origin, compages::transformPoint(p_pose, { p_length, 0.0f, 0.0f }), { 1.0f, 0.2f, 0.2f });
+    line(origin, compages::transformPoint(p_pose, { 0.0f, p_length, 0.0f }), { 0.2f, 1.0f, 0.2f });
+    line(origin, compages::transformPoint(p_pose, { 0.0f, 0.0f, p_length }), { 0.3f, 0.5f, 1.0f });
+}
+
+void DebugDraw::frustum(compages::Matrix44f const& p_pose,
+                        compages::world::Camera const& p_lens,
+                        float p_aspect,
+                        float p_length,
+                        compages::Vector3f const& p_color)
+{
+    // Half the width and height of the picture at a distance d: a perspective
+    // lens grows with d, an orthographic one does not.
+    const bool perspective = (p_lens.projection == compages::world::Camera::Projection::Perspective);
+    const float slope = std::tan(0.5f * float(units::angle::radian_t(p_lens.fov).value()));
+    auto corners = [&](float p_distance)
+    {
+        const float h = perspective ? slope * p_distance : p_lens.ortho_half_height;
+        const float w = h * p_aspect;
+        return std::array<compages::Vector3f, 4>{
+            compages::transformPoint(p_pose, { -w, -h, -p_distance }),
+            compages::transformPoint(p_pose, { w, -h, -p_distance }),
+            compages::transformPoint(p_pose, { w, h, -p_distance }),
+            compages::transformPoint(p_pose, { -w, h, -p_distance }) };
+    };
+    const float near = std::min(p_lens.near_plane, p_length);
+    const std::array<compages::Vector3f, 4> a = corners(near);
+    const std::array<compages::Vector3f, 4> b = corners(p_length);
+    for (std::size_t k = 0u; k < 4u; ++k)
+    {
+        line(a[k], a[(k + 1u) % 4u], p_color);
+        line(b[k], b[(k + 1u) % 4u], p_color);
+        line(a[k], b[k], p_color);
+    }
+}
+
+Status DebugDraw::flush(RenderSnapshot const& p_view)
 {
     if (m_pending.empty())
     {
@@ -152,8 +231,10 @@ Status DebugDraw::flush(CameraFrame const& p_camera)
     }
 
     m_vertices.write(std::span<DebugVertex const>(m_pending));
-    m_program.set("view", p_camera.view);
-    m_program.set("projection", p_camera.reversed_projection);
+    m_program.set("view", p_view.camera.view);
+    m_program.set("projection", p_view.camera.reversed_projection);
+    offer(m_program, "toneMapping", static_cast<int>(p_view.environment.tone_mapping));
+    offer(m_program, "linearTarget", p_view.linear_target);
     compages::gpu::draw(m_pipeline, m_vertices.handle(), m_pending.size());
     return success();
 }

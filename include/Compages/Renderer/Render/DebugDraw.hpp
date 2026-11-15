@@ -15,7 +15,10 @@
 #include "Compages/GPU/Pipeline.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
+#include "Compages/Renderer/Render/RenderSnapshot.hpp"
+#include "Compages/World/Components/Camera.hpp"
 
+#include <span>
 #include <vector>
 
 #include "Compages/Core/Quaternion.hpp"
@@ -24,7 +27,8 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief Immediate-mode debug overlay: lines and wire boxes.
+//! \brief Immediate-mode debug overlay: lines, wire boxes, paths, arrows,
+//! frames of poses and frustums of cameras.
 //!
 //! Call \c clear() at the start of a frame, queue primitives, then \c flush()
 //! after the main Renderer while the same pass is open.
@@ -53,7 +57,49 @@ public:
              compages::Vector3f const& p_color =
                  compages::Vector3f(1.0f, 1.0f, 0.2f));
 
-    [[nodiscard]] Status flush(CameraFrame const& p_camera);
+    // ------------------------------------------------------------------------
+    //! \brief Lines joining the points one after the other (a path, a
+    //! trajectory, a streamline). A loop repeats its first point at the end.
+    // ------------------------------------------------------------------------
+    void polyline(std::span<const compages::Vector3f> p_points,
+                  compages::Vector3f const& p_color);
+
+    // ------------------------------------------------------------------------
+    //! \brief A line from \c p_from to \c p_to with a head at \c p_to (a
+    //! force, a velocity, a direction to go).
+    // ------------------------------------------------------------------------
+    void arrow(compages::Vector3f const& p_from,
+               compages::Vector3f const& p_to,
+               compages::Vector3f const& p_color);
+
+    // ------------------------------------------------------------------------
+    //! \brief The three axes of a pose: X red, Y green, Z blue, each
+    //! \c p_length long (a joint, a tool, a target).
+    // ------------------------------------------------------------------------
+    void frame(compages::Matrix44f const& p_pose, float p_length);
+
+    // ------------------------------------------------------------------------
+    //! \brief What a camera sees, cut at \c p_length from it: the pyramid of a
+    //! perspective lens, the box of an orthographic one.
+    //!
+    //! \param[in] p_pose where the camera stands (its world matrix; it looks
+    //! down its -Z).
+    //! \param[in] p_lens its projection and field of view.
+    //! \param[in] p_aspect width over height of its picture (640 x 480: 4/3).
+    //! \param[in] p_length how far from the camera the pyramid stops.
+    //! \param[in] p_color colour of the lines.
+    // ------------------------------------------------------------------------
+    void frustum(compages::Matrix44f const& p_pose,
+                 compages::world::Camera const& p_lens,
+                 float p_aspect,
+                 float p_length,
+                 compages::Vector3f const& p_color);
+
+    // ------------------------------------------------------------------------
+    //! \brief Draw the lines queued so far, in the open pass, for this view
+    //! (its camera, and whether it is drawn into a linear picture).
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status flush(RenderSnapshot const& p_view);
 
 private:
 
