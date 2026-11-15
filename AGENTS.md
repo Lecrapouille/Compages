@@ -17,7 +17,7 @@ Read only what the task needs. Load a skill instead of reading the docs:
 | Entities, components, systems, routines, joints, headless | `compages-world` | doc/concepts/the-world.md |
 | `Scene`, primitives, assets (glTF/STL/URDF), cameras, `CanvasTexture` | `compages-renderer` | doc/guides/README.md |
 | Add or change a gallery demo | `compages-example` | doc/reference/gallery.md |
-| Edit the documentation | `compages-docs` | doc/README.md |
+| Edit the documentation | `compages-docs` | README.md (Documentation) |
 | Find a call | — | doc/reference/api.md |
 | Change the core structure | — | doc/concepts/architecture.md |
 
@@ -29,8 +29,8 @@ include/Compages/   public, installed: Core/ Fields/ GPU/ World/ Renderer/ + Com
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
-                    00_Workshop/ = the tutorials (doc/tutorials/), one file per step in Workshop/;
-                    01_FirstSteps/ … 12_Effects/ = chapters, read in order;
+                    01_FirstSteps/ … 13_Workshop/ = chapters, read in order;
+                    13_Workshop/ = the robot workshop of doc/tutorials/ (Workshop/Arm.cpp is World only);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
                     Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
 tests/              GoogleTest: Core/ Fields/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
@@ -78,7 +78,62 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
 - `.clang-format` (braces on their own line, 4 spaces).
 - Parameters `p_name`, members `m_name`, constants `kName` or `UPPER_CASE`.
 - Doxygen `//!` comments; class banners `// ****...`, method banners `// ----...`.
+  See "Doxygen comments" below.
 - Every source file starts with the SPDX header
   `GPL-3.0-or-later OR LicenseRef-Compages-Commercial` (copy it from a neighbour).
-- Commit subject: imperative sentence, no prefix. Docs: simple English for
-  French readers.
+- Commit subject: imperative sentence, no prefix. Docs: simple English (short
+  sentences, common words) for readers whose English is basic; see the
+  `compages-docs` skill.
+
+## Doxygen comments
+
+A comment says what the code cannot say. Repeating the name of the function
+("Flushes pending changes to the GPU" on `flush()`) is not a comment. A
+public class or function answers the questions that matter for it among:
+
+| Question | The comment says |
+|----------|------------------|
+| Why? | which problem it solves |
+| When? | in which situation to use it (and when not to) |
+| How? | its observable behaviour, or the mechanism worth knowing |
+| Guarantees? | invariants, side effects, contracts, who owns what |
+| Limits? | what it does not do, special cases |
+| Why this choice? | why this API exists rather than another one |
+
+Every public **class** has a `\code … \endcode` example of its common use,
+taken from a demo or a test that compiles. Example of the expected level:
+
+```cpp
+// ------------------------------------------------------------------------
+//! \brief Synchronizes pending CPU-side changes with GPU resources.
+//!
+//! Changes to CPU-side data are accumulated to avoid unnecessary GPU
+//! transfers. Call this method when the updated data must become
+//! available for rendering.
+//!
+//! Only modified regions are uploaded, reducing transfer overhead when
+//! working with large datasets.
+//!
+//! \note This operation does not wait for the GPU to finish executing
+//! rendering commands.
+// ------------------------------------------------------------------------
+void flush();
+```
+
+Short getters and obvious members keep a one-line `\brief`. The same plain
+English as the documentation.
+
+## At the end of each request
+
+Before the final answer, review what you changed against what was asked, then
+end the answer with a table, one row per point of the request:
+
+| | Point asked | What was done | What remains |
+|---|-------------|---------------|--------------|
+| ✅ | … | done and checked (how) | — |
+| ⚠️ | … | partly done, or done but not checked | … |
+| ❌ | … | not done, or done wrong | why, what to do |
+
+Judge whether each change goes the way the user asked, not only whether it
+builds. Say what was not checked (a locked screen, no test) instead of
+marking it ✅.
