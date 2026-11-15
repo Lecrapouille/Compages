@@ -31,7 +31,7 @@ mesh.draw();
   error), `mesh.editVertex<Vertex>(i).position.y = …` (marked),
   `editVertices<Vertex>(first, count)`, `editVertices<Vertex>()`, `vertexCount()`.
 - Rule: the drawable owns its vertices; `mesh.borrowVertices(buffer)` (no copy)
-  only for GPU-made (compute) or shared vertices. Table in doc/04 §3.
+  only for GPU-made (compute) or shared vertices. Table in doc/concepts/the-gpu-layer.md.
 - Buffers: `VertexBuffer<T>`, `IndexBuffer<T>`, `StorageBuffer<T>` (the kind is in
   the type); `::from(data, usage)` / `::create(count, usage)`, no default usage:
   `Static` (no CPU copy, never written; a compute pass may write a StorageBuffer),
@@ -85,4 +85,4 @@ stderr (KHR_debug).
 - Tests: `tests/GPU/` (need a GL 4.5 context; use the xvfb + Mesa command of
   AGENTS.md without screen).
 
-Reference: doc/04-GPU-Layer.md, doc/10-Debugging.md.
+Reference: doc/concepts/the-gpu-layer.md, doc/guides/compute-on-the-gpu.md, doc/guides/draw-in-several-passes.md, doc/guides/debug-a-black-window.md.

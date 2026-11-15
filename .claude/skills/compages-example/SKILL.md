@@ -8,9 +8,15 @@ description: Add, rename or change a demo of the Compages gallery (examples/, Co
 One binary, `build/linux-gcc-debug/bin/Compages-examples`, runs every demo. The gallery is a
 progressive tutorial: one folder = one chapter = one question, read in order; inside a
 folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
+`00_Workshop` (the robot workshop of doc/tutorials/: one step per demo, the code of each step in
+`00_Workshop/Workshop/*.cpp`, reused by the steps after it),
 `01_FirstSteps` `02_ChangingData` `03_Images` `04_Passes` `05_Simulation` (GPU),
 `06_Scene` (Renderer, Three.js-like), `07_World`, `08_Assets`, `09_Performance`, `10_Complete`,
-`11_Science` (fields: computed on the CPU or GPU, shown by `scene.show`, read by `scene.probe`).
+`11_Science` (fields: computed on the CPU or GPU, shown by `scene.show`, read by `scene.probe`),
+`12_Effects` (screen filters, bloom).
+
+The tutorials quote `00_Workshop/Workshop/*.cpp` line for line: a change there is a change of
+doc/tutorials/ too (and of its screenshots).
 
 ## Add a demo
 
@@ -34,7 +40,7 @@ folder a letter gives the step (`05b_GameOfLife` = chapter 5, step b).
 3. `make && ./build/linux-gcc-debug/bin/Compages-examples NNx_Name`, then
    `./build/linux-gcc-debug/bin/Compages-examples --check NNx_Name` (that demo only; fails on frame
    errors and leftover GPU handles), then `--check` alone before a commit (every demo).
-4. Document it in doc/09-Examples.md (and the layer chapter if it introduces a call).
+4. Document it in doc/reference/gallery.md (its row, with its screenshot), and in the guide or concept page if it introduces a call.
 
 ## Rules
 

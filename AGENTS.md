@@ -13,13 +13,13 @@ Read only what the task needs. Load a skill instead of reading the docs:
 
 | Task | Skill (`.claude/skills/`) | Long doc |
 |------|---------------------------|----------|
-| Shaders, `Drawable`, buffers, compute, passes, backend | `compages-gpu` | doc/04-GPU-Layer.md |
-| Entities, components, systems, routines, joints, headless | `compages-world` | doc/05-World-Layer.md |
-| `Scene`, primitives, assets (glTF/STL/URDF), cameras, `CanvasTexture` | `compages-renderer` | doc/06-Renderer-Layer.md |
-| Add or change a gallery demo | `compages-example` | doc/09-Examples.md |
+| Shaders, `Drawable`, buffers, compute, passes, backend | `compages-gpu` | doc/concepts/the-gpu-layer.md |
+| Entities, components, systems, routines, joints, headless | `compages-world` | doc/concepts/the-world.md |
+| `Scene`, primitives, assets (glTF/STL/URDF), cameras, `CanvasTexture` | `compages-renderer` | doc/guides/README.md |
+| Add or change a gallery demo | `compages-example` | doc/reference/gallery.md |
 | Edit the documentation | `compages-docs` | doc/README.md |
-| Find a call | — | doc/08-API-Reference.md |
-| Change the core structure | — | doc/07-Architecture.md |
+| Find a call | — | doc/reference/api.md |
+| Change the core structure | — | doc/concepts/architecture.md |
 
 ## Layout
 
@@ -29,7 +29,8 @@ include/Compages/   public, installed: Core/ Fields/ GPU/ World/ Renderer/ + Com
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
 src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
-                    01_FirstSteps/ … 11_Science/ = chapters, read in order;
+                    00_Workshop/ = the tutorials (doc/tutorials/), one file per step in Workshop/;
+                    01_FirstSteps/ … 12_Effects/ = chapters, read in order;
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
                     Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
 tests/              GoogleTest: Core/ Fields/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)

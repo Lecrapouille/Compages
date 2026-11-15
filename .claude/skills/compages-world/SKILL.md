@@ -38,7 +38,7 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
   `onMessage(m)`, `m.as<T>()`; `Contact` = shock from an outside engine (no
   `onCollision`). `RoutineSystem` holds them; `World` is not movable. Access
   `entity()`, `transform()`, `world()`, `input()`, `frame()`. Prefer `each`
-  for many entities. Tutorial: doc/05-World-Layer.md §3.
+  for many entities. Guide: doc/guides/write-routines.md.
 - Joints (`using namespace units::literals;`):
   `child.revolute({0,0,1}, -90.0_deg, 90.0_deg)` then `child.joint().angle(30.0_deg)`
   (`World/Kinematics/JointHandle.hpp`; no limits = continuous),
@@ -67,4 +67,4 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
 Quick check without the gallery (verified):
 `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`.
 
-Reference: doc/05-World-Layer.md, doc/03-Tutorial.md §2.
+Reference: doc/concepts/the-world.md, doc/tutorials/03-make-it-move.md, doc/guides/run-without-a-screen.md.

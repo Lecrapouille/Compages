@@ -127,4 +127,4 @@ scene.draw(frame);                       // = update(frame) + render()
 - `Scene` must not open windows or touch input devices: input arrives in `ViewFrame`.
 - Renderer tests can build `RenderSnapshot` by hand (`tests/Renderer/`).
 
-Reference: doc/06-Renderer-Layer.md, doc/03-Tutorial.md §3.
+Reference: doc/guides/ (one task each: load-a-model, light-the-scene, write-a-material, several-views, screen-effects, show-a-field…), doc/concepts/one-frame.md, doc/tutorials/02-first-scene.md.

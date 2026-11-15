@@ -1,74 +1,134 @@
 ---
 name: compages-docs
-description: Edit or extend the Compages documentation (README.md, doc/ numbered chapters 01–11, doc/README.md index, examples/README.md, logos and images). Use when documenting a call, a layer feature, a demo, the build, or when asked to fix or rewrite docs.
+description: Write, restructure or review the Compages documentation (README.md, doc/ in Diátaxis folders tutorials/ guides/ concepts/ reference/, plus techniques/ and case-studies/, examples/README.md, screenshots in Compages-data). Use when documenting a call, a feature, a demo, the build, or when asked to fix, rewrite or review docs.
 ---
 
 # Compages documentation
 
-Audience: developers with no 3D or OpenGL background, often French. Simple
-English: short sentences, present tense, common words, no idioms; define each
-3D word once (01-Introduction.md §2 is the glossary). Emojis in headings, as
-in the other chapters; 🟧 GPU, 🟦 World, 🟩 Renderer.
+Readers: C++ developers with no 3D or OpenGL background, often French.
+The goal: pages that read as if an experienced developer explained what he
+understood, not as if a tool described a repository.
 
-## Map (general → specific)
+## Map: one page, one job (Diátaxis)
 
-| File | Holds |
-|------|-------|
-| README.md | what it is for (no jargon), the story, why Compages (comparison), code at a glance, quick start, doc table |
-| doc/README.md | index: Learn (1–3, 12–14), layers (4–6), Reference (7–11), quick paths |
-| 01-Introduction.md | glossary, three layers and what each leaves out, error moments, OpenGL versions |
-| 02-Getting-Started.md | tools per OS, build, third parties, gallery, tests/CI, install |
-| 03-Tutorial.md | one program per layer (§2 is compiled and run headless) |
-| 04/05/06-*-Layer.md | one layer each: concepts → calls → demos |
-| 07-Architecture.md | includes, folders, frame flow, entry points |
-| 08-API-Reference.md | calls of the three layers |
-| 09-Examples.md | gallery window, options, every demo |
-| 10-Debugging.md | library/driver messages, apitrace, RenderDoc, CI, common problems |
-| 11-Credits.md | technical lessons, inspirations, third parties, license (the story is in README.md) |
-| 12-Going-Further.md | the tutorial continued: one important call per step (own shader, pictures, meshes, see-through, deform, Field, fromField, passes, picking), from real demo code |
-| 14-Science-With-Fields.md | the 11_Science demos: equations (LaTeX ```math blocks), discrete loops, mermaid diagrams, the Fields calls |
-| techniques/README.md | the list of techniques (lettier order, status ✅ 🕓 🚧) and how a page reads |
-| techniques/<slug>.md | one effect per page (cel-shading, bloom, flow-mapping…), the template below |
-| 13-Complete-Demos.md | 10c, 10e, 10f rebuilt step by step (the technique lives here; 09 keeps the idea, the keys and a link) |
+| Folder | Kind | The reader wants to… | A page is |
+|--------|------|----------------------|-----------|
+| `doc/tutorials/` | tutorial | learn, by doing, in order | one step of the **robot workshop** (`examples/00_Workshop/`): a result on screen, then the next step |
+| `doc/guides/` | how-to | do one task now | goal → steps → code → result picture → see also |
+| `doc/concepts/` | explanation | understand why | the problem, the idea, the choice made and what it costs |
+| `doc/reference/` | reference | look up a fact | tables of calls, the gallery list, credits; no story |
+| `doc/techniques/` | technique | reproduce one effect | the fixed template below, one demo per page |
+| `doc/case-studies/` | case study | see a whole demo built | 10c, 10e, 10f step by step; one fiche per `11_Science` demo |
 
-Put a fact in one place and link to it. README.md and doc/README.md hold the
-chapter tables: keep them in sync. Code comments point to chapters
-(`doc/01-Introduction.md`, `doc/06-Renderer-Layer.md §5`): update them on rename.
+`doc/README.md` is the map: three paths (use Compages · make effects and
+simulations · understand and extend the engine) over these folders. Each
+folder has a `README.md` listing its pages in reading order. The root
+`README.md` links only to `doc/README.md` and the first tutorial.
 
-## Technique pages (doc/techniques/)
+Do not mix the kinds. A tutorial does not explain theory at length: it links
+to a concept. A guide does not teach from zero: it links to the tutorial. A
+reference page has no narrative. When a page starts doing two jobs, split it.
 
-One effect, one page, one demo. Inspired by lettier's *3D Game Shaders For
-Beginners* for the structure only: never copy its text or pictures. Order:
-title, nav line (`[◀ Prev](x.md) · [⏫ Techniques](README.md) · [Next ▶](y.md)`),
-screenshot, card table (Demo | Layer | Your C++ | Your GLSL | Passes added),
-then 🎯 The problem · 💡 The idea (maths + one mermaid) · 🧩 In Compages (real
-lines of the demo) · 🔍 The shader · 📏 Cost (passes, textures, memory) ·
-🚧 Limits · 🧪 Try it (the demo's own controls) · 📁 Source, and the nav line
-again. "Your C++" counts only the lines that switch the effect on and set it.
-A new page: add it to techniques/README.md (status ✅), relink its neighbours'
-nav lines, link it from the demo's row in 09-Examples.md.
+Put a fact in one place and link to it. Code comments point to pages
+(`doc/concepts/three-layers.md`): update them when a page moves
+(`grep -rn "doc/" include src examples tests .claude AGENTS.md README.md`).
 
-## Rules
+## Writing charter
 
-- The README sells before it teaches: what the library is for in plain words
-  (no jargon, no code), the story (why it exists, what was wrong with the
-  others), why it is better (comparison table), and only then code, quick
-  start and the doc table. Never open a README with API details.
-- Code excerpts come from real files (`examples/...`) or are compiled: World
-  snippets build headless with
-  `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`;
-  paste the real output.
-- Namespaces in snippets: `compages::Vector3f`, `compages::Frame`,
-  `compages::world::...`, `compages::renderer::...`, `compages::gpu::...`.
-- Each chapter: what you will learn → content/tutorial → reference tables → next.
-- Maths: display equations in ```` ```math ```` blocks, inline as `$...$` (GitHub renders both);
-  in Python string edits, beware `\f`, `\t`, `\r` in LaTeX (`\frac`, `\text`, `\right`): use raw strings.
-  Diagrams: ```` ```mermaid ```` (flowchart, classDiagram), short labels, `<br/>` for new lines.
-- Do not document what does not exist (check the header first); mark future
-  work as such.
-- Link anchors: GitHub drops emojis from heading ids (`## 🚀 2. Build` →
-  `#-2-build`). Do not use emojis with U+FE0F (⚠️ 🖥️ 🛠️ 🏗️ …) in headings:
-  the selector stays in the id.
-- Logos in `doc/logos/` (`Compages.png` plain, `compages-layers.png` with the
-  three layer captions); screenshots only in Compages-data `doc/examples/<demo>.png`, linked as
+- **Start from the problem**, never from a list of features. First sentence:
+  a situation the reader knows ("You want a river that flows round rocks").
+- **One running example** for the tutorials: the robot workshop grows by one
+  idea per page (table → arm → heat → look → camera). Guides and concepts
+  reuse it when they can.
+- **Real code only**: excerpts from `examples/` or compiled (see Checks).
+  Cut with `// ...`, never invent a call. Check the header before naming a
+  call; mark future work as future.
+- **Explain why**: each choice of architecture says what it buys and what it
+  costs ("the world never sees a GPU type, so it runs in a test without a
+  screen").
+- **Write plainly**: short sentences, present tense, common words, no idioms
+  (French readers). Define a 3D word once, in `concepts/glossary.md`, and
+  link to it. Prose first; a list only for real enumerations, a table only
+  for real comparisons.
+- **Never write**: "This section explores…", "In this chapter we will…",
+  "Let's dive in", "powerful", "seamless", "robust", "blazing", "simply",
+  "just", "easy", "comprehensive", "leverage", absolute claims ("the only
+  library that…"). Say what Compages chooses, what it leaves out, when it fits.
+- **Keep the author's voice**: dry, concrete, physical comparisons (a shell
+  drawn inside out, a picture moved along the water). Do not flatten the
+  existing pages into a generic tone.
+- **Depth by place**: README welcomes, tutorials hold the hand, concepts and
+  architecture are rigorous.
+
+## Pictures
+
+Every tutorial, guide, technique and case study shows at least one picture,
+near the top: what the reader will get. More pictures where a step changes
+what is seen.
+
+- Screenshots of demos live in Compages-data `doc/examples/<demo>.png`, made by
+  `./build/linux-gcc-debug/bin/Compages-examples --check --shots external/Compages-data/doc/examples [demo]`
+  and linked as
   `https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/<demo>.png`.
+  Look at a new screenshot (Read the PNG) before linking it: framing, nothing
+  cut, the idea visible. A demo whose interesting state needs time warms up
+  in `setUp()` (as `00c_HotTable`, `11a_HeatPlate`).
+- Commit new PNGs in the Compages-data clone too, and say that it must be
+  pushed: until then the links are broken on GitHub.
+- Diagrams: ```` ```mermaid ```` (flowchart, sequence, classDiagram), short
+  labels, `<br/>` for new lines. One diagram per idea, not per section.
+- Maths: ```` ```math ```` blocks, inline `$...$`. In Python string edits,
+  beware `\f`, `\t`, `\r` in LaTeX (`\frac`, `\text`, `\right`): raw strings.
+- Logos in `doc/logos/` (`Compages.png`, `compages-layers.png`).
+
+## Templates
+
+**Tutorial** (`tutorials/NN-name.md`): title · nav line · screenshot of the
+step · "You will" (one sentence) · the code of the step (from
+`examples/00_Workshop/Workshop/*.cpp`), explained in order · "Run it"
+(`Compages-examples 00x_Name`) and what you should see · "Try" (two or three
+changes and their effect) · "What happened" (link to the concepts) · nav line.
+
+**Guide** (`guides/name.md`): title · one line goal · picture · steps with
+code · common mistakes · see also (concept, reference, demo).
+
+**Concept** (`concepts/name.md`): the problem · the idea (one diagram) ·
+how Compages does it · what it costs and what it leaves out · see also.
+
+**Technique** (`techniques/slug.md`): title, nav line
+(`[◀ Prev](x.md) · [⏫ Techniques](README.md) · [Next ▶](y.md)`),
+screenshot, card table (Demo | Layer | Your C++ | Your GLSL | Passes added),
+🎯 The problem · 💡 The idea (maths + one mermaid) · 🧩 In Compages (real lines
+of the demo) · 🔍 The shader · 📏 Cost · 🚧 Limits · 🧪 Try it · 📁 Source, nav
+line again. "Your C++" counts only the lines that switch the effect on. Lettier's
+*3D Game Shaders For Beginners* inspires the list and the shape only: never copy
+its text or pictures. A new page: status ✅ in techniques/README.md, relink the
+neighbours, link it from the demo's row in reference/gallery.md.
+
+**Case study** (`case-studies/name.md`): the problem → the technique (with its
+paper) → the data and how it is made → the shaders and hooks → what Compages
+does for you → cost → other ways → extensions. A science fiche: the physical
+problem → the equation → the discrete loop → the data → CPU or GPU → the
+picture → limits.
+
+## Format
+
+- Emojis in headings, as in the other pages; 🟧 GPU, 🟦 World, 🟩 Renderer.
+  GitHub drops emojis from heading ids (`## 🚀 2. Build` → `#-2-build`); never
+  use emojis with U+FE0F (⚠️ 🖥️ 🛠️ 🏗️ …) in headings: the selector stays in the id.
+- Namespaces in snippets: `compages::Vector3f`, `compages::world::...`,
+  `compages::renderer::...`, `compages::gpu::...`.
+- Relative links between pages; check that every target exists.
+
+## Checks before a commit
+
+1. World snippets that are not from a demo compile headless:
+   `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`;
+   paste the real output.
+2. Every relative link resolves (a loop over `](…)` targets with `test -e`).
+3. **Fresh reader pass**: reread each new page as a C++ developer who opened
+   the repository an hour ago. Is the first paragraph a problem they have? Is
+   every 3D word defined or linked? Can they run what the page shows, with the
+   commands given? Does any sentence only fill space? Fix what fails; for a
+   large rewrite, have a subagent do this pass with no other context and
+   report the places where it got lost.
