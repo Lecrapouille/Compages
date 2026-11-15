@@ -48,7 +48,11 @@ constexpr char const* FOG = R"(#include <compages/scene.glsl>
 // depth), holding the light the fog sends toward the eye from the camera to
 // each slice (rgb) and what it lets through (a).
 uniform bool fogVolumeOn;
-uniform sampler3D fogVolume;
+// Its unit is fixed here (FOG_UNIT of FogVolume.cpp), never set while
+// drawing: a sampler left on unit 0 would share it with the base colour
+// picture (a 2D one), which a strict driver (Mesa) refuses, and setting a
+// sampler at each material makes the driver check the program again.
+layout(binding = 10) uniform sampler3D fogVolume;
 uniform vec2 fogVolumeDepth;      // near, far of the slices
 uniform vec4 fogVolumeViewport;   // x, y, width, height in pixels
 uniform mat4 fogVolumeView;
@@ -418,6 +422,13 @@ vec3 toSrgb(vec3 c)
     return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055,
                step(0.0031308, c));
 }
+
+// The other way: a colour of the screen (sRGB), back to linear.
+vec3 fromSrgb(vec3 c)
+{
+    c = clamp(c, 0.0, 1.0);
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
 )";
 
 constexpr char const* PRESENT = R"(#include <compages/srgb.glsl>
@@ -426,23 +437,62 @@ constexpr char const* PRESENT = R"(#include <compages/srgb.glsl>
 // exposure, then a tone curve that brings any brightness under 1 without
 // burning the hue (Environment::tone_mapping), then the sRGB encoding the
 // screen expects. A custom main() calls it too.
+//
+// When the view has screen effects (ScreenEffects on its camera), the Scene
+// draws it into a linear picture first: present() then keeps the light
+// linear (after the exposure), and the last pass of the view applies the
+// tone curve and the sRGB encoding, after the filters and the bloom.
 uniform float exposure;
 uniform int toneMapping;   // 0 none (clamp), 1 Reinhard, 2 ACES
 uniform float opacity;
+uniform bool linearTarget;
+
+vec3 toneCurve(vec3 c)
+{
+    if (toneMapping == 1)
+    {
+        return c / (1.0 + c);
+    }
+    if (toneMapping == 2)
+    {
+        // ACES filmic, Narkowicz's fit.
+        return (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+    }
+    return c;
+}
+
+// The light that toneCurve() turns into c (c from 0 to 1).
+vec3 untoneCurve(vec3 c)
+{
+    c = clamp(c, 0.0, 1.0);
+    if (toneMapping == 1)
+    {
+        c = min(c, vec3(0.999));
+        return c / (1.0 - c);
+    }
+    if (toneMapping == 2)
+    {
+        // The positive root of (2.43c - 2.51) x^2 + (0.59c - 0.03) x + 0.14c.
+        vec3 a = 2.43 * c - 2.51;
+        vec3 b = 0.59 * c - 0.03;
+        vec3 d = sqrt(max(b * b - 4.0 * a * 0.14 * c, 0.0));
+        return (-b - d) / (2.0 * a);
+    }
+    return c;
+}
 
 vec3 present(vec3 linear)
 {
     vec3 c = max(linear * exposure, 0.0);
-    if (toneMapping == 1)
-    {
-        c = c / (1.0 + c);
-    }
-    else if (toneMapping == 2)
-    {
-        // ACES filmic, Narkowicz's fit.
-        c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
-    }
-    return toSrgb(c);
+    return linearTarget ? c : toSrgb(toneCurve(c));
+}
+
+// A colour already meant for the screen (an unlit marker, a picture, a
+// line): as it is, or, in a linear picture, the light that the last pass
+// turns back into the same colour.
+vec3 screen(vec3 shown)
+{
+    return linearTarget ? untoneCurve(fromSrgb(shown)) : shown;
 }
 )";
 
@@ -543,40 +593,90 @@ uniform float pbrNormalScale;
 
 out vec4 oColor;
 
-#include <hook/main>
-)";
-
-constexpr char const* PBR_MAIN = R"(void main()
+// What a point of the surface is, before the light: the hook surface()
+// changes it, the main() lights it. Linear colours, a world normal of
+// length one.
+struct Surface
 {
-    vec3 albedo = baseColorFactor;
+    vec3 albedo;
+    vec3 normal;
+    float metallic;
+    float roughness;
+    vec3 emission;    // light the surface gives itself, added after the lamps
+    float opacity;
+};
+
+// The surface the material instance describes: its colour and pictures, its
+// normal map, its metal and roughness.
+Surface instanceSurface()
+{
+    Surface s;
+    s.albedo = baseColorFactor;
     if (hasBaseColorMap)
     {
-        albedo *= texture(baseColorMap, vUv).rgb;
+        s.albedo *= texture(baseColorMap, vUv).rgb;
     }
-    vec3 n = normalize(vNormal);
-    vec3 lit;
+    s.normal = normalize(vNormal);
+    s.metallic = pbrMetallic;
+    s.roughness = pbrRoughness;
     if (pbrUseMetalRoughness)
     {
         if (pbrHasNormalMap)
         {
             vec3 t = texture(pbrNormalMap, vUv).xyz * 2.0 - 1.0;
-            n = bumpNormal(n, vWorldPos, vUv, normalize(vec3(t.xy * pbrNormalScale, t.z)));
+            s.normal = bumpNormal(s.normal, vWorldPos, vUv, normalize(vec3(t.xy * pbrNormalScale, t.z)));
         }
-        float metallic = pbrMetallic;
-        float roughness = pbrRoughness;
         if (pbrHasMetalRoughnessMap)
         {
             vec4 mr = texture(pbrMetalRoughnessMap, vUv);
-            roughness *= mr.g;
-            metallic *= mr.b;
+            s.roughness *= mr.g;
+            s.metallic *= mr.b;
         }
-        lit = shadePbr(albedo, n, vWorldPos, metallic, roughness);
     }
-    else
-    {
-        lit = shade(albedo, n, vWorldPos);
-    }
-    oColor = vec4(present(applyFog(lit, vWorldPos)), opacity);
+    s.emission = vec3(0.0);
+    s.opacity = opacity;
+    return s;
+}
+
+// The light of the scene on a surface, in linear units: the glTF model when
+// the instance asks for it, the simple one otherwise. The default hook
+// light() returns it.
+vec3 sceneLight(Surface s)
+{
+    return pbrUseMetalRoughness ? shadePbr(s.albedo, s.normal, vWorldPos, s.metallic, s.roughness)
+                                : shade(s.albedo, s.normal, vWorldPos);
+}
+
+// From the lit surface to the screen: its own light, the fog, the tone curve
+// and the screen colours.
+vec4 toScreen(Surface s, vec3 lit)
+{
+    return vec4(present(applyFog(lit + s.emission, vWorldPos)), s.opacity);
+}
+
+#include <hook/surface>
+
+#include <hook/light>
+
+#include <hook/main>
+)";
+
+constexpr char const* PBR_SURFACE = R"(void surface(inout Surface s)
+{
+}
+)";
+
+constexpr char const* PBR_LIGHT = R"(vec3 light(Surface s)
+{
+    return sceneLight(s);
+}
+)";
+
+constexpr char const* PBR_MAIN = R"(void main()
+{
+    Surface s = instanceSurface();
+    surface(s);
+    oColor = toScreen(s, light(s));
 }
 )";
 
@@ -647,13 +747,13 @@ constexpr char const* DEPTH_FRAGMENT = R"(#version 450 core
 in float vEyeDepth;
 uniform float near;
 uniform float far;
-uniform float opacity;
+#include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
     float shade = 1.0 - smoothstep(near, far, vEyeDepth);
-    oColor = vec4(vec3(shade), opacity);
+    oColor = vec4(screen(vec3(shade)), opacity);
 }
 )";
 
@@ -677,12 +777,12 @@ void main()
 
 constexpr char const* NORMALS_FRAGMENT = R"(#version 450 core
 in vec3 vNormal;
-uniform float opacity;
+#include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(0.5 * normalize(vNormal) + 0.5, opacity);
+    oColor = vec4(screen(0.5 * normalize(vNormal) + 0.5), opacity);
 }
 )";
 
@@ -703,13 +803,12 @@ void main()
 // of a colour kept linear by the renderer.
 constexpr char const* UNLIT_FRAGMENT = R"(#version 450 core
 uniform vec3 color;
-uniform float opacity;
-#include <compages/srgb.glsl>
+#include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = vec4(toSrgb(color), opacity);
+    oColor = vec4(screen(toSrgb(color)), opacity);
 }
 )";
 
@@ -748,6 +847,8 @@ ShaderPair pbr()
     ShaderPair pair{ piece("pbr.vert", PBR_VERTEX),
                      piece("pbr.frag", PBR_FRAGMENT) };
     pair.vertex().declareHook("deform", PBR_DEFORM);
+    pair.fragment().declareHook("surface", PBR_SURFACE);
+    pair.fragment().declareHook("light", PBR_LIGHT);
     pair.fragment().declareHook("main", PBR_MAIN);
     return pair;
 }

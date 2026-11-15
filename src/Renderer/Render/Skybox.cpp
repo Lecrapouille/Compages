@@ -7,6 +7,9 @@
 
 #include "Skybox.hpp"
 
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
+#include "Offer.hpp"
+
 #include <initializer_list>
 
 namespace compages::renderer
@@ -33,11 +36,12 @@ void main()
 constexpr char const* SKY_FRAGMENT = R"(#version 450 core
 in vec3 vDirection;
 uniform samplerCube sky;
+#include <compages/present.glsl>
 out vec4 oColor;
 
 void main()
 {
-    oColor = texture(sky, normalize(vDirection));
+    oColor = vec4(screen(texture(sky, normalize(vDirection)).rgb), 1.0);
 }
 )";
 
@@ -51,7 +55,9 @@ Status Skybox::loadFiles(std::array<std::filesystem::path, 6u> const& p_faces)
     options.wrap = compages::gpu::Wrap::ClampToEdge;
     COMPAGES_TRY_ASSIGN(
         m_texture, compages::gpu::Texture::cubeFromFiles(p_faces, options));
-    COMPAGES_TRY(m_cube.loadSources(SKY_VERTEX, SKY_FRAGMENT));
+    compages::gpu::ResolvedSource fragment;
+    COMPAGES_TRY_ASSIGN(fragment, shaders::compute("sky.frag", SKY_FRAGMENT).resolve());
+    COMPAGES_TRY(m_cube.loadSources(SKY_VERTEX, fragment.text));
     // A cube around the camera, seen from the inside. Drawn first and
     // without the depth test, it is behind whatever comes after.
     // The element type is written out: a bare braced list is ambiguous
@@ -68,14 +74,16 @@ Status Skybox::loadFiles(std::array<std::filesystem::path, 6u> const& p_faces)
     return success();
 }
 
-void Skybox::draw(CameraFrame const& p_camera)
+void Skybox::draw(RenderSnapshot const& p_view)
 {
     if (!m_texture.valid())
     {
         return;
     }
-    m_cube["view"] = p_camera.view;
-    m_cube["projection"] = p_camera.reversed_projection;
+    m_cube["view"] = p_view.camera.view;
+    m_cube["projection"] = p_view.camera.reversed_projection;
+    offer(m_cube.program(), "toneMapping", static_cast<int>(p_view.environment.tone_mapping));
+    offer(m_cube.program(), "linearTarget", p_view.linear_target);
     m_cube.draw();
 }
 

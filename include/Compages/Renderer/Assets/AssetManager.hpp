@@ -70,6 +70,14 @@ public:
                                                  Material p_material);
 
     // ------------------------------------------------------------------------
+    //! \brief Build a material (Material::create()) and register it under
+    //! its name: the usual way to make one.
+    //! \return its id, or why the shaders did not build.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Result<MaterialId> createMaterial(std::string p_name,
+                                                    MaterialDesc const& p_desc);
+
+    // ------------------------------------------------------------------------
     //! \brief Register a material instance and return its id.
     // ------------------------------------------------------------------------
     [[nodiscard]] Result<MaterialInstanceId>

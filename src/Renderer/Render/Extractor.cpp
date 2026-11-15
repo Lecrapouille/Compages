@@ -182,7 +182,8 @@ Result<RenderSnapshot> extractWithSize(compages::renderer::Scene const& p_scene,
         [&](compages::world::EntityId entity,
             compages::renderer::MeshRenderer const& mr)
         {
-            if (!world.enabledInHierarchy(entity))
+            if (!world.enabledInHierarchy(entity) ||
+                (!camera->sees_helpers && has(mr.flags, compages::renderer::RenderFlags::Helper)))
             {
                 return;
             }

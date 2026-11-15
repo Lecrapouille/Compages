@@ -9,6 +9,7 @@
 #include "Compages/Renderer/Render/Renderer.hpp"
 #include "../Render/TextDraw.hpp"
 #include "../Render/Skybox.hpp"
+#include "../Render/ScreenPost.hpp"
 #include "../Visualization/FieldViews.hpp"
 #include "Compages/World/Entity.hpp"
 
@@ -23,6 +24,7 @@
 #include "Compages/Renderer/Components/Helpers.hpp"
 #include "Compages/Renderer/Components/Text.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/Renderer/Components/ScreenEffects.hpp"
 #include "Compages/Renderer/Import/PrefabInstantiate.hpp"
 #include "Compages/Renderer/Render/Picker.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
@@ -174,6 +176,9 @@ struct Scene::Impl
     Environment environment{};
     CameraFrame last_camera{};
     Skybox sky;
+    //! \brief The linear picture, the filters and the bloom of the views
+    //! whose camera has ScreenEffects.
+    ScreenPost post;
     //! \brief The fields shown (show()), with the values given from the CPU.
     FieldViews fields;
 };
@@ -771,12 +776,43 @@ void Scene::render(compages::world::EntityId p_camera)
     m_impl->last_camera.viewport_x = float(part.x - where.x);
     m_impl->last_camera.viewport_y = float(part.y - where.y);
 
-    m_impl->sky.draw(snapshot.value().camera);
+    const auto drawView = [&](RenderSnapshot const& p_view)
+    {
+        m_impl->sky.draw(p_view);
+        compages::gpu::check(m_impl->renderer.render(p_view, *m_assets));
+        // A sensor camera leaves the lines alone: the next view draws them.
+        if ((lens == nullptr) || lens->sees_helpers)
+        {
+            queueHelpers(m_world, *m_assets, m_impl->debug);
+            compages::gpu::check(m_impl->debug.flush(p_view));
+            m_impl->debug.clear();
+        }
+    };
 
-    compages::gpu::check(m_impl->renderer.render(snapshot.value(), *m_assets));
-    queueHelpers(m_world, *m_assets, m_impl->debug);
-    compages::gpu::check(m_impl->debug.flush(snapshot.value().camera));
-    m_impl->debug.clear();
+    // A view with screen effects is drawn into a linear picture first; the
+    // effects then put it into the pass of the camera with the tone curve.
+    ScreenEffects const* effects = m_world.tryGet<ScreenEffects>(p_camera);
+    if ((effects != nullptr) && effects->active())
+    {
+        auto linear = m_impl->post.target(part.width, part.height);
+        if (!linear)
+        {
+            return compages::gpu::reportError(linear.error());
+        }
+        snapshot.value().linear_target = true;
+        compages::gpu::RenderPass view(
+            *linear.value(),
+            { .clear_color = true,
+              .color = ScreenPost::linearClear(part.color, snapshot.value().environment.tone_mapping),
+              .reversed_depth = true });
+        drawView(snapshot.value());
+        view.end();
+        compages::gpu::check(m_impl->post.finish(*effects, snapshot.value()));
+    }
+    else
+    {
+        drawView(snapshot.value());
+    }
     // Last, over everything: the caption of the camera and the names.
     queueText(m_world, p_camera, snapshot.value().camera, m_impl->text);
     compages::gpu::check(m_impl->text.flush(snapshot.value().camera));
@@ -787,33 +823,24 @@ void Scene::render()
     render(m_impl->active_camera);
 }
 
+void Scene::render(compages::world::EntityId p_camera, RenderTarget& p_target)
+{
+    if (!p_target.valid())
+    {
+        return compages::gpu::reportError("Scene::render() into an empty RenderTarget: create() it first");
+    }
+    compages::gpu::RenderPass pass(p_target.framebuffer());
+    render(p_camera);
+}
+
 Status Scene::renderToFile(std::filesystem::path const& p_path,
                            std::uint32_t p_width,
                            std::uint32_t p_height)
 {
-    // A colour picture and the distances that let near faces hide far ones.
-    compages::gpu::Texture color;
-    COMPAGES_TRY_ASSIGN(color,
-                        compages::gpu::Texture::create(
-                            { .format = compages::gpu::PixelFormat::RGBA8,
-                              .width = p_width,
-                              .height = p_height }));
-    compages::gpu::Texture depth;
-    COMPAGES_TRY_ASSIGN(depth,
-                        compages::gpu::Texture::create(
-                            { .format = compages::gpu::PixelFormat::Depth32F,
-                              .width = p_width,
-                              .height = p_height }));
-    compages::gpu::Framebuffer target;
-    COMPAGES_TRY_ASSIGN(target, compages::gpu::Framebuffer::create(color, depth));
-
-    COMPAGES_TRY(compages::gpu::attempt(
-        [&]
-        {
-            compages::gpu::RenderPass pass(target);
-            render();
-        }));
-    return color.saveFile(p_path);
+    RenderTarget target;
+    COMPAGES_TRY_ASSIGN(target, RenderTarget::create(p_width, p_height));
+    COMPAGES_TRY(compages::gpu::attempt([&] { render(m_impl->active_camera, target); }));
+    return target.saveColor(p_path);
 }
 
 void Scene::draw(compages::world::ViewFrame const& p_frame)

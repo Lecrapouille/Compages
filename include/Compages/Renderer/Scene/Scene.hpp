@@ -20,6 +20,7 @@
 #include "Compages/Renderer/Render/Raycast.hpp"
 #include "Compages/Renderer/Render/CameraFrame.hpp"
 #include "Compages/Renderer/Render/DebugDraw.hpp"
+#include "Compages/Renderer/Render/RenderTarget.hpp"
 #include "Compages/Renderer/Scene/RenderSettings.hpp"
 #include "Compages/Renderer/Scene/Looks.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
@@ -457,6 +458,18 @@ public:
     //! frame error channel.
     // ------------------------------------------------------------------------
     void render(compages::world::EntityId p_camera);
+
+    // ------------------------------------------------------------------------
+    //! \brief Draw what \c p_camera sees into a picture of its own instead
+    //! of the window: the view of a robot camera, a thumbnail. Opens the pass
+    //! itself; the target keeps its pictures (color(), readColor()).
+    //!
+    //! \code
+    //! COMPAGES_TRY_ASSIGN(m_eye, compages::renderer::RenderTarget::create(640u, 480u));
+    //! scene.render(robot_camera, m_eye);
+    //! \endcode
+    // ------------------------------------------------------------------------
+    void render(compages::world::EntityId p_camera, RenderTarget& p_target);
     //! \brief Same, with the active camera.
     void render();
 

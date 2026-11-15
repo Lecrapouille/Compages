@@ -36,6 +36,10 @@ enum class RenderFlags : std::uint32_t
     NoShadowReceiver = 1u << 2u,
     //! \brief Drawn on top of everything at the end. What a UI billboard wants.
     Overlay = 1u << 3u,
+    //! \brief A help for the person at the screen (a marker, a gizmo): a
+    //! camera whose \c sees_helpers is false does not draw it, nor its
+    //! shadow. What a robot camera wants, so that perception is not fooled.
+    Helper = 1u << 4u,
 };
 
 [[nodiscard]] constexpr RenderFlags operator|(RenderFlags p_a, RenderFlags p_b)

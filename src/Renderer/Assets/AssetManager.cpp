@@ -191,6 +191,14 @@ Result<MaterialId> AssetManager::addMaterial(std::string p_name,
                               "material");
 }
 
+Result<MaterialId> AssetManager::createMaterial(std::string p_name,
+                                                MaterialDesc const& p_desc)
+{
+    Material material;
+    COMPAGES_TRY_ASSIGN(material, Material::create(p_name, p_desc));
+    return addMaterial(std::move(p_name), std::move(material));
+}
+
 Result<MaterialInstanceId>
 AssetManager::addMaterialInstance(std::string p_name,
                                   MaterialInstance p_instance)

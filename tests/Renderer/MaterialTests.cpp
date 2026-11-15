@@ -170,7 +170,7 @@ TEST_F(MaterialTest, RefusesAHookThatIsNotThere)
           .state = {},
           .see_through = std::nullopt });
     ASSERT_FALSE(bool(made));
-    EXPECT_THAT(made.error(), HasSubstr("known: main"));
+    EXPECT_THAT(made.error(), HasSubstr("known: light, main, surface"));
 }
 
 // reshape() changes the mesh in place: what was drawn at the centre is gone.

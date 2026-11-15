@@ -46,16 +46,15 @@ static constexpr char const* BEND = R"(layout(std430) readonly buffer Beam
 {
     vec4 slices[];   // x, y of the middle line, angle, temperature
 };
-uniform int sliceCount;
-uniform float beamLength;
+// SLICE_COUNT and BEAM_LENGTH come from C++ (ShaderSource::define).
 
 out float vHeat;
 out float vBrass;
 
 void deform(inout vec4 world, inout vec3 normal)
 {
-    float s = clamp(world.x / beamLength, 0.0, 1.0) * float(sliceCount - 1);
-    int k = min(int(s), sliceCount - 2);
+    float s = clamp(world.x / BEAM_LENGTH, 0.0, 1.0) * float(SLICE_COUNT - 1);
+    int k = min(int(s), SLICE_COUNT - 2);
     vec4 slice = mix(slices[k], slices[k + 1], s - float(k));
     vec2 across = vec2(-sin(slice.z), cos(slice.z));
     vBrass = (world.y > 0.0) ? 1.0 : 0.0;
@@ -72,13 +71,11 @@ void deform(inout vec4 world, inout vec3 normal)
 static constexpr char const* METAL = R"(in float vHeat;
 in float vBrass;
 
-void main()
+void surface(inout Surface s)
 {
-    vec3 metal = mix(vec3(0.45, 0.47, 0.5), vec3(0.75, 0.55, 0.2), vBrass);
-    vec3 shaded = shade(metal, normalize(vNormal), vWorldPos);
+    s.albedo = mix(vec3(0.45, 0.47, 0.5), vec3(0.75, 0.55, 0.2), vBrass);
     float glow = smoothstep(350.0, 800.0, vHeat);
-    shaded += 0.6 * glow * mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.5, 0.1), glow);
-    oColor = vec4(present(applyFog(shaded, vWorldPos)), opacity);
+    s.emission = 0.6 * glow * mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.5, 0.1), glow);
 }
 )";
 
@@ -174,21 +171,18 @@ compages::Status BimetalBeam::setUp()
 
     compages::renderer::shaders::ShaderPair pbr = compages::renderer::shaders::pbr();
     pbr.vertex().hook("deform", BEND);
-    pbr.fragment().hook("main", METAL);
-    compages::renderer::Material material;
+    pbr.fragment().hook("surface", METAL);
+    pbr.vertex().define("SLICE_COUNT", std::to_string(SLICES)).define("BEAM_LENGTH", std::to_string(LENGTH) + "f");
+    compages::renderer::MaterialId id;
     COMPAGES_TRY_ASSIGN(
-        material,
-        compages::renderer::Material::create(
+        id,
+        m_scene.assets().createMaterial(
             "Bimetal",
             { .family = compages::renderer::ShaderFamily::PbrMinimal,
               .shaders = std::move(pbr),
               .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
-              .see_through = std::nullopt }));
-    material.program.set("sliceCount", SLICES);
-    material.program.set("beamLength", LENGTH);
-    material.buffers = { { .block = "Beam", .buffer = m_line.handle() } };
-    compages::renderer::MaterialId id;
-    COMPAGES_TRY_ASSIGN(id, m_scene.assets().addMaterial("Bimetal", std::move(material)));
+              .see_through = std::nullopt,
+              .buffers = { { .block = "Beam", .buffer = m_line.handle() } } }));
 
     // The material bends the strip in its shadow too (its hook "deform").
     compages::world::Entity strip = m_scene.mesh(stripMesh(), "Strip");

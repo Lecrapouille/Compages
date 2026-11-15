@@ -157,20 +157,15 @@ compages::Status FlowingWater::makeMaterials()
     {
         compages::renderer::shaders::ShaderPair shaders =
             compages::renderer::shaders::pbr();
-        shaders.fragment().hook("main", flowing::SOLID_MAIN);
-        compages::renderer::Material material;
-        COMPAGES_TRY_ASSIGN(
-            material,
-            compages::renderer::Material::create(
-                p_name,
-                { .family = compages::renderer::ShaderFamily::PbrMinimal,
-                  .shaders = std::move(shaders),
-                  .state = { .depth_test = true,
-                             .cull = compages::gpu::CullMode::Back },
-                  .see_through = std::nullopt }));
-        material.textures = { { .sampler = "surfaceMap",
-                                .texture = p_picture } };
-        return m_scene.assets().addMaterial(material.name, std::move(material));
+        shaders.fragment().hook("surface", flowing::SOLID_SURFACE);
+        return m_scene.assets().createMaterial(
+            p_name,
+            { .family = compages::renderer::ShaderFamily::PbrMinimal,
+              .shaders = std::move(shaders),
+              .state = { .depth_test = true,
+                         .cull = compages::gpu::CullMode::Back },
+              .see_through = std::nullopt,
+              .textures = { { .sampler = "surfaceMap", .texture = p_picture } } });
     };
     COMPAGES_TRY_ASSIGN(m_concrete, make("Concrete", concrete));
     COMPAGES_TRY_ASSIGN(m_metal, make("Painted metal", metal));
@@ -194,23 +189,19 @@ compages::Status FlowingWater::makeWater()
     compages::renderer::shaders::ShaderPair shaders =
         compages::renderer::shaders::pbr();
     shaders.fragment().hook("main", flowing::WATER_MAIN);
-    compages::renderer::Material water;
     COMPAGES_TRY_ASSIGN(
-        water,
-        compages::renderer::Material::create(
+        m_water_material,
+        m_scene.assets().createMaterial(
             "Flowing water",
             { .family = compages::renderer::ShaderFamily::PbrMinimal,
               .shaders = std::move(shaders),
               .state = { .depth_test = true,
                          .cull = compages::gpu::CullMode::Back },
-              .see_through = std::nullopt }));
-    water.textures = { { .sampler = "flowMap", .texture = m_flow_map },
-                       { .sampler = "noiseMap", .texture = m_noise },
-                       { .sampler = "rippleMap", .texture = m_ripples },
-                       { .sampler = "foamMap", .texture = m_foam } };
-    COMPAGES_TRY_ASSIGN(
-        m_water_material,
-        m_scene.assets().addMaterial(water.name, std::move(water)));
+              .see_through = std::nullopt,
+              .textures = { { .sampler = "flowMap", .texture = m_flow_map },
+                            { .sampler = "noiseMap", .texture = m_noise },
+                            { .sampler = "rippleMap", .texture = m_ripples },
+                            { .sampler = "foamMap", .texture = m_foam } } }));
 
     // A square standing in XY, laid on the water.
     m_water = m_scene.plane("Water");
@@ -236,10 +227,10 @@ compages::Status FlowingWater::makeJet()
         compages::renderer::shaders::ShaderPair shaders =
             compages::renderer::shaders::pbr();
         shaders.fragment().hook("main", flowing::JET_MAIN);
-        compages::renderer::Material material;
+        compages::renderer::MaterialId id;
         COMPAGES_TRY_ASSIGN(
-            material,
-            compages::renderer::Material::create(
+            id,
+            m_scene.assets().createMaterial(
                 p_name,
                 { .family = compages::renderer::ShaderFamily::PbrMinimal,
                   .shaders = std::move(shaders),
@@ -249,12 +240,13 @@ compages::Status FlowingWater::makeJet()
                       .depth_test = true,
                       .depth_write = false,
                       .blend = compages::gpu::Blend::alpha(),
-                      .cull = compages::gpu::CullMode::None } }));
-        material.textures = { { .sampler = "noiseMap", .texture = m_noise },
-                              { .sampler = "foamMap", .texture = m_foam } };
-        material.program.set("scroll", p_scroll);
-        material.program.set("fade", p_fade);
-        return m_scene.assets().addMaterial(material.name, std::move(material));
+                      .cull = compages::gpu::CullMode::None },
+                  .textures = { { .sampler = "noiseMap", .texture = m_noise },
+                                { .sampler = "foamMap", .texture = m_foam } } }));
+        compages::gpu::Program& program = m_scene.assets().material(id)->program;
+        program.set("scroll", p_scroll);
+        program.set("fade", p_fade);
+        return id;
     };
     COMPAGES_TRY_ASSIGN(m_jet_material, make("Water jet", 2.6f, 0.0f));
     COMPAGES_TRY_ASSIGN(m_crown_material, make("Spray", -0.8f, 1.0f));

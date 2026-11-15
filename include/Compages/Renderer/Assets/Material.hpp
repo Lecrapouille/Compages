@@ -69,14 +69,17 @@ struct MaterialBuffer
 // ****************************************************************************
 //! \brief What Material::create() builds a material from.
 //!
+//! AssetManager::createMaterial() builds it and registers it in one call:
+//!
 //! \code
 //! auto pbr = compages::renderer::shaders::pbr();
-//! pbr.fragment().hook("main", WATER);
-//! COMPAGES_TRY_ASSIGN(material, compages::renderer::Material::create(
+//! pbr.fragment().hook("surface", WATER);
+//! COMPAGES_TRY_ASSIGN(id, assets.createMaterial(
 //!     "Water", { .family = compages::renderer::ShaderFamily::PbrMinimal,
 //!                .shaders = std::move(pbr),
 //!                .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
-//!                .see_through = std::nullopt }));
+//!                .see_through = std::nullopt,
+//!                .textures = { { .sampler = "flowMap", .texture = flow } } }));
 //! \endcode
 // ****************************************************************************
 struct MaterialDesc
@@ -91,6 +94,10 @@ struct MaterialDesc
     //! \brief How see-through instances (opacity below one) are drawn; none:
     //! they are drawn solid.
     std::optional<compages::gpu::RenderState> see_through;
+    //! \brief Pictures the shaders read, by sampler name (Material::textures).
+    std::vector<MaterialTexture> textures{};
+    //! \brief Storage buffers the shaders read, by block name (Material::buffers).
+    std::vector<MaterialBuffer> buffers{};
 };
 
 // ****************************************************************************

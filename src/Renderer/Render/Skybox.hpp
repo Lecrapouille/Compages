@@ -10,7 +10,7 @@
 #include "Compages/Core/Result.hpp"
 #include "Compages/GPU/Drawable.hpp"
 #include "Compages/GPU/Texture.hpp"
-#include "Compages/Renderer/Render/CameraFrame.hpp"
+#include "Compages/Renderer/Render/RenderSnapshot.hpp"
 
 #include <array>
 #include <filesystem>
@@ -30,7 +30,7 @@ namespace compages::renderer
 //! compages::renderer::Skybox sky;
 //! COMPAGES_TRY(sky.loadFiles(
 //!     { "px.jpg", "nx.jpg", "py.jpg", "ny.jpg", "pz.jpg", "nz.jpg" }));
-//! sky.draw(camera); // inside a render pass, before the scene
+//! sky.draw(snapshot); // inside a render pass, before the scene
 //! \endcode
 // ****************************************************************************
 class Skybox
@@ -48,7 +48,7 @@ public:
     }
 
     //! \brief Draw the sky as seen by the camera. Nothing without a sky.
-    void draw(CameraFrame const& p_camera);
+    void draw(RenderSnapshot const& p_view);
 
 private:
 

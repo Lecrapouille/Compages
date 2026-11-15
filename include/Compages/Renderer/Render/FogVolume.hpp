@@ -66,6 +66,13 @@ public:
     void bind(compages::gpu::Program& p_program) const;
 
     // ------------------------------------------------------------------------
+    //! \brief Say "no fog" to a lit program drawn outside the colour pass
+    //! (its own shadow): its 3D sampler still gets its unit, else it would
+    //! share unit 0 with a 2D picture and a strict driver refuses the draw.
+    // ------------------------------------------------------------------------
+    static void bindNone(compages::gpu::Program& p_program);
+
+    // ------------------------------------------------------------------------
     //! \brief Lay the fog of the farthest slice over the background (the
     //! colour of the pass or the sky), before the objects: what has no
     //! surface is seen through the fog too.

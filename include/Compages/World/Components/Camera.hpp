@@ -92,6 +92,11 @@ struct Camera
     float far_plane = 1000.0f;
     //! \brief Normalised sub-rectangle of the render target for this camera.
     Viewport viewport{};
+    //! \brief Whether this camera draws the helps for the person at the
+    //! screen: grids, axes, bounds, debug lines, and the meshes the renderer
+    //! marks as helpers. False for a camera that stands for a sensor (the
+    //! eye of a robot): it sees the world, not the tools around it.
+    bool sees_helpers = true;
 };
 
 } // namespace compages::world

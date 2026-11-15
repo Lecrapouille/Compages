@@ -90,19 +90,20 @@ makeSurface(compages::renderer::AssetManager& p_assets, std::string const& p_nam
 
     compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
     shaders.fragment().hook("main", SURFACE_MAIN);
-    compages::renderer::Material material;
-    COMPAGES_TRY_ASSIGN(material,
-                        compages::renderer::Material::create(
+    compages::renderer::MaterialId id;
+    COMPAGES_TRY_ASSIGN(id,
+                        p_assets.createMaterial(
                             p_name, { .family = compages::renderer::ShaderFamily::PbrMinimal,
                                       .shaders = std::move(shaders),
                                       .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
-                                      .see_through = std::nullopt }));
-    material.textures = { { .sampler = "surfaceMap", .texture = colour },
-                          { .sampler = "normalMap", .texture = normals },
-                          { .sampler = "roughMap", .texture = roughness } };
-    material.program.set("tileMetres", p_tile);
-    material.program.set("metallic", p_metallic);
-    return p_assets.addMaterial(p_name, std::move(material));
+                                      .see_through = std::nullopt,
+                                      .textures = { { .sampler = "surfaceMap", .texture = colour },
+                                                    { .sampler = "normalMap", .texture = normals },
+                                                    { .sampler = "roughMap", .texture = roughness } } }));
+    compages::gpu::Program& program = p_assets.material(id)->program;
+    program.set("tileMetres", p_tile);
+    program.set("metallic", p_metallic);
+    return id;
 }
 
 } // namespace examples::doom

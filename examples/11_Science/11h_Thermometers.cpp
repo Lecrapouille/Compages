@@ -109,16 +109,14 @@ compages::Status Thermometers::setUp()
     // background would turn grey). The hook "main" of the PBR shader reads
     // the picture the look above gave the board.
     compages::renderer::shaders::ShaderPair screen = compages::renderer::shaders::pbr();
-    screen.fragment().hook("main", "void main() { oColor = vec4(texture(baseColorMap, vUv).rgb, opacity); }");
-    compages::renderer::Material material;
-    COMPAGES_TRY_ASSIGN(material,
-                        compages::renderer::Material::create(
+    screen.fragment().hook("main", "void main() { oColor = vec4(screen(texture(baseColorMap, vUv).rgb), opacity); }");
+    compages::renderer::MaterialId shown;
+    COMPAGES_TRY_ASSIGN(shown,
+                        m_scene.assets().createMaterial(
                             "Screen", { .family = compages::renderer::ShaderFamily::PbrMinimal,
                                         .shaders = std::move(screen),
                                         .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back },
                                         .see_through = std::nullopt }));
-    compages::renderer::MaterialId shown;
-    COMPAGES_TRY_ASSIGN(shown, m_scene.assets().addMaterial(material.name, std::move(material)));
     m_scene.look(board, shown);
     // A frame round the screen.
     m_scene.box("Screen frame", compages::renderer::color(0.12f, 0.13f, 0.15f))

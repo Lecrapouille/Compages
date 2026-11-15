@@ -90,6 +90,10 @@ struct RenderSnapshot
     //! space the vertex shader multiplies rest-pose vertices with.
     std::vector<compages::Matrix44f> joint_palette;
     compages::renderer::Environment environment{};
+    //! \brief The view is drawn into a linear picture (its camera has
+    //! ScreenEffects): present() keeps the light linear, the last pass of the
+    //! view applies the tone curve.
+    bool linear_target = false;
 };
 
 //! \brief Direction the light of the sun travels, and its colour: the first

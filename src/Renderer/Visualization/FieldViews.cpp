@@ -106,7 +106,7 @@ void main()
     }
     else
     {
-        oColor = vec4(toSrgb(colour), opacity);
+        oColor = vec4(screen(toSrgb(colour)), opacity);
     }
 }
 )";
@@ -151,7 +151,7 @@ void main()
         colour += (1.0 - alpha) * a * c;
         alpha += (1.0 - alpha) * a;
     }
-    oColor = vec4(toSrgb(colour / max(alpha, 1e-4)), alpha * opacity);
+    oColor = vec4(screen(toSrgb(colour / max(alpha, 1e-4))), alpha * opacity);
 }
 )";
 
@@ -164,7 +164,7 @@ void main()
 {
     float width = float(textureSize(fieldColors, 0).x);
     vec3 colour = texture(fieldColors, vec2((clamp(vUv.x, 0.0, 1.0) * (width - 1.0) + 0.5) / width, 0.5)).rgb;
-    oColor = vec4(toSrgb(colour), opacity);
+    oColor = vec4(screen(toSrgb(colour)), opacity);
 }
 )";
 

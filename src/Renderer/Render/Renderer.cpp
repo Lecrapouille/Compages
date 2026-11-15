@@ -60,6 +60,10 @@ Status bindCamera(compages::renderer::Material& p_material,
     offer(p_material.program, "view", p_snapshot.camera.view);
     offer(p_material.program, "projection",
                            p_snapshot.camera.reversed_projection);
+    // Every family: present() and screen() need them.
+    offer(p_material.program, "exposure", p_snapshot.environment.exposure);
+    offer(p_material.program, "toneMapping", static_cast<int>(p_snapshot.environment.tone_mapping));
+    offer(p_material.program, "linearTarget", p_snapshot.linear_target);
     return success();
 }
 
@@ -76,9 +80,6 @@ Status bindLighting(compages::renderer::Material& p_material,
     offer(p_material.program, "cameraPos", p_snapshot.camera.position);
     offer(p_material.program, "fogColor", p_snapshot.environment.fog_color);
     offer(p_material.program, "fogDensity", p_snapshot.environment.fog_density);
-    offer(p_material.program, "exposure", p_snapshot.environment.exposure);
-    offer(p_material.program, 
-        "toneMapping", static_cast<int>(p_snapshot.environment.tone_mapping));
 
     const int count = static_cast<int>(
         std::min(p_snapshot.point_lights.size(),

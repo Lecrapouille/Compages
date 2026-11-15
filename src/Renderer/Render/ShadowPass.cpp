@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Render/ShadowPass.hpp"
+#include "Compages/Renderer/Render/FogVolume.hpp"
 #include "Renderer/Render/Offer.hpp"
 #include "Renderer/Render/MaterialResources.hpp"
 
@@ -88,6 +89,7 @@ Status drawOwnCaster(compages::renderer::Material& p_material,
     offer(p_material.program, "projection", p_light_view_projection);
     offer(p_material.program, "shadowEnabled", 0);
     offer(p_material.program, "lampShadows", compages::Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+    FogVolume::bindNone(p_material.program);
     COMPAGES_TRY(bindMaterialResources(p_material, p_assets));
     return drawCaster(p_material.program, p_material.casts_shadow, p_item, p_snapshot, p_assets);
 }

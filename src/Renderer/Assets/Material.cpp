@@ -18,6 +18,8 @@ Result<Material> Material::create(std::string p_name,
     Material material;
     material.name = std::move(p_name);
     material.family = p_desc.family;
+    material.textures = p_desc.textures;
+    material.buffers = p_desc.buffers;
     COMPAGES_TRY(material.program.load(p_desc.shaders.vertex(),
                                        p_desc.shaders.fragment()));
     COMPAGES_TRY_ASSIGN(material.pipeline,

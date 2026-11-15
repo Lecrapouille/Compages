@@ -33,26 +33,23 @@ enum class View : int
 // blended by the normal (triplanar mapping), so long walls, pillars and
 // pipes need no UV. Near the water they are wet (darker) with slime at the
 // waterline.
-inline constexpr char const* SOLID_MAIN = R"(
+inline constexpr char const* SOLID_SURFACE = R"(
 uniform sampler2D surfaceMap;
 uniform float tileMetres;
 uniform float waterLevel;
 
-void main()
+void surface(inout Surface s)
 {
-    vec3 n = normalize(vNormal);
-    vec3 w = pow(abs(n), vec3(4.0));
+    vec3 w = pow(abs(s.normal), vec3(4.0));
     w /= (w.x + w.y + w.z);
     vec3 p = vWorldPos / tileMetres;
     vec3 c = texture(surfaceMap, p.zy).rgb * w.x + texture(surfaceMap, p.xz).rgb * w.y
            + texture(surfaceMap, p.xy).rgb * w.z;
-    vec3 base = c * baseColorFactor;
     float above = vWorldPos.y - waterLevel;
     float wet = 1.0 - smoothstep(0.0, 0.5, above);
     float slime = 1.0 - smoothstep(-0.05, 0.14, above);
-    base *= mix(1.0, 0.5, wet);
-    base = mix(base, vec3(0.05, 0.075, 0.03), 0.65 * slime);
-    oColor = vec4(present(applyFog(shade(base, n, vWorldPos), vWorldPos)), opacity);
+    s.albedo = c * baseColorFactor * mix(1.0, 0.5, wet);
+    s.albedo = mix(s.albedo, vec3(0.05, 0.075, 0.03), 0.65 * slime);
 }
 )";
 
@@ -200,7 +197,7 @@ void main()
             // The pixels that have just started again.
             c = mix(c, vec3(1.0, 0.1, 0.05), 1.0 - smoothstep(0.0, 0.03, phase0));
         }
-        oColor = vec4(toSrgb(c), 1.0);
+        oColor = vec4(screen(toSrgb(c)), 1.0);
         return;
     }
 

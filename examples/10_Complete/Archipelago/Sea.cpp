@@ -82,18 +82,15 @@ compages::Status Sea::makeMaterials(compages::renderer::Scene& p_scene)
     ground.fragment()
         .include("archipelago/swells.glsl", swells)
         .hook("main", MAP_MAIN);
-    compages::renderer::Material map;
     COMPAGES_TRY_ASSIGN(
-        map,
-        compages::renderer::Material::create(
+        m_map,
+        p_scene.assets().createMaterial(
             "ArchipelagoMap",
             { .family = compages::renderer::ShaderFamily::PbrMinimal,
               .shaders = std::move(ground),
               .state = opaque,
-              .see_through = std::nullopt }));
-    map.textures = m_grounds;
-    COMPAGES_TRY_ASSIGN(m_map,
-                        p_scene.assets().addMaterial(map.name, std::move(map)));
+              .see_through = std::nullopt,
+              .textures = m_grounds }));
 
     compages::renderer::shaders::ShaderPair water =
         compages::renderer::shaders::pbr();
@@ -103,10 +100,9 @@ compages::Status Sea::makeMaterials(compages::renderer::Scene& p_scene)
     water.fragment()
         .include("archipelago/swells.glsl", swells)
         .hook("main", SURFACE_MAIN);
-    compages::renderer::Material surface;
     COMPAGES_TRY_ASSIGN(
-        surface,
-        compages::renderer::Material::create(
+        m_surface_material,
+        p_scene.assets().createMaterial(
             "ArchipelagoSurface",
             { .family = compages::renderer::ShaderFamily::PbrMinimal,
               .shaders = std::move(water),
@@ -117,9 +113,6 @@ compages::Status Sea::makeMaterials(compages::renderer::Scene& p_scene)
                   .depth_write = false,
                   .blend = compages::gpu::Blend::alpha(),
                   .cull = compages::gpu::CullMode::Back } }));
-    COMPAGES_TRY_ASSIGN(
-        m_surface_material,
-        p_scene.assets().addMaterial(surface.name, std::move(surface)));
     return compages::success();
 }
 

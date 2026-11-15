@@ -17,9 +17,15 @@
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/Renderer/Components/Helpers.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
+#include "Compages/Renderer/Components/ScreenEffects.hpp"
 #include "Compages/World/World.hpp"
 #include "Compages/World/Controllers/ViewFrame.hpp"
 
+#include <gmock/gmock.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <filesystem>
 
 
@@ -245,6 +251,175 @@ TEST_F(WorldDrawTest, HelpersAreComponentsOfEntities)
     auto written = scene.renderToFile(path, 32u, 32u);
     EXPECT_TRUE(bool(written)) << written.error();
     std::filesystem::remove(path);
+}
+
+// A Scene draws into a picture of its own; readColor() gives the top row
+// first, as an image file does: a white box above the middle is at the top.
+// The depth read back in metres: a wall 7 m in front of the camera, nothing
+// above it.
+TEST_F(WorldDrawTest, ReadsTheDepthInMetres)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.box("Wall", compages::renderer::unlit(1.0f, 1.0f, 1.0f)).position(0.0f, -5.0f, -7.0f).scale(40.0f, 10.0f, 0.1f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 0.0f);
+    eye.get<compages::world::Camera>().near_plane = 0.1f;
+    eye.get<compages::world::Camera>().far_plane = 500.0f;
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto target = compages::renderer::RenderTarget::create(32u, 32u);
+    ASSERT_TRUE(bool(target));
+    scene.render(eye.id(), target.value());
+    auto metres = target.value().readDepth(eye.get<compages::world::Camera>());
+    ASSERT_TRUE(bool(metres)) << metres.error();
+    // The wall is in the lower half (top row first), the sky above.
+    EXPECT_NEAR(metres.value()[(28u * 32u) + 16u], 6.95f, 0.01f);
+    EXPECT_TRUE(std::isinf(metres.value()[(3u * 32u) + 16u]));
+}
+
+// A view with screen effects is drawn in linear light, then given the tone
+// curve: a filter that changes nothing gives back the same picture (the
+// background, an unlit colour, a lit face), and a filter is run.
+TEST_F(WorldDrawTest, ScreenEffectsKeepThePictureAndRunTheFilters)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.2f, 0.4f, 0.6f);
+    scene.box("Marker", compages::renderer::unlit(0.9f, 0.3f, 0.1f)).position(-1.2f, 0.0f, 0.0f);
+    scene.box("Lit", compages::renderer::color(0.3f, 0.7f, 0.4f)).position(1.2f, 0.0f, 0.0f);
+    scene.sun().position(1.0f, 2.0f, 3.0f).lookAt(0.0f, 0.0f, 0.0f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 5.0f).lookAt(0.0f, 0.0f, 0.0f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto shoot = [&]()
+    {
+        auto target = compages::renderer::RenderTarget::create(64u, 32u);
+        EXPECT_TRUE(bool(target));
+        scene.render(eye.id(), target.value());
+        EXPECT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+        return target.value().readColor().value();
+    };
+    const std::vector<std::byte> plain = shoot();
+
+    eye.set(compages::renderer::ScreenEffects{
+        .filters = { { .name = "Same", .glsl = "vec3 effect(vec2 uv) { return texture(screenColor, uv).rgb; }" } } });
+    const std::vector<std::byte> same = shoot();
+    ASSERT_EQ(plain.size(), same.size());
+    int worst = 0;
+    for (std::size_t i = 0u; i < plain.size(); ++i)
+    {
+        worst = std::max(worst, std::abs(int(plain[i]) - int(same[i])));
+    }
+    EXPECT_LE(worst, 3) << "the linear picture and the tone curve change the colours";
+
+    eye.get<compages::renderer::ScreenEffects>().filters = {
+        { .name = "No red",
+          .glsl = "uniform float keep;\nvec3 effect(vec2 uv) { return texture(screenColor, uv).rgb * vec3(keep, 1.0, 1.0); }",
+          .values = { { "keep", 0.0f } } }
+    };
+    const std::vector<std::byte> cyan = shoot();
+    auto reddest = [](std::vector<std::byte> const& p_pixels)
+    {
+        int red = 0;
+        for (std::size_t i = 0u; i < p_pixels.size(); i += 4u)
+        {
+            red = std::max(red, int(p_pixels[i]));
+        }
+        return red;
+    };
+    EXPECT_GT(reddest(plain), 200);
+    EXPECT_LT(reddest(cyan), 5);
+
+    // A value for a uniform the text does not have is an error, not a silence.
+    eye.get<compages::renderer::ScreenEffects>().filters[0].values = { { "kept", 0.0f } };
+    auto target = compages::renderer::RenderTarget::create(64u, 32u);
+    ASSERT_TRUE(bool(target));
+    scene.render(eye.id(), target.value());
+    ASSERT_TRUE(compages::gpu::hasFrameError());
+    EXPECT_THAT(compages::gpu::takeFrameError(), ::testing::HasSubstr("kept"));
+}
+
+// The bloom spills the light of a white marker on the black around it.
+TEST_F(WorldDrawTest, BloomSpillsBrightLight)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f);
+    scene.box("Bulb", compages::renderer::unlit(1.0f, 1.0f, 1.0f)).scale(0.6f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 5.0f).lookAt(0.0f, 0.0f, 0.0f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto beside = [&]()
+    {
+        auto target = compages::renderer::RenderTarget::create(128u, 128u);
+        EXPECT_TRUE(bool(target));
+        scene.render(eye.id(), target.value());
+        EXPECT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+        return int(target.value().readColor().value()[(64u * 128u + 84u) * 4u]);
+    };
+    EXPECT_LT(beside(), 3);
+    eye.set(compages::renderer::ScreenEffects{ .bloom = { .enabled = true, .threshold = 1.0f, .strength = 1.0f } });
+    EXPECT_GT(beside(), 10);
+}
+
+TEST_F(WorldDrawTest, DrawsIntoARenderTargetReadTopRowFirst)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f);
+    scene.box("Up", compages::renderer::unlit(1.0f, 1.0f, 1.0f)).position(0.0f, 1.0f, 0.0f).scale(4.0f, 1.0f, 1.0f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 4.0f).lookAt(0.0f, 0.0f, 0.0f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto target = compages::renderer::RenderTarget::create(32u, 32u);
+    ASSERT_TRUE(bool(target)) << target.error();
+    scene.render(eye.id(), target.value());
+    ASSERT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+    auto pixels = target.value().readColor();
+    ASSERT_TRUE(bool(pixels)) << pixels.error();
+    auto at = [&](std::size_t p_row) { return static_cast<int>(pixels.value()[(p_row * 32u + 16u) * 4u]); };
+    EXPECT_GT(at(9u), 200) << "the box above the middle is not in the upper rows";
+    EXPECT_LT(at(24u), 50);
+
+    // The same size again keeps the pictures; another size makes new ones.
+    EXPECT_TRUE(bool(target.value().resize(32u, 32u)));
+    EXPECT_TRUE(bool(target.value().resize(16u, 8u)));
+    EXPECT_EQ(target.value().width(), 16u);
+    EXPECT_FALSE(bool(target.value().resize(0u, 8u)));
+    EXPECT_FALSE(target.value().valid());
+}
+
+// A camera standing for a sensor (sees_helpers false) does not draw the
+// meshes marked Helper: the eye of a robot is not fooled by a marker.
+TEST_F(WorldDrawTest, ASensorCameraDoesNotSeeTheHelpers)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    compages::world::Entity marker = scene.box("Marker", compages::renderer::unlit(1.0f, 1.0f, 1.0f));
+    marker.get<compages::renderer::MeshRenderer>().flags = compages::renderer::RenderFlags::Helper;
+    scene.box("Cube").position(3.0f, 0.0f, 0.0f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 6.0f).lookAt(0.0f, 0.0f, 0.0f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    scene.update(compages::world::ViewFrame{});
+
+    auto seen = compages::renderer::SceneExtractor::extract(scene, 32u, 32u);
+    ASSERT_TRUE(bool(seen)) << seen.error();
+    EXPECT_EQ(seen.value().items.size(), 2u);
+
+    eye.get<compages::world::Camera>().sees_helpers = false;
+    auto sensed = compages::renderer::SceneExtractor::extract(scene, 32u, 32u);
+    ASSERT_TRUE(bool(sensed)) << sensed.error();
+    ASSERT_EQ(sensed.value().items.size(), 1u);
+    EXPECT_NE(sensed.value().items.front().entity, marker.id());
 }
 
 // A camera drawing into the left half of a 64 x 32 target sees a square: its

@@ -35,12 +35,27 @@ namespace compages::renderer::shaders
 //! |                              | bumpNormal(n, worldPos, uv, tangentNormal) |
 //! | <compages/present.glsl>      | opacity, present(linear): tone curve, sRGB |
 //!
-//! The PBR shader leaves two hooks open:
+//! The PBR shader leaves four hooks open:
 //! - \c deform (vertex): \c void \c deform(inout \c vec4 \c world, inout \c vec3
 //!   \c normal), called on the world position and normal before they are
 //!   projected. By default it changes nothing.
-//! - \c main (fragment): the whole main() writing \c oColor, which is declared
-//!   before it, as are the uniforms the Renderer sets (baseColorFactor,
+//! - \c surface (fragment): \c void \c surface(inout \c Surface \c s). It
+//!   receives what the material instance describes (\c albedo, \c normal,
+//!   \c metallic, \c roughness, \c emission, \c opacity) and changes what it
+//!   wants; the Renderer then lights it (sun, lamps, shadows), adds the fog
+//!   and the tone curve. It may \c discard. By default it changes nothing.
+//!   This is the hook for a new look: the lights stay right without effort.
+//! - \c light (fragment): \c vec3 \c light(Surface \c s), the light on the
+//!   surface in linear units, before its emission, the fog and the tone
+//!   curve. By default \c sceneLight(s) (sun, sky, lamps, shadows). This is
+//!   the hook for another model of light (cel shading, a rim): it reads
+//!   \c lightDir, \c lightColor, \c ambient, \c cameraPos, \c vWorldPos and
+//!   calls \c sunVisibility(), \c pointLightsContribution().
+//! - \c main (fragment): the whole main() writing \c oColor, for what is
+//!   not a lit surface (a debug view, a picture shown as it is). It may
+//!   call \c instanceSurface(), \c surface(), \c light(s) and
+//!   \c toScreen(s, lit) (the default main is these four calls). Declared
+//!   before it: \c oColor, the uniforms the Renderer sets (baseColorFactor,
 //!   baseColorMap, hasBaseColorMap; for the metallic-roughness model of an
 //!   instance: pbrUseMetalRoughness, pbrMetallic, pbrRoughness,
 //!   pbrMetalRoughnessMap, pbrHasMetalRoughnessMap, pbrNormalMap,
@@ -49,7 +64,7 @@ namespace compages::renderer::shaders
 //! \code
 //! auto pbr = compages::renderer::shaders::pbr();
 //! pbr.vertex().include("waves.glsl", wavesGlsl()).hook("deform", DEFORM);
-//! pbr.fragment().include("waves.glsl", wavesGlsl()).hook("main", WATER);
+//! pbr.fragment().include("waves.glsl", wavesGlsl()).hook("surface", WATER);
 //! \endcode
 // ****************************************************************************
 

@@ -21,6 +21,7 @@ namespace
 {
 
 //! \brief The texture unit of the fog in the lit shaders.
+//! The unit of the sampler fogVolume, written in fog.glsl (layout(binding)).
 constexpr std::uint32_t FOG_UNIT = 10u;
 
 // ----------------------------------------------------------------------------
@@ -317,6 +318,7 @@ void FogVolume::drawBackground(RenderSnapshot const& p_snapshot)
     offer(program, "fogVolumeViewport", m_viewport);
     offer(program, "exposure", p_snapshot.environment.exposure);
     offer(program, "toneMapping", int(p_snapshot.environment.tone_mapping));
+    offer(program, "linearTarget", p_snapshot.linear_target);
     m_background["fogVolume"] = m_integrated;
     m_background.draw(3u);
 }
@@ -333,11 +335,20 @@ void FogVolume::bind(compages::gpu::Program& p_program) const
     {
         return;
     }
+    // The sampler reads this unit: layout(binding) in fog.glsl.
     m_integrated.bind(FOG_UNIT);
-    offer(p_program, "fogVolume", int(FOG_UNIT));
     offer(p_program, "fogVolumeDepth", m_depth);
     offer(p_program, "fogVolumeViewport", m_viewport);
     offer(p_program, "fogVolumeView", m_view);
+}
+
+void FogVolume::bindNone(compages::gpu::Program& p_program)
+{
+    if (!p_program.has("fogVolumeOn"))
+    {
+        return;
+    }
+    p_program.set("fogVolumeOn", false);
 }
 
 } // namespace compages::renderer
