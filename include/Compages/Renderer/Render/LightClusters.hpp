@@ -101,7 +101,20 @@ private:
 
     [[nodiscard]] int sliceOf(float p_depth) const;
 
+    //! \brief The clusters a lamp reaches: a box of slices, rows and columns.
+    struct Span
+    {
+        std::uint32_t lamp;
+        int x0, x1, y0, y1, s0, s1;
+    };
+
+    template <typename F>
+    void eachCluster(Span const& p_span, F&& p_do) const;
+
     std::vector<compages::Vector4f> m_lamps;
+    //! \brief Kept from one build to the next: no allocation once warm.
+    std::vector<Span> m_spans;
+    std::vector<std::uint32_t> m_filled;
     std::vector<std::uint32_t> m_cells;
     std::vector<std::uint32_t> m_indices;
     float m_near = 0.1f;

@@ -75,7 +75,7 @@ void LightClusters::build(RenderSnapshot const& p_snapshot, std::size_t p_first)
                        : compages::Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
 
     m_lamps.clear();
-    std::vector<std::vector<std::uint32_t>> lists(CLUSTERS);
+    m_spans.clear();
     const std::size_t end = std::min(p_snapshot.point_lights.size(), p_first + MAX_LIGHTS);
     for (std::size_t i = p_first; i < end; ++i)
     {
@@ -125,30 +125,59 @@ void LightClusters::build(RenderSnapshot const& p_snapshot, std::size_t p_first)
             y0 = std::clamp(int(v0 * float(m_tiles_y)), 0, m_tiles_y - 1);
             y1 = std::clamp(int(v1 * float(m_tiles_y)), 0, m_tiles_y - 1);
         }
-        const int s0 = sliceOf(std::max(closest, m_near));
-        const int s1 = sliceOf(std::min(farthest, m_far));
-        for (int s = s0; s <= s1; ++s)
-        {
-            for (int y = y0; y <= y1; ++y)
-            {
-                for (int x = x0; x <= x1; ++x)
-                {
-                    lists[std::size_t((((s * m_tiles_y) + y) * m_tiles_x) + x)].push_back(index);
-                }
-            }
-        }
+        m_spans.push_back(Span{ .lamp = index, .x0 = x0, .x1 = x1, .y0 = y0, .y1 = y1,
+                                .s0 = sliceOf(std::max(closest, m_near)),
+                                .s1 = sliceOf(std::min(farthest, m_far)) });
     }
 
-    // One list after the other; what does not fit is left out.
+    // Count the lamps of each cluster, give each list its place one after
+    // the other (what does not fit is left out), then fill the lists in the
+    // order of the lamps. No list of lists: the memory stays from one frame
+    // to the next.
     m_cells.assign(2u * CLUSTERS, 0u);
-    m_indices.clear();
+    for (Span const& span : m_spans)
+    {
+        eachCluster(span, [this](std::size_t p_k) { ++m_cells[(2u * p_k) + 1u]; });
+    }
+    std::size_t first = 0u;
     for (std::size_t k = 0u; k < CLUSTERS; ++k)
     {
-        const std::size_t room = MAX_INDICES - m_indices.size();
-        const std::size_t taken = std::min(lists[k].size(), room);
-        m_cells[2u * k] = std::uint32_t(m_indices.size());
+        const std::size_t taken = std::min(std::size_t(m_cells[(2u * k) + 1u]), MAX_INDICES - first);
+        m_cells[2u * k] = std::uint32_t(first);
         m_cells[(2u * k) + 1u] = std::uint32_t(taken);
-        m_indices.insert(m_indices.end(), lists[k].begin(), lists[k].begin() + std::ptrdiff_t(taken));
+        first += taken;
+    }
+    m_indices.resize(first);
+    m_filled.assign(CLUSTERS, 0u);
+    for (Span const& span : m_spans)
+    {
+        eachCluster(span,
+                    [this, &span](std::size_t p_k)
+                    {
+                        if (m_filled[p_k] < m_cells[(2u * p_k) + 1u])
+                        {
+                            m_indices[m_cells[2u * p_k] + m_filled[p_k]] = span.lamp;
+                            ++m_filled[p_k];
+                        }
+                    });
+    }
+}
+
+// ----------------------------------------------------------------------------
+//! Call \c p_do with the number of each cluster the span covers.
+// ----------------------------------------------------------------------------
+template <typename F>
+void LightClusters::eachCluster(Span const& p_span, F&& p_do) const
+{
+    for (int s = p_span.s0; s <= p_span.s1; ++s)
+    {
+        for (int y = p_span.y0; y <= p_span.y1; ++y)
+        {
+            for (int x = p_span.x0; x <= p_span.x1; ++x)
+            {
+                p_do(std::size_t((((s * m_tiles_y) + y) * m_tiles_x) + x));
+            }
+        }
     }
 }
 
