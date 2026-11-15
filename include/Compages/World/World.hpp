@@ -38,6 +38,18 @@
 //! \brief The World: entities, their components, their hierarchy and their
 //! routines. Headless: nothing here needs a GPU.
 //!
+//! A World is the state of a simulation: where things are and how they move.
+//! Use one per simulation. It runs alone in a unit test, a server or a robot
+//! controller; to see it, give it to one or several renderer::Scene, which
+//! read it and never change it. It has no physics engine and detects no
+//! collision: an outside engine writes the poses (PoseDriver::External).
+//!
+//! It holds two mechanisms on the same entities, because simulations need
+//! both: a tree of parents and children (a robot arm, a car and its wheels)
+//! and tables of plain structs visited by loops (a thousand agents). The tree
+//! is the scene graph; the tables are an ECS (EnTT). Systems written with
+//! each<>() run only when you call them: update() does not discover them.
+//!
 //! The syntax is the one of flecs. An entity is created by name and given
 //! components, which are plain structs:
 //! \code
@@ -141,7 +153,21 @@ public:
             { std::invoke(p_callback, EntityId(p_entity), p_components...); });
     }
 
-    //! \brief A whole headless step: step(), update(), endStep().
+    // ------------------------------------------------------------------------
+    //! \brief Move the world forward by one step of time, with no picture.
+    //!
+    //! In order: the routines (fixedUpdate, update, timers), the joints (their
+    //! angles become local transforms), the world matrices from the parents
+    //! down, then lateUpdate and the matrices of what it moved. After it,
+    //! worldPosition() and worldMatrix() of every entity are up to date.
+    //!
+    //! Call it once per step. With a renderer::Scene, call Scene::update() or
+    //! Scene::draw() instead, which call it and apply the animation clips:
+    //! calling both would run the routines twice.
+    //!
+    //! \param[in] p_frame the time since the last step (\c elapsed) and since
+    //! the start (\c total); you fill both in a headless loop.
+    // ------------------------------------------------------------------------
     void update(compages::Frame const& p_frame);
 
     //! \brief A whole interactive step, with the keyboard and the mouse:

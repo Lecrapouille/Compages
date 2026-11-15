@@ -34,6 +34,13 @@ class World;
 //! \brief Handle on one entity inside a \c World: chain calls like flecs or
 //! three.js.
 //!
+//! An Entity is a small value: the World and an EntityId. Copying it does not
+//! copy the entity; two copies name the same thing. An empty handle, or one
+//! whose entity was destroyed, is \c false. Keep an EntityId in your own data
+//! when you only need to name an entity later; keep an Entity when you call
+//! it often. The calls that place, parent or add return the handle, so they
+//! chain.
+//!
 //! \code
 //! compages::world::Entity ship = world.entity("Ship").position(0, 2, 0);
 //! ship.child("Mast").scale(0.5f).add<Spin>(1.0f);

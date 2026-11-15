@@ -26,6 +26,22 @@
 //! triangle.draw();
 //! \endcode
 //!
+//! Use it for one shape drawn by one shader: a triangle, a mesh of your own,
+//! a full-screen pass, points written by a compute shader. For one mesh read
+//! by several shaders (the picture, its shadow, its outline), give each
+//! Drawable the same buffer with borrowVertices(), or go one level down to a
+//! Program and a Pipeline. To show objects in a 3D scene with lights and a
+//! camera, use renderer::Scene instead: it writes the shaders for you.
+//!
+//! Guarantees: assigning a value never calls the GPU; draw() sends only what
+//! changed since the last draw. A Drawable owns its vertices unless it
+//! borrowed a buffer, which must then outlive it. It cannot be copied.
+//!
+//! Why names: the shader already declares what it reads. Reading these
+//! declarations from the compiled program removes the attribute numbers and
+//! the byte layouts that raw OpenGL asks for, and turns a mismatch into an
+//! error message that lists the real names, instead of a black window.
+//!
 //! Underneath it uses a Program, a Pipeline and Buffers; reach for those only
 //! for what Drawable does not cover.
 // ****************************************************************************
@@ -631,8 +647,20 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    //! \brief Draw everything: every index if there are indices, every vertex
-    //! otherwise.
+    //! \brief Send what changed on the CPU, then draw the whole shape into the
+    //! open render pass.
+    //!
+    //! The values assigned since the last draw (attributes, uniforms,
+    //! textures) are sent first, only the ranges that changed. Then every
+    //! index is drawn if the drawable has indices, every vertex otherwise.
+    //! Call it inside an open RenderPass, once per frame or per view.
+    //!
+    //! A mistake (an unknown name, a value of the wrong type, no vertex) is
+    //! not thrown: it is recorded, and takeFrameError() returns it, so one bad
+    //! frame never stops a simulation. prepare() finds the same mistakes
+    //! before the first frame.
+    //!
+    //! \note It does not wait for the GPU to finish the draw.
     // ------------------------------------------------------------------------
     void draw();
 

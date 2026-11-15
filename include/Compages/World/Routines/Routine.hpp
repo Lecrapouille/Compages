@@ -59,6 +59,13 @@ class Entity;
 //! \endcode
 //! Routines run by priority() (smaller first), then in the order they were
 //! added, whatever their entity: a run is the same each time.
+//!
+//! Use a routine for a few objects with their own logic: a door, a robot
+//! arm, a camera control. Each one is an object called through a virtual
+//! function, which is fine for tens or hundreds. For thousands of entities
+//! with the same data, write a system with World::each<>(); for millions,
+//! keep the data on the GPU. A routine detects no collision (Compages has no
+//! physics engine): an outside engine sends a Contact message instead.
 // ****************************************************************************
 class Routine
 {

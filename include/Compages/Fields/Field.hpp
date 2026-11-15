@@ -30,6 +30,14 @@ namespace compages
 //! points: they can be sent to the GPU as they are (values()). A field of a
 //! million points is one object, never a million entities.
 //!
+//! A field holds values; it solves nothing. Heat, waves or fluids are loops
+//! written by the program (see the 11_Science demos). sample() mixes the
+//! points round a place (bilinear on a plane, trilinear in a volume) and
+//! returns the value of the nearest edge outside the grid; the GPU samples
+//! a texture made with gpu::Texture::fromField() the same way, so the CPU
+//! and the GPU read the same value at the same place. A field on a grid with
+//! a size of zero or less is empty.
+//!
 //! \code
 //! compages::Field<float> altitude(grid, 0.0f);
 //! altitude(10, 20) = 35.0f;

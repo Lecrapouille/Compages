@@ -73,6 +73,16 @@ namespace compages::renderer
 //! A mistake made while building, a missing picture for instance, does not
 //! stop the building: it is kept and prepare() returns it.
 //!
+//! Guarantees: the Scene never changes where things are; it reads the World.
+//! Before drawing it copies what one camera needs into a RenderSnapshot and
+//! draws from that copy, so the World may change in the meantime (another
+//! thread, a physics engine). A world component holds asset ids, never a GPU
+//! object: the World stays usable without a context.
+//!
+//! Limits: it draws with OpenGL 4.5 through the gpu layer and needs a context
+//! made by your program (it never opens a window). It is not an editor and
+//! has no physics, no sound, no scene file other than its own JSON.
+//!
 //! Two Scenes may show the same compages::world::World, with their own cameras
 //! and their own backgrounds; the second one then shares the assets of the
 //! first so that nothing is loaded twice.
@@ -440,12 +450,21 @@ public:
     // ------------------------------------------------------------------------
     //! \brief Send everything built so far to the GPU, and report the first
     //! mistake made while building. What setUp() returns.
+    //!
+    //! Call it once, after the scene is built and before the first frame. It
+    //! turns the mistakes that the first frame would meet (a missing picture,
+    //! a shader that does not compile) into one error returned at a moment
+    //! where the program can still stop cleanly.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status prepare();
 
     // ------------------------------------------------------------------------
     //! \brief Move the compages::world::World forward one frame: the routines,
     //! then the animations, then the transforms.
+    //!
+    //! Call it once per frame, then render() once per view. It calls
+    //! World::update() itself: do not call that too, or the routines run
+    //! twice.
     // ------------------------------------------------------------------------
     void update(compages::world::ViewFrame const& p_frame);
 
@@ -473,7 +492,9 @@ public:
     //! \brief Same, with the active camera.
     void render();
 
-    //! \brief update() then render(): the usual frame.
+    //! \brief update() then render() with the active camera: the usual
+    //! frame of a program with one view. With several views, or work to do
+    //! between the move and the picture, call the two halves yourself.
     void draw(compages::world::ViewFrame const& p_frame);
 
     // ------------------------------------------------------------------------
