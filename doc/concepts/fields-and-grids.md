@@ -1,14 +1,12 @@
-# 🗺 Fields and grids
+# Fields and grids
 
-[⏫ Concepts](README.md)
+[Concepts](README.md)
 
 ![11a_HeatPlate](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11a_HeatPlate.png)
 
-## 🎯 The problem
-
 Most scientific data is a value at each point of a space: the temperature of a plate, the height of an island, the speed of the wind, the density of smoke in a room. An engine made for games offers entities and meshes. A million temperatures as a million entities is absurd; as a mesh, it mixes the data with the way it is drawn, and the solver must know about triangles.
 
-## 💡 The idea: where, what, and how it looks, kept apart
+## Where, what, and how it looks, kept apart
 
 | Thing | Type | Holds |
 |-------|------|-------|
@@ -80,16 +78,16 @@ flowchart LR
     BUF -->|"scene.show(grid, buffer, look)"| VIEW
 ```
 
-- **Small, or read by the CPU**: compute on the CPU, show with `scene.show(field, look)`; send the new values each frame with `scene.show(entity, field, look)` ([values on a grid](../tutorials/04-values-on-a-grid.md)).
+- **Small, or read by the CPU**: compute on the CPU, show with `scene.show(field, look)`; send the new values each frame with `scene.show(entity, field, look)` ([values on a grid](../tutorials/05-values-on-a-grid.md)).
 - **Large, every frame**: compute on the GPU into a storage buffer and show the buffer; nothing comes back to the CPU ([the ripple tank](../case-studies/ripple-tank.md)).
 
 `scene.show()` sends the values to the GPU as a buffer, and the shader turns them into colours and heights: a new range or new values never rebuild the mesh.
 
-## 💰 What it leaves out
+## What Compages does not do with fields
 
 Compages holds and shows fields; **it does not solve equations**. Creating a `Field` makes nothing spread. The heat, the waves and the fluids of the `11_Science` demos are a few loops each, in the demos; the [case studies](../case-studies/README.md) explain them. A finite-element solver, adaptive grids, units on values: not in Compages.
 
-## 🔗 See also
+## See also
 
 - [Show a field](../guides/show-a-field.md): colour maps, relief, volumes, arrows, a value under the mouse, curves over time.
-- [Reference: fields](../reference/api.md#-6-fields).
+- [Reference: fields](../reference/api.md#6-fields).

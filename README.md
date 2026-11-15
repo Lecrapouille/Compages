@@ -162,18 +162,17 @@ Keyboard keys: `PgUp` / `PgDn` change demo, `F1` hides the panels. Then follow [
 
 ## 📚 Documentation
 
-<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/00e_RobotEye.png" alt="The robot workshop of the tutorials" width="480">
+<img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/13d_RobotEye.png" alt="The robot workshop of the tutorials" width="480">
 
-Start with the **[tutorials](doc/tutorials/README.md)**: they build the robot workshop above step by step, from a table to an arm that sees, and each page ends with something new on the screen. The [documentation map](doc/README.md) then offers three paths: use Compages, make effects and simulations, understand and extend the engine.
+Start with the [tutorials](doc/tutorials/README.md). They follow the three layers: a shader and some numbers on the GPU, then a robot arm in a World with no screen, then the workshop above drawn by the Renderer, one idea per page.
 
-| Folder | Kind | For |
-|--------|------|-----|
-| [Tutorials](doc/tutorials/README.md) | learn by doing | 🎓 install, a first scene, joints, a field, a shader hook, a second camera, the GPU alone |
-| [Guides](doc/guides/README.md) | one task each | 🧭 load a model, light the scene, several views, screen effects, compute on the GPU, debug a black window… |
-| [Techniques](doc/techniques/README.md) | one effect each | 🎨 cel shading, bloom, flow mapping…: the idea, the code, the cost |
-| [Case studies](doc/case-studies/README.md) | whole demos | 🔬 sweat on a face, an archipelago, flowing water, heat, waves, smoke |
-| [Concepts](doc/concepts/README.md) | why | 💡 three layers, the World, the GPU layer, one frame, fields, errors, architecture |
-| [Reference](doc/reference/README.md) | look up | 📖 the API, every demo of the gallery, credits |
+Then:
+
+- the [guides](doc/guides/README.md) show how to do one task: load a model, light a scene, add a second view, compute on the GPU, find why a window is black;
+- the [techniques](doc/techniques/README.md) explain one effect each, with when to use it and what it costs;
+- the [case studies](doc/case-studies/README.md) follow a whole demo, from the equation or the paper to the picture;
+- the [concepts](doc/concepts/README.md) explain why Compages is built this way;
+- the [reference](doc/reference/README.md) lists the calls, the demos and the shader library.
 
 Coding agents: [AGENTS.md](AGENTS.md) and the skills of `.claude/skills/`.
 

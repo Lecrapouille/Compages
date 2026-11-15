@@ -1,10 +1,10 @@
-# 🔨 Build and install
+# Build and install
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** build Compages with its tests, choose a build mode, and install it on your system so that another project can use it with `pkg-config`. For a first build, [tutorial 1](../tutorials/01-install.md) is shorter.
+Build Compages with its tests, choose a build mode, and install it on your system so that another project can use it with `pkg-config`. For a first build, [tutorial 1](../tutorials/01-install.md) is shorter.
 
-## 📦 The tools
+## The tools
 
 Compages builds in C++20, on Linux, with `make` (the build system is [MyMakefile](https://github.com/Lecrapouille/MyMakefile), in `.makefile/`). The GL45 backend needs an OpenGL **4.5 core** context for the gallery and the GPU tests. The library itself does not depend on GLFW: the window belongs to your application.
 
@@ -43,7 +43,7 @@ sudo dnf install xorg-x11-server-Xvfb mesa-dri-drivers  # machine without screen
 brew install cmake glfw googletest pkg-config
 ```
 
-## 🔨 Build
+## Build
 
 ```sh
 git clone --recurse-submodules https://github.com/Lecrapouille/Compages.git
@@ -80,7 +80,7 @@ After the build, in `build/linux-gcc-debug/` (`make COMPILATION_MODE=release` bu
 
 `make help` lists the variables (`GPU_BACKEND`, `PREFIX`, …).
 
-## 🧪 Tests
+## Tests
 
 ```sh
 make check                                                # the unit tests
@@ -89,7 +89,7 @@ make check                                                # the unit tests
 
 `make check` rebuilds the test binary first; a plain `make` may leave it stale. `make coverage` gives the local coverage. On a machine without screen, see [run without a screen](run-without-a-screen.md).
 
-## 📥 Install on your system
+## Install on your system
 
 | Variable | Default |
 |----------|---------|
@@ -112,13 +112,13 @@ export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_
 c++ -std=c++20 app.cpp -o app $(pkg-config --cflags --libs Compages)
 ```
 
-A drawing application also makes its window and its OpenGL context ([a first scene](../tutorials/02-first-scene.md#-the-same-scene-in-your-own-window)); a World-only application needs neither.
+A drawing application also makes its window and its OpenGL context ([a first scene](../tutorials/04-a-scene.md#the-same-scene-in-your-own-window)); a World-only application needs neither.
 
-## 🧯 Common problems
+## Common problems
 
 - **`libCompages.so` not found after the install (Fedora, RHEL).** The loader reads only `/etc/ld.so.cache`, `/lib64` and `/usr/lib64`. Add `/usr/local/lib`: `echo '/usr/local/lib' | sudo tee /etc/ld.so.conf.d/usrlocal.conf && sudo ldconfig`. For one run: `LD_LIBRARY_PATH=/usr/local/lib ./app`.
 - **Not linked**: GLEW, SOIL, Bullet, bzip2 are not part of the build. ImGui and GLFW stay in the gallery and the tests; glad is private to the GL45 backend.
 
-## 🔗 See also
+## See also
 
 [Run without a screen](run-without-a-screen.md) · [A black window](debug-a-black-window.md) · [Architecture](../concepts/architecture.md)

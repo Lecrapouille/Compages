@@ -1,6 +1,6 @@
-# 🏝 10e_Archipelago: a world made from a graph
+# 10e_Archipelago: a world made from a graph
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![10e_Archipelago](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10e_Archipelago.png)
 
@@ -20,7 +20,7 @@ The map is 16 km wide. Every size is written with its unit (`toMetres(1.4_km)`),
 | `FineTiles` | finer tiles near the camera |
 | `Wildlife`, `Pins`, `Signs`, `Highlight`, `Panels`, `Browser` | what lives on the map, and the interface |
 
-**First observation:** land generation happens on the CPU; displaying its result happens on the GPU. The background thread produces data. The main thread turns that data into meshes and textures while its graphics context is current.
+Land generation happens on the CPU; displaying its result happens on the GPU. The background thread produces data. The main thread turns that data into meshes and textures while its graphics context is current.
 
 ## Step 1 — A recipe, a thread, a progress bar
 
@@ -63,7 +63,7 @@ flowchart LR
 
 The same seed gives the same map: Try it → Seed, Erosion steps, Generate.
 
-## Step 2 — Cells: a Voronoi diagram on a `Grid2D`
+## Step 2 — Cells: a Voronoi diagram on a Grid2D
 
 As the thesis asks, after A. Patel's polygon maps, the map is made of **cells**: the places nearest to each of 96 x 96 points (a **Voronoi diagram**). There is one point (the **site**) per square of a grid, moved by up to 0.3 square:
 
@@ -147,8 +147,8 @@ The table lives once in C++. `swellsGlsl()` writes it as GLSL, given to the shad
 
 ## Step 9 — Life and interface
 
-Boats sail round the islands where the water is deep enough, gulls circle in flocks along the coasts, fish jump in the lagoons. Boats and fish are drawn at least as large as a part of their distance to the camera, like the icons of a map. The names are written on signs over their places (`Signs`, with `ImGui::GetWindowDrawList()` over the picture), and `Panels` opens the windows of IslandedBrowser through `Example::overlay()`. The keys are in [chapter 9](../reference/gallery.md#-13-10--complete-everything-together).
+Boats sail round the islands where the water is deep enough, gulls circle in flocks along the coasts, fish jump in the lagoons. Boats and fish are drawn at least as large as a part of their distance to the camera, like the icons of a map. The names are written on signs over their places (`Signs`, with `ImGui::GetWindowDrawList()` over the picture), and `Panels` opens the windows of IslandedBrowser through `Example::overlay()`. The keys are in [chapter 9](../reference/gallery.md#12-10--complete-everything-together).
 
-## 🔗 See also
+## See also
 
-[Make pictures and meshes](../guides/make-pictures-and-meshes.md) · [Write a material: `deform`](../guides/write-a-material.md#4-deform-to-move-the-vertices) · [Move the camera: fly to a place](../guides/move-the-camera.md#-fly-to-a-place) · [Text on the picture](../guides/text-on-the-picture.md)
+[Make pictures and meshes](../guides/make-pictures-and-meshes.md) · [Write a material: `deform`](../guides/write-a-material.md#4-deform-to-move-the-vertices) · [Move the camera: fly to a place](../guides/move-the-camera.md#fly-to-a-place) · [Text on the picture](../guides/text-on-the-picture.md)

@@ -1,10 +1,10 @@
-# 🙏 Credits
+# Credits
 
-[⏫ Reference](README.md)
+[Reference](README.md)
 
 The design lessons behind Compages, and the projects, papers and assets it learned from or uses. The history of the project is in the main README; this page keeps the technical sources in one place.
 
-## 📜 1. Where Compages comes from
+## 1. Where Compages comes from
 
 The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compages) is told in the [README](../../README.md#-the-story). Two technical lessons of OpenGLCppWrapper shaped the [three layers](../concepts/three-layers.md):
 
@@ -13,7 +13,7 @@ The story (SimTaDyn maps, OpenGL 3.3 core, Glumpy, OpenGLCppWrapper, then Compag
 
 ---
 
-## 💡 2. Inspirations
+## 2. Inspirations
 
 **OpenGL**
 
@@ -57,16 +57,15 @@ The demos rebuild published techniques from the papers and talks below, with cod
 
 ---
 
-## 📦 3. Third-party libraries
+## 3. Third-party libraries
 
-The list and the install are in [build and install](../guides/build-and-install.md#-build). In short: EnTT, units, cgltf, nlohmann/json, stb, pugixml, ImGui (gallery), glad (private to the backend), GLFW (gallery and tests).
+The list and the install are in [build and install](../guides/build-and-install.md#build). In short: EnTT, units, cgltf, nlohmann/json, stb, pugixml, ImGui (gallery), glad (private to the backend), GLFW (gallery and tests).
 
 Demo assets: [Compages-data](https://github.com/Lecrapouille/Compages-data), fetched by `make` with the other third parties.
 
 ---
 
-## 📝 4. License
+## 4. License
 
 Compages is dual-licensed: GNU GPL v3 or later, or a commercial license for those who cannot use the GPL. See [LICENSING.md](../../LICENSING.md). The scripts of `.makefile` carry their own header (MIT for the third-party download scripts).
 
-Back to the [documentation map](../README.md).

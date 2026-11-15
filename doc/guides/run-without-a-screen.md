@@ -1,12 +1,12 @@
-# 🖥 Run without a screen
+# Run without a screen
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** run a simulation, draw a picture, or check the gallery on a machine with no screen: a server, a container, a CI job, a unit test.
+Run a simulation, draw a picture, or check the gallery on a machine with no screen: a server, a container, a CI job, a unit test.
 
 There are two very different cases. A **World** alone needs no graphics at all. **Drawing** needs an OpenGL context, but not a window.
 
-## 🟦 A simulation: nothing to do
+## A simulation: nothing to do
 
 The World never touches the GPU. A program that only moves entities, joints and routines builds against the library and runs anywhere, with no context and no driver:
 
@@ -52,7 +52,7 @@ angle 120 deg -> hand at (0, -1, 0.5)
 
 120° is outside the limits of the joint: it stays at 90°. A tiny residual such as `-4.37114e-08` where the output shows zero is floating-point rounding. A gallery demo can test itself this way: `07a_HeadlessWorld` calls `gpu::reportError()` if its player did not move, and `--check` fails, with zero pixels to look at.
 
-## 🖼 A picture into a file
+## A picture into a file
 
 `Scene::renderToFile()` draws what the active camera sees into an off-screen picture and writes a PNG:
 
@@ -67,9 +67,9 @@ It needs an OpenGL context, not a window. `Compages-headless` ([examples/Headles
 ./build/linux-gcc-debug/bin/Compages-headless scene.png 1280 720
 ```
 
-`renderToFile` waits for the GPU: use it for a report, a thumbnail, or a test that compares pictures, not at every frame. For a picture you read each frame (a robot camera), draw into a `RenderTarget` and read it at the rate of the sensor ([what the robot sees](../tutorials/06-what-the-robot-sees.md)).
+`renderToFile` waits for the GPU: use it for a report, a thumbnail, or a test that compares pictures, not at every frame. For a picture you read each frame (a robot camera), draw into a `RenderTarget` and read it at the rate of the sensor ([what the robot sees](../tutorials/07-what-the-robot-sees.md)).
 
-## 🤖 The gallery and the tests in CI
+## The gallery and the tests in CI
 
 The gallery opens a window, so give it a virtual screen and a software OpenGL:
 
@@ -83,11 +83,11 @@ xvfb-run -a env \
 
 The same prefix works for `Compages-UnitTest`. `--check` runs each demo a few frames, closes it, and fails on a frame error or a GPU handle left behind; `--check NAME` checks one demo.
 
-## 🧯 Common problems
+## Common problems
 
 - **`--check` blocks forever on a desktop.** On Wayland, a locked session or a hidden window makes the swap wait. Unlock the screen, or use `xvfb-run` as above.
-- **"EGL could not use the context without a surface".** The driver lacks `EGL_KHR_surfaceless_context`; Mesa has it.
+- "EGL could not use the context without a surface". The driver lacks `EGL_KHR_surfaceless_context`; Mesa has it.
 
-## 🔗 See also
+## See also
 
 [The World](../concepts/the-world.md) · [Build and install](build-and-install.md) · [A black window](debug-a-black-window.md)

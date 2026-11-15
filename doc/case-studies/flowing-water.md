@@ -1,6 +1,6 @@
-# 🌊 10f_FlowingWater: water that flows round things
+# 10f_FlowingWater: water that flows round things
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![10f_FlowingWater](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10f_FlowingWater.png)
 
@@ -25,7 +25,7 @@ flowchart TB
     PACK -->|"sample()"| CPU["crates, barrel"]
 ```
 
-**First observation:** a flow map stores the direction and speed of water at each point. The shader uses it to move the visible texture; the CPU uses the same field to move floating crates. This is a shared description of movement, not a full fluid solver.
+A flow map stores the direction and speed of water at each point. The shader uses it to move the visible texture; the CPU uses the same field to move floating crates. This is a shared description of movement, not a full fluid solver.
 
 ## Step 1 — The scene and its pictures
 
@@ -102,7 +102,7 @@ With $x = r / R$ and $\hat{\mathbf{r}}$ the direction from the centre:
 
 ## Step 6 — Foam, and the texture
 
-The water slows near the walls. Foam gathers there and where the water is slow; the upwellings push it away. Everything goes into one `Field<Vector4f>` ([show a field](../guides/show-a-field.md#-the-values-in-your-own-shader)):
+The water slows near the walls. Foam gathers there and where the water is slow; the upwellings push it away. Everything goes into one `Field<Vector4f>` ([show a field](../guides/show-a-field.md#the-values-in-your-own-shader)):
 
 | Channel | Holds |
 |---------|-------|
@@ -160,10 +160,10 @@ The crates and the barrel move with `Field::sample()` where they are, the biline
 
 A drain pipe comes up through the deck and over the edge. Its jet is a tube along the path of a thrown body ([make pictures and meshes](../guides/make-pictures-and-meshes.md)), see-through ([see-through things](../guides/see-through-things.md)), its picture scrolling down; a crown of spray where it falls scrolls up and breathes. In the water shader, rings run out from the impact and the water is white there. In the flow map, the impact is an upwelling: the water it brings spreads out and carries the crates away. Try it → Pipe running.
 
-## 🧩 What Compages does for you
+## What Compages does for you
 
 The meshes of the scene on the CPU (`source_vertices`) for the bake, the `Field` and its `Grid2D`, the texture made from it in one call (`Texture::fromField`), the PBR shader whose `main` the water replaces, bilinear sampling on the CPU equal to the GPU's, see-through drawing for the jet. The bake, the shaders and the floating physics are the demo's.
 
-## 🔗 See also
+## See also
 
-[Flow mapping](../techniques/flow-mapping.md) (the shader trick alone) · [Show a field: the values in your own shader](../guides/show-a-field.md#-the-values-in-your-own-shader) · [See-through things](../guides/see-through-things.md)
+[Flow mapping](../techniques/flow-mapping.md) (the shader trick alone) · [Show a field: the values in your own shader](../guides/show-a-field.md#the-values-in-your-own-shader) · [See-through things](../guides/see-through-things.md)

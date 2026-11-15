@@ -1,6 +1,6 @@
-# 🌊 11b_RippleTank: the wave equation on the GPU
+# 11b_RippleTank: the wave equation on the GPU
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![11b_RippleTank](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11b_RippleTank.png)
 
@@ -12,7 +12,7 @@ A water surface of height $u$ follows the **wave equation**, with $c$ the speed 
 \frac{\partial^2 u}{\partial t^2} = c^2\,\nabla^2 u
 ```
 
-**Picture the effect:** a local bump pushes the surrounding water, so the disturbance travels outward. Heat diffusion smooths a hot spot; a wave carries a disturbance across the grid. These are different update rules even though both store one number per grid point.
+A local bump pushes the surrounding water, so the disturbance travels outward. Heat diffusion smooths a hot spot; a wave carries a disturbance across the grid. These are different update rules even though both store one number per grid point.
 
 A second derivative in time needs two past states. The **leapfrog** scheme keeps three: before, now, next.
 
@@ -38,11 +38,11 @@ flowchart LR
 - `scene.show(grid, buffer, look)` draws the buffer of *now* as it is. The CPU never reads a height.
 - After a dispatch, `gpu::barrier(...)` is the caller's job ([compute on the GPU](../guides/compute-on-the-gpu.md)).
 
-## 🚧 Limits
+## Limits
 
 - Stable only while $C^2 = (c\,\Delta t / h)^2 \le \tfrac12$: faster waves or a finer grid need smaller steps of time.
 - The damping $d$ stands for every loss at once; it is not the physics of a real liquid.
 
-## 🔗 See also
+## See also
 
 [Compute on the GPU](../guides/compute-on-the-gpu.md) · [The heat plate](heat-plate.md) (the same grid, a different equation)

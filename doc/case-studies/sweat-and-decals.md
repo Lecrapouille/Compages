@@ -1,6 +1,6 @@
-# 🧴 10c_SweatAndDecals: a simulation on the skin
+# 10c_SweatAndDecals: a simulation on the skin
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![10c_SweatAndDecals](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10c_SweatAndDecals.png)
 
@@ -19,7 +19,7 @@ flowchart LR
     WASH --> SKIN
 ```
 
-**First observation:** a flat sticker follows a curved head because the simulation stores values in the head's texture coordinates. Keep that distinction in mind: the object is 3D, while the evolving state is a 2D image.
+A flat sticker follows a curved head because the simulation stores values in the head's texture coordinates. Keep that distinction in mind: the object is 3D, while the evolving state is a 2D image.
 
 ## Step 1 — Load the head and keep its triangles
 
@@ -36,7 +36,7 @@ m_indices = mesh->source_indices;
 
 `loadFile` reads the glTF file (the head of the three.js decals demo, Lee Perry-Smith) and returns the root entity. The mesh is found with `each<MeshRenderer>`. Its corners stay on the CPU: the passes draw them again, and the click finds the skin under the mouse with them.
 
-## Step 2 — The skin: your own `main`
+## Step 2 — The skin: your own main
 
 As in [write a material](../guides/write-a-material.md), the PBR shader keeps its lights and gets a new `main()` (`SKIN_MAIN`): the normal map, the decals, the drops. This demo binds its three extra textures by hand, on units 2, 3 and 4, before the render:
 
@@ -55,7 +55,7 @@ The decal and water maps change every frame (ping-pong), so they are not fixed i
 
 ## Step 3 — Draw the mesh into its own UV map
 
-The key idea of the demo. The vertex shader puts each corner at its texture coordinate instead of its place on the screen:
+This is the main idea of the demo. The vertex shader puts each corner at its texture coordinate instead of its place on the screen:
 
 ```glsl
 vec4 world = model * vec4(position, 1.0);
@@ -102,7 +102,7 @@ It also writes where the skin faces down (drops fall there) and where it sweats 
 
 A texel holds at most one drop, and where the drop sits inside the texel: drops glide, they do not jump. Pores fill small beads. A bead heavier than a threshold runs down the force field. When it crosses the border of its texel, it goes to that neighbour (diagonals too) and leaves a thin film behind, the wet trail. It stops when it has left most of its water, at a threshold that changes from texel to texel (rough skin).
 
-Each texel computes what its eight neighbours send to it, from their own state only. The water that moves is counted once on each side, so none is created on the way. The loop is the ping-pong of [compute on the GPU](../guides/compute-on-the-gpu.md#-ping-pong-read-one-copy-write-the-other): read `current()`, write `next()`, `swap()`, several steps per frame so that a drop moves at most one texel per step.
+Each texel computes what its eight neighbours send to it, from their own state only. The water that moves is counted once on each side, so none is created on the way. The loop is the ping-pong of [compute on the GPU](../guides/compute-on-the-gpu.md#ping-pong-read-one-copy-write-the-other): read `current()`, write `next()`, `swap()`, several steps per frame so that a drop moves at most one texel per step.
 
 ## Step 6 — Decals projected on the skin
 
@@ -149,10 +149,10 @@ m_scene.render();            // the skin reads the maps
 
 Try it: left click paints a decal or drops water, Pitch and Roll tilt the head and the drops change their way. Water stops at the seams of the UV map: it cannot cross from one island of the map to the next. That is the limit of the idea.
 
-## 🧩 What Compages does for you
+## What Compages does for you
 
 Loading the head and keeping its triangles (`loadFile`, `MeshAsset::source_vertices`), the lit shader with its own `main`, the passes and their framebuffers (`RenderPass`, `TexturePingPong`). The water rules, the decal projection and the skin shading are the demo's.
 
-## 🔗 See also
+## See also
 
-[Draw in several passes](../guides/draw-in-several-passes.md) · [Compute on the GPU: ping-pong](../guides/compute-on-the-gpu.md#-ping-pong-read-one-copy-write-the-other) · [Write a material](../guides/write-a-material.md)
+[Draw in several passes](../guides/draw-in-several-passes.md) · [Compute on the GPU: ping-pong](../guides/compute-on-the-gpu.md#ping-pong-read-one-copy-write-the-other) · [Write a material](../guides/write-a-material.md)

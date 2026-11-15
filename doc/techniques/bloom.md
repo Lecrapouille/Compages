@@ -1,6 +1,6 @@
-# 💡 Bloom
+# Bloom
 
-[◀ Cel shading](cel-shading.md) · [⏫ Techniques](README.md) · [Next: Flow mapping ▶](flow-mapping.md)
+[Cel shading](cel-shading.md) · [Techniques](README.md) · [Next: Flow mapping](flow-mapping.md)
 
 ![12b_Bloom](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/12b_Bloom.png)
 
@@ -8,11 +8,11 @@
 |------|-------|----------|-----------|--------------|
 | `12b_Bloom` | 🟩 Renderer | 1 statement | none | up to 12 small passes + 1 |
 
-## 🎯 The problem
+## The problem
 
 A screen cannot show light brighter than its white. A bulb, the sun on chrome or a neon tube are many times brighter than that, but on the screen they become the same flat white as a sheet of paper. Our eyes and cameras know these lights another way: their light **spills round them** in a soft halo. That halo is the bloom. Without it, a lamp at night looks like a white disc stuck on the picture.
 
-## 💡 The idea
+## The idea
 
 1. Draw the scene in **linear light**, in a picture of floating-point numbers (RGBA16F), where 1 is the white of the screen and a bulb can be 7.
 2. Keep only the light **above a threshold** (1 by default): the paper is dropped, the bulb stays.
@@ -33,7 +33,7 @@ flowchart LR
     U1 --> P
 ```
 
-## 🧩 In Compages
+## In Compages
 
 Bloom is a part of `ScreenEffects`, a component you put **on a camera** ([screen effects](../guides/screen-effects.md)). The Renderer makes the pictures, the passes and the framebuffers, and resizes them with the window. From [12b_Bloom.cpp](../../examples/12_Effects/12b_Bloom.cpp):
 
@@ -58,7 +58,7 @@ ImGui::SliderFloat("Threshold", &bloom.threshold, 0.0f, 4.0f, "%.2f");
 
 Each camera chooses: in a split view ([several views](../guides/several-views.md)), one view can bloom and the other not.
 
-## 🔍 The shader
+## The shader
 
 You write no GLSL for the bloom. These are the passes of the Renderer, in [src/Renderer/Render/ScreenPost.cpp](../../src/Renderer/Render/ScreenPost.cpp).
 
@@ -89,7 +89,7 @@ vec3 c = texture(screenColor, vUv).rgb + bloomStrength * texture(bloomMap, vUv).
 oColor = vec4(toSrgb(toneCurve(max(c, 0.0))), 1.0);
 ```
 
-## 📏 Cost
+## Cost
 
 At 1920 × 1080:
 
@@ -100,20 +100,20 @@ At 1920 × 1080:
 | Memory | the linear picture: 16.6 MB (RGBA16F, shared with the filters); the levels: about 1/3 of it, 5.5 MB |
 | Pixels read | the down passes read about 1.3 times the screen; the up passes are small |
 
-## 🚧 Limits
+## Limits
 
 - The threshold is hard: light just above it blooms, light just under it does not. Some engines use a soft "knee" round the threshold.
 - The halo has one shape, round. Real lenses add streaks and ghosts (lens flares); they are not in Compages.
 - Bloom needs light above 1. A scene drawn with a low exposure, or lit only by a dim sun, has nothing to bloom: lower the threshold, or raise the light.
 
-## 🧪 Try it
+## Try it
 
 - **Bloom** off: the bulbs become flat discs with sharp edges.
 - **Threshold** to 0: all the light spills, the lit floor glows, the picture looks foggy.
 - **Threshold** to 3: only the core of the bulbs blooms.
 - **Strength** to 2: the halo is wider than the bulb itself.
 
-## 📁 Source
+## Source
 
 - [examples/12_Effects/12b_Bloom.cpp](../../examples/12_Effects/12b_Bloom.cpp): the scene and the one statement
 - [include/Compages/Renderer/Components/ScreenEffects.hpp](../../include/Compages/Renderer/Components/ScreenEffects.hpp): `ScreenEffects`, `Bloom`, `ScreenFilter`
@@ -121,4 +121,4 @@ At 1920 × 1080:
 
 ---
 
-[◀ Cel shading](cel-shading.md) · [⏫ Techniques](README.md) · [Next: Flow mapping ▶](flow-mapping.md)
+[Cel shading](cel-shading.md) · [Techniques](README.md) · [Next: Flow mapping](flow-mapping.md)

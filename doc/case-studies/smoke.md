@@ -1,6 +1,6 @@
-# 💨 11e_Smoke: an incompressible fluid
+# 11e_Smoke: an incompressible fluid
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![11e_Smoke](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11e_Smoke.png)
 
@@ -29,14 +29,14 @@ flowchart LR
     S --> SHOW["scene.show(grid, buffer, look)"]
 ```
 
-The five kernels come from one GLSL text: `ShaderSource::define("STEP", n)` chooses the part ([shaders made of pieces](../guides/draw-in-several-passes.md#-shaders-made-of-pieces-shadersource)). Looking *back* (step 1) is what makes it stable at any $\Delta t$.
+The five kernels come from one GLSL text: `ShaderSource::define("STEP", n)` chooses the part ([shaders made of pieces](../guides/draw-in-several-passes.md#shaders-made-of-pieces-shadersource)). Looking *back* (step 1) is what makes it stable at any $\Delta t$.
 
-## 🚧 Limits
+## Limits
 
 - A fixed number of Jacobi steps leaves a little divergence: the smoke loses or gains a little volume. More steps cost more.
 - Looking back blurs the field a little at each step (numerical diffusion): fine whirls fade faster than in real air.
 - Two dimensions only.
 
-## 🔗 See also
+## See also
 
-[Compute on the GPU](../guides/compute-on-the-gpu.md) · [Draw in several passes: shaders made of pieces](../guides/draw-in-several-passes.md#-shaders-made-of-pieces-shadersource)
+[Compute on the GPU](../guides/compute-on-the-gpu.md) · [Draw in several passes: shaders made of pieces](../guides/draw-in-several-passes.md#shaders-made-of-pieces-shadersource)

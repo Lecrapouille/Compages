@@ -1,10 +1,10 @@
-# 🏗 Architecture
+# Architecture
 
-[⏫ Concepts](README.md)
+[Concepts](README.md)
 
 The *why* of the layers is in [three layers](three-layers.md). This page says *where* the code lives, *who may include whom*, and *where to enter* when you want to change Compages itself. To use Compages in an application, the tutorials and the guides are enough.
 
-## 🧭 Overview
+## Overview
 
 ```mermaid
 flowchart TB
@@ -55,7 +55,7 @@ flowchart TB
 
 `Core/` (vectors, matrices, `Result`, `Frame`, files) is the shared vocabulary, in the `compages` namespace; it is not a fourth layer. `Fields/` (grids and fields) is plain data, also in `compages`, usable by every layer ([fields and grids](fields-and-grids.md)).
 
-## 🚧 Who may include whom
+## Who may include whom
 
 | Part | Entry point | May include | Never includes |
 |------|-------------|-------------|----------------|
@@ -75,7 +75,7 @@ flowchart TB
 
 Only `src/GPU/Backends/GL45/` includes glad. A world component never holds a GPU pointer, only asset ids; the Renderer draws from a `RenderSnapshot`, never from the World. The library never calls GLFW: GLFW lives in `examples/Common/Window.cpp`.
 
-## 📁 Folders
+## Folders
 
 ```text
 include/Compages/          the public interface, installed
@@ -106,7 +106,7 @@ external/external.mk       the third-party repositories, locked in external/vers
 
 `include/` is the contract; `src/` is not installed. Classes stay small; only `Scene` uses PIMPL (`Scene::Impl` in `Scene.cpp`). A helper used by one `.cpp` lives next to it in `src/`.
 
-## 🎭 Four actors per frame
+## Four actors per frame
 
 ```text
 application    context, input, ViewFrame
@@ -117,7 +117,7 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 
 [One frame](one-frame.md) gives the order in detail.
 
-## 🚪 Where to enter the code
+## Where to enter the code
 
 | Goal | File | Demo |
 |------|------|------|
@@ -125,16 +125,16 @@ gpu            sends the CPU changes to the backend, draws and dispatches
 | compute | `GPU/ComputeProgram.hpp` | `05d_ComputeParticles` |
 | ping-pong | `GPU/PingPong.hpp` | `05f_Galaxy`, `05b_GameOfLife` |
 | headless world | `World/World.hpp` | `07a_HeadlessWorld` |
-| joints | `World/Kinematics/Joint.hpp` | `00b_RobotArm`, `08d_RobotArm` |
-| scene | `Renderer/Scene/Scene.hpp` | `00a_Workshop` |
-| shader hooks | `Renderer/Procedural/ShaderLib.hpp` | `00d_PaintedArm`, `06o_CelShading` |
+| joints | `World/Kinematics/Joint.hpp` | `13a_Workshop`, `08d_RobotArm` |
+| scene | `Renderer/Scene/Scene.hpp` | `13a_Workshop` |
+| shader hooks | `Renderer/Procedural/ShaderLib.hpp` | `13c_PaintedArm`, `06o_CelShading` |
 | extraction | `Renderer/Render/SceneExtractor.hpp` | the renderer tests |
 | assets | `Renderer/Assets/`, `Renderer/Import/` | `08a_GltfModel` |
 | physics engine | `World/Components/PoseDriver.hpp` | `07e_ExternalPhysics` |
 
 The conventions for contributors (style, naming, commits, the rules easy to break) are in [AGENTS.md](../../AGENTS.md).
 
-## 🎮 After OpenGL 4.5
+## After OpenGL 4.5
 
 - **4.3** brought compute shaders and storage buffers: particles, n-body, indirect draws.
 - **4.5** brought Direct State Access: the backend sets objects up without binding them first.

@@ -1,14 +1,12 @@
-# 🟦 The World
+# The World
 
-[⏫ Concepts](README.md)
+[Concepts](README.md)
 
 ![07c_MovingRobot](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07c_MovingRobot.png)
 
-## 🎯 The problem
-
 A simulation needs two different kinds of organisation. A robot arm is a **tree**: the forearm hangs on the elbow, which hangs on the shoulder; turning the shoulder must move everything after it. A swarm of a thousand drones is a **table**: the same data (position, speed, battery) for each, and one loop over all of them. A tree is slow to loop over; a table does not know parents and children. Engines usually pick one and fake the other.
 
-## 💡 The idea: one container, two mechanisms
+## One container, two mechanisms
 
 A `compages::world::World` holds both:
 
@@ -66,7 +64,7 @@ player after 1 s: 1 0 0
 
 `each` runs only when you call it: `update()` does not discover your systems. `Position` here is your struct; the place of the entity in the graph, which `.position(x, y, z)` changes, is another thing. Choose what fits; both can live together.
 
-## 🦾 Joints
+## Joints
 
 A joint is a child with one freedom instead of six: `.revolute(axis, min, max)` turns round an axis, `.prismatic(axis, min, max)` slides along it. `entity.joint().angle(a)` (or `.offset(o)`) sets the value; `update()` turns it into the local transform, then the matrices follow down the chain. This is forward kinematics, with no screen.
 
@@ -74,7 +72,7 @@ A joint keeps two values: the **commanded** one, which you set and may be outsid
 
 A URDF file describes a robot as such a chain: `compages::world::loadUrdf(world, path)` builds it headless; the Renderer adds the visuals when it loads the same file (`08d_RobotArm`).
 
-## ✍ Who may move an entity: `PoseDriver`
+## Who may move an entity: PoseDriver
 
 Three writers can move an entity: the kinematics (from its joint), an animation clip (from the Renderer), and your code (a physics engine, a controller, the network). Without a rule they would write over each other. The rule without a `PoseDriver`: a joint wins over a clip, and your code may always write. With one, only the named writer touches the pose:
 
@@ -86,19 +84,19 @@ Three writers can move an entity: the kinematics (from its joint), an animation 
 
 This is how a physics engine plugs in without Compages having one: [the guide](../guides/plug-a-physics-engine.md).
 
-## 📦 What lives in the World, and what does not
+## What lives in the World, and what does not
 
 In `include/Compages/World/Components/`: **Camera** (lens, viewport, `sees_helpers`; the view comes from the inverse of the entity's world matrix), **Light** (colour, intensity; the sun shines along the forward axis of its entity), **SkinInstance** (the pose of a skeleton), **PoseDriver**.
 
 Not in the World: meshes and materials (`MeshRenderer`, in the Renderer, holding asset ids), the files (the `AssetManager`), draw calls (`gpu::`), the window. A world component never holds a GPU pointer. This is why `world.update()` runs in a unit test with no context at all.
 
-## 💰 What it costs
+## Two ways to place a thing, and the cost of a routine
 
 - Two ways to place a thing (your component, or the transform) can confuse at first: a `Position` struct alone does not move the graph. Copy it into the transform if you want both.
-- A `Routine` is one virtual call per entity per frame: fine for hundreds, not for a million. For a million, use components and `each`, or keep the data on the GPU ([where does my data live?](three-layers.md#-where-does-my-data-live)).
+- A `Routine` is one virtual call per entity per frame: fine for hundreds, not for a million. For a million, use components and `each`, or keep the data on the GPU ([where does my data live?](three-layers.md#where-does-my-data-live)).
 
-## 🔗 See also
+## See also
 
-- [Make it move](../tutorials/03-make-it-move.md): the arm of the workshop, joint by joint.
+- [Make it move](../tutorials/03-the-world.md): the arm of the workshop, joint by joint.
 - [Write routines](../guides/write-routines.md): fixed steps, timers, messages, order.
 - [One frame](one-frame.md): when the routines, the joints and the matrices run.

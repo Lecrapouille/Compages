@@ -1,6 +1,6 @@
-# 🌀 11g_FlowAroundCylinder: ideal flow and a grid fitted round the column
+# 11g_FlowAroundCylinder: ideal flow and a grid fitted round the column
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![11g_FlowAroundCylinder](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11g_FlowAroundCylinder.png)
 
@@ -56,10 +56,10 @@ is found by Newton's method (a 2 × 2 system per step). A place is in the cell w
 
 Try it: Grid (regular or fitted), Grid lines, the speed, the turn.
 
-## 🚧 Limits
+## Limits
 
 An ideal flow has no friction: no boundary layer, no wake, no vortices shed behind the column. Real air separates behind it. The formula is exact for this model, not for real air.
 
-## 🔗 See also
+## See also
 
-[Show a field: vectors and streamlines](../guides/show-a-field.md#-vectors-and-streamlines) · [Fields and grids](../concepts/fields-and-grids.md)
+[Show a field: vectors and streamlines](../guides/show-a-field.md#vectors-and-streamlines) · [Fields and grids](../concepts/fields-and-grids.md)

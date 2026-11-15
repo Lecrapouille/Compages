@@ -1,12 +1,12 @@
-# 🎬 Write routines
+# Write routines
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** attach behaviour to one entity (a door, a robot arm, a camera) with code that runs at each step: at a fixed pace, after the matrices, later, or when a message comes.
+Attach behaviour to one entity (a door, a robot arm, a camera) with code that runs at each step: at a fixed pace, after the matrices, later, or when a message comes.
 
 ![07b_Routines](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/07b_Routines.png)
 
-A **routine** is code attached to one entity and run at each step of the World, like a `MonoBehaviour` in Unity. The workshop arm has one ([make it move](../tutorials/03-make-it-move.md)). Headers: `World/Routines/Routine.hpp` and `World/Routines/RoutineSystem.hpp`, both included by `World/Entity.hpp`.
+A **routine** is code attached to one entity and run at each step of the World, like a `MonoBehaviour` in Unity. The workshop arm has one ([make it move](../tutorials/03-the-world.md)). Headers: `World/Routines/Routine.hpp` and `World/Routines/RoutineSystem.hpp`, both included by `World/Entity.hpp`.
 
 ## 1. Code at each frame
 
@@ -36,7 +36,7 @@ Inside a routine: `entity()`, `transform()`, `world()`, `input()` (keys and mous
 
 `routine.enabled(false)` switches off one routine; `entity.enable(false)` switches off the entity, its children and all their routines. A change takes effect at the next step.
 
-## 3. A fixed pace: `fixedUpdate`
+## 3. A fixed pace: fixedUpdate
 
 `update(dt)` receives the time of the frame, which changes. A controller, a physics engine or a behaviour tree wants the same step each time. `fixedUpdate(dt)` is called 0, 1 or more times per step, with a constant `dt`:
 
@@ -46,11 +46,11 @@ world.routines().fixedStep(0.25f);   // fixedUpdate() at 4 Hz (1/60 s by default
 
 After a very slow frame, at most 8 run: the World drops the time it cannot catch up with instead of freezing.
 
-## 4. After the matrices: `lateUpdate`
+## 4. After the matrices: lateUpdate
 
 `update` runs before the joints and the world matrices are computed; `lateUpdate(dt)` after them. A camera that follows an object, a sensor that reads a pose, want it. The World then updates the matrices of what `lateUpdate` moved.
 
-## 5. Order: `priority`
+## 5. Order: priority
 
 Routines run by `priority()` (smaller first), then in the order they were added, whatever their entity. A run is the same each time.
 
@@ -82,7 +82,7 @@ void onMessage(compages::world::Message const& p_message) override
 }
 ```
 
-## ⏱ All together
+## All together
 
 A routine with every function, a second one moving the entity first, two steps of 0.3 s at a fixed pace of 0.25 s, a message, then the entity destroyed:
 
@@ -103,14 +103,14 @@ onDisable
 onDestroy
 ```
 
-## 🧯 What a routine is not
+## What a routine is not
 
 - **No `onCollision`.** Compages has no physics engine, so it detects no contact. The outside engine sends a `compages::world::Contact` message ([plug a physics engine](plug-a-physics-engine.md)).
-- **Not a behaviour tree.** A routine can host one (BehaviorTree.CPP, BlackThorn…): it owns the tree, ticks it in `fixedUpdate`, resets it in `onDisable`. The actions of the tree write commands (a joint angle, a speed), not poses.
-- **Not for a million things.** A routine is an object with virtual calls. For thousands of entities, use components and `world.each`; for millions, keep the data on the GPU ([where does my data live?](../concepts/three-layers.md#-where-does-my-data-live)).
+- Not a behaviour tree. A routine can host one (BehaviorTree.CPP, BlackThorn…): it owns the tree, ticks it in `fixedUpdate`, resets it in `onDisable`. The actions of the tree write commands (a joint angle, a speed), not poses.
+- Not for a million things. A routine is an object with virtual calls. For thousands of entities, use components and `world.each`; for millions, keep the data on the GPU ([where does my data live?](../concepts/three-layers.md#where-does-my-data-live)).
 
 `07b_Routines` puts three routines on three cubes. The camera controls `Orbit`, `Fly` and `Rig` are routines too ([move the camera](move-the-camera.md)).
 
-## 🔗 See also
+## See also
 
 [The World](../concepts/the-world.md) · [One frame](../concepts/one-frame.md)

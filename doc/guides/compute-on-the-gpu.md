@@ -1,14 +1,14 @@
-# 🧮 Compute on the GPU
+# Compute on the GPU
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** run a simulation on the GPU (particles, cells, stars, a fluid) and draw it where it is, without bringing it back to the CPU.
+Run a simulation on the GPU (particles, cells, stars, a fluid) and draw it where it is, without bringing it back to the CPU.
 
 ![05f_Galaxy](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05f_Galaxy.png)
 
-The smallest compute shader is in [the GPU alone](../tutorials/07-the-gpu-alone.md). This guide goes on from there.
+The smallest compute shader is in [the GPU alone](../tutorials/02-the-gpu.md). This guide goes on from there.
 
-## 🔁 Compute writes, draw reads, a barrier between
+## Compute writes, draw reads, a barrier between
 
 A compute shader runs once per item of a grid. The same `StorageBuffer` can be what it writes and the vertices of the next draw, with no copy through the CPU. From `05d_ComputeParticles`:
 
@@ -20,7 +20,7 @@ points.draw();
 
 The barrier makes the writes visible to the next reader. Choose the flag for **that reader**: `VertexAttrib` for a draw that reads vertices, `Storage` for another shader that reads a storage buffer, both with `|` (`Command`, `All`… are in `GPU/Enums.hpp`). **The barrier is your job**: a missing one is a race, not a compile error; the particles flicker or lag a frame.
 
-## 🏓 Ping-pong: read one copy, write the other
+## Ping-pong: read one copy, write the other
 
 A parallel step must not read and write the same state: one cell could read a neighbour that another cell has already changed. The GPU gives no error for this; the result changes from one run to the next. So keep two copies: `current()` to read (and to draw), `next()` to write, then `swap()` the roles. Nothing is copied.
 
@@ -63,7 +63,7 @@ m_show["image"] = m_field.current();
 
 `draw(3u)` with no vertices: the vertex shader makes three corners from `gl_VertexID`, one triangle covers the texture, and each pixel is one cell. A render pass makes its writes visible to the next pass by itself; only a compute dispatch needs the barrier. `05c_GrayScott` and `10c_SweatAndDecals` work this way.
 
-## 🧱 Work groups and more
+## Work groups and more
 
 | Need | Types | Demo |
 |------|-------|------|
@@ -74,10 +74,10 @@ m_show["image"] = m_field.current();
 
 `05f_Galaxy` keeps tiles of stars in work-group memory to share reads between threads. `05e_SpiralGalaxy`, a port of the [galaxy example of Glumpy](https://github.com/glumpy/glumpy/blob/master/examples/galaxy.py) by Nicolas P. Rougier, needs no compute shader at all: each star rides a fixed ellipse, its position is a formula of the time, and only one uniform changes per frame. When the next state depends on the last (gravity, a Game of Life), the state must be stored: that is the compute shader and the ping-pong.
 
-## 📤 Reading the numbers back
+## Reading the numbers back
 
 `m_stars.current().read()` returns a `std::vector<T>` (`05f_Galaxy` writes it to `galaxy.csv`, and `05f_Galaxy_plot_xy.py` plots it); `buffer.download()` refreshes the CPU copy of a buffer that keeps one (`05a_Compute`). Both make the CPU wait for the GPU: once, not every frame.
 
-## 🔗 See also
+## See also
 
 [The GPU layer](../concepts/the-gpu-layer.md) · [Draw in several passes](draw-in-several-passes.md) · [The ripple tank](../case-studies/ripple-tank.md), [Smoke](../case-studies/smoke.md)

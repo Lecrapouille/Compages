@@ -1,14 +1,12 @@
-# 🟧 The GPU layer
+# The GPU layer
 
-[⏫ Concepts](README.md)
+[Concepts](README.md)
 
 ![05d_ComputeParticles](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/05d_ComputeParticles.png)
 
-## 🎯 The problem
-
 In raw OpenGL, a shader and the C++ that feeds it are glued by numbers. The shader says `in vec2 position;`; the C++ asks the driver for the location of `position`, binds a buffer, describes the bytes with `glVertexAttribPointer(0, 2, GL_FLOAT, …)`, and hopes the two sides agree. When they do not, the screen stays black and nothing says why. Most of a first OpenGL program is this glue, and most of its bugs are in it.
 
-## 💡 The idea: the name is the contract
+## The name is the contract
 
 The shader already knows its inputs and their types. So Compages reads them from the compiled program, and the C++ side uses the same names:
 
@@ -30,7 +28,7 @@ mesh.draw();
 
 The idea comes from [Glumpy](https://glumpy.github.io/) (Python). Glumpy alone would copy a mesh again for each shader that reads it (the picture, the shadow, the outline). Compages adds a vertex layout on the C++ side (`VertexBuffer<Vertex>`, `Pipeline`), checked against each program: one buffer, several shaders.
 
-## 🧬 Who owns the vertices
+## Who owns the vertices
 
 **The drawable owns its vertices. Borrow a buffer when they are made on the GPU, shared by several drawables, or large and never changed.**
 
@@ -48,7 +46,7 @@ What a buffer is used for is part of its type, so drawing indices from a buffer 
 | `Stream` | no | `write()`, often whole | skinned vertices, debug lines |
 | `Dynamic` | yes | `buffer[i] = …`, `emplace_back()`, then `upload()` sends what changed | a trail, numbers the CPU and the GPU share |
 
-## 🧮 Compute, and the barrier you write
+## Compute, and the barrier you write
 
 A compute shader draws nothing: it runs once per item of a grid. The same `StorageBuffer` can be what it writes and the vertices of the next draw, with no trip through the CPU:
 
@@ -60,20 +58,20 @@ points.draw();
 
 The GPU does not wait for a dispatch to finish before the next command reads its result. The `barrier` says "the next reader waits", and the flag names the next reader: `VertexAttrib` for a draw, `Storage` for another shader, both with `|`. **Compages does not add it for you**: a missing barrier is a race, not a compile error. `gpu::dispatch(program, pingpong, …)`, which runs a whole ping-pong step, does add it, since it knows the next reader.
 
-## 🎫 Handles
+## Handles
 
 Driver objects live in pools: an index plus a generation. Destroying twice does nothing. A `Buffer` cannot be copied. The gallery's `--check` closes each demo and verifies that every counter is back at zero: destroying your C++ objects is enough, there is no `tearDown()` to write.
 
 Before any drawing, a `RenderPass` says where to draw; it ends at the closing brace of its scope. Compages never opens a window: `gpu::init(loader)` receives the function loader of a context your program made, and `gpu::shutdown()` must come after every GPU object is destroyed and before the context is.
 
-## 💰 What it costs
+## What names cost
 
-- **Names are checked when the program runs, not when it compiles.** A typo in `mesh["colour"]` is found by `prepare()` or at the first frame, not by the C++ compiler.
+- Names are checked when the program runs, not when it compiles. A typo in `mesh["colour"]` is found by `prepare()` or at the first frame, not by the C++ compiler.
 - **The dirty range is one range**, from the first change to the last: changing elements 1 and 5000 sends everything between them, in one copy.
-- **One backend.** Only OpenGL 4.5 exists today (`src/GPU/Backends/GL45/`). The public headers have no `GLenum`, so another backend could come without changing your code ([architecture](architecture.md#-after-opengl-45)).
+- One backend. Only OpenGL 4.5 exists today (`src/GPU/Backends/GL45/`). The public headers have no `GLenum`, so another backend could come without changing your code ([architecture](architecture.md#after-opengl-45)).
 
-## 🔗 See also
+## See also
 
-- [The GPU alone](../tutorials/07-the-gpu-alone.md): the triangle and the compute shader, step by step.
+- [The GPU alone](../tutorials/02-the-gpu.md): the triangle and the compute shader, step by step.
 - [Compute on the GPU](../guides/compute-on-the-gpu.md): ping-pong, work groups, reading back.
 - [Draw in several passes](../guides/draw-in-several-passes.md): textures as targets, post-processing, shaders made of pieces.

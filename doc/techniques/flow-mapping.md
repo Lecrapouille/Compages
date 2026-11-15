@@ -1,6 +1,6 @@
-# 🌊 Flow mapping
+# Flow mapping
 
-[◀ Bloom](bloom.md) · [⏫ Techniques](README.md)
+[Bloom](bloom.md) · [Techniques](README.md)
 
 ![10f_FlowingWater](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10f_FlowingWater.png)
 
@@ -8,21 +8,29 @@
 |------|-------|----------|-----------|--------------|
 | `10f_FlowingWater` | 🟩 Renderer + `Field` | 6 lines to make the material, 5 uniforms per frame | about 10 lines for the flow | none |
 
-## 🎯 The problem
+## The problem
 
 You want a river that flows round rocks, or a pool that turns round pillars. A real fluid simulation is expensive, and it must run every frame. A texture that only **scrolls** in one direction is cheap, but it looks wrong: water does not go through the rocks; it goes round them.
 
 The technique of this page comes from the water of Portal 2 (A. Vlachos, "Water Flow in Portal 2", SIGGRAPH 2010). The surface stays **one flat square**. Only its textures move, each pixel in its own direction.
 
-## 💡 The idea
+## The idea
 
-**1. A flow map.** A texture that stores, at each point of the water, which way and how fast the water goes: a 2D vector in its red and green channels. You paint it, or a program computes it from the scene. It does not change from frame to frame.
+### 1. A flow map
 
-**2. Move the picture along the flow.** A picture moved for a time $t$ along the flow $\mathbf{f}$ is read at $\mathbf{p} - \mathbf{f}\,t$. Each pixel has its own $\mathbf{f}$, so the picture moves round the rocks.
+A texture that stores, at each point of the water, which way and how fast the water goes: a 2D vector in its red and green channels. You paint it, or a program computes it from the scene. It does not change from frame to frame.
 
-**3. Start again, often.** After a few seconds, two pixels that were neighbours have drifted far apart, and the picture is stretched beyond recognition. So the time only runs over one **cycle** $T$, from $-T/2$ to $+T/2$, then starts again. If it starts again everywhere at once, the whole surface jumps (the **pop**).
+### 2. Move the picture along the flow
 
-**4. Two layers, half a cycle apart.** Read the picture twice, with two phases half a cycle apart, and mix them. Each layer starts again at the moment its weight is zero, so the jump is never seen. A **noise** added to the phase makes each region start at a different time, so no two places pulse together.
+A picture moved for a time $t$ along the flow $\mathbf{f}$ is read at $\mathbf{p} - \mathbf{f}\,t$. Each pixel has its own $\mathbf{f}$, so the picture moves round the rocks.
+
+### 3. Start again, often
+
+After a few seconds, two pixels that were neighbours have drifted far apart, and the picture is stretched beyond recognition. So the time only runs over one **cycle** $T$, from $-T/2$ to $+T/2$, then starts again. If it starts again everywhere at once, the whole surface jumps (the **pop**).
+
+### 4. Two layers, half a cycle apart
+
+Read the picture twice, with two phases half a cycle apart, and mix them. Each layer starts again at the moment its weight is zero, so the jump is never seen. A **noise** added to the phase makes each region start at a different time, so no two places pulse together.
 
 With $\nu(\mathbf{p})$ the noise:
 
@@ -50,11 +58,13 @@ flowchart LR
     T1 --> M
 ```
 
-## 🧩 In Compages
+## In Compages
 
 Three things: a flow map as a texture, a material whose `main` reads it, and a few uniforms each frame.
 
-**The flow map.** In the demo it is computed on the CPU in a `Field<Vector4f>` (one value per point of a `Grid2D`, [fields and grids](../concepts/fields-and-grids.md)), and sent to the GPU in one call. A painted image would come from `gpu::Texture::fromFile()` instead. From [10f_FlowingWater.cpp](../../examples/10_Complete/10f_FlowingWater.cpp):
+### The flow map
+
+In the demo it is computed on the CPU in a `Field<Vector4f>` (one value per point of a `Grid2D`, [fields and grids](../concepts/fields-and-grids.md)), and sent to the GPU in one call. A painted image would come from `gpu::Texture::fromFile()` instead. From [10f_FlowingWater.cpp](../../examples/10_Complete/10f_FlowingWater.cpp):
 
 ```cpp
 compages::renderer::TextureAsset flow;
@@ -63,7 +73,9 @@ COMPAGES_TRY_ASSIGN(flow.texture, compages::gpu::Texture::fromField(m_bake.packe
 COMPAGES_TRY_ASSIGN(m_flow_map, m_scene.assets().addTexture(flow.name, std::move(flow)));
 ```
 
-**The material.** Start from the PBR shader, replace its `main`, name the textures it reads:
+### The material
+
+Start from the PBR shader, replace its `main`, name the textures it reads:
 
 ```cpp
 compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
@@ -95,9 +107,11 @@ program.set("time", m_time);
 program.set("cycle", m_cycle);
 ```
 
-**The CPU reads the same field.** The crates and the barrel move with `Field::sample()` at their place: the same bilinear value the GPU reads from the texture. The water and the floating things agree, with no read-back from the GPU.
+### The CPU reads the same field
 
-## 🔍 The shader
+The crates and the barrel move with `Field::sample()` at their place: the same bilinear value the GPU reads from the texture. The water and the floating things agree, with no read-back from the GPU.
+
+## The shader
 
 The part of [FlowingWater/Shaders.hpp](../../examples/10_Complete/FlowingWater/Shaders.hpp) that moves the water. `flowAt()` turns a place in metres into a coordinate of the flow map; `ripple()` reads the normal map of the ripples with a shift:
 
@@ -128,7 +142,7 @@ void main()
 
 The demo stores real speeds in metres per second, in a float texture. Portal 2 used an 8-bit texture, so it stored `flow * 0.5 + 0.5` and decoded it with `(c - 0.5) * 2`. If you paint your flow map in an image editor, decode it the same way.
 
-## 📏 Cost
+## Cost
 
 | What | How much |
 |------|----------|
@@ -137,13 +151,13 @@ The demo stores real speeds in metres per second, in a float texture. Portal 2 u
 | Memory | the flow map: 193 × 113 points × 16 bytes (RGBA32F) = 350 KB |
 | CPU | none per frame for the water; the flow map is computed once |
 
-## 🚧 Limits
+## Limits
 
 - The flow does not react by itself: it is fixed when the map is made. The demo adds a swirl round each floating crate in the shader, from uniforms, so the water seems to answer them.
 - It is not a fluid simulation: no waves that travel, no water that rises. For those, see the wave equation of `11b_RippleTank` or the fluid of `11e_Smoke` ([case studies](../case-studies/README.md)).
 - A shorter cycle stretches the picture less, but the pulse of the two layers shows more. A longer cycle hides the pulse but stretches more. The demo uses about 2 seconds.
 
-## 🧪 Try it
+## Try it
 
 The demo has a menu **Show** that shows each step of this page:
 
@@ -155,7 +169,7 @@ The demo has a menu **Show** that shows each step of this page:
 
 The whole demo is longer than this page: how the flow map is computed from the scene (the distance to the walls, the current that slides along them, the upwellings and vortices), the foam, the pipe. [The flowing water case study](../case-studies/flowing-water.md) follows it step by step.
 
-## 📁 Source
+## Source
 
 - [examples/10_Complete/10f_FlowingWater.cpp](../../examples/10_Complete/10f_FlowingWater.cpp): the material, the uniforms, the floating things
 - [examples/10_Complete/FlowingWater/Shaders.hpp](../../examples/10_Complete/FlowingWater/Shaders.hpp): `WATER_MAIN`
@@ -164,4 +178,4 @@ The whole demo is longer than this page: how the flow map is computed from the s
 
 ---
 
-[◀ Bloom](bloom.md) · [⏫ Techniques](README.md)
+[Bloom](bloom.md) · [Techniques](README.md)

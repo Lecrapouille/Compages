@@ -1,12 +1,12 @@
-# 🎨 Write a material
+# Write a material
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** give a shape a look no built-in look has (stripes, triplanar concrete, hot metal, waves), and keep what the Renderer gives: the sun and its shadow, the lamps, the fog, the tone curve.
+Give a shape a look no built-in look has (stripes, triplanar concrete, hot metal, waves), and keep what the Renderer gives: the sun and its shadow, the lamps, the fog, the tone curve.
 
 ![11d_BimetalBeam](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11d_BimetalBeam.png)
 
-## 🪝 Four hooks of the PBR shader
+## Four hooks of the PBR shader
 
 `shaders::pbr()` returns the two stages of the Renderer's lit shader, as text you can change. Four named functions, its **hooks**, can be replaced:
 
@@ -29,9 +29,9 @@ flowchart LR
 
 A name the shader does not declare is an error that lists the known ones (`'pbr.vert' has no hook 'deforme' (known: deform)`), not a silence.
 
-## 1. Start with `surface`
+## 1. Start with surface
 
-It receives what the material instance gives (its colour and picture, its normal map, metal and roughness) and changes what it wants; the light stays right without effort. The workshop paints stripes ([tutorial 5](../tutorials/05-your-own-look.md)); `11d_BimetalBeam` paints hot metal that glows:
+It receives what the material instance gives (its colour and picture, its normal map, metal and roughness) and changes what it wants; the light stays right without effort. The workshop paints stripes ([tutorial 5](../tutorials/06-a-look-of-your-own.md)); `11d_BimetalBeam` paints hot metal that glows:
 
 ```glsl
 void surface(inout Surface s)
@@ -61,15 +61,15 @@ void surface(inout Surface s)
 
 The hook sees what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`.
 
-## 2. Then `light`, for another model of light
+## 2. Then light, for another model of light
 
 The surface stays; only the way light falls on it changes. The [cel shading technique](../techniques/cel-shading.md) cuts the sun into flat tones this way. `light` reads `lightDir`, `lightColor`, `ambient`, `cameraPos`, `vWorldPos` and may call `sunVisibility(…)`, `pointLightsContribution(…)`, `shade(…)`, `shadePbr(…)` or `sceneLight(s)` (to change the light of the scene, not replace it).
 
-## 3. `main`, for what is not a lit surface
+## 3. main, for what is not a lit surface
 
 A picture shown as it is, a debug view, several lightings mixed (the water of `10f`). Your `main()` may call `instanceSurface()`, `surface(s)`, `light(s)` and `toScreen(s, lit)`, and every piece of the library: `shade(base, n, worldPos)`, `shadePbr(albedo, n, worldPos, metallic, roughness)` (the model of glTF), `bumpNormal(…)` (a normal map without tangents), `applyFog(colour, worldPos)`, `present(linear)`. Your own shaders can include the same pieces by name (`<compages/shade.glsl>`, `<compages/fog.glsl>`…, listed in `ShaderLib.hpp`).
 
-## 4. `deform`, to move the vertices
+## 4. deform, to move the vertices
 
 The sea of `10e_Archipelago` is a flat grid that the hook lifts into Gerstner waves:
 
@@ -89,7 +89,7 @@ void deform(inout vec4 world, inout vec3 normal)
 
 `include(name, text)` gives a piece of GLSL a name: here the table of swells, written by C++. The boats read the same table on the CPU: they ride the waves that are drawn. A material whose `deform` is replaced draws its own shadow of the sun, so the shadow follows the waves (not the shadow of a lamp: that pass has no hooks).
 
-## 🧩 Make the material, give it, feed it
+## Make the material, give it, feed it
 
 ```cpp
 compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
@@ -113,11 +113,11 @@ scene.assets().material(m_concrete)->program.set("tileMetres", 4.0f);
 - The Renderer sets the uniforms of the family (lights, fog, shadows) only when the shader reads them.
 - `.see_through` is how the shape is drawn when its opacity is under one ([see-through things](see-through-things.md)).
 
-## 🧯 Common problems
+## Common problems
 
-- **A uniform you set is "unknown".** The GLSL compiler drops a uniform that does not count in the result. Setting it is a frame error, and `--check` fails. Use it, or do not set it.
-- **The clusters of lamps break.** Bindings 9, 10 and 11 of the lit shaders hold the clustered lamps: keep them free in your hooks.
+- A uniform you set is "unknown". The GLSL compiler drops a uniform that does not count in the result. Setting it is a frame error, and `--check` fails. Use it, or do not set it.
+- The clusters of lamps break. Bindings 9, 10 and 11 of the lit shaders hold the clustered lamps: keep them free in your hooks.
 
-## 🔗 See also
+## See also
 
-[A look of your own](../tutorials/05-your-own-look.md) · [Cel shading](../techniques/cel-shading.md) · [Flow mapping](../techniques/flow-mapping.md) · [Draw in several passes](draw-in-several-passes.md) (shaders made of pieces, hot reload)
+[A look of your own](../tutorials/06-a-look-of-your-own.md) · [Cel shading](../techniques/cel-shading.md) · [Flow mapping](../techniques/flow-mapping.md) · [Draw in several passes](draw-in-several-passes.md) (shaders made of pieces, hot reload)

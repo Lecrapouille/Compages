@@ -1,8 +1,8 @@
-# 🎥 Move the camera
+# Move the camera
 
-[⏫ Guides](README.md)
+[Guides](README.md)
 
-**Goal:** let the user turn round a point, fly through a scene, or drag a map; or move the camera from your code.
+Let the user turn round a point, fly through a scene, or drag a map; or move the camera from your code.
 
 ![10e_Archipelago](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/10e_Archipelago.png)
 
@@ -22,7 +22,7 @@ scene.camera().position(1.6f, 1.2f, 1.6f).add<compages::world::Rig>(compages::Ve
 
 The point given to `Orbit` and `Rig` is what they look at. In your own window, fill `frame.input` from your window library; the gallery does it in `examples/Common/Window.cpp`.
 
-## 🛫 Fly to a place
+## Fly to a place
 
 `Rig` glides to the wanted pose: each frame covers the part `1 - exp(-sharpness × dt)` of the way, so the glide is the same at any frame rate and never overshoots. To jump far, call `flyTo`: the camera goes up, across and down along the path of van Wijk and Nuij (the path of a map viewer), starting and stopping with no jolt; the farther the place, the higher it goes. Any input of the user stops the flight where it is.
 
@@ -34,6 +34,6 @@ rig.flyTo(compages::Vector3f(4200.0f, 0.0f, -3100.0f), 3200.0f);   // target, di
 
 `10e_Archipelago` flies between regions this way. The logic is in `RigController`, tested without a window.
 
-## 🔗 See also
+## See also
 
 [Several views](several-views.md) (more than one camera) · [Very large scenes](very-large-scenes.md) (zooming from a metre to the Moon) · [Pick with the mouse](pick-with-the-mouse.md)

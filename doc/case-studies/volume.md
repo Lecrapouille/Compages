@@ -1,6 +1,6 @@
-# 🌡 11f_Volume: seeing through warm air
+# 11f_Volume: seeing through warm air
 
-[⏫ Case studies](README.md)
+[Case studies](README.md)
 
 ![11f_Volume](https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/11f_Volume.png)
 
@@ -25,10 +25,10 @@ Two other ways to look at a volume:
 
 Tetrahedra have no ambiguous cases (unlike the cubes of marching cubes). `renderer::meshOf(surface)` makes a mesh of it.
 
-## 🚧 Limits
+## Limits
 
-The volume emits and absorbs; it does not scatter light, and the sun does not light it. For fog that the light of the scene crosses, see [light the scene](../guides/light-the-scene.md#-fog-that-the-light-crosses).
+The volume emits and absorbs; it does not scatter light, and the sun does not light it. For fog that the light of the scene crosses, see [light the scene](../guides/light-the-scene.md#fog-that-the-light-crosses).
 
-## 🔗 See also
+## See also
 
-[Show a field: volumes](../guides/show-a-field.md#-volumes) · [Fields and grids](../concepts/fields-and-grids.md)
+[Show a field: volumes](../guides/show-a-field.md#volumes) · [Fields and grids](../concepts/fields-and-grids.md)

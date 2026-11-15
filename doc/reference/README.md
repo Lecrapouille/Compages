@@ -1,13 +1,10 @@
-# 📖 Reference
+# Reference
 
-[⏫ Documentation](../README.md)
+[Documentation](../../README.md#-documentation)
 
-Pages to look a fact up in, not to read from top to bottom.
+- [API](api.md): the calls of the GPU, World, Renderer and Fields, by task.
+- [Shader library](shaders.md): the GLSL pieces of the Renderer, their includes, the hooks, the uniforms it sets.
+- [Gallery](gallery.md): the window, its keys and options, every demo with its picture.
+- [Credits](credits.md): the papers and projects Compages learned from, the third parties, the license.
 
-| Page | Holds |
-|------|-------|
-| [API reference](api.md) | the calls of the GPU, World, Renderer and Fields, by task |
-| [The gallery](gallery.md) | the window, its keys and options, every demo with its picture |
-| [Credits](credits.md) | the technical lessons, the papers and projects Compages learned from, the third parties, the license |
-
-The headers of `include/Compages/` are the final reference: each class and call has a Doxygen comment, often with an example.
+The Doxygen comments of the headers in `include/Compages/` give the details of each class.

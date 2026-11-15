@@ -1,22 +1,22 @@
-# 🔬 Case studies: whole demos, from the problem to the picture
+# Case studies
 
-[⏫ Documentation](../README.md)
+[Documentation](../../README.md#-documentation)
 
-A case study follows one demo from its inputs to its final picture: the problem, the technique and where it comes from, the data and how it is made, the shaders, what Compages does and what the demo does, and the limits. Choose one; they are independent. Run the demo first and describe what you see in one sentence; then follow the data from one step to the next. Read the equations only after you know what each step is trying to do.
+A case study follows one demo from its inputs to its final picture: the problem, the technique and where it comes from, the data and how it is made, the shaders, what Compages does and what the demo does, and the limits. The pages do not depend on each other. Run the demo first. Then follow the data from one step to the next, and read the equations only when you know what each step is for.
 
 The snippets are parts of the real implementations, not files to paste. Helpers such as `Land`, `Patch` or the flow-map baker belong to the demos, not to Compages; the source paths say where they live.
 
-## 🎮 Complete demos
+## Complete demos
 
 | Demo | Page | What it adds |
 |------|------|--------------|
-| `10c_SweatAndDecals` | [Sweat and decals](sweat-and-decals.md) | a simulation **on the GPU**, in the UV map of a mesh: several passes, ping-pong |
-| `10e_Archipelago` | [Archipelago](archipelago.md) | a whole world **made on the CPU** in a thread: cells, erosion, rivers, levels of detail, a sea |
-| `10f_FlowingWater` | [Flowing water](flowing-water.md) | a technique of a game studio: a **flow map** baked from the scene, read by the GPU and the CPU |
+| `10c_SweatAndDecals` | [Sweat and decals](sweat-and-decals.md) | a simulation on the GPU, in the UV map of a mesh: several passes, ping-pong |
+| `10e_Archipelago` | [Archipelago](archipelago.md) | a whole world made on the CPU, in a thread: cells, erosion, rivers, levels of detail, a sea |
+| `10f_FlowingWater` | [Flowing water](flowing-water.md) | a technique of a game studio: a flow map baked from the scene, read by the GPU and the CPU |
 
-## 🧪 Science with fields
+## Science with fields
 
-The `11_Science` demos compute physics on a grid and show it. Each page: the physical problem, the equation, how it becomes a loop on a grid, the data, CPU or GPU, the picture, the limits. Start with the heat plate.
+The `11_Science` demos compute physics on a grid and show it. Each page gives the physical problem, the equation, the loop on the grid, where it runs (CPU or GPU), the picture and the limits. Start with the heat plate.
 
 | Demo | Page | The physics | The Compages idea |
 |------|------|-------------|-------------------|
@@ -52,7 +52,7 @@ The physical models and solvers belong to the demos. Compages holds the data, gi
 | light through a medium | $\alpha_i = 1 - e^{-k t_i \Delta l}$, front to back | [volume](volume.md) |
 | ideal flow | uniform + doublet + vortex | [flow around a cylinder](flow-around-cylinder.md) |
 
-## ✅ Practice: keep calculation and display apart
+## Practice: keep calculation and display apart
 
 In `11a_HeatPlate`, change one control at a time: the colour map, then the relief, then the speed of time. The first two change only the picture; the third changes how fast heat spreads, and the solver still keeps its step under the limit. Then follow one value from the CPU update to `scene.show`, and find where the old and new fields swap.
 
