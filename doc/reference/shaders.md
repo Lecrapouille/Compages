@@ -69,7 +69,7 @@ void main()
 | `light` | fragment | `vec3 light(Surface s)` | `sceneLight(s)` | another model of light: cartoon tones, a rim |
 | `main` | fragment | `void main()` | the three lines above | what is not a lit surface: a picture shown as it is, mixed lightings |
 
-A `Surface` holds `albedo`, `normal`, `metallic`, `roughness`, `emission` and `opacity`. `metallic` and `roughness` count only when the instance uses the metallic-roughness model of glTF (a loaded model); a shape made with `color()` is lit by `shade()`, which uses the albedo and the normal only.
+A `Surface` holds `albedo`, `normal`, `metallic`, `roughness`, `emission` and `opacity`. `metallic` and `roughness` count only when the instance uses the metallic-roughness model of glTF (`MaterialInstance::metal_roughness`, turned on by the glTF loader, or by hand). A shape made with `color()` has it off and is lit by `shade()`, which uses the albedo and the normal only.
 
 A hook may read what the PBR shader declares: `vWorldPos`, `vNormal`, `vUv`, `baseColorFactor`, `baseColorMap`, `opacity`, `cameraPos`, and everything the pieces above give. A hook name that the shader does not declare is an error that lists the known names.
 

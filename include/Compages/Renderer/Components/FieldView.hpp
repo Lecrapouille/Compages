@@ -15,6 +15,10 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief What Scene::show() keeps on the entity that draws a field: the id of
 //! its material, to give it new values or a new look.
+//!
+//! You never set it: Scene::show(field, look) adds it, and
+//! Scene::show(entity, field, look) reads it to send new values. New values
+//! must have the size of the grid the entity was made with.
 // ****************************************************************************
 struct FieldView
 {

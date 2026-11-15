@@ -37,6 +37,16 @@ class AssetManager;
 //! Renderer draws into it. That way an application can compose several draws
 //! into one pass (main + overlay, main + gizmos) without the Renderer needing
 //! to know.
+//!
+//! Scene::render() uses it; call it yourself only to draw a snapshot you
+//! built or changed (a test, a replay, a view computed elsewhere).
+//!
+//! \code
+//! auto snapshot = compages::renderer::SceneExtractor::extract(scene, width, height);
+//! compages::renderer::Renderer renderer;
+//! compages::gpu::RenderPass pass({ .width = width, .height = height });
+//! COMPAGES_TRY(renderer.render(snapshot.value(), scene.assets()));
+//! \endcode
 // ****************************************************************************
 class Renderer: private compages::NotCopiable
 {

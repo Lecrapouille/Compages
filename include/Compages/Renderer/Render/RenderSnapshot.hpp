@@ -79,6 +79,16 @@ struct PointLightFrame
 //! The Renderer consumes a snapshot. It does not read the compages::world::World. That is what
 //! lets a future version put simulation on one thread and rendering on
 //! another, and what makes the renderer testable in isolation.
+//!
+//! A plain value: copy it, keep it, build one by hand in a test. It holds ids
+//! of the catalog, not GPU objects, so it is only drawn with the AssetManager
+//! it was extracted from.
+//!
+//! \code
+//! compages::renderer::RenderSnapshot snapshot;
+//! snapshot.camera = camera_frame;
+//! snapshot.items.push_back({ .mesh = cube, .material_instance = red, .world_matrix = model });
+//! \endcode
 // ****************************************************************************
 struct RenderSnapshot
 {

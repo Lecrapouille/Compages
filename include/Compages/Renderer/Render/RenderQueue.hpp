@@ -49,6 +49,17 @@ struct QueueEntry
 
 // ****************************************************************************
 //! \brief The list of items the Renderer draws in order.
+//!
+//! build() sorts the items of a snapshot: the solid ones by material, then by
+//! mesh, so that the GPU changes shaders as rarely as possible; the
+//! see-through ones after them, from the farthest to the nearest. The Renderer
+//! keeps one and reuses its memory from frame to frame.
+//!
+//! \code
+//! compages::renderer::RenderQueue queue;
+//! queue.build(snapshot, scene.assets());
+//! for (compages::renderer::QueueEntry const& e : queue.entries()) { ... }
+//! \endcode
 // ****************************************************************************
 class RenderQueue: private compages::NotCopiable
 {

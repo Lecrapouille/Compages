@@ -207,6 +207,19 @@ private:                                                                       \
 //!
 //! \warning Keep \c n small enough for stack storage; there is no guard against
 //!   stack overflow. Storage is a plain \c T m_data[n] member array.
+//!
+//! Vector2f, Vector3f and Vector4f are what every layer passes around: a
+//! position in metres, a direction, a colour, a vertex attribute. The
+//! storage is n contiguous values, so a std::vector<Vector3f> goes to the GPU
+//! as it is. Vector3g is the same in double; Vector3m carries metres in its
+//! type, for a large world: toMetres() gives the floats of the World.
+//!
+//! \code
+//! compages::Vector3f a(1.0f, 2.0f, 3.0f);
+//! compages::Vector3f b = a * 2.0f;
+//! float d = compages::vector::dot(a, b);
+//! compages::Vector3f u = compages::vector::normalize(a);
+//! \endcode
 // *****************************************************************************
 template <typename T, size_t n>
 class Vector

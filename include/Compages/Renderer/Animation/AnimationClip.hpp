@@ -17,10 +17,12 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief One sampled curve that writes a local TRS channel of an compages::world::EntityId.
+//! \brief One sampled curve that writes the translation, the rotation or the
+//! scale of one node of a prefab.
 //!
 //! Times are in seconds. Values are packed: three floats per key for
-//! translation and scale, four (glTF xyzw) for rotation.
+//! translation and scale, four (glTF xyzw) for rotation. The glTF loader
+//! makes them; you rarely write one by hand.
 // ****************************************************************************
 struct AnimationChannel
 {
@@ -52,7 +54,19 @@ struct AnimationChannel
 };
 
 // ****************************************************************************
-//! \brief A named clip imported from a glTF animation.
+//! \brief A named clip imported from a glTF animation: its curves, played
+//! together.
+//!
+//! Clips live in the catalog of the Scene, not in the World: a headless World
+//! has none until a Scene loads a file. Play one with Scene::play(); the
+//! AnimationSystem samples it at each update, after the routines and before
+//! the joints.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(soldier, scene.loadFile("Soldier.glb"));
+//! for (std::string const& name : scene.clips(soldier)) { std::cout << name << '\n'; }
+//! scene.play(soldier, "Walk");
+//! \endcode
 // ****************************************************************************
 struct AnimationClip
 {

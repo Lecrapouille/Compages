@@ -29,19 +29,34 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
-//! \brief Owns and hands out mesh assets, materials and material instances.
+//! \brief The catalog of a Scene: meshes, textures, materials, material
+//! instances, prefabs, animation clips and skins, each named by a typed id.
 //!
 //! Assets are addressed by a typed id: a MeshAssetId names a mesh, a
 //! MaterialId names a material family, a MaterialInstanceId names one
 //! parameterisation. The AssetManager owns the actual data: the GPU buffers
 //! of a mesh, the program and pipeline of a material, the parameters of an
-//! instance. compages::world::World components store only ids.
+//! instance. compages::world::World components store only ids, so the World
+//! never holds a GPU object and stays usable without a context.
 //!
-//! The manager is not a scene: it does not know which entities use a given
-//! asset. It is what would eventually cache the results of loading a glTF file
-//! and hand out its ids. For now it is a small holder of pools, with just what
-//! Étape 3 of the roadmap needs: registering a mesh made in code, registering
-//! a material made in code, and dropping any of them by id.
+//! Use it when a Look is not enough: a material of your own
+//! (createMaterial()), a texture made by the program (addTexture()), a file
+//! loaded once and copied many times (loadFile(), then
+//! Scene::instantiate()). Several Scenes can share one catalog, so nothing is
+//! loaded twice for a split screen.
+//!
+//! The manager is not a scene: it does not know which entities use an asset.
+//! Removing an asset that an entity still uses leaves that entity with an id
+//! that names nothing; it is then not drawn. Each asset also has a name,
+//! found back with findMesh(), findTexture()…: what a saved scene stores.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(paint, scene.assets().createMaterial("Worn paint", desc));
+//! COMPAGES_TRY_ASSIGN(duck, scene.assets().loadFile("Duck.glb"));   // a prefab, no entity yet
+//! COMPAGES_TRY_ASSIGN(copy, scene.instantiate(duck));
+//! compages::renderer::Material* m = scene.assets().material(paint);
+//! m->program.set("tones", 3.0f);
+//! \endcode
 // ****************************************************************************
 class AssetManager: private compages::NotCopiable
 {

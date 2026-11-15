@@ -24,7 +24,16 @@
 namespace compages::renderer
 {
 
+// ****************************************************************************
 //! \brief A square grid in the XZ plane of its entity, centred on it.
+//!
+//! A helper for the person at the screen: it shows sizes and heights. A camera
+//! whose \c sees_helpers is false does not draw it.
+//!
+//! \code
+//! scene.grid(6.0f, 12u);    // 6 m wide, a line every 50 cm
+//! \endcode
+// ****************************************************************************
 struct Grid
 {
     //! \brief Width of the whole grid.
@@ -35,15 +44,30 @@ struct Grid
     compages::Vector3f color{ 0.35f, 0.35f, 0.38f };
 };
 
+// ****************************************************************************
 //! \brief The three axes of its entity: X red, Y green, Z blue. Hung from
 //! another entity, it shows how that one is placed and turned (a gizmo).
+//!
+//! \code
+//! scene.axes(0.3f).parent(arm.elbow);   // turns with the elbow
+//! \endcode
+// ****************************************************************************
 struct Axes
 {
     //! \brief Length of each axis.
     float length = 1.0f;
 };
 
+// ****************************************************************************
 //! \brief Draw the box around the mesh of this entity, turning with it.
+//!
+//! Shows what culling and picking use (MeshAsset::local_bounds): a box too
+//! small explains a shape that vanishes at the edge of the view.
+//!
+//! \code
+//! scene.showBounds(cube.id(), true);
+//! \endcode
+// ****************************************************************************
 struct ShowBounds
 {
     compages::Vector3f color{ 0.2f, 1.0f, 0.4f };

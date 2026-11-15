@@ -62,6 +62,20 @@ enum Type
 //!   therefore not store in the heap but stored in the stack of called
 //!   function. Too big matrices will create a stack overflow. Matrices up to
 //!   4x4 for float or double are perfect.
+//!
+//! Use Matrix44f for the placement of a thing in space (the world matrix of
+//! an entity, a camera, a projection) and Matrix33f for normals. The World
+//! builds these for you; write them by hand for a shader of your own or a
+//! test. The helpers of Transformation.hpp (translate, rotate, scale,
+//! perspective, lookAt) each return a new matrix.
+//!
+//! \code
+//! compages::Matrix44f model(compages::matrix::Identity);
+//! model = compages::translate(model, compages::Vector3f(3.0f, 0.0f, 0.0f));
+//! model = compages::rotate(model, units::angle::radian_t(0.5f), compages::Vector3f(0.0f, 1.0f, 0.0f));
+//! compages::Vector3f p = compages::transformPoint(model, compages::Vector3f(1.0f, 0.0f, 0.0f));
+//! drawable["model"] = model;
+//! \endcode
 // *****************************************************************************
 template <typename T, size_t rows, size_t cols>
 class Matrix

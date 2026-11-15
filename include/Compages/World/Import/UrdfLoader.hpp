@@ -49,6 +49,10 @@ struct UrdfVisual
     std::optional<compages::Vector4f> rgba;
 };
 
+// ****************************************************************************
+//! \brief One link of a URDF robot: its name and what it looks like. It
+//! becomes one entity of the World, named after it.
+// ****************************************************************************
 struct UrdfLink
 {
     std::string name;
@@ -63,6 +67,13 @@ enum class UrdfJointKind
     Prismatic,
 };
 
+// ****************************************************************************
+//! \brief One joint of a URDF robot, as written in the file: which link it
+//! joins to which, where, round or along which axis, and within which limits
+//! (in radians or metres). buildUrdf() turns a revolute or continuous joint
+//! into a RevoluteJoint, a prismatic one into a PrismaticJoint, and a fixed
+//! one into a plain local transform.
+// ****************************************************************************
 struct UrdfJoint
 {
     std::string name;
@@ -76,7 +87,20 @@ struct UrdfJoint
     double velocity = 0.0;
 };
 
+// ****************************************************************************
 //! \brief A URDF file, read but not built.
+//!
+//! Read it first with parseUrdf() to look at a robot without creating
+//! anything (its joints and their limits, to fill a panel), then build it
+//! with buildUrdf(), or do both with loadUrdf(). URDF is Z-up and Compages
+//! Y-up: the built root turns one into the other.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(robot, compages::world::parseUrdf("irb2400.urdf"));
+//! for (compages::world::UrdfJoint const& j : robot.joints) { std::cout << j.name << '\n'; }
+//! COMPAGES_TRY_ASSIGN(root, compages::world::buildUrdf(world, robot));
+//! \endcode
+// ****************************************************************************
 struct UrdfRobot
 {
     std::string name;

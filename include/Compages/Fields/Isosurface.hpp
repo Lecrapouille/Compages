@@ -20,6 +20,16 @@ namespace compages
 // ****************************************************************************
 //! \brief Triangles in space, three corners each, with the normal of each
 //! corner: what isosurface() makes.
+//!
+//! A plain list, with no index and no shared corner, so that it is simple to
+//! fill and to test. renderer::meshOf() turns it into a mesh the Scene can
+//! draw; positions.size() / 3 is the number of triangles.
+//!
+//! \code
+//! compages::Surface hot = compages::isosurface(heat, 30.0f);
+//! COMPAGES_TRY_ASSIGN(mesh, compages::renderer::meshOf(hot));
+//! scene.mesh(std::move(mesh), "Hot air");
+//! \endcode
 // ****************************************************************************
 struct Surface
 {

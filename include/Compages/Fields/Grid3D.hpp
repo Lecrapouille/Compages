@@ -24,6 +24,18 @@ namespace compages
 //! numbered x first, then y, then z: index = (k * rows + j) * columns + i,
 //! which is also the order of the texels of a 3D texture, so a
 //! Field<T, Grid3D> goes to the GPU as it is (gpu::Texture::fromField()).
+//!
+//! Use it for a volume: the heat of a room, a density, a cloud. It holds no
+//! value: a Field<T, Grid3D> does. Memory grows with the cube of the
+//! resolution: 128 points per side is two million values.
+//!
+//! \code
+//! const compages::Grid3D room{ .columns = 48, .rows = 24, .layers = 32,
+//!                              .origin = { -2.4f, 0.0f, -1.6f }, .spacing = 0.1f };
+//! compages::Field<float, compages::Grid3D> heat(room, 20.0f);
+//! heat(10, 5, 8) = 60.0f;
+//! compages::Surface warm = compages::isosurface(heat, 30.0f);
+//! \endcode
 // ****************************************************************************
 struct Grid3D
 {

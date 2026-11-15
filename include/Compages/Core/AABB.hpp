@@ -30,6 +30,23 @@ namespace compages
 // ****************************************************************************
 //! \brief The smallest box aligned with the axes that still holds a set of
 //! points.
+//!
+//! The Renderer uses it to skip what the camera cannot see: the box of a mesh
+//! (MeshAsset::local_bounds), moved by the world matrix of its entity, is
+//! tested against the frustum before anything is drawn. Picking uses it too,
+//! to skip the shapes a ray misses. Use it for these coarse tests; it is not a
+//! collision shape.
+//!
+//! The default box is empty (min above max), so a mesh that forgot its bounds
+//! is culled instead of covering the whole world. transformed() returns the
+//! box round the eight moved corners: it is larger than the shape after a
+//! rotation, never smaller.
+//!
+//! \code
+//! compages::AABB box = compages::AABB::fromCorners({ -0.5f, 0.0f, -0.5f }, { 0.5f, 2.0f, 0.5f });
+//! compages::AABB in_world = box.transformed(entity.worldMatrix());
+//! if (in_world.intersects(other)) { ... }
+//! \endcode
 // ****************************************************************************
 struct AABB
 {

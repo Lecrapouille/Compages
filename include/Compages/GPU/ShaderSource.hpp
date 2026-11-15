@@ -21,6 +21,16 @@ namespace compages::gpu
 // ****************************************************************************
 //! \brief The GLSL of one stage after its includes are put in: what the driver
 //! compiles, and what is needed to read its error log.
+//!
+//! Program::load() makes one for you. Ask for it yourself to see the text
+//! the driver really compiles, or to know which files a hot reload must
+//! watch. explain() turns the piece numbers of a driver log back into names.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(resolved, source.resolve());
+//! std::cout << resolved.text;                       // what the driver compiles
+//! std::cerr << resolved.explain(driver_log);        // "water.glsl:12(5): error ..."
+//! \endcode
 // ****************************************************************************
 struct ResolvedSource
 {

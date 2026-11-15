@@ -20,6 +20,16 @@ namespace compages
 //! points (i, j) and (i + 1, j + 1), and how far across it, from 0 to 1, in
 //! the two directions of the grid. A field mixes the values of the four
 //! corners with these weights (bilinear).
+//!
+//! What Grid2D::locate() and CurvilinearGrid::locate() return. Field::sample()
+//! uses it; call locate() yourself to interpolate several fields at the same
+//! place with one search, which matters on a curvilinear grid.
+//!
+//! \code
+//! const compages::GridCell cell = grid.locate({ 1.3f, -0.4f });
+//! const float v = (1 - cell.s) * (1 - cell.t) * f(cell.i, cell.j) + cell.s * (1 - cell.t) * f(cell.i + 1, cell.j)
+//!               + (1 - cell.s) * cell.t * f(cell.i, cell.j + 1) + cell.s * cell.t * f(cell.i + 1, cell.j + 1);
+//! \endcode
 // ****************************************************************************
 struct GridCell
 {

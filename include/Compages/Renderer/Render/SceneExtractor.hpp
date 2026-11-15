@@ -34,6 +34,15 @@ class Scene;
 //! not after: an item whose world bounds fall entirely outside the camera
 //! frustum is left out. LOD, visibility, batching and light selection belong
 //! here later.
+//!
+//! Scene::render() calls it once per view. Call it yourself to look at what
+//! a camera would draw (how many items, which lights) without drawing, in a
+//! test for example.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(snapshot, compages::renderer::SceneExtractor::extract(scene, 640u, 480u));
+//! std::size_t seen = snapshot.items.size();
+//! \endcode
 // ****************************************************************************
 class SceneExtractor
 {

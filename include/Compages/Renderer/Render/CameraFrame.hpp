@@ -30,6 +30,19 @@ namespace compages::renderer
 //!
 //! The inverses are stored so a picker can unproject a pixel without walking
 //! back to the compages::world::World. \c screenRay() is the only operation that needs them.
+//!
+//! Read it after a render with Scene::lastCamera(): to turn the mouse into a
+//! ray, to draw over the picture with the same projection, to know the
+//! viewport. Before the first render it is empty (viewport_width is 0).
+//!
+//! \code
+//! compages::renderer::CameraFrame const& camera = scene.lastCamera();
+//! if (camera.viewport_width > 0u)
+//! {
+//!     compages::Ray ray = camera.screenRay(mouse.x, mouse.y, camera.viewport_width, camera.viewport_height);
+//! }
+//! drawable["projection"] = camera.reversed_projection;   // in a pass with reversed_depth
+//! \endcode
 // ****************************************************************************
 struct CameraFrame
 {

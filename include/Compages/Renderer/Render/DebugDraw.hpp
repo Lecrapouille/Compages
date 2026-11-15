@@ -32,6 +32,16 @@ namespace compages::renderer
 //!
 //! Call \c clear() at the start of a frame, queue primitives, then \c flush()
 //! after the main Renderer while the same pass is open.
+//!
+//! A Scene owns one and does this for you: queue lines with Scene::debug()
+//! at each frame, they are drawn by the next render and then forgotten. Use
+//! it to see what code computes (a path, a force, a pose, what a camera
+//! sees). A camera whose \c sees_helpers is false does not draw it.
+//!
+//! \code
+//! scene.debug().arrow(body.worldPosition(), body.worldPosition() + velocity, { 1.0f, 0.3f, 0.2f });
+//! scene.debug().frustum(eye.worldMatrix(), eye.get<compages::world::Camera>(), aspect, 20.0f, { 1.0f, 0.85f, 0.2f });
+//! \endcode
 // ****************************************************************************
 class DebugDraw
 {

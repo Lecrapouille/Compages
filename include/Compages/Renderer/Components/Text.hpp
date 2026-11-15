@@ -51,7 +51,17 @@
 namespace compages::renderer
 {
 
+// ****************************************************************************
 //! \brief A name written next to its entity, on the picture.
+//!
+//! Use it to name what may be too small to see (a planet, a joint). It needs
+//! Scene::font().
+//!
+//! \code
+//! mars.set(compages::renderer::Label{ .text = "Mars", .color = { 1.0f, 0.95f, 0.85f },
+//!                                     .pixels = 15.0f, .hide_closer_than = 0.0f });
+//! \endcode
+// ****************************************************************************
 struct Label
 {
     //! \brief What is written, in UTF-8. The letters of Latin-1 (French
@@ -67,11 +77,22 @@ struct Label
     float hide_closer_than;
 };
 
+// ****************************************************************************
 //! \brief A box of text pointing at its entity: a title, lines under it, on
 //! a frame with round corners, joined to the point by a stem. Always faces
 //! the camera and keeps its size in pixels. It goes above the point, or
 //! below when there is no room above, and stays inside the picture. Laid out
 //! before the labels, so that no label covers it.
+//!
+//! Set it to show the box, remove it to hide it: what a hover shows.
+//!
+//! \code
+//! region.set(compages::renderer::Tooltip{ .title = "Sciences", .text = "Physics\nChemistry",
+//!                                         .color = { 0.92f, 0.95f, 1.0f }, .accent = { 1.0f, 0.8f, 0.45f },
+//!                                         .background = { 0.04f, 0.08f, 0.14f }, .opacity = 0.85f,
+//!                                         .pixels = 14.0f });
+//! \endcode
+// ****************************************************************************
 struct Tooltip
 {
     //! \brief The first line, a quarter taller than the others (UTF-8).
@@ -92,9 +113,17 @@ struct Tooltip
     float pixels;
 };
 
+// ****************************************************************************
 //! \brief Text at a fixed place of the picture of its camera: set on the
 //! camera entity, drawn only in what that camera sees (each view of a split
 //! screen has its own). Change \c text each frame for values that move.
+//!
+//! \code
+//! camera.set(compages::renderer::Caption{ .text = "Altitude 0 km", .color = { 1.0f, 0.96f, 0.88f },
+//!                                         .pixels = 16.0f, .at = { 12.0f, 10.0f } });
+//! camera.get<compages::renderer::Caption>().text = std::format("Altitude {:.0f} km", altitude);
+//! \endcode
+// ****************************************************************************
 struct Caption
 {
     //! \brief What is written, in UTF-8; '\n' starts a new line.

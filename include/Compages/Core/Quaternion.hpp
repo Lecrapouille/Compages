@@ -50,20 +50,25 @@
 namespace compages
 {
 
-// *****************************************************************************
+// ****************************************************************************
 //! \class Quat
-//! \brief Template representation of a quaternion q = (a, (b,c,d)) in the axis
-//! (i,j,k) where i² = j² = k² = ijk = -1. We write q = a + bi + cj + dk.
-//! In some code the quaternion is also defined as q = (w, (x,y,z)).
+//! \brief A rotation in 3D, as a quaternion q = a + bi + cj + dk (also written
+//! (w, (x, y, z))).
 //!
-//! where:
-//!   - \c a (aka w) is the T component.
-//!   - \c b (aka x) is the first complex dimension (i-axis).
-//!   - \c c (aka y) is the second complex dimension (j-axis).
-//!   - \c d (aka z) is the third complex dimension (k-axis).
+//! Use it to compose or blend rotations: unlike three angles it has no gimbal
+//! lock, and unlike a matrix it stays a pure rotation after many products
+//! (normalise it from time to time). The World stores the rotation of each
+//! entity as a quaternion; toMatrix() gives the matrix the GPU needs.
+//!
+//! \code
+//! using namespace units::literals;
+//! compages::Quatf q = compages::Quatf::fromAngleAxis(90.0_deg, compages::Vector3f(0.0f, 1.0f, 0.0f));
+//! compages::Quatf turn = compages::Quatf::fromTo(from_direction, to_direction);
+//! compages::Matrix44f m = (turn * q).toMatrix();
+//! \endcode
 //!
 //! Supports multiplication, addition, scaling and integration.
-// *****************************************************************************
+// ****************************************************************************
 template <typename T>
 class Quat
 {

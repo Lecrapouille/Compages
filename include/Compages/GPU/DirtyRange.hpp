@@ -40,6 +40,18 @@ namespace compages::gpu
 //! element landed in the wrong place. Both mistakes were invisible in a review
 //! and expensive to find in a running program, hence one small type with one
 //! convention and its own tests.
+//!
+//! Buffers and drawables use it to remember what to send at the next draw;
+//! you meet it only when you write a container of your own that mirrors GPU
+//! memory.
+//!
+//! \code
+//! compages::gpu::DirtyRange dirty;
+//! dirty.add(2u);              // element 2 changed
+//! dirty.add(10u, 3u);         // elements 10, 11, 12 changed
+//! upload(data + dirty.begin(), dirty.count());   // elements 2 to 12, in one copy
+//! dirty.clear();
+//! \endcode
 // ****************************************************************************
 class DirtyRange
 {

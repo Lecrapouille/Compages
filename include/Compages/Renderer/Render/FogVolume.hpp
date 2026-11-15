@@ -41,6 +41,20 @@ class ShadowPass;
 //!    over each slice, so it does not depend on its thickness).
 //! applyFog() of the lit shaders then reads the picture at the pixel and the
 //! depth of each surface: colour x transmittance + light gathered.
+//!
+//! The Renderer owns it; you turn it on and tune it through
+//! Environment::volumetric. It is the most expensive light effect of
+//! Compages (two compute passes over WIDTH x HEIGHT x SLICES cells at each
+//! render): use it when the air is part of the picture, and the plain fog
+//! of Environment::fog_density for haze alone. While it is on, it replaces
+//! the plain fog.
+//!
+//! \code
+//! compages::renderer::VolumetricFog& fog = scene.environment().volumetric;
+//! fog.enabled = true;
+//! fog.density = 0.035f;
+//! fog.anisotropy = 0.6f;
+//! \endcode
 // ****************************************************************************
 class FogVolume: private compages::NotCopiable
 {

@@ -34,16 +34,20 @@ enum class ToneMapping
 
 
 // ****************************************************************************
-//! \brief The world's ambient information: what a Scene tells the renderer
-//! about the space around the entities.
-//!
-//! Kept small on purpose. IBL, skybox and HDR belong here when Stage 9 is
-//! reached; the fields below are what the built-in lit material reads today.
-// ****************************************************************************
-// ****************************************************************************
 //! \brief Fog that the light crosses: shafts of the sun between pillars,
-//! halos round the lamps, shadows in the air (VolumetricFog). Off by
-//! default: the plain fog of Environment::fog_density is then used.
+//! halos round the lamps, shadows in the air (FogVolume). Off by default: the
+//! plain fog of Environment::fog_density is then used.
+//!
+//! The most expensive light effect of Compages: use it when the air is part
+//! of the picture (a dusty hall, a foggy street), not for distance haze.
+//!
+//! \code
+//! compages::renderer::VolumetricFog& fog = scene.environment().volumetric;
+//! fog.enabled = true;
+//! fog.density = 0.035f;     // light taken per metre, at fog.height
+//! fog.falloff = 0.25f;      // thinner higher up
+//! fog.anisotropy = 0.6f;    // light sent mostly forward
+//! \endcode
 // ****************************************************************************
 struct VolumetricFog
 {
@@ -71,6 +75,22 @@ struct VolumetricFog
     float distance = 60.0f;
 };
 
+// ****************************************************************************
+//! \brief The space around the entities, as one view of a Scene draws it:
+//! ambient light, fog, shadows, the tone curve, the exposure.
+//!
+//! A Scene keeps one (Scene::environment()); change its fields at any frame.
+//! It belongs to the Scene, not to the World: two Scenes of one World may
+//! light it differently. The sky box is set with Scene::skybox().
+//!
+//! \code
+//! compages::renderer::Environment& env = scene.environment();
+//! env.fog_color = { 0.6f, 0.65f, 0.7f };
+//! env.fog_density = 0.02f;
+//! env.exposure = 1.5f;
+//! env.shadows = false;        // a chart or a flat field
+//! \endcode
+// ****************************************************************************
 struct Environment
 {
     //! \brief A dim colour multiplied by the material colour to fake the light

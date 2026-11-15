@@ -96,6 +96,19 @@ struct ViewFrame;
 //! test, a tool or a server runs the same simulation without a device. What
 //! is drawn, and how, is the business of a compages::renderer::Scene looking at
 //! the World.
+//!
+//! It cannot be copied: entities, routines and joints point into it. Keep it
+//! alive as long as the Scenes that read it.
+//!
+//! \code
+//! compages::world::World world;
+//! compages::world::Entity arm = world.entity("Arm").revolute({ 0.0f, 1.0f, 0.0f });
+//! arm.child("Tool").position(0.0f, 0.5f, 0.0f);
+//! compages::Frame step;
+//! step.elapsed = 1.0f / 60.0f;
+//! world.update(step);
+//! compages::Vector3f tip = world.lookup("Arm/Tool").worldPosition();
+//! \endcode
 // ****************************************************************************
 class World: private compages::NotCopiable
 {

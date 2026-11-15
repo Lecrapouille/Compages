@@ -52,6 +52,20 @@ using TextureHandle = Handle<struct TextureTag>;
 //! One description covering every shape, rather than a class per shape. A cube
 //! map differs from a 2D texture by holding six images, and an array by holding
 //! several layers, which is a value here rather than a type of its own.
+//!
+//! Defaults: one 2D level of RGBA8, linear filtering, clamped edges. Choose
+//! SRGB8A8 for colours painted for the eye and RGBA8 or a float format for
+//! numbers (noise, normals, data); the GPU then filters each one right.
+//!
+//! \code
+//! compages::gpu::TextureDesc desc =
+//!     compages::gpu::TextureDesc::image(512u, 512u, compages::gpu::PixelFormat::SRGB8A8)
+//!         .wrap(compages::gpu::Wrap::Repeat);
+//! desc.levels = 0u;                         // all the mipmaps
+//! COMPAGES_TRY_ASSIGN(texture, compages::gpu::Texture::create(desc));
+//! COMPAGES_TRY(texture.write(std::as_bytes(std::span(pixels))));
+//! COMPAGES_TRY(texture.generateMipmaps());
+//! \endcode
 // ****************************************************************************
 struct TextureDesc
 {

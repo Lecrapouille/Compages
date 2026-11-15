@@ -42,6 +42,18 @@ namespace compages::renderer
 //! - ClusterLights: per lamp, (position, range) and (colour x intensity, 0);
 //! - ClusterCells: per cluster, (first index, count);
 //! - ClusterIndices: the lamps of each cluster, one after the other.
+//!
+//! The Renderer owns it and fills it from the lamps of the scene: you only
+//! add lamps (Scene::lamp()). Worth it from a few tens of lamps; the
+//! clustered lamps cast no shadow. Keep the bindings 9, 10 and 11 free in
+//! your own hooks.
+//!
+//! \code
+//! for (int k = 0; k < 200; ++k)
+//! {
+//!     scene.lamp("Lamp", colour(k), 2.0f, 3.0f).position(x(k), 0.5f, z(k));
+//! }
+//! \endcode
 // ****************************************************************************
 class LightClusters: private compages::NotCopiable
 {

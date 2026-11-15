@@ -25,6 +25,9 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief A compages::renderer::MeshRenderer inside a prefab, referencing assets by registered
 //! name rather than by runtime id.
+//!
+//! Names survive a save and a load, and a prefab may be copied into another
+//! World; instantiate() turns them back into ids.
 // ****************************************************************************
 struct PrefabMeshRenderer
 {
@@ -33,6 +36,10 @@ struct PrefabMeshRenderer
     compages::renderer::RenderFlags flags = compages::renderer::RenderFlags::None;
 };
 
+// ****************************************************************************
+//! \brief The skin of a node inside a prefab: the source indices of its joint
+//! nodes, turned into entity ids when the prefab is instantiated.
+// ****************************************************************************
 struct PrefabSkinInstance
 {
     std::vector<std::uint32_t> joints;
@@ -40,6 +47,10 @@ struct PrefabSkinInstance
 
 // ****************************************************************************
 //! \brief One node of a prefab tree: transform, optional components, children.
+//!
+//! It becomes one entity per copy. The source index keeps the order of the
+//! file, so that skins and animation channels find their node whatever the
+//! names.
 // ****************************************************************************
 struct PrefabNode
 {
@@ -61,6 +72,19 @@ struct PrefabNode
 //! Asset references inside the tree are strings (``"cube"``, ``"wood"``) so a
 //! prefab survives save/load and can be shared across Worlds. Runtime ids are
 //! resolved only at instantiation time.
+//!
+//! Load a file once as a prefab, then make as many copies as needed: each
+//! copy is a new tree of entities that can move alone, and they all share the
+//! meshes and materials of the catalog.
+//!
+//! \code
+//! COMPAGES_TRY_ASSIGN(barrel, scene.assets().loadFile("barrel.glb"));
+//! for (int k = 0; k < 10; ++k)
+//! {
+//!     COMPAGES_TRY_ASSIGN(copy, scene.instantiate(barrel));
+//!     copy.position(float(k), 0.0f, 0.0f);
+//! }
+//! \endcode
 // ****************************************************************************
 struct Prefab
 {

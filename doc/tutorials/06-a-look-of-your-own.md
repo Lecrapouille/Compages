@@ -69,7 +69,7 @@ The edges of the two links show light grey steel. The links still shade from lig
 - Remove the closing parenthesis of `mix(`. The demo stops at its setup, and the console shows the line of the error.
 - Use `fract(vWorldPos.y * 10.0)` instead of `edge`. You get bands every 10 cm, fixed in the room: the arm moves through them. Real paint stays on the object, which is why the hook uses `vUv`.
 
-A `Surface` also has `metallic` and `roughness`. They count only for a shape that uses the metallic-roughness model of glTF, such as a model loaded from a file; a shape made with `color()` uses a simpler light model and ignores them. The PBR shader has three more hooks: `deform` moves the corners of a shape, `light` changes how light falls on it, and `main` replaces everything. [Write a material](../guides/write-a-material.md) shows each one, and the [shader library](../reference/shaders.md) shows the pieces that a hook may call.
+A `Surface` also has `metallic` and `roughness`. They count only when the material instance of the shape uses the metallic-roughness model of glTF (`MaterialInstance::metal_roughness`). The glTF loader turns it on for a model loaded from a file. A shape made with `color()` has it off: it is lit by a simpler model, which ignores these two values. Turn it on by hand to use them. The PBR shader has three more hooks: `deform` moves the corners of a shape, `light` changes how light falls on it, and `main` replaces everything. [Write a material](../guides/write-a-material.md) shows each one, and the [shader library](../reference/shaders.md) shows the pieces that a hook may call.
 
 ---
 

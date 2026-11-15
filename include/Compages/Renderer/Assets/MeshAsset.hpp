@@ -27,8 +27,17 @@ namespace compages::renderer
 //! \brief What one corner of a mesh looks like for the built-in lit shader.
 //!
 //! This is the vertex the AssetManager fills for the primitives it can build
-//! by itself. A GLB loader will produce vertices of its own struct that share
-//! this same layout, so the same pipeline can draw both.
+//! by itself, and the one the glTF loader makes: every material of the
+//! Renderer draws this layout, so one mesh can wear any material. Fill it
+//! yourself for a mesh made by the program.
+//!
+//! \code
+//! compages::renderer::MeshVertex v;
+//! v.position = centre + out * radius;
+//! v.normal = out;
+//! v.uv = { float(k) / float(AROUND), length };
+//! mesh.source_vertices.push_back(v);
+//! \endcode
 // ****************************************************************************
 struct MeshVertex
 {
@@ -50,6 +59,20 @@ struct MeshVertex
 //! Owned by the AssetManager. compages::world::World components refer to it by
 //! MeshAssetId, not by pointer or handle: the AssetManager is what keeps the
 //! buffers alive.
+//!
+//! The corners and indices stay on the CPU (source_vertices,
+//! source_indices): a mesh can be built without a GPU, read back for picking
+//! or for baking (10f_FlowingWater), and sent again. local_bounds must hold
+//! every corner: the Renderer skips a mesh whose box is outside the view.
+//!
+//! \code
+//! compages::renderer::MeshAsset mesh;
+//! mesh.source_vertices = corners;
+//! mesh.source_indices = { 0, 1, 2, 2, 1, 3 };
+//! mesh.index_count = mesh.source_indices.size();
+//! mesh.local_bounds = compages::AABB::fromCorners(low, high);
+//! compages::world::Entity e = scene.mesh(std::move(mesh), "Quad");
+//! \endcode
 // ****************************************************************************
 struct MeshAsset
 {

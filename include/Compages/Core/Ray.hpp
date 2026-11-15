@@ -26,8 +26,22 @@ namespace compages
 // ****************************************************************************
 
 // ****************************************************************************
-//! \brief Origin plus a unit direction. Point at \c t is \c origin + t *
-//! direction.
+//! \brief A half-line: an origin and a unit direction. The point at distance
+//! \c t is \c origin + t * direction.
+//!
+//! What picking is made of: a pixel of the picture becomes a ray from the
+//! camera (CameraFrame), and the first box or triangle it meets is the thing
+//! under the mouse. fromPoints() normalises the direction, so \c t is a
+//! distance in metres; a ray between two equal points looks down -z instead of
+//! dividing by zero.
+//!
+//! \code
+//! compages::Ray ray = compages::Ray::fromPoints(camera_position, target);
+//! if (std::optional<float> t = compages::intersect(ray, box))
+//! {
+//!     compages::Vector3f hit = ray.pointAt(*t);
+//! }
+//! \endcode
 // ****************************************************************************
 struct Ray
 {

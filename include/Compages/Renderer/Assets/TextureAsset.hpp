@@ -23,6 +23,18 @@ namespace compages::renderer
 //! compages::world::World and Scene never hold a \c compages::gpu::Texture
 //! directly: they store a TextureAssetId and ask the manager when a draw needs
 //! a binding.
+//!
+//! Make one when a texture comes from your program (a noise, a field, a
+//! picture computed once) and must be read by a material or a look. The
+//! pixels may wait on the CPU until upload(), so a scene can be built before
+//! a GPU exists.
+//!
+//! \code
+//! compages::renderer::TextureAsset flow;
+//! flow.name = "Flow map";
+//! COMPAGES_TRY_ASSIGN(flow.texture, compages::gpu::Texture::fromField(field));
+//! COMPAGES_TRY_ASSIGN(id, scene.assets().addTexture(flow.name, std::move(flow)));
+//! \endcode
 // ****************************************************************************
 struct TextureAsset
 {

@@ -83,6 +83,17 @@ struct ArrowLook
 // ****************************************************************************
 //! \brief What Scene::probe() finds under a pixel: where the ray meets the
 //! field as it is drawn, and the value there.
+//!
+//! The point is on the drawn surface, relief included, so a tooltip placed
+//! there sits on the hill the user sees.
+//!
+//! \code
+//! if (const auto found = scene.probe(altitude, look, p_frame.input.mouse))
+//! {
+//!     marker.position(found->point);
+//!     caption.text = std::format("{:.0f} m", found->value);
+//! }
+//! \endcode
 // ****************************************************************************
 struct FieldProbe
 {

@@ -75,6 +75,17 @@ inline constexpr int MAX_JOINTS = 64;
 // ****************************************************************************
 //! \brief The vertex and the fragment stages of one shader, to change before
 //! they are compiled.
+//!
+//! What the functions of this file return. Change a stage with include(),
+//! define() and hook() of gpu::ShaderSource, then give the pair to
+//! AssetManager::createMaterial(). Copying a pair copies the text: the shader
+//! of the library is not changed for anyone else.
+//!
+//! \code
+//! compages::renderer::shaders::ShaderPair pbr = compages::renderer::shaders::pbr();
+//! pbr.vertex().include("waves.glsl", wavesGlsl()).hook("deform", DEFORM);
+//! pbr.fragment().hook("surface", WATER);
+//! \endcode
 // ****************************************************************************
 class ShaderPair
 {

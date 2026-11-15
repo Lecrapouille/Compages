@@ -15,8 +15,13 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief Presentation-level knobs a Scene carries for the renderer.
 //!
-//! These belong to a given view of the compages::world::World, not to the compages::world::World itself. Two
-//! Scenes observing the same compages::world::World can have different clear colours.
+//! These belong to a given view of the compages::world::World, not to the
+//! compages::world::World itself. Two Scenes observing the same
+//! compages::world::World can have different clear colours.
+//!
+//! \code
+//! scene.renderSettings().frustum_culling = false;   // measure what culling saves
+//! \endcode
 // ****************************************************************************
 struct RenderSettings
 {

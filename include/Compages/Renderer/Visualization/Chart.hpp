@@ -34,6 +34,15 @@ enum class ChartScale
 
 // ****************************************************************************
 //! \brief The size and the axes of a Chart.
+//!
+//! Every field must be given: there is no default size or range, so a chart
+//! never shows a scale chosen without your knowledge.
+//!
+//! \code
+//! compages::renderer::ChartDesc desc{ .width = 1024u, .height = 512u, .seconds = 120.0f,
+//!                                     .low = 0.0f, .high = 100.0f,
+//!                                     .scale = compages::renderer::ChartScale::FollowValues };
+//! \endcode
 // ****************************************************************************
 struct ChartDesc
 {

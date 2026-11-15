@@ -50,6 +50,15 @@ struct ScreenFilter
 // ****************************************************************************
 //! \brief Light brighter than the screen can show spills round it, as in a
 //! lens: the halo of a bulb, of the sun on metal.
+//!
+//! Use it when the picture has sources much brighter than white: bulbs seen
+//! directly, the sun on metal, sparks. In a dim scene it only blurs. It costs
+//! about twelve small passes per view (doc/techniques/bloom.md).
+//!
+//! \code
+//! camera.set(compages::renderer::ScreenEffects{
+//!     .filters = {}, .bloom = { .enabled = true, .threshold = 1.0f, .strength = 0.6f } });
+//! \endcode
 // ****************************************************************************
 struct Bloom
 {

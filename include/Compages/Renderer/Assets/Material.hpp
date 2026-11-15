@@ -44,6 +44,15 @@ enum class ShaderFamily
 // ****************************************************************************
 //! \brief A texture that every object of a material reads, by the name of its
 //! sampler in the shader.
+//!
+//! The Renderer binds it at each draw, on a free unit (Material::
+//! FIRST_TEXTURE_UNIT and up), and sets the sampler. A material has at most
+//! Material::MAX_TEXTURES of them.
+//!
+//! \code
+//! .textures = { { .sampler = "flowMap", .texture = flow_map },
+//!               { .sampler = "noiseMap", .texture = noise } }
+//! \endcode
 // ****************************************************************************
 struct MaterialTexture
 {
@@ -57,6 +66,14 @@ struct MaterialTexture
 //! \brief A storage buffer that every object of a material reads, by the name
 //! of its block in the shader: values a compute shader wrote, for example.
 //! Borrowed: the buffer must live as long as the material draws.
+//!
+//! What lets a hook read data of the CPU or of a compute pass without a
+//! texture: 11d_BimetalBeam bends a mesh on a line its CPU model writes into
+//! a buffer each frame.
+//!
+//! \code
+//! .buffers = { { .block = "Beam", .buffer = line.handle() } }
+//! \endcode
 // ****************************************************************************
 struct MaterialBuffer
 {
@@ -107,6 +124,20 @@ struct MaterialDesc
 //! A Material owns its \c compages::gpu::Program and its \c compages::gpu::Pipeline. Many
 //! MaterialInstances can point at the same Material, and a Material is what a
 //! renderer would key its "which pipeline is bound right now" cache on.
+//!
+//! Make one with AssetManager::createMaterial(), which compiles it and keeps
+//! it in the catalog; Material::create() builds one without keeping it. A
+//! material draws MeshVertex only. Its uniforms of your own are set through
+//! \c program, once or at each frame; the Renderer sets those of its family.
+//!
+//! \code
+//! compages::renderer::shaders::ShaderPair shaders = compages::renderer::shaders::pbr();
+//! shaders.fragment().hook("surface", WORN_PAINT);
+//! COMPAGES_TRY_ASSIGN(id, scene.assets().createMaterial("Worn paint",
+//!     { .family = compages::renderer::ShaderFamily::PbrMinimal, .shaders = std::move(shaders),
+//!       .state = { .depth_test = true, .cull = compages::gpu::CullMode::Back }, .see_through = std::nullopt }));
+//! scene.look(entity, id);
+//! \endcode
 // ****************************************************************************
 struct Material
 {
@@ -162,6 +193,21 @@ struct Material
 //!
 //! Two objects sharing the same MaterialInstance are drawn identically. The
 //! renderer batches them together.
+//!
+//! A Look makes one for you. Change it to tint one object, make it
+//! see-through, or light it with the metallic-roughness model of glTF
+//! (\c metal_roughness): only then do \c metallic_factor and
+//! \c roughness_factor, and the \c metallic and \c roughness of a hook
+//! "surface", count. Colours here are linear (srgbToLinear()).
+//!
+//! \code
+//! compages::renderer::MaterialInstance* look = scene.assets().materialInstance(
+//!     entity.get<compages::renderer::MeshRenderer>().material_instance);
+//! look->opacity = 0.5f;
+//! look->metal_roughness = true;
+//! look->metallic_factor = 1.0f;
+//! look->roughness_factor = 0.3f;
+//! \endcode
 // ****************************************************************************
 struct MaterialInstance
 {

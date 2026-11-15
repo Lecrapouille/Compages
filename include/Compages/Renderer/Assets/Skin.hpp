@@ -25,6 +25,11 @@ namespace compages::renderer
 // ****************************************************************************
 //! \brief Inverse-bind matrices of a glTF skin, in this library's matrix
 //! storage (CPU rows are the shader columns).
+//!
+//! Each matrix brings a vertex from the space of the model to the space of
+//! one joint at rest. The glTF loader makes it; the AnimationSystem combines
+//! it with the current pose of the joints into the palette the vertex shader
+//! uses (SkinInstance).
 // ****************************************************************************
 struct SkinAsset
 {
