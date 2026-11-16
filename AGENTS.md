@@ -27,7 +27,8 @@ Read only what the task needs. Load a skill instead of reading the docs:
 include/Compages/   public, installed: Core/ Fields/ GPU/ World/ Renderer/ + Compages.hpp
                     World/: Components/ Spatial/ Kinematics/ Import/ Controllers/
                     Renderer/: Scene/ Assets/ Import/ Procedural/ Animation/ Render/ Components/ Serialization/
-src/                same folders as include/; src/GPU/Backends/GL45/ is the only place with glad/gl*
+src/                same folders as include/; src/GPU/Backends/ is the only place with glad/gl*
+                    (GL45/; GL41/ = OpenGL 4.1 for macOS and, with COMPAGES_GLES3, ES 3.0 for WebGL 2)
 examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-examples);
                     01_FirstSteps/ … 13_Workshop/ = chapters, read in order;
                     13_Workshop/ = the robot workshop of doc/tutorials/ (Workshop/Arm.cpp is World only);
@@ -46,6 +47,9 @@ make check                                # unit tests
 ./build/linux-gcc-debug/bin/Compages-examples [name]          # gallery; --check [name] = run all (or one), fail on GPU leaks/errors
 xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
     MESA_GLSL_VERSION_OVERRIDE=450 ./build/linux-gcc-debug/bin/Compages-examples --check   # no screen
+make BUILD_DIR=build-gl41 GPU_BACKEND=GL41      # the macOS backend, testable on Linux (4.1 context)
+make BUILD_DIR=build-gles3 GPU_BACKEND=GLES3    # the WebGL 2 backend on a native ES 3.0 context
+make TOOLCHAIN=emscripten                       # the gallery as a web page (emsdk_env.sh first)
 ```
 
 ## Rules that are easy to break
@@ -59,8 +63,8 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
 - Include direction: `Fields` includes only `Core`; `gpu` and `world`
   include only `Core` and `Fields`; `renderer` includes `world`, `gpu`,
   `Fields`, `Core`. `world` never sees a `gpu::` type; public
-  headers never contain `GLenum`/`gl*`; only `src/GPU/Backends/GL45/` includes
-  glad.
+  headers never contain `GLenum`/`gl*`; only `src/GPU/Backends/` includes
+  glad or GL headers.
 - The library never opens a window or calls GLFW: `gpu::init(loader)`
   receives a ready context. GLFW lives in `examples/Common/Window.cpp`.
 - A world component never holds a GPU pointer, only asset ids; the renderer
@@ -73,6 +77,10 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
   (`COMPAGES_TRY`, `COMPAGES_TRY_ASSIGN`); per-frame errors are recorded
   (`gpu::reportError`, read by `takeFrameError`), never thrown.
 - After a compute dispatch, a `gpu::barrier(...)` is the caller's job.
+- Shaders are written for `#version 450 core` only: GL41/GLES3 translate them
+  (`GlslDialect`). Compute, storage blocks and images need
+  `gpu::device().compute`; a Renderer shader keeps a path under
+  `#ifndef COMPAGES_NO_STORAGE`.
 - GPU handles are pooled (index + generation); `--check` must end with every
   counter at zero.
 - RobotIK uses this repository as `external/Compages` (World + Renderer for

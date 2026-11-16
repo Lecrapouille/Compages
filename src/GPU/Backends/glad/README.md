@@ -6,7 +6,7 @@ It is committed rather than downloaded so that building the project needs no net
 
 ## Why it is vendored here and not in external/
 
-`external/external.mk` declares the dependencies fetched by MyMakefile. glad is different: it is generated output, tied to the exact OpenGL version this backend targets. It therefore belongs to the backend that uses it, next to the code calling it.
+`external/external.mk` declares the dependencies fetched by MyMakefile. glad is different: it is generated output, tied to the OpenGL version the backends target. It therefore sits beside the backends that use it: `GL45/` and `GL41/` on the desktop. The `GLES3` build (WebGL 2) does not use it: its symbols come from `GLES3/gl3.h` and the linker.
 
 ## Regenerating
 
@@ -31,4 +31,4 @@ The generated `gl.c` is copied as `gl.cpp`. glad's output is written to be valid
 
 ## Note on the OpenGL version
 
-The loader is generated for 4.6 but the backend only uses features up to 4.5, the version that introduced Direct State Access. `gpu::init()` checks the version actually granted by the driver and refuses to run below 4.5. See `doc/concepts/architecture.md` for why 4.5 is the floor.
+The loader is generated for 4.6. `gladLoadGL()` loads only what the context gives, so the same loader serves the `GL45` backend (which refuses less than 4.5) and the `GL41` backend (4.1, the last version of macOS). See `doc/concepts/architecture.md`.

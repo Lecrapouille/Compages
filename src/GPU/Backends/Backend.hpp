@@ -25,7 +25,7 @@
 //!
 //! This file declares free functions and never defines them. Exactly one
 //! backend implements them, chosen when the project is compiled through the
-//! GPU_BACKEND variable of Makefile.common. There is no virtual method and no
+//! GPU_BACKEND variable of Compages.mk. There is no virtual method and no
 //! function pointer anywhere: a call from the compages::gpu:: layer into the
 //! backend is a plain direct call, resolved at link time.
 //!
@@ -48,8 +48,9 @@
 //! glBindBuffer(GL_ARRAY_BUFFER, 0);
 //! \endcode
 //! Binding an object merely to configure it is what Direct State Access
-//! removed, and it is also what makes the order of calls fragile. Only the 4.5
-//! backend is implemented; see doc/concepts/architecture.md.
+//! removed, and it is also what makes the order of calls fragile. Both exist:
+//! GL45/, and GL41/ (OpenGL 4.1 for macOS, OpenGL ES 3.0 for WebGL 2 when
+//! compiled with COMPAGES_GLES3); see doc/concepts/architecture.md.
 // ****************************************************************************
 
 namespace compages::gpu::backend

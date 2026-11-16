@@ -9,6 +9,10 @@
 
 #include <GLFW/glfw3.h>
 
+#if defined(__EMSCRIPTEN__)
+#    include <emscripten.h>
+#endif
+
 namespace examples
 {
 
@@ -16,9 +20,14 @@ namespace examples
 //! anything this file could invent.
 static std::string glfwReason()
 {
+#if defined(__EMSCRIPTEN__)
+    // The GLFW of Emscripten has no glfwGetError: see the browser console.
+    return "see the console of the browser";
+#else
     const char* why = nullptr;
     glfwGetError(&why);
     return (why == nullptr) ? "no reason given" : why;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -34,9 +43,26 @@ Window::open(std::string const& p_title, int p_width, int p_height)
     }
     m_glfw_ready = true;
 
+    // The context the backend compiled in the library needs (GPU_BACKEND of
+    // Compages.mk, seen here as COMPAGES_GPU_BACKEND_...).
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    const char* const context = "OpenGL ES 3.0";
+#elif defined(COMPAGES_GPU_BACKEND_GL41)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // macOS gives a core profile only to a forward compatible context.
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    const char* const context = "OpenGL 4.1 core profile";
+#else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    const char* const context = "OpenGL 4.5 core profile";
+#endif
     // Asked for so that the driver reports its own mistakes to us rather than
     // waiting to be interrogated after every call.
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
@@ -47,10 +73,8 @@ Window::open(std::string const& p_title, int p_width, int p_height)
     if (m_window == nullptr)
     {
         return compages::failure(
-            "no OpenGL 4.5 core profile context is available: " + glfwReason() +
-            ". This backend needs 4.5 for Direct State Access; macOS never "
-            "went "
-            "past 4.1");
+            std::string("no ") + context + " context is available: " + glfwReason() +
+            ". macOS never went past 4.1: build with GPU_BACKEND=GL41 there");
     }
 
     glfwMakeContextCurrent(m_window);
@@ -162,6 +186,11 @@ void Window::beginFrame()
 void Window::endFrame()
 {
     glfwSwapBuffers(m_window);
+#if defined(__EMSCRIPTEN__)
+    // In a web page the frame is shown when the browser gets its turn back:
+    // ASYNCIFY suspends the loop here and resumes it at the next frame.
+    emscripten_sleep(0);
+#endif
 }
 
 // ----------------------------------------------------------------------------

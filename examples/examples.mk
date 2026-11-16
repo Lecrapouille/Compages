@@ -39,6 +39,23 @@ imgui.SOURCES := imgui.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp \
     backends/imgui_impl_glfw.cpp backends/imgui_impl_opengl3.cpp
 imgui.PUBLIC_INCLUDES := . backends
 imgui.PKG_CONFIG := glfw3
+# On OpenGL ES, ImGui calls GLES3/gl3.h instead of loading desktop symbols.
+ifeq ($(GPU_BACKEND),GLES3)
+    imgui.DEFINES := IMGUI_IMPL_OPENGL_ES3
+endif
 
 # Textures and models of the examples.
 Compages-data.GIT := https://github.com/Lecrapouille/Compages-data.git
+
+# The gallery in a web page (make TOOLCHAIN=emscripten, GPU_BACKEND=GLES3):
+# GLFW and WebGL 2 come with Emscripten. The gallery keeps its own frame
+# loop: ASYNCIFY lets Window::endFrame() give the browser its turn at each
+# frame. The demo data is packed beside the page, at the same path.
+ifeq ($(TARGET_OS),Emscripten)
+    Compages-examples.PKG_CONFIG :=
+    imgui.PKG_CONFIG :=
+    Compages-examples.LDFLAGS = -sUSE_GLFW=3 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 \
+        -sASYNCIFY -sASYNCIFY_STACK_SIZE=1048576 -sEXIT_RUNTIME=1 -sSTACK_SIZE=4194304 -sALLOW_MEMORY_GROWTH=1 \
+        --preload-file $(Compages-data.DIR)@/$(Compages-data.DIR) \
+        --exclude-file '$(Compages-data.DIR).git'
+endif

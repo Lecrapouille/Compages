@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Render/LightClusters.hpp"
+#include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Shader.hpp"
 #include "Renderer/Render/Offer.hpp"
 
@@ -184,6 +185,12 @@ void LightClusters::eachCluster(Span const& p_span, F&& p_do) const
 // ----------------------------------------------------------------------------
 Status LightClusters::upload()
 {
+    // Without storage blocks (GL41, GLES3) the shaders read no cluster: the
+    // buffers stay empty, bind() then gives a count of zero.
+    if (!compages::gpu::device().compute)
+    {
+        return success();
+    }
     if (!m_lamp_buffer.valid())
     {
         COMPAGES_TRY_ASSIGN(m_lamp_buffer, compages::gpu::StorageBuffer<compages::Vector4f>::create(

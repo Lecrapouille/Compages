@@ -189,10 +189,13 @@ vec3 samplePointLight(int i, vec3 n, vec3 worldPos, vec3 pos, vec3 col, float ra
 
 // The other lamps: clustered (LightClusters). The picture is cut into
 // tiles, the depth into slices that grow with the distance; a pixel reads
-// the lamps of its cluster only. No shadows for these.
+// the lamps of its cluster only. No shadows for these. A device without
+// storage blocks (GL41, GLES3 backends: COMPAGES_NO_STORAGE) has none.
+#ifndef COMPAGES_NO_STORAGE
 layout(std430, binding = 9) readonly buffer ClusterLights { vec4 clusterLights[]; };
 layout(std430, binding = 10) readonly buffer ClusterCells { uint clusterCells[]; };
 layout(std430, binding = 11) readonly buffer ClusterIndices { uint clusterIndices[]; };
+#endif
 uniform int clusterLightCount;
 uniform ivec2 clusterTiles;
 uniform int clusterSlices;
@@ -200,6 +203,7 @@ uniform vec2 clusterDepth;     // near, far
 uniform vec4 clusterViewport;  // x, y, width, height in pixels
 uniform mat4 clusterView;
 
+#ifndef COMPAGES_NO_STORAGE
 // The first index and the count of the lamps of a cluster, from a place on
 // the picture (0 to 1 across the viewport) and a distance in front of the
 // camera.
@@ -227,17 +231,22 @@ vec3 clusterLampToward(uint lamp, vec3 worldPos, out float att)
     return toLight / max(dist, 1e-4);
 }
 
+#endif
+
 #ifndef COMPAGES_COMPUTE
 // The cluster of the pixel being drawn (fragment shaders only).
+#ifndef COMPAGES_NO_STORAGE
 uvec2 clusterOf(vec3 worldPos)
 {
     vec2 at = (gl_FragCoord.xy - clusterViewport.xy) / clusterViewport.zw;
     return clusterAt(at, -(clusterView * vec4(worldPos, 1.0)).z);
 }
+#endif
 
 vec3 clusteredLampsContribution(vec3 n, vec3 worldPos)
 {
     vec3 sum = vec3(0.0);
+#ifndef COMPAGES_NO_STORAGE
     if (clusterLightCount == 0)
     {
         return sum;
@@ -250,6 +259,7 @@ vec3 clusteredLampsContribution(vec3 n, vec3 worldPos)
         vec3 l = clusterLampToward(lamp, worldPos, att);
         sum += max(dot(n, l), 0.0) * att * clusterLights[2u * lamp + 1u].rgb;
     }
+#endif
     return sum;
 }
 
@@ -375,6 +385,7 @@ vec3 shadePbr(vec3 albedo, vec3 n, vec3 worldPos, float metallic, float roughnes
     if (pointLightCount > 1) colour += pbrLamp(1, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos1, pointLightColor1, pointLightRange1);
     if (pointLightCount > 2) colour += pbrLamp(2, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos2, pointLightColor2, pointLightRange2);
     if (pointLightCount > 3) colour += pbrLamp(3, albedo, f0, metallic, roughness, n, v, worldPos, pointLightPos3, pointLightColor3, pointLightRange3);
+#ifndef COMPAGES_NO_STORAGE
     if (clusterLightCount > 0)
     {
         uvec2 cell = clusterOf(worldPos);
@@ -386,6 +397,7 @@ vec3 shadePbr(vec3 albedo, vec3 n, vec3 worldPos, float metallic, float roughnes
             colour += pbrLight(albedo, f0, metallic, roughness, n, v, l, att * clusterLights[2u * lamp + 1u].rgb);
         }
     }
+#endif
     // The sky and the fill light, as in shade(): diffuse, and in the glint.
     float sky = 0.5 + 0.5 * n.y;
     vec3 around = ambient * mix(0.45, 1.3, sky) + 0.22 * lightColor * max(dot(n, v), 0.0);

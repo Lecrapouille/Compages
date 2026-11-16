@@ -1,6 +1,6 @@
 ---
 name: compages-gpu
-description: Write or change Compages GPU-layer code (compages::gpu): Drawable and the shader naming contract, VertexBuffer<Vertex>, Pipeline/Program, textures, framebuffers, RenderPass, compute shaders and barriers, render state, frame errors, the GL45 backend. Use for shader programs, "unknown attribute" frame errors, black frames, compute races, multi-pass rendering.
+description: Write or change Compages GPU-layer code (compages::gpu): Drawable and the shader naming contract, VertexBuffer<Vertex>, Pipeline/Program, textures, framebuffers, RenderPass, compute shaders and barriers, render state, frame errors, the GL45, GL41 (macOS) and GLES3 (WebGL 2) backends. Use for shader programs, "unknown attribute" frame errors, black frames, compute races, multi-pass rendering.
 ---
 
 # Compages GPU layer
@@ -102,7 +102,10 @@ stderr (KHR_debug).
   uniform takes a time or an angle as is (`drawable["time"] = frame.total`).
   Positions, sizes and colours stay `float`/`Vector3f` (metres).
 - No `GLenum`/`gl*` in public headers; GL calls only in
-  `src/GPU/Backends/GL45/` (selected by `GPU_BACKEND` in the `Makefile`).
+  `src/GPU/Backends/` (`GL45/`, or `GL41/` for `GPU_BACKEND=GL41` (macOS) and `GLES3`
+  (WebGL 2); chosen in `Compages.mk`). Shaders stay `#version 450 core`: GL41/GLES3
+  translate them (`src/GPU/Internal/GlslDialect.cpp`) and refuse compute/storage/images
+  (`gpu::device().compute` is false).
 - `gpu` includes only `Core`, never `World`/`Renderer`.
 - Handles are pooled (index + generation); `Buffer<T, Kind>` is not copyable;
   `./build/linux-gcc-debug/bin/Compages-examples --check` must report no leftover handle.

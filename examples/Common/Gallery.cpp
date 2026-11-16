@@ -680,7 +680,15 @@ compages::Status Gallery::run(Options const& p_options)
     imgui_io.IniFilename =
         (p_options.frames == 0u) ? layoutFile().c_str() : nullptr;
     ImGui_ImplGlfw_InitForOpenGL(m_window.handle(), true);
+    // The GLSL of ImGui's own shaders: a core profile of macOS refuses 130,
+    // OpenGL ES wants its own dialect.
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#elif defined(COMPAGES_GPU_BACKEND_GL41)
+    ImGui_ImplOpenGL3_Init("#version 410");
+#else
     ImGui_ImplOpenGL3_Init("#version 130");
+#endif
 
     std::size_t start = 0u;
     if (!p_options.start.empty())

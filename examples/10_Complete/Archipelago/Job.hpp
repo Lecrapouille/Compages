@@ -33,6 +33,11 @@ public:
         wait();
         std::promise<T> promise;
         m_result = promise.get_future();
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+        // A web page built without -pthread has no thread to start: the work
+        // is done here, and this frame takes longer.
+        promise.set_value(p_work());
+#else
         m_thread = std::jthread(
             [promise = std::move(promise), work = std::move(p_work)]() mutable
             {
@@ -45,6 +50,7 @@ public:
                     promise.set_exception(std::current_exception());
                 }
             });
+#endif
     }
 
     //! \brief A result is coming (ready or not yet).
@@ -65,7 +71,10 @@ public:
     [[nodiscard]] T take()
     {
         T result = m_result.get();
-        m_thread.join();
+        if (m_thread.joinable())
+        {
+            m_thread.join();
+        }
         return result;
     }
 

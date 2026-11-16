@@ -120,6 +120,31 @@ struct DeviceInfo
     //! \brief Largest total number of invocations inside one work group.
     int max_compute_work_group_invocations = 0;
 
+    //! \brief Can this device run compute shaders, and read or write storage
+    //! blocks and images from any shader?
+    //!
+    //! One flag for the four because they come together, in OpenGL 4.3 and
+    //! OpenGL ES 3.1. False on the GL41 backend (macOS) and on the GLES3
+    //! backend (WebGL 2): ComputeProgram::load() then fails, a storage block
+    //! cannot be declared, and the Renderer draws without clustered lamps
+    //! and without volumetric fog. Their shaders see the macro
+    //! `COMPAGES_NO_STORAGE`, to keep a path that does without.
+    bool compute = false;
+
+    //! \brief Can a program have a geometry stage? False on OpenGL ES 3.0
+    //! (WebGL 2).
+    bool geometry_shaders = false;
+
+    //! \brief Is the depth stored reversed with a true [0, 1] clip range
+    //! (glClipControl, OpenGL 4.5)? Without it, a pass with
+    //! PassDesc::reversed_depth still draws right, with the precision of an
+    //! ordinary depth buffer.
+    bool clip_control = false;
+
+    //! \brief Can a pipeline draw edges or points instead of filled
+    //! triangles (RenderState::polygon, showWireframe())? False on OpenGL ES.
+    bool polygon_mode = false;
+
     //! \brief Is the driver able to report its own errors to us? When true the
     //! library relies on it instead of asking for an error code after every
     //! single call.

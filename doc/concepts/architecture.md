@@ -34,7 +34,7 @@ flowchart TB
   end
 
   subgraph BE [private]
-    GL[Backends/GL45]
+    GL[Backends/GL45 or GL41]
   end
 
   WIN --> SC
@@ -66,7 +66,7 @@ flowchart TB
 
 Public header entry points are listed in the [code map](../reference/code-map.md#-public-headers).
 
-Only `src/GPU/Backends/GL45/` includes glad. A world component never holds a GPU pointer, only asset ids; the Renderer draws from a `RenderSnapshot`, never from the World. The library never calls GLFW: GLFW lives in `examples/Common/Window.cpp`.
+Only `src/GPU/Backends/` includes glad and GL headers. A world component never holds a GPU pointer, only asset ids; the Renderer draws from a `RenderSnapshot`, never from the World. The library never calls GLFW: GLFW lives in `examples/Common/Window.cpp`.
 
 ## 🎭 Four actors per frame
 
@@ -87,8 +87,20 @@ Only `Scene` uses PIMPL. Its implementation brings together assets, extraction a
 
 ## 🎮 The backend boundary
 
-The GL45 implementation requires OpenGL 4.5, including Direct State Access for object setup. Its compute paths also use storage buffers and dispatches. Keeping these calls behind the GPU interface lets World code compile without a graphics context.
+Every driver call goes through `src/GPU/Backends/Backend.hpp`: a list of free functions, with no virtual call. One backend implements them, chosen at build time by `GPU_BACKEND`. The compiler then lists what a new backend still lacks. Keeping these calls behind the GPU interface also lets World code compile without a graphics context.
 
-Only `GL45` exists today. A different backend must implement resource creation, drawing, compute and synchronization while preserving the public contracts. Isolating driver calls makes that work possible; it does not supply the replacement. `GPU_BACKEND` selects the implementation folder at build time.
+Three backends exist:
 
-A platform without the required context cannot run this backend's drawing code. World-only applications remain usable because the include boundary keeps them independent of that driver requirement.
+| `GPU_BACKEND` | Context | Where | Folder |
+|---------------|---------|-------|--------|
+| `GL45` (default) | OpenGL 4.5 core | Linux, Windows | `GL45/` |
+| `GL41` | OpenGL 4.1 core | macOS | `GL41/` |
+| `GLES3` | OpenGL ES 3.0 | WebGL 2 (Emscripten), or a native ES context | `GL41/` with `COMPAGES_GLES3` |
+
+`GL45` configures objects with Direct State Access: it never binds an object to change it. OpenGL 4.1 and ES 3.0 have no such calls, so `GL41` binds each object on a target that no draw depends on, and puts the old binding back. They also tie the vertex format to the vertex buffer: `GL41` keeps the fields of each shared vertex array and points them at the buffer again when the buffer changes.
+
+The shaders stay written once, for `#version 450 core`. `GL41` translates them before compiling (`src/GPU/Internal/GlslDialect.cpp`): it lowers the version, adds the default precisions of ES, and moves `layout(binding = N)` (GLSL 4.20) out of the text, to apply it after linking. It also defines `COMPAGES_NO_STORAGE`, so that a shader keeps a path without storage blocks.
+
+What has no equivalent is refused, with a sentence that says why: compute shaders, storage blocks and images (OpenGL 4.3 / ES 3.1). `DeviceInfo::compute` tells the program before it tries. The Renderer then draws without clustered lamps (only the four lamps with shadows) and without volumetric fog. A reversed depth buffer still draws right, but without `glClipControl` it keeps the precision of an ordinary one.
+
+World-only applications need none of this: the include boundary keeps them free of any driver.

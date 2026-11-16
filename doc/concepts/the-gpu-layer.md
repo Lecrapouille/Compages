@@ -68,7 +68,7 @@ Before any drawing, a `RenderPass` says where to draw; it ends at the closing br
 
 - Names are checked when the program runs, not when it compiles. A typo in `mesh["colour"]` is found by `prepare()` or at the first frame, not by the C++ compiler.
 - **The dirty range is one range**, from the first change to the last: changing elements 1 and 5000 sends everything between them, in one copy.
-- One backend. Only OpenGL 4.5 exists today (`src/GPU/Backends/GL45/`). The public headers have no `GLenum`, so another backend could come without changing your code ([architecture](architecture.md#-the-backend-boundary)).
+- Compute needs OpenGL 4.3. The macOS backend (`GL41`) and the web backend (`GLES3`) have no compute shaders, storage blocks or images: check `gpu::device().compute`. The rest of this page works on the three backends ([architecture](architecture.md#-the-backend-boundary)).
 
 ## 🔗 See also
 

@@ -7,6 +7,7 @@ Each guide helps you complete a task in an existing application. They assume the
 Set up and check:
 
 - [Build and install](build-and-install.md): the unit tests, a release build, a system install for another project.
+- [Build for macOS and the web](build-for-macos-and-the-web.md): the OpenGL 4.1 and WebGL 2 backends, and what they lack.
 - [Run without a screen](run-without-a-screen.md): a simulation on a server, a picture into a file, the gallery in CI.
 - [A black window](debug-a-black-window.md): the messages of Compages and of the driver, apitrace, RenderDoc.
 - [Measure a frame](measure-a-frame.md): is the CPU or the GPU slow?
