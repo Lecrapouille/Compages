@@ -21,7 +21,8 @@ namespace tests
 {
 
 // ****************************************************************************
-//! \brief An invisible window holding an OpenGL 4.5 core profile context, so
+//! \brief An invisible window holding the context of the backend (4.5 core,
+//! 4.1 core or ES 3.0), so
 //! that tests touching the GPU can run without anything showing up on screen.
 //!
 //! The context is created but the OpenGL functions are deliberately not loaded
@@ -78,7 +79,13 @@ public:
             glfwCreateWindow(p_width, p_height, "unit tests", nullptr, nullptr);
         if (m_window == nullptr)
         {
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+            m_error = "No OpenGL ES 3.0 context available";
+#elif defined(COMPAGES_GPU_BACKEND_GL41)
+            m_error = "No OpenGL 4.1 core profile context available";
+#else
             m_error = "No OpenGL 4.5 core profile context available";
+#endif
             return;
         }
         glfwMakeContextCurrent(m_window);

@@ -222,13 +222,18 @@ jobs:
       - name: Build and run unit tests
         run: gmake check
 
-      # macOS builds the GL41 backend (OpenGL 4.1, the last one of Apple). Not
-      # yet checked on a real Mac: kept from failing the run until it passes.
+      # macOS builds the GL41 backend (OpenGL 4.1, the last one of Apple). The
+      # macOS runners of GitHub are virtual machines with no GPU: they give no
+      # OpenGL context, and the GPU tests above are skipped. Said as a notice;
+      # on a runner with a context, the gallery is checked for real.
       - name: Check the gallery (GL41)
-        continue-on-error: true
         run: |
           ${{ steps.info.outputs.build }}/bin/Compages-examples --check > gallery.log 2>&1 || true
           cat gallery.log
+          if grep -q 'context is available' gallery.log; then
+            echo "::notice::No OpenGL context on this macOS runner: the gallery is not checked here"
+            exit 0
+          fi
           grep -E '^  [0-9]{2}[a-z]_' gallery.log | awk '{print $1}' | sort > failed.txt
           diff -u .github/gallery-expected-failures.txt failed.txt
 
