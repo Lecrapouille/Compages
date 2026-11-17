@@ -32,9 +32,18 @@ const chrome = spawn(process.env.CHROME || 'google-chrome', [
 ], { stdio: 'ignore' });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const finish = (code) => {
+// The result is the page's: the browser is stopped, and its profile removed
+// once it has really gone (it writes there until the end). A profile that
+// cannot be removed is left in the temporary folder, never a failure.
+const finish = async (code) => {
+  const gone = new Promise((resolve) => chrome.once('exit', resolve));
   chrome.kill('SIGKILL');
-  rmSync(profile, { recursive: true, force: true });
+  await Promise.race([gone, sleep(5000)]);
+  try {
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {
+    // left in the temporary folder
+  }
   process.exit(code);
 };
 
@@ -49,7 +58,7 @@ for (let i = 0; (i < 100) && !targets; ++i) {
 const page = targets?.find((target) => target.type === 'page');
 if (!page) {
   console.error('the browser did not start');
-  finish(2);
+  await finish(2);
 }
 
 const socket = new WebSocket(page.webSocketDebuggerUrl);
@@ -82,6 +91,6 @@ while ((exit === null) && (Date.now() < end)) {
 }
 if (exit === null) {
   console.error(`no exit after ${seconds} s`);
-  finish(2);
+  await finish(2);
 }
-finish(exit);
+await finish(exit);
