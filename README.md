@@ -128,17 +128,23 @@ Run them with `./build/linux-gcc-debug/bin/Compages-examples 11h_Thermometers` (
 
 | | 🧱 Compages | Raw OpenGL | Glumpy | Three.js | Unity / Godot |
 |---|---|---|---|---|---|
+| What it is | a library in three layers | a graphics API | a Python layer over OpenGL | a 3D library for the web | a game engine with an editor |
 | Language | C++20 | C | Python | JavaScript | C# / GDScript |
-| Triangle in a few lines | ✅ the shader names the data | ❌ dozens of calls | ✅ | ✅ | ✅ (in the editor) |
-| CPU → GPU copies hidden | ✅ one flush at `draw()` | ❌ | ✅ | ✅ | ✅ |
-| Compute shaders, ping-pong | ✅ | ✅ (by hand) | ❌ ping-pong only, no compute | WebGL limits | ✅ |
-| Scene graph in chained calls | ✅ | ❌ | ❌ | ✅ | ✅ (editor) |
-| ECS, cache-friendly data | ✅ | — | ❌ | ❌ | Unity DOTS (separate) |
-| Simulation without any screen | ✅ a whole layer for it | — | ❌ | ❌ | ✅ headless mode, but the whole engine |
-| Use only the part you need | ✅ three independent layers | — | ✅ | ❌ | ❌ |
-| A library, not an editor | ✅ your window, your loop | ✅ | ✅ | ✅ | ❌ |
+| Give data to a shader | ✅ name its inputs: `drawable["position"] = points` | ❌ buffers and attribute pointers, by hand | ✅ the same idea (Compages took it from Glumpy) | 🟡 materials; `ShaderMaterial` for your own shader | 🟡 materials, made in the editor |
+| CPU → GPU copies | ✅ one upload at `draw()`, only what changed | ❌ by hand | ✅ automatic | 🟡 automatic once you set `needsUpdate` | ✅ done by the engine |
+| Compute shaders | ✅ OpenGL 4.5; emulated on OpenGL 4.1 and WebGL 2 | 🟡 OpenGL 4.3 and later, by hand | ❌ none: fragment shaders on textures | 🟡 with the WebGPU renderer: a TSL function run by `renderer.compute()` | ✅ Unity: a `.compute` file run by `ComputeShader.Dispatch()`; Godot: GLSL run through `RenderingDevice` (not in its Compatibility renderer) |
+| Scene graph | ✅ in chained calls | ❌ | ❌ | ✅ | ✅ in the editor |
+| ECS | ✅ EnTT, wrapped in the World API | ❌ | ❌ | ❌ | 🟡 Unity: the Entities package (DOTS); Godot: no ECS, a tree of objects, each with its script |
+| Logic attached to an object | ✅ a `Routine` (`start`, `update`, `lateUpdate`…) | ❌ | ❌ | ❌ your own loop | ✅ Unity: `MonoBehaviour`; Godot: a script with `_process()` |
+| Grids and fields | ✅ `Grid2D`, `CurvilinearGrid`, `Field<T>`, a ray against a height field | ❌ | 🟡 NumPy arrays | ❌ | ❌ |
+| Without a screen | ✅ the World has no GPU type; the GPU layer computes and draws with no window (EGL, `Compages-headless`) | 🟡 with EGL, by hand | ❌ | 🟡 the scene graph runs in Node.js, without drawing | 🟡 headless mode, with the whole engine |
+| Platforms | Linux (OpenGL 4.5); also macOS (OpenGL 4.1) and browsers (WebGL 2) | everywhere | desktop | browsers | everywhere, consoles too |
+
+✅ yes · 🟡 partly, or with more work · ❌ no
 
 Compages puts together the **Glumpy** way of talking to the GPU, the **Three.js** way of building scenes, an **ECS** world that runs **headless**, and **Unity**-like routines, as three layers you can use one at a time.
+
+Other libraries do parts of this job. I have not built a project with them, so they are not in the table, but each one is ahead of Compages somewhere. Magnum runs on more platforms and has many mature plugins. bgfx and sokol draw with Direct3D, Metal and Vulkan, where Compages has only OpenGL. Filament gives more realistic lighting and materials, also on phones. VTK has decades of scientific filters, file formats and tools for very large data.
 
 ---
 
