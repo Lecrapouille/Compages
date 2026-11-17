@@ -33,6 +33,7 @@ constexpr float HALO_CORE = 0.2f;
 
 constexpr const char* STEP = R"(#version 450 core
 layout(local_size_x = 256) in;
+#include <compages/tiles.glsl>
 
 struct Star
 {
@@ -58,37 +59,31 @@ uniform float softening;
 uniform float haloMass;   // G times the mass of the dark halo
 uniform float haloCore;   // its radius: inside, the pull fades to zero
 
-shared vec2 tile[256];
+// Where the positions read by the whole work group wait: shared memory on a
+// device with compute shaders, nothing where compute is emulated.
+COMPAGES_TILE(vec2, positions);
 
 void main()
 {
+    // Every invocation reaches the loop (it waits for its group there): the
+    // ones past the last star stop after it.
     uint i = gl_GlobalInvocationID.x;
+    Star me = incoming[min(i, count - 1u)];
+    vec2 acc = vec2(0.0);
+
+    // The pull of every star. With compute shaders, the group loads 256
+    // positions into shared memory, waits, then each star reads them there;
+    // where compute is emulated, each star reads every position itself.
+    COMPAGES_FOR_EACH(positions, j, count, vec2 other, incoming[j].position)
+    {
+        vec2 r = other - me.position;
+        float d2 = dot(r, r) + softening;
+        acc += r * (G / (d2 * sqrt(d2)));
+    }
+    COMPAGES_END_FOR_EACH
     if (i >= count)
     {
         return;
-    }
-
-    // One star. The tiles below are shared by the whole work group, so each
-    // position is loaded from global memory once per tile, not once per star.
-    Star me = incoming[i];
-    vec2 acc = vec2(0.0);
-    uint tiles = (count + 255u) / 256u;
-
-    for (uint t = 0u; t < tiles; ++t)
-    {
-        uint src = t * 256u + gl_LocalInvocationID.x;
-        tile[gl_LocalInvocationID.x] =
-            (src < count) ? incoming[src].position : vec2(0.0);
-        barrier();
-
-        uint n = min(256u, count - t * 256u);
-        for (uint j = 0u; j < n; ++j)
-        {
-            vec2 r = tile[j] - me.position;
-            float d2 = dot(r, r) + softening;
-            acc += r * (G / (d2 * sqrt(d2)));
-        }
-        barrier();
     }
 
     // The dark matter halo: a fixed ball of mass around the centre (Plummer).
@@ -216,7 +211,7 @@ compages::Status Galaxy::setUp()
         m_stars,
         compages::gpu::PingPong<Star>::from(std::span<const Star>(stars)));
 
-    COMPAGES_TRY(m_step.loadSource(STEP));
+    COMPAGES_TRY(m_step.load(compages::gpu::ShaderSource::fromText("galaxy.comp", STEP)));
     // Gravity and the halo stay put; only the time step changes per frame.
     m_step.set("count", COUNT);
     m_step.set("G", G);

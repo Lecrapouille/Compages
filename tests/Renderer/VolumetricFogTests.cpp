@@ -77,6 +77,7 @@ protected:
 // and thicker fog glows more.
 TEST_F(VolumetricFogTest, TheAirGlowsWhereTheLightCrossesIt)
 {
+    COMPAGES_SKIP_WITHOUT(images);
     EXPECT_LT(centre(), 5);
     compages::renderer::VolumetricFog& fog = m_scene->environment().volumetric;
     fog.enabled = true;

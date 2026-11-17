@@ -42,8 +42,10 @@
 
 #include "Compages/GPU/Errors.hpp"
 #include "GPU/Backends/Backend.hpp"
+#include "GPU/Internal/ComputeEmulation.hpp"
 
 #include <string>
+#include <vector>
 
 namespace compages::gpu::backend
 {
@@ -99,6 +101,69 @@ void forgetBuffer(GLuint p_buffer);
 //! \brief Log a message once per process: what this device cannot do,
 //! said the first time it is asked rather than every frame.
 void warnOnce(char const* p_what);
+
+//! \brief Delete what reading textures back keeps (shutdown).
+void releaseTextureReadback();
+
+//! \brief The program in use (detail::useProgram()).
+GLuint usedProgram();
+
+//! \brief Compile one stage from GLSL 4.50, translated to the dialect of the
+//! backend. Keeps the bindings it removed, for linkProgram().
+//! \return the shader, or 0 with the compiler log in \c p_log.
+GLuint compileGlsl(GLenum p_stage, std::string_view p_source, std::string& p_log);
+
+// ----------------------------------------------------------------------------
+// Storage blocks and compute, emulated (GL41Compute.cpp).
+// ----------------------------------------------------------------------------
+
+//! \brief Width in words of the textures that hold a copy of a storage
+//! buffer. Set by init().
+void setDataTextureWidth(GLsizei p_width);
+
+//! \brief Compile a compute shader as a vertex shader for transform
+//! feedback (and the empty fragment shader OpenGL ES wants beside it).
+Result<NativeId> compileCompute(std::string_view p_source);
+
+//! \brief The storage blocks a vertex or fragment shader reads (rewritten
+//! by emulateStorageReads()), for the programs it goes into.
+void rememberStorageReads(GLuint p_shader, std::vector<gpu::detail::EmulatedBlock> p_blocks);
+
+//! \brief Forget what a shader reads; delete it if it is an emulated compute
+//! shader. \return true when it was one (deleted).
+bool releaseCompute(GLuint p_shader);
+
+//! \brief Before linking: when \c p_shaders holds an emulated compute shader,
+//! attach its fragment shader and say which outputs are captured.
+//! \return true when it does.
+bool prepareComputeLink(GLuint p_program, std::span<const NativeId> p_shaders);
+
+//! \brief After linking: detach what prepareComputeLink() attached and, when
+//! the link worked, keep what a dispatch or a draw needs to read its blocks.
+void finishStorageLink(GLuint p_program, std::span<const NativeId> p_shaders, bool p_linked);
+
+//! \brief A program is deleted: drop what it kept.
+void forgetStorageProgram(GLuint p_program);
+
+//! \brief Complete the reflection: storage blocks, work group size, the
+//! internal uniforms hidden.
+void reflectStorage(GLuint p_program, ProgramReflection& p_reflection);
+
+//! \brief Remember which buffer is on a storage binding point.
+void bindStoragePoint(GLuint p_buffer, int p_binding, std::size_t p_offset, std::size_t p_bytes);
+
+//! \brief The content of a buffer changed: its copy is out of date.
+void touchBuffer(GLuint p_buffer);
+
+//! \brief A buffer is deleted: drop its copy and its binding points.
+void dropStorageCopy(GLuint p_buffer);
+
+//! \brief Before a draw: bring the copies the program reads up to date and
+//! bind them. Nothing for a program that reads no storage block.
+void prepareStorageReads(GLuint p_program);
+
+//! \brief Delete every copy (shutdown).
+void releaseStorageCopies();
 
 } // namespace detail
 

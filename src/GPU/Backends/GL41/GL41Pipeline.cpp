@@ -301,6 +301,11 @@ void useProgram(GLuint p_program)
     }
 }
 
+GLuint usedProgram()
+{
+    return g_used_program;
+}
+
 void bindVertexArray(GLuint p_vao)
 {
     if (p_vao != g_bound_vao)
@@ -494,6 +499,8 @@ void bindPipeline(NativeId p_program, NativeId p_reader, RenderState const& p_st
 
     detail::useProgram(static_cast<GLuint>(p_program));
     detail::bindVertexArray(static_cast<GLuint>(p_reader));
+    // The storage blocks the shaders read, from their copies.
+    detail::prepareStorageReads(static_cast<GLuint>(p_program));
 
     const bool everything = !g_state_known;
 

@@ -118,6 +118,67 @@ jobs:
           if-no-files-found: error
 
   # ============================================================================
+  # The backends of macOS (GL41) and of the web (GLES3), checked on Linux with
+  # llvmpipe: a 4.1 core context, and an OpenGL ES 3.0 one. The gallery must
+  # fail exactly the demos of .github/gallery-expected-failures.txt (they need
+  # compute shaders or storage blocks that these backends do not emulate).
+  # ============================================================================
+  backends-linux:
+    name: Backend ${{ matrix.backend }} on Linux (llvmpipe)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [GL41, GLES3]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache the third parties
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mymakefile
+          key: mymakefile-${{ runner.os }}-${{ hashFiles('external/versions.lock') }}
+
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            build-essential cmake git pkg-config ccache \
+            libgl1-mesa-dev libgl1-mesa-dri libglfw3-dev libegl-dev libgles-dev \
+            libdw-dev mesa-utils xvfb xauth
+
+      - name: Download, configure and install Google test
+        run: |
+          wget https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz
+          tar xf googletest-1.17.0.tar.gz
+          cd googletest-1.17.0
+          cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON .
+          sudo make install
+
+      - name: Build Compages and the gallery
+        run: make BUILD_DIR=build-${{ matrix.backend }} GPU_BACKEND=${{ matrix.backend }} all
+
+      - name: Build and run unit tests with llvmpipe
+        run: |
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
+            make BUILD_DIR=build-${{ matrix.backend }} GPU_BACKEND=${{ matrix.backend }} check
+
+      - name: Check the gallery with llvmpipe
+        run: |
+          BUILD=$(make -s BUILD_DIR=build-${{ matrix.backend }} GPU_BACKEND=${{ matrix.backend }} print-BUILD)
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 \
+            $BUILD/bin/Compages-examples --check > gallery.log 2>&1 || true
+          cat gallery.log
+          grep -E '^  [0-9]{2}[a-z]_' gallery.log | awk '{print $1}' | sort > failed.txt
+          diff -u .github/gallery-expected-failures.txt failed.txt
+
+  # ============================================================================
   # macOS
   # ============================================================================
   build-macos:
@@ -161,6 +222,16 @@ jobs:
       - name: Build and run unit tests
         run: gmake check
 
+      # macOS builds the GL41 backend (OpenGL 4.1, the last one of Apple). Not
+      # yet checked on a real Mac: kept from failing the run until it passes.
+      - name: Check the gallery (GL41)
+        continue-on-error: true
+        run: |
+          ${{ steps.info.outputs.build }}/bin/Compages-examples --check > gallery.log 2>&1 || true
+          cat gallery.log
+          grep -E '^  [0-9]{2}[a-z]_' gallery.log | awk '{print $1}' | sort > failed.txt
+          diff -u .github/gallery-expected-failures.txt failed.txt
+
       # Before the installation: sudo writes in the build folder.
       - name: Gather the build artifacts
         run: gmake dist
@@ -190,6 +261,79 @@ jobs:
           name: compages-macos-arm64
           path: ${{ steps.info.outputs.dist_dir }}/
           if-no-files-found: error
+
+  # ============================================================================
+  # The gallery in a web page (Emscripten, WebGL 2), published on GitHub Pages.
+  # Pages must use "GitHub Actions" as its source (Settings > Pages).
+  # ============================================================================
+  build-web:
+    name: Build the web gallery (WebGL 2)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache the third parties
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mymakefile
+          key: mymakefile-web-${{ hashFiles('external/versions.lock') }}
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build the gallery for the web
+        run: make TOOLCHAIN=emscripten COMPILATION_MODE=release Compages-examples
+
+      - name: Gather the page
+        run: |
+          mkdir -p site
+          cp build/emscripten-release/bin/Compages-examples.* site/
+          cp site/Compages-examples.html site/index.html
+          ls -la site
+
+      - name: Install Node (WebSocket, for the browser check)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # A few demos in a headless Chrome: a triangle, a compute shader (the
+      # emulated one), lamps and shadows, a glTF model.
+      - name: Check some demos in a headless browser
+        run: |
+          python3 -m http.server -d site 8080 > /dev/null 2>&1 &
+          for demo in 01c_Triangle 05f_Galaxy 06d_Lights 08a_GltfModel; do
+            echo "::group::$demo"
+            node examples/Web/check.mjs "http://127.0.0.1:8080/index.html?args=--check%20$demo" 300
+            echo "::endgroup::"
+          done
+
+      - name: Keep the page for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy-web:
+    name: Publish the web gallery on GitHub Pages
+    needs: build-web
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # ============================================================================
   # Release packaging (tags and manual runs)

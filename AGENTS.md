@@ -50,6 +50,7 @@ xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 MESA_GL_VERSION_OVERRIDE=4.5 \
 make BUILD_DIR=build-gl41 GPU_BACKEND=GL41      # the macOS backend, testable on Linux (4.1 context)
 make BUILD_DIR=build-gles3 GPU_BACKEND=GLES3    # the WebGL 2 backend on a native ES 3.0 context
 make TOOLCHAIN=emscripten                       # the gallery as a web page (emsdk_env.sh first)
+node examples/Web/check.mjs "http://127.0.0.1:8080/Compages-examples.html?args=--check 05f_Galaxy" 300  # in headless Chrome
 ```
 
 ## Rules that are easy to break
@@ -78,9 +79,12 @@ make TOOLCHAIN=emscripten                       # the gallery as a web page (ems
   (`gpu::reportError`, read by `takeFrameError`), never thrown.
 - After a compute dispatch, a `gpu::barrier(...)` is the caller's job.
 - Shaders are written for `#version 450 core` only: GL41/GLES3 translate them
-  (`GlslDialect`). Compute, storage blocks and images need
-  `gpu::device().compute`; a Renderer shader keeps a path under
-  `#ifndef COMPAGES_NO_STORAGE`.
+  (`GlslDialect`) and emulate compute by transform feedback
+  (`ComputeEmulation`: each invocation writes its own element; `shared` only
+  through `<compages/tiles.glsl>`; no atomics, no images). No `#ifdef` per
+  backend in a demo. Drawing shaders read storage blocks there from copies in
+  textures (made again when the buffer changed: `touchBuffer`), never write
+  them. Never lose speed on GL45 for them.
 - GPU handles are pooled (index + generation); `--check` must end with every
   counter at zero.
 - RobotIK uses this repository as `external/Compages` (World + Renderer for

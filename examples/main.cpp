@@ -9,6 +9,10 @@
 
 #include <iostream>
 
+#if defined(__EMSCRIPTEN__)
+#    include <emscripten.h>
+#endif
+
 // ****************************************************************************
 //! \file
 //! \brief Every example, in one program.
@@ -101,8 +105,12 @@ int main(int argc, char* argv[])
     if (!ran)
     {
         std::cerr << ran.error() << std::endl;
-        return EXIT_FAILURE;
     }
-
-    return EXIT_SUCCESS;
+    const int code = ran ? EXIT_SUCCESS : EXIT_FAILURE;
+#if defined(__EMSCRIPTEN__)
+    // In a web page main() went back to the browser at the first frame
+    // (ASYNCIFY), so its return value would be lost: the page is told here.
+    emscripten_force_exit(code);
+#endif
+    return code;
 }

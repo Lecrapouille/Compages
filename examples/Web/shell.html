@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Compages-Commercial -->
+<!-- The page of the gallery built with Emscripten (examples/examples.mk, -->
+<!-- --shell-file). The canvas fills the window; a line says what loads. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compages gallery</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111318; color: #c8ccd4;
+                 font: 14px/1.4 system-ui, sans-serif; }
+    canvas { display: block; width: 100vw; height: 100vh; outline: none; }
+    #status { position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; border-radius: 6px;
+              background: rgba(0, 0, 0, 0.6); }
+    #status:empty { display: none; }
+    a { color: #8ab4f8; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+  <div id="status">Loading Compages…</div>
+  <noscript>The gallery of Compages needs JavaScript and WebGL 2.</noscript>
+  <script>
+    var statusLine = document.getElementById('status');
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      // ?args=05f_Galaxy shows one example first; ?args=--check runs them all.
+      arguments: (new URLSearchParams(location.search).get('args') || '').split(' ').filter(Boolean),
+      print: function (text) { console.log(text); },
+      printErr: function (text) { console.warn(text); },
+      setStatus: function (text) { statusLine.textContent = text; },
+      // Read by a test run in a headless browser (--check).
+      onExit: function (code) { console.log('EXIT ' + code); },
+      onAbort: function (what) {
+        statusLine.innerHTML = 'Compages stopped: ' + what +
+          '. This page needs WebGL 2 (<a href="https://get.webgl.org/webgl2/">check yours</a>).';
+      },
+    };
+    window.addEventListener('error', function () {
+      if (!document.createElement('canvas').getContext('webgl2')) {
+        Module.onAbort('no WebGL 2');
+      }
+    });
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

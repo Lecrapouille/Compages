@@ -310,6 +310,50 @@ Fixed on the way: a package's `background` was ignored (the colour went to
 the render pass, and `Scene::render` clears with `scene.background()`); it
 is now given to the Scene.
 
+## Later: one WebGPU backend (decided 2026-11-17, not started)
+
+**Why.** macOS stops at OpenGL 4.1 (deprecated by Apple since 2018) and the
+web gives WebGL 2 (OpenGL ES 3.0): neither has compute shaders, `shared`
+memory, atomics or images. The GL41/GLES3 backend emulates part of compute
+(transform feedback, `<compages/tiles.glsl>`) and the reads of storage blocks
+in drawing shaders (copies in textures); the rest stays GL45 only:
+05g (one invocation writes 337 values), 09c (`atomicAdd`, indirect draw),
+the volumetric fog (images). A WebGPU backend would give full compute
+everywhere, with one C API (`webgpu.h`): natively through Dawn or
+wgpu-native (Vulkan on Linux, Metal on macOS, D3D12 on Windows), and in the
+browser through Emscripten. It is the choice of three.js, Babylon.js and
+Bevy.
+
+**What stays.** The idea of Compages: users write GLSL, fill names from C++,
+and the World and the Renderer do not see the backend. GLSL would be
+translated at run time (glslang → SPIR-V → Tint or naga → WGSL), the
+reflection taken from the translated shader.
+
+**What it costs.**
+
+- Translation at run time, also in the page (a few MB of WebAssembly),
+  because shaders are composed while running (hooks, defines, hot reload).
+- Loose uniforms (`uniform float dt;`, 213 in the repository) do not exist
+  in WebGPU: gather them into a generated block, written per draw into a
+  ring buffer with dynamic offsets.
+- `sampler2D` is one object in GLSL, a texture and a sampler in WGSL.
+- Missing in WebGPU: geometry and tessellation shaders (4 files), `LineLoop`
+  and `TriangleFan` (5, convert the indices), wireframe (11, barycentric
+  shader), lines wider than 1 px (3) and `gl_PointSize` (9) (quads), RGB8
+  textures (5, expand to RGBA8), 1D textures (7), doubles in shaders.
+- Immutable pipelines (cache per program + render state), asynchronous
+  read-back (`download()`: ASYNCIFY in the browser), recorded commands.
+- Needs Vulkan, Metal or D3D12 drivers. Firefox is not WebGPU everywhere
+  yet: 100 % of browsers needs the GLES3 backend kept as a fallback.
+- RobotIK uses Compages: update it with the API.
+
+**First step when it starts: a prototype of the risk**, before any backend:
+a Compages GLSL shader → SPIR-V → WGSL at run time, natively and in the
+browser, with the loose uniforms gathered, `sampler2D` split and the names
+found by reflection; checked on 01c (triangle), 03a (texture) and 05a
+(compute). Then the backend beside GL45, the gallery at parity, and only
+then decide what to remove (GL41, GLES3, GL45).
+
 ## Earlier decisions (audit of 2026-11-06)
 
 Accepted: offscreen rendering to an image, one-line helpers (grid, axes,

@@ -242,15 +242,15 @@ Status FogVolume::update(RenderSnapshot const& p_snapshot, ShadowPass const& p_s
     VolumetricFog const& fog = p_snapshot.environment.volumetric;
     CameraFrame const& camera = p_snapshot.camera;
     m_on = fog.enabled && (camera.viewport_width > 0u) && (camera.viewport_height > 0u);
-    if (m_on && !compages::gpu::device().compute)
+    if (m_on && !compages::gpu::device().images)
     {
-        // Two compute passes make the fog: none on a device without compute
-        // (GL41, GLES3). The distance fog (Environment) still applies.
+        // Two compute passes writing images make the fog: none on a device
+        // without images (GL41, GLES3). The distance fog still applies.
         static bool said = false;
         if (!said)
         {
             compages::gpu::log(compages::gpu::LogLevel::Warning,
-                               "volumetric fog needs compute shaders (OpenGL 4.3): not drawn on this device");
+                               "volumetric fog needs images (OpenGL 4.3): not drawn on this device");
             said = true;
         }
         m_on = false;

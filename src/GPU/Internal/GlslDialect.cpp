@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "GPU/Internal/GlslDialect.hpp"
+#include "GPU/Internal/GlslText.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -30,79 +31,6 @@ constexpr char const* ES_PRECISIONS =
     "precision highp isamplerCube; precision highp isampler2DArray; "
     "precision highp usampler2D; precision highp usampler3D; "
     "precision highp usamplerCube; precision highp usampler2DArray;";
-
-//! \brief One change of the text, applied once every position is known.
-struct Edit
-{
-    std::size_t at = 0u;
-    std::size_t length = 0u;
-    std::string text;
-};
-
-bool isWordChar(char p_c)
-{
-    return (std::isalnum(static_cast<unsigned char>(p_c)) != 0) || (p_c == '_');
-}
-
-bool isSpace(char p_c)
-{
-    return (p_c == ' ') || (p_c == '\t') || (p_c == '\r') || (p_c == '\n');
-}
-
-std::string_view trimmed(std::string_view p_text)
-{
-    while (!p_text.empty() && isSpace(p_text.front()))
-    {
-        p_text.remove_prefix(1u);
-    }
-    while (!p_text.empty() && isSpace(p_text.back()))
-    {
-        p_text.remove_suffix(1u);
-    }
-    return p_text;
-}
-
-//! \brief The text with every comment replaced by spaces, newlines kept: same
-//! length, same positions, so a search on it never matches inside a comment
-//! and its positions apply to the original.
-std::string blankComments(std::string_view p_source)
-{
-    std::string code(p_source);
-    std::size_t i = 0u;
-    while (i < code.size())
-    {
-        if ((code[i] == '/') && (i + 1u < code.size()) && (code[i + 1u] == '/'))
-        {
-            while ((i < code.size()) && (code[i] != '\n'))
-            {
-                code[i++] = ' ';
-            }
-        }
-        else if ((code[i] == '/') && (i + 1u < code.size()) && (code[i + 1u] == '*'))
-        {
-            code[i++] = ' ';
-            code[i++] = ' ';
-            while ((i < code.size()) &&
-                   !((code[i] == '*') && (i + 1u < code.size()) && (code[i + 1u] == '/')))
-            {
-                if (code[i] != '\n')
-                {
-                    code[i] = ' ';
-                }
-                ++i;
-            }
-            for (int k = 0; (k < 2) && (i < code.size()); ++k)
-            {
-                code[i++] = ' ';
-            }
-        }
-        else
-        {
-            ++i;
-        }
-    }
-    return code;
-}
 
 //! \brief A line of the text, and what the compiler will call it.
 struct Line
@@ -382,17 +310,11 @@ TranslatedGlsl translateGlsl(std::string_view p_source, GlslDialect p_dialect)
             last_header = i;
         }
     }
-    if (version != lines.size())
+    if ((version != lines.size()) && (p_dialect == GlslDialect::Es300))
     {
         Line const& header = lines[last_header];
         const int next = (last_header + 1u < lines.size()) ? lines[last_header + 1u].number : header.number + 1;
-        std::string added;
-        if (p_dialect == GlslDialect::Es300)
-        {
-            added += ES_PRECISIONS;
-            added += "\n";
-        }
-        added += "#define COMPAGES_NO_STORAGE 1\n#line " + std::to_string(next) + "\n";
+        std::string added = std::string(ES_PRECISIONS) + "\n#line " + std::to_string(next) + "\n";
         if (header.end == code.size())
         {
             added = "\n" + added;
@@ -403,18 +325,7 @@ TranslatedGlsl translateGlsl(std::string_view p_source, GlslDialect p_dialect)
 
     moveBindings(p_source, code, edits, out.bindings);
 
-    // From the end, so that the positions of the earlier edits still hold.
-    // At the same place, the replacement first, then the insertion in front
-    // of it (a layout on the line after #version): the other order would
-    // replace the inserted lines.
-    std::sort(edits.begin(), edits.end(),
-              [](Edit const& p_a, Edit const& p_b)
-              { return (p_a.at != p_b.at) ? (p_a.at > p_b.at) : (p_a.length > p_b.length); });
-    out.text = std::string(p_source);
-    for (Edit const& edit : edits)
-    {
-        out.text.replace(edit.at, edit.length, edit.text);
-    }
+    out.text = applyEdits(p_source, std::move(edits));
     return out;
 }
 

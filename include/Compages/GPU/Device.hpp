@@ -120,16 +120,31 @@ struct DeviceInfo
     //! \brief Largest total number of invocations inside one work group.
     int max_compute_work_group_invocations = 0;
 
-    //! \brief Can this device run compute shaders, and read or write storage
-    //! blocks and images from any shader?
+    //! \brief Does ComputeProgram run here, natively or emulated?
     //!
-    //! One flag for the four because they come together, in OpenGL 4.3 and
-    //! OpenGL ES 3.1. False on the GL41 backend (macOS) and on the GLES3
-    //! backend (WebGL 2): ComputeProgram::load() then fails, a storage block
-    //! cannot be declared, and the Renderer draws without clustered lamps
-    //! and without volumetric fog. Their shaders see the macro
-    //! `COMPAGES_NO_STORAGE`, to keep a path that does without.
+    //! True on every backend. See compute_emulated for what changes when the
+    //! device has no compute shader.
     bool compute = false;
+
+    //! \brief Is compute emulated (GL41 for macOS, GLES3 for WebGL 2)?
+    //!
+    //! OpenGL 4.1 and OpenGL ES 3.0 have no compute shader. The backend runs
+    //! one as a vertex shader whose outputs are captured by transform
+    //! feedback, after a copy of each storage buffer into a texture. It is
+    //! slower, and only for shaders where each invocation writes its own
+    //! element: `shared` and `barrier()` (except through
+    //! `<compages/tiles.glsl>`), atomics and images are refused when the
+    //! program loads. Compiled shaders see `COMPAGES_EMULATED_COMPUTE`.
+    //!
+    //! Vertex and fragment shaders read storage blocks there the same way
+    //! (a copy in a texture, made again when the buffer changed); they cannot
+    //! write one.
+    bool compute_emulated = false;
+
+    //! \brief Can a shader load and store images (imageLoad, imageStore)?
+    //! False on GL41 and GLES3: the Renderer then draws without its
+    //! volumetric fog.
+    bool images = false;
 
     //! \brief Can a program have a geometry stage? False on OpenGL ES 3.0
     //! (WebGL 2).

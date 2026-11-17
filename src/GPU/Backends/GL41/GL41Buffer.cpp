@@ -67,6 +67,7 @@ void destroyBuffer(NativeId p_buffer)
 {
     const GLuint buffer = static_cast<GLuint>(p_buffer);
     detail::forgetBuffer(buffer);
+    detail::dropStorageCopy(buffer);
     glDeleteBuffers(1, &buffer);
 }
 
@@ -82,6 +83,7 @@ void writeBuffer(NativeId p_buffer,
                     static_cast<GLsizeiptr>(p_bytes),
                     p_data);
     glBindBuffer(GL_COPY_WRITE_BUFFER, 0u);
+    detail::touchBuffer(static_cast<GLuint>(p_buffer));
 }
 
 void bindBufferToPoint(BufferKind p_kind,
@@ -92,8 +94,9 @@ void bindBufferToPoint(BufferKind p_kind,
 {
     if (p_kind == BufferKind::Storage)
     {
-        reportError(std::string(name()) +
-                    " has no storage blocks (they need OpenGL 4.3 or OpenGL ES 3.1)");
+        // No storage binding point on this device: the emulated compute
+        // reads the table at dispatch().
+        detail::bindStoragePoint(static_cast<GLuint>(p_buffer), p_binding, p_offset, p_bytes);
         return;
     }
 

@@ -105,7 +105,11 @@ TEST_F(DeviceTest, ReportsTheDriverLimits)
     ASSERT_TRUE(bool(compages::gpu::init(GPUContext::procAddress())));
     compages::gpu::DeviceInfo const& info = compages::gpu::device();
 
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+    ASSERT_GE(info.version_major, 3);
+#else
     ASSERT_GE(info.version_major, 4);
+#endif
     ASSERT_FALSE(info.vendor.empty());
     ASSERT_FALSE(info.renderer.empty());
     ASSERT_FALSE(info.version.empty());
@@ -115,7 +119,8 @@ TEST_F(DeviceTest, ReportsTheDriverLimits)
     ASSERT_GE(info.max_vertex_attributes, 16);
     ASSERT_GE(info.max_texture_size, 1024);
     ASSERT_GE(info.max_texture_size_3d, 256);
-    ASSERT_GE(info.max_texture_units, 48);
+    // The minimum of OpenGL ES 3.0 is 32, of OpenGL 4.x 48.
+    ASSERT_GE(info.max_texture_units, 32);
     ASSERT_GE(info.max_uniform_block_size, 16384);
     ASSERT_GE(info.uniform_buffer_offset_alignment, 1);
     ASSERT_GE(info.max_shader_storage_block_size, 1 << 24);

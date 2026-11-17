@@ -49,6 +49,8 @@ pbr() fragment stage
 
 `lit()` includes `fog`, `shade` and `present` the same way, with no hooks. Each piece is included once, even when several pieces ask for it.
 
+One piece is given by the GPU layer to every `ShaderSource`, without `include()`: `<compages/tiles.glsl>`, the loop in which every invocation of a compute shader reads every element (`COMPAGES_TILE`, `COMPAGES_FOR_EACH` … `COMPAGES_END_FOR_EACH`). It uses `shared` memory with compute shaders and a plain loop where compute is emulated ([compute on the GPU](../guides/compute-on-the-gpu.md#-every-item-reads-every-other-shared-memory)).
+
 ## 🔍 The four hooks of the PBR shader
 
 The default `main()` of the fragment stage is these steps:

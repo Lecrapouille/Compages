@@ -35,7 +35,8 @@ TEST(GlslDialect, DesktopLowersTheVersionAndMovesTheBindings)
 
     EXPECT_EQ(out.source_version, 450);
     EXPECT_EQ(out.text.rfind("#version 410 core\n", 0u), 0u) << out.text;
-    EXPECT_NE(out.text.find("#define COMPAGES_NO_STORAGE 1\n#line 2\n"), std::string::npos) << out.text;
+    // Nothing added on the desktop: the lines keep their numbers.
+    EXPECT_EQ(out.text.find("#line"), std::string::npos) << out.text;
     // The block keeps its other qualifiers; the sampler loses its layout.
     EXPECT_NE(out.text.find("layout(std140) uniform Camera"), std::string::npos) << out.text;
     EXPECT_NE(out.text.find("\n uniform sampler3D fog;"), std::string::npos) << out.text;
@@ -65,17 +66,15 @@ TEST(GlslDialect, EsGetsItsVersionAndPrecisions)
 // ----------------------------------------------------------------------------
 TEST(GlslDialect, LineNumbersFollowTheSource)
 {
-    // After the version and the extensions; the next line keeps its number.
-    auto out = translateGlsl("#version 450 core\n#extension GL_X : enable\nvoid main() {}\n",
-                             GlslDialect::Desktop410);
-    EXPECT_NE(out.text.find("#extension GL_X : enable\n#define COMPAGES_NO_STORAGE 1\n#line 3\nvoid main"),
-              std::string::npos)
-        << out.text;
+    // ES precisions go after the version and the extensions; the next line
+    // keeps its number.
+    auto out = translateGlsl("#version 450 core\n#extension GL_X : enable\nvoid main() {}\n", GlslDialect::Es300);
+    EXPECT_NE(out.text.find("#extension GL_X : enable\nprecision highp float;"), std::string::npos) << out.text;
+    EXPECT_NE(out.text.find("\n#line 3\nvoid main"), std::string::npos) << out.text;
 
     // A #line of the source counts: the line after `#line 40` is line 40.
-    auto moved = translateGlsl("#line 40\n#version 450 core\nvoid main() {}\n", GlslDialect::Desktop410);
-    EXPECT_NE(moved.text.find("#define COMPAGES_NO_STORAGE 1\n#line 41\nvoid main"), std::string::npos)
-        << moved.text;
+    auto moved = translateGlsl("#line 40\n#version 450 core\nvoid main() {}\n", GlslDialect::Es300);
+    EXPECT_NE(moved.text.find("\n#line 41\nvoid main"), std::string::npos) << moved.text;
 }
 
 // ----------------------------------------------------------------------------

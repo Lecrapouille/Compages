@@ -10,6 +10,7 @@
 #include "main.hpp"
 
 #include "Compages/GPU/ComputeProgram.hpp"
+#include "Compages/GPU/Device.hpp"
 #include "Compages/GPU/Shader.hpp"
 
 #include <GLFW/glfw3.h>
@@ -55,9 +56,21 @@ public:
             return;
         }
 
+        // The context the backend of the library needs (Compages.mk).
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#elif defined(COMPAGES_GPU_BACKEND_GL41)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#else
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
@@ -227,5 +240,25 @@ programFromCompute(std::string_view p_source)
     COMPAGES_TRY(compute.loadSource(p_source));
     return std::move(compute.program());
 }
+
+// ----------------------------------------------------------------------------
+//! \brief Skip a test that needs what the backend compiled in (GL41 for
+//! macOS, GLES3 for WebGL 2) does not have, saying what. The flag is a field
+//! of gpu::DeviceInfo: call it after gpu::init().
+// ----------------------------------------------------------------------------
+#define COMPAGES_SKIP_WITHOUT(p_flag)                                                                            \
+    if (!compages::gpu::device().p_flag)                                                                         \
+    {                                                                                                            \
+        GTEST_SKIP() << "this backend has no " #p_flag;                                                          \
+    }
+
+// ----------------------------------------------------------------------------
+//! \brief Skip a test of what OpenGL ES 3.0 (the GLES3 backend) has not.
+// ----------------------------------------------------------------------------
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+#    define COMPAGES_SKIP_ON_GLES3(p_why) GTEST_SKIP() << "OpenGL ES 3.0: " << (p_why)
+#else
+#    define COMPAGES_SKIP_ON_GLES3(p_why) (void)0
+#endif
 
 } // namespace tests

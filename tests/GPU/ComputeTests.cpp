@@ -330,3 +330,66 @@ TEST_F(ComputeTest, CountsADispatch)
     ASSERT_TRUE(bool(compute.dispatchItems(64u)));
     ASSERT_EQ(compages::gpu::frameStatistics().dispatches, 1u);
 }
+
+// ----------------------------------------------------------------------------
+// <compages/tiles.glsl>: every invocation reads every element. 300 elements
+// in groups of 64: the last tile is partial, the case that breaks a tiled
+// loop written by hand. Shared memory on GL45, a direct loop where compute
+// is emulated: same sums.
+// ----------------------------------------------------------------------------
+TEST_F(ComputeTest, TilesGlslReadsEveryElementInEveryInvocation)
+{
+    constexpr char const* SUM = R"(#version 450 core
+layout(local_size_x = 64) in;
+#include <compages/tiles.glsl>
+layout(std430, binding = 0) readonly buffer Input { float incoming[]; };
+layout(std430, binding = 1) writeonly buffer Output { float outgoing[]; };
+uniform uint count;
+COMPAGES_TILE(float, values);
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+    float sum = 0.0;
+    COMPAGES_FOR_EACH(values, j, count, float value, incoming[j])
+    {
+        sum += value;
+    }
+    COMPAGES_END_FOR_EACH
+    if (i < count)
+    {
+        outgoing[i] = sum + incoming[i];
+    }
+}
+)";
+    constexpr std::uint32_t count = 300u;
+    std::vector<float> start(count);
+    float total = 0.0f;
+    for (std::uint32_t k = 0u; k < count; ++k)
+    {
+        start[k] = float(k % 7u);
+        total += start[k];
+    }
+    auto input = compages::gpu::StorageBuffer<float>::from(std::span<const float>(start),
+                                                           compages::gpu::BufferUsage::Static)
+                     .take();
+    auto output = compages::gpu::StorageBuffer<float>::create(count, compages::gpu::BufferUsage::Stream).take();
+
+    compages::gpu::ComputeProgram compute;
+    auto loaded = compute.load(compages::gpu::ShaderSource::fromText("sum.comp", SUM));
+    ASSERT_TRUE(bool(loaded)) << loaded.error();
+    ASSERT_TRUE(bool(compute.bind("Input", input)));
+    ASSERT_TRUE(bool(compute.bind("Output", output)));
+    compute.set("count", count);
+    auto ran = compute.dispatchItems(count);
+    ASSERT_TRUE(bool(ran)) << ran.error();
+    compages::gpu::barrier(compages::gpu::Barrier::Storage);
+
+    auto back = output.read();
+    ASSERT_TRUE(bool(back)) << back.error();
+    ASSERT_EQ(back.value().size(), count);
+    for (std::uint32_t k : { 0u, 63u, 64u, 255u, 256u, 299u })
+    {
+        EXPECT_FLOAT_EQ(back.value()[k], total + start[k]) << "element " << k;
+    }
+    EXPECT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+}

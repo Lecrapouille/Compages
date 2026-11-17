@@ -66,7 +66,9 @@ uniform float spin;
 uniform float radius;
 uniform mat4 view;
 uniform mat4 projection;
-uniform sampler1D colormap;
+// One row of colours: a 2D texture one pixel high (OpenGL ES, so WebGL 2,
+// has no 1D texture).
+uniform sampler2D colormap;
 
 struct V2F
 {
@@ -95,7 +97,7 @@ void main()
         shown = (kind == 2.0) ? 2.0 * span : span / 6.0;
     }
 
-    v2f.color = texture(colormap, temperature).rgb * brightness;
+    v2f.color = texture(colormap, vec2(temperature, 0.5)).rgb * brightness;
     if (kind == 2.0)
     {
         v2f.color *= vec3(2.0, 1.0, 1.0);   // the cloud, pulled toward red
@@ -269,9 +271,10 @@ compages::Status SpiralGalaxy::makeColormap()
 {
     constexpr std::uint32_t count = sizeof(BLACKBODY) / sizeof(BLACKBODY[0]);
     compages::gpu::TextureDesc desc;
-    desc.kind = compages::gpu::TextureKind::Texture1D;
+    desc.kind = compages::gpu::TextureKind::Texture2D;
     desc.format = compages::gpu::PixelFormat::RGBA8;
     desc.width = count;
+    desc.height = 1u;
     desc.filter(compages::gpu::Filter::Linear)
         .wrap(compages::gpu::Wrap::ClampToEdge);
     COMPAGES_TRY_ASSIGN(m_colormap, compages::gpu::Texture::create(desc));

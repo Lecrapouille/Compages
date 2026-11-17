@@ -96,6 +96,7 @@ std::array<int, 3> middle()
 
 const std::array<int, 3> RED{ 255, 0, 0 };
 const std::array<int, 3> GREEN{ 0, 255, 0 };
+const std::array<int, 3> BLUE{ 0, 0, 255 };
 
 } // namespace
 
@@ -382,4 +383,42 @@ TEST_F(DrawableTest, APassWithoutTargetDrawsIntoThePassAroundIt)
     screen.draw(3u);
     ASSERT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
     ASSERT_EQ(middle(), GREEN);
+}
+
+// ----------------------------------------------------------------------------
+// A fragment shader reads a storage block, and sees what the buffer holds at
+// each draw. Where storage is emulated (GL41, GLES3), the shader reads a copy
+// of the buffer, made again when the buffer changed: a copy kept too long
+// would draw the old colour the second time.
+// ----------------------------------------------------------------------------
+TEST_F(DrawableTest, ReadsAStorageBlockAndSeesItChange)
+{
+    constexpr const char* READING_FRAGMENT = R"(#version 450 core
+layout(std430, binding = 3) readonly buffer Colours { vec4 colours[]; };
+uniform int which;
+out vec4 oColor;
+void main()
+{
+    oColor = colours[which];
+}
+)";
+    const std::vector<compages::Vector4f> start{ { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } };
+    auto colours = compages::gpu::StorageBuffer<compages::Vector4f>::from(std::span<const compages::Vector4f>(start),
+                                                                          compages::gpu::BufferUsage::Stream)
+                       .take();
+
+    compages::gpu::Drawable screen;
+    auto loaded = screen.loadSources(GENERATED_VERTEX, READING_FRAGMENT);
+    ASSERT_TRUE(bool(loaded)) << loaded.error();
+    ASSERT_NE(screen.program().reflection().storageBlock("Colours"), nullptr) << screen.program().reflection().toString();
+    auto bound = screen.program().bind("Colours", colours.handle());
+    ASSERT_TRUE(bool(bound)) << bound.error();
+    screen["which"] = 1;
+    ASSERT_EQ(drawn([&] { screen.draw(3u); }), GREEN);
+
+    const std::vector<compages::Vector4f> after{ { 0.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } };
+    colours.write(std::span<const compages::Vector4f>(after));
+    ASSERT_EQ(drawn([&] { screen.draw(3u); }), RED);
+    screen["which"] = 0;
+    ASSERT_EQ(drawn([&] { screen.draw(3u); }), BLUE);
 }

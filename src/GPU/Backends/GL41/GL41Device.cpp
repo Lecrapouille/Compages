@@ -7,7 +7,9 @@
 
 #include "GPU/Backends/GL41/GL41.hpp"
 
+#include <algorithm>
 #include <array>
+#include <limits>
 #include <set>
 #include <string>
 
@@ -139,9 +141,24 @@ Status init([[maybe_unused]] LoadProc p_load, DeviceInfo& p_info)
     p_info.geometry_shaders = true;
     p_info.polygon_mode = true;
 #endif
-    p_info.compute = false;
     p_info.clip_control = false;
     queryLimits(p_info);
+
+    // Compute is emulated (GL41Compute.cpp): a storage buffer is copied into
+    // a texture of 32 bit words, as wide as below and as tall as the device
+    // allows; that is the largest buffer a dispatch can read.
+    const GLsizei width = std::min(4096, std::max(64, p_info.max_texture_size));
+    detail::setDataTextureWidth(width);
+    p_info.compute = true;
+    p_info.compute_emulated = true;
+    p_info.images = false;
+    p_info.max_shader_storage_block_size =
+        static_cast<int>(std::min<long long>(std::numeric_limits<int>::max(),
+                                             4LL * width * std::max(1, p_info.max_texture_size)));
+    // One point per invocation: the counts a draw accepts.
+    p_info.max_compute_work_group_count = { 65535, 65535, 65535 };
+    p_info.max_compute_work_group_size = { 1024, 1024, 64 };
+    p_info.max_compute_work_group_invocations = 1024;
     return success();
 }
 
@@ -213,6 +230,8 @@ void warnOnce(char const* p_what)
 
 void shutdown()
 {
+    detail::releaseTextureReadback();
+    detail::releaseStorageCopies();
     detail::clearVertexArrayCache();
     if (g_timestamps_made)
     {

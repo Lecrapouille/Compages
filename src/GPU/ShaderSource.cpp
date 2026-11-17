@@ -22,6 +22,53 @@ namespace
 constexpr std::string_view HOOK_PREFIX = "hook/";
 
 // ----------------------------------------------------------------------------
+//! \brief <compages/tiles.glsl>: a loop in which every invocation reads every
+//! element of a storage block (an N-body, all the pairs), written once.
+//!
+//! With compute shaders, the loop goes through tiles of gl_WorkGroupSize.x
+//! elements: each invocation of the group loads one into `shared` memory, a
+//! barrier() waits for all of them, then each reads the tile from that fast
+//! memory. Without compute (the GL41 and GLES3 backends emulate it, and
+//! define COMPAGES_EMULATED_COMPUTE), memory shared by a group does not
+//! exist: the loop reads every element directly. Same result, slower.
+//!
+//! Its rules: COMPAGES_TILE comes after layout(local_size_x = ...); the loop
+//! is reached by every invocation of the group (no return before it, as for
+//! barrier()); an expression holding a comma is put between brackets.
+//!
+//! The macros of the compute branch are long lines continued with '\': the
+//! emulation never sees them (it skips the preprocessor lines).
+// ----------------------------------------------------------------------------
+constexpr char const* TILES_GLSL = R"(// Compages: <compages/tiles.glsl>
+#ifdef COMPAGES_EMULATED_COMPUTE
+#define COMPAGES_TILE(TYPE, NAME) const uint NAME = 0u
+#define COMPAGES_FOR_EACH(TILE, INDEX, COUNT, VALUE, EXPR) for (uint INDEX = 0u; INDEX < uint(COUNT); ++INDEX) { VALUE = (EXPR);
+#define COMPAGES_END_FOR_EACH }
+#else
+#define COMPAGES_TILE(TYPE, NAME) shared TYPE NAME[gl_WorkGroupSize.x]
+#define COMPAGES_FOR_EACH(TILE, INDEX, COUNT, VALUE, EXPR) \
+    for (uint compages_first = 0u; compages_first < uint(COUNT); compages_first += gl_WorkGroupSize.x) { \
+        { uint INDEX = compages_first + gl_LocalInvocationID.x; \
+          if (INDEX < uint(COUNT)) { TILE[gl_LocalInvocationID.x] = (EXPR); } } \
+        barrier(); \
+        uint compages_n = min(gl_WorkGroupSize.x, uint(COUNT) - compages_first); \
+        for (uint compages_k = 0u; compages_k < compages_n; ++compages_k) { \
+            uint INDEX = compages_first + compages_k; \
+            VALUE = TILE[compages_k];
+#define COMPAGES_END_FOR_EACH } barrier(); }
+#endif
+)";
+
+// ----------------------------------------------------------------------------
+//! \brief The text of an include that the library gives to every shader, or
+//! nullptr. Looked up last: an include() of the same name wins.
+// ----------------------------------------------------------------------------
+char const* builtinInclude(std::string_view p_name)
+{
+    return (p_name == "compages/tiles.glsl") ? TILES_GLSL : nullptr;
+}
+
+// ----------------------------------------------------------------------------
 //! \brief The line without its spaces in front.
 // ----------------------------------------------------------------------------
 std::string_view trimFront(std::string_view p_line)
@@ -255,16 +302,24 @@ private:
                     found = *it / name;
                 }
             }
-            if (found.empty())
+            if (found.empty() && (builtinInclude(name) != nullptr))
             {
-                return failure("'" + parent + "' includes '" + name +
-                               "', which is neither given with include() nor "
-                               "found in the include directories");
+                text = builtinInclude(name);
+                key = name;
             }
-            found = std::filesystem::weakly_canonical(found);
-            COMPAGES_TRY_ASSIGN(text, readText(found));
-            key = found.string();
-            folder = found.parent_path();
+            else
+            {
+                if (found.empty())
+                {
+                    return failure("'" + parent + "' includes '" + name +
+                                   "', which is neither given with include() "
+                                   "nor found in the include directories");
+                }
+                found = std::filesystem::weakly_canonical(found);
+                COMPAGES_TRY_ASSIGN(text, readText(found));
+                key = found.string();
+                folder = found.parent_path();
+            }
         }
 
         if (std::find(m_stack.begin(), m_stack.end(), key) != m_stack.end())

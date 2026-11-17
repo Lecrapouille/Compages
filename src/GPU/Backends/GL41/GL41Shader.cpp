@@ -297,22 +297,38 @@ void applyFixedBindings(GLuint p_program, std::span<const NativeId> p_shaders)
 
 } // namespace
 
-Result<NativeId> compileShader(ShaderStage p_stage, std::string_view p_source)
+namespace detail
 {
-    const GLenum stage = toGL(p_stage);
-    if (stage == 0u)
-    {
-        const bool compute = (p_stage == ShaderStage::Compute);
-        return failure(std::string(name()) + " has no " + (compute ? "compute" : toString(p_stage)) +
-                       " shaders: they need " +
-                       (compute ? "OpenGL 4.3 or OpenGL ES 3.1" : "OpenGL 3.2 or OpenGL ES 3.2") +
-                       ". Check DeviceInfo::compute or DeviceInfo::geometry_shaders before using one");
-    }
 
-    const GLuint shader = glCreateShader(stage);
+GLuint compileGlsl(GLenum p_stage, std::string_view p_source, std::string& p_log)
+{
+    const GLuint shader = glCreateShader(p_stage);
     if (shader == 0u)
     {
-        return failure("the driver refused to create a shader");
+        p_log = "the driver refused to create a shader";
+        return 0u;
+    }
+
+    // A vertex or fragment shader reading storage blocks reads copies in
+    // textures instead (GL41Compute.cpp).
+    std::string rewritten;
+    std::vector<gpu::detail::EmulatedBlock> reads;
+    if (gpu::detail::declaresStorageBlock(p_source))
+    {
+#if defined(COMPAGES_GLES3)
+        auto emulated = gpu::detail::emulateStorageReads(p_source, { "GL_ES" });
+#else
+        auto emulated = gpu::detail::emulateStorageReads(p_source, {});
+#endif
+        if (!emulated)
+        {
+            glDeleteShader(shader);
+            p_log = emulated.error();
+            return 0u;
+        }
+        rewritten = std::move(emulated.value().text);
+        reads = std::move(emulated.value().blocks);
+        p_source = rewritten;
     }
 
     gpu::detail::TranslatedGlsl translated = gpu::detail::translateGlsl(p_source, DIALECT);
@@ -337,18 +353,49 @@ Result<NativeId> compileShader(ShaderStage p_stage, std::string_view p_source)
         {
             log += "\n(" + std::string(name()) + " compiles this #version " +
                    std::to_string(translated.source_version) + " source as " + DIALECT_NAME +
-                   ": no storage blocks, images or compute; COMPAGES_NO_STORAGE is defined" +
+                   ": storage blocks read from textures, no image" +
 #if defined(COMPAGES_GLES3)
                    "; no implicit int to float conversion, no geometry stage" +
 #endif
                    ")";
         }
-        return failure(std::move(log));
+        p_log = std::move(log);
+        return 0u;
     }
 
     if (!translated.bindings.empty())
     {
         fixedBindings()[shader] = std::move(translated.bindings);
+    }
+    if (!reads.empty())
+    {
+        detail::rememberStorageReads(shader, std::move(reads));
+    }
+    return shader;
+}
+
+} // namespace detail
+
+Result<NativeId> compileShader(ShaderStage p_stage, std::string_view p_source)
+{
+    if (p_stage == ShaderStage::Compute)
+    {
+        // No compute shader here: it runs as a vertex shader whose outputs
+        // are captured (GL41Compute.cpp).
+        return detail::compileCompute(p_source);
+    }
+    const GLenum stage = toGL(p_stage);
+    if (stage == 0u)
+    {
+        return failure(std::string(name()) + " has no " + toString(p_stage) +
+                       " shaders: they need OpenGL 3.2 or OpenGL ES 3.2. Check DeviceInfo::geometry_shaders "
+                       "before using one");
+    }
+    std::string log;
+    const GLuint shader = detail::compileGlsl(stage, p_source, log);
+    if (shader == 0u)
+    {
+        return failure(std::move(log));
     }
     return static_cast<NativeId>(shader);
 }
@@ -356,6 +403,10 @@ Result<NativeId> compileShader(ShaderStage p_stage, std::string_view p_source)
 void destroyShader(NativeId p_shader)
 {
     fixedBindings().erase(static_cast<GLuint>(p_shader));
+    if (detail::releaseCompute(static_cast<GLuint>(p_shader)))
+    {
+        return;
+    }
     glDeleteShader(static_cast<GLuint>(p_shader));
 }
 
@@ -371,6 +422,7 @@ Result<NativeId> linkProgram(std::span<const NativeId> p_shaders)
     {
         glAttachShader(program, static_cast<GLuint>(shader));
     }
+    detail::prepareComputeLink(program, p_shaders);
     glLinkProgram(program);
     for (NativeId shader : p_shaders)
     {
@@ -379,6 +431,7 @@ Result<NativeId> linkProgram(std::span<const NativeId> p_shaders)
 
     GLint linked = GL_FALSE;
     glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    detail::finishStorageLink(program, p_shaders, linked != GL_FALSE);
     if (linked == GL_FALSE)
     {
         std::string log = programLog(program);
@@ -401,6 +454,7 @@ void destroyProgram(NativeId p_program)
     // A deleted program in use stays alive until another one is used:
     // forget it, so that a new program given the same name is bound again.
     detail::useProgram(0u);
+    detail::forgetStorageProgram(program);
     glDeleteProgram(program);
 }
 
@@ -504,6 +558,8 @@ void reflectProgram(NativeId p_program, std::span<const ShaderStage> /* stages *
         }
         p_reflection.uniform_blocks.emplace_back(std::move(block));
     }
+
+    detail::reflectStorage(program, p_reflection);
 }
 
 void setUniform(NativeId p_program, int p_location, DataType p_type, const void* p_data)

@@ -6,6 +6,7 @@
 // See LICENSING.md for details.
 
 #include "Compages/Renderer/Render/RenderTarget.hpp"
+#include "Compages/GPU/Device.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -94,6 +95,9 @@ Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const
     const float n = p_lens.near_plane;
     const float f = p_lens.far_plane;
     const bool perspective = (p_lens.projection == compages::world::Camera::Projection::Perspective);
+    // Without glClipControl (GL41, GLES3) the clip depth stays in [-1, 1]: the
+    // card stored (z + 1) / 2, and z is wanted.
+    const bool clip_control = compages::gpu::device().clip_control;
     std::vector<float> metres(count);
     for (std::size_t row = 0u; row < m_height; ++row)
     {
@@ -103,6 +107,7 @@ Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const
         {
             float stored = 0.0f;
             std::memcpy(&stored, bytes.data() + ((from + x) * sizeof(float)), sizeof(float));
+            stored = clip_control ? stored : ((2.0f * stored) - 1.0f);
             float& out = metres[(row * m_width) + x];
             if (stored <= 0.0f)
             {

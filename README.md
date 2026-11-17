@@ -31,7 +31,7 @@ Who it is for:
 - 🔬 **Scientists** draw and compute on the GPU (a galaxy, heat in a plate) without learning the OpenGL state machine. The GPU layer is often enough.
 - 🤖 **Robotics** gets a world that runs in unit tests and CI with no OpenGL context at all, and the same world drawn when you want to see it.
 - 🎮 **Games** get short scene code like Three.js, glTF models, animations and cameras, in C++. They use all three layers.
-- 🧑‍🏫 **Learners** get a gallery of more than seventy small demos, each adding one idea, with its source shown next to the picture, and tutorials that build a robot workshop step by step.
+- 🧑‍🏫 **Learners** get a gallery of more than seventy small demos, each adding one idea, with its source shown next to the picture, and tutorials that build a robot workshop step by step. [Try the gallery in your browser](https://lecrapouille.github.io/Compages/) (WebGL 2).
 
 ---
 

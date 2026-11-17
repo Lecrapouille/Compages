@@ -12,7 +12,7 @@ using namespace tests;
 // The GL45 backend needs Direct State Access, introduced in OpenGL 4.5. If this
 // test fails on a machine, no other GPU test can be trusted, so it acts as the
 // canary for the whole GPU test suite.
-TEST(Context, GrantsAtLeast45Core)
+TEST(Context, GrantsTheVersionTheBackendNeeds)
 {
     GPUContext context;
     if (!context.ready())
@@ -20,11 +20,19 @@ TEST(Context, GrantsAtLeast45Core)
         GTEST_SKIP() << context.error();
     }
 
+    // 4.5 core for GL45, 4.1 core for GL41 (macOS), ES 3.0 for GLES3.
+#if defined(COMPAGES_GPU_BACKEND_GLES3)
+    constexpr int needed[2] = { 3, 0 };
+#elif defined(COMPAGES_GPU_BACKEND_GL41)
+    constexpr int needed[2] = { 4, 1 };
+#else
+    constexpr int needed[2] = { 4, 5 };
+#endif
     auto const [major, minor] = context.version();
-    ASSERT_GE(major, 4);
-    if (major == 4)
+    ASSERT_GE(major, needed[0]);
+    if (major == needed[0])
     {
-        ASSERT_GE(minor, 5);
+        ASSERT_GE(minor, needed[1]);
     }
 }
 

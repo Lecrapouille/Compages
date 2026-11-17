@@ -375,6 +375,7 @@ TEST_F(TextureTest, KeepsEveryLayerOfAnArrayAtEveryLevel)
 // A one dimensional texture, used for colour ramps and lookup tables.
 TEST_F(TextureTest, HoldsASingleRowOfPixels)
 {
+    COMPAGES_SKIP_ON_GLES3("no 1D texture");
     auto texture = compages::gpu::Texture::create({ .kind = compages::gpu::TextureKind::Texture1D,
                                           .format = compages::gpu::PixelFormat::RGBA8,
                                           .width = 256u })
@@ -450,6 +451,7 @@ TEST_F(TextureTest, HoldsWholeNumbersAsWholeNumbers)
 // be bound that way.
 TEST_F(TextureTest, BindsAsAnImageForAComputePass)
 {
+    COMPAGES_SKIP_WITHOUT(images);
     auto texture = compages::gpu::Texture::create({ .format = compages::gpu::PixelFormat::RGBA32F,
                                           .width = 8u,
                                           .height = 8u })
@@ -463,6 +465,7 @@ TEST_F(TextureTest, BindsAsAnImageForAComputePass)
 // compute pass that produces nothing at all.
 TEST_F(TextureTest, RefusesToBindAThreeChannelTextureAsAnImage)
 {
+    COMPAGES_SKIP_WITHOUT(images);
     auto texture = compages::gpu::Texture::create({ .format = compages::gpu::PixelFormat::RGB8,
                                           .width = 8u,
                                           .height = 8u })

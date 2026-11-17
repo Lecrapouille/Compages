@@ -68,7 +68,7 @@ Before any drawing, a `RenderPass` says where to draw; it ends at the closing br
 
 - Names are checked when the program runs, not when it compiles. A typo in `mesh["colour"]` is found by `prepare()` or at the first frame, not by the C++ compiler.
 - **The dirty range is one range**, from the first change to the last: changing elements 1 and 5000 sends everything between them, in one copy.
-- Compute needs OpenGL 4.3. The macOS backend (`GL41`) and the web backend (`GLES3`) have no compute shaders, storage blocks or images: check `gpu::device().compute`. The rest of this page works on the three backends ([architecture](architecture.md#-the-backend-boundary)).
+- Compute on macOS (`GL41`) and the web (`GLES3`) is emulated: the same shaders run, slower, and an invocation writes only its own element; `shared` goes through `<compages/tiles.glsl>` ([compute on the GPU](../guides/compute-on-the-gpu.md#-on-macos-and-in-the-browser)). The rest of this page works on the three backends ([architecture](architecture.md#-the-backend-boundary)).
 
 ## 🔗 See also
 

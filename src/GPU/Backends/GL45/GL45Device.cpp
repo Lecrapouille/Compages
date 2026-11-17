@@ -230,6 +230,8 @@ Status init(LoadProc p_load, DeviceInfo& p_info)
 
     p_info.debug_output = enableDriverMessages();
     p_info.compute = true;
+    p_info.compute_emulated = false;
+    p_info.images = true;
     p_info.geometry_shaders = true;
     p_info.clip_control = true;
     p_info.polygon_mode = true;

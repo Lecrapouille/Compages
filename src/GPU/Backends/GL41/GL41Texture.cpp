@@ -8,6 +8,9 @@
 #include "GPU/Backends/GL41/GL41.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <vector>
 
 namespace compages::gpu::backend
 {
@@ -172,6 +175,240 @@ void allocateLevels(GLenum p_target, TextureDesc const& p_desc, GLFormat const& 
 }
 #endif
 
+
+#if defined(COMPAGES_GLES3)
+// ****************************************************************************
+// Reading a texture back on OpenGL ES 3.0, which has no glGetTexImage and
+// whose glReadPixels accepts RGBA bytes, RGBA floats and RGBA integers only.
+// ****************************************************************************
+
+//! \brief How the texels are read: as which RGBA, before keeping the
+//! channels of the format.
+struct Reading
+{
+    GLenum layout;
+    GLenum type;
+    std::size_t texel; //!< Bytes of one RGBA texel as read.
+};
+
+Reading readingOf(PixelFormat p_format)
+{
+    switch (p_format)
+    {
+        case PixelFormat::R8UI:
+        case PixelFormat::R32UI:
+            return { GL_RGBA_INTEGER, GL_UNSIGNED_INT, 16u };
+        case PixelFormat::R32I:
+            return { GL_RGBA_INTEGER, GL_INT, 16u };
+        case PixelFormat::R16F:
+        case PixelFormat::RG16F:
+        case PixelFormat::RGBA16F:
+        case PixelFormat::R32F:
+        case PixelFormat::RG32F:
+        case PixelFormat::RGBA32F:
+            return { GL_RGBA, GL_FLOAT, 16u };
+        case PixelFormat::R8:
+        case PixelFormat::RG8:
+        case PixelFormat::RGB8:
+        case PixelFormat::RGBA8:
+        case PixelFormat::SRGB8:
+        case PixelFormat::SRGB8A8:
+        case PixelFormat::Depth16:
+        case PixelFormat::Depth32F:
+        case PixelFormat::Depth24Stencil8:
+            break;
+    }
+    return { GL_RGBA, GL_UNSIGNED_BYTE, 4u };
+}
+
+//! \brief A float as a half float (IEEE 754 binary16), rounded to nearest.
+std::uint16_t toHalf(float p_value)
+{
+    std::uint32_t bits = 0u;
+    std::memcpy(&bits, &p_value, sizeof(bits));
+    const std::uint32_t sign = (bits >> 16u) & 0x8000u;
+    const int exponent = int((bits >> 23u) & 0xFFu) - 127 + 15;
+    std::uint32_t mantissa = bits & 0x7FFFFFu;
+    if (((bits >> 23u) & 0xFFu) == 0xFFu)
+    {
+        return std::uint16_t(sign | 0x7C00u | (mantissa != 0u ? 0x200u : 0u));
+    }
+    if (exponent >= 31)
+    {
+        return std::uint16_t(sign | 0x7C00u);
+    }
+    if (exponent <= 0)
+    {
+        if (exponent < -10)
+        {
+            return std::uint16_t(sign);
+        }
+        mantissa = (mantissa | 0x800000u) >> std::uint32_t(1 - exponent);
+        return std::uint16_t(sign | ((mantissa + 0x1000u) >> 13u));
+    }
+    const std::uint32_t half = sign | (std::uint32_t(exponent) << 10u) | (mantissa >> 13u);
+    return std::uint16_t(half + ((mantissa >> 12u) & 1u)); // round
+}
+
+//! \brief Keep the channels of \c p_format from texels read as RGBA.
+void keepChannels(PixelFormat p_format, Reading const& p_reading, std::byte const* p_from, std::size_t p_texels,
+                  std::byte* p_to)
+{
+    const std::size_t channels = channelsOf(p_format);
+    const std::size_t size = bytesPerPixel(p_format) / channels;
+    for (std::size_t t = 0u; t < p_texels; ++t)
+    {
+        std::byte const* in = p_from + (t * p_reading.texel);
+        std::byte* out = p_to + (t * bytesPerPixel(p_format));
+        for (std::size_t c = 0u; c < channels; ++c)
+        {
+            if (p_reading.type == GL_UNSIGNED_BYTE)
+            {
+                out[c] = in[c];
+            }
+            else if ((p_reading.type == GL_FLOAT) && (size == 2u))
+            {
+                float value = 0.0f;
+                std::memcpy(&value, in + (c * 4u), 4u);
+                const std::uint16_t half = toHalf(value);
+                std::memcpy(out + (c * 2u), &half, 2u);
+            }
+            else if (size == 1u)
+            {
+                std::uint32_t value = 0u;
+                std::memcpy(&value, in + (c * 4u), 4u);
+                out[c] = std::byte(value & 0xFFu);
+            }
+            else
+            {
+                std::memcpy(out + (c * size), in + (c * 4u), size);
+            }
+        }
+    }
+}
+
+GLuint g_depth_copy = 0u;      //!< The program that writes a depth as bits.
+GLint g_depth_copy_level = -1; //!< Its uniform: the level read.
+
+//! \brief The program drawing the depth of a texture into a R32UI target, as
+//! the bits of its float: ES reads integer targets back, not depth ones.
+GLuint depthCopyProgram()
+{
+    if (g_depth_copy != 0u)
+    {
+        return g_depth_copy;
+    }
+    constexpr char const* vertex = "#version 300 es\n"
+                                   "void main()\n{\n"
+                                   "    vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));\n"
+                                   "    gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);\n}\n";
+    constexpr char const* fragment = "#version 300 es\n"
+                                     "precision highp float;\nprecision highp int;\n"
+                                     "uniform highp sampler2D depth;\nuniform int level;\nout highp uvec4 bits;\n"
+                                     "void main()\n{\n"
+                                     "    float d = texelFetch(depth, ivec2(gl_FragCoord.xy), level).r;\n"
+                                     "    bits = uvec4(floatBitsToUint(d), 0u, 0u, 0u);\n}\n";
+    const GLuint program = glCreateProgram();
+    for (auto [stage, text] : { std::pair{ GLenum(GL_VERTEX_SHADER), vertex }, std::pair{ GLenum(GL_FRAGMENT_SHADER), fragment } })
+    {
+        const GLuint shader = glCreateShader(stage);
+        glShaderSource(shader, 1, &text, nullptr);
+        glCompileShader(shader);
+        glAttachShader(program, shader);
+        glDeleteShader(shader); // freed with the program
+    }
+    glLinkProgram(program);
+    g_depth_copy = program;
+    g_depth_copy_level = glGetUniformLocation(program, "level");
+    return program;
+}
+
+//! \brief Read one level of a 2D depth texture into \c p_pixels.
+void readDepth(NativeId p_texture, TextureDesc const& p_desc, GLint p_level, void* p_pixels)
+{
+    const GLsizei width = atLevel(p_desc.width, p_level);
+    const GLsizei height = atLevel(p_desc.height, p_level);
+
+    // What the copy changes, put back after it.
+    GLint viewport[4] = { 0, 0, 0, 0 };
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+    GLint draw = 0;
+    GLint read = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
+
+    GLuint target = 0u;
+    glGenTextures(1, &target);
+    glActiveTexture(GL_TEXTURE0 + detail::SCRATCH_UNIT);
+    glBindTexture(GL_TEXTURE_2D, target);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32UI, width, height);
+    GLuint framebuffer = 0u;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target, 0);
+
+    // A depth texture is not filterable on ES: NEAREST while it is read.
+    const GLenum source = bindToConfigure(p_texture);
+    GLint min_filter = 0;
+    GLint mag_filter = 0;
+    glGetTexParameteriv(source, GL_TEXTURE_MIN_FILTER, &min_filter);
+    glGetTexParameteriv(source, GL_TEXTURE_MAG_FILTER, &mag_filter);
+    glTexParameteri(source, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(source, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    detail::useProgram(depthCopyProgram());
+    glUniform1i(glGetUniformLocation(g_depth_copy, "depth"), GLint(detail::SCRATCH_UNIT));
+    glUniform1i(g_depth_copy_level, p_level);
+    detail::bindVertexArray(0u);
+    glViewport(0, 0, width, height);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    std::vector<std::uint32_t> words(std::size_t(width) * std::size_t(height) * 4u);
+    glReadPixels(0, 0, width, height, GL_RGBA_INTEGER, GL_UNSIGNED_INT, words.data());
+    auto* out = static_cast<std::byte*>(p_pixels);
+    const std::size_t texel = bytesPerPixel(p_desc.format);
+    for (std::size_t t = 0u; t < std::size_t(width) * std::size_t(height); ++t)
+    {
+        float depth = 0.0f;
+        std::memcpy(&depth, &words[t * 4u], 4u);
+        if (p_desc.format == PixelFormat::Depth32F)
+        {
+            std::memcpy(out + (t * texel), &depth, 4u);
+        }
+        else if (p_desc.format == PixelFormat::Depth16)
+        {
+            const auto value = std::uint16_t(std::lround(std::clamp(depth, 0.0f, 1.0f) * 65535.0f));
+            std::memcpy(out + (t * texel), &value, 2u);
+        }
+        else // Depth24Stencil8: the depth in the high 24 bits, the stencil lost
+        {
+            const auto value = std::uint32_t(std::lround(std::clamp(depth, 0.0f, 1.0f) * 16777215.0f)) << 8u;
+            std::memcpy(out + (t * texel), &value, 4u);
+        }
+    }
+
+    glTexParameteri(source, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(source, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(read));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(draw));
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteTextures(1, &target);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    if (scissor == GL_TRUE)
+    {
+        glEnable(GL_SCISSOR_TEST);
+    }
+    // The next pipeline sends all of its state again.
+    forgetRenderState();
+}
+#endif
+
 } // namespace
 
 Result<NativeId> createTexture(TextureDesc const& p_desc)
@@ -284,44 +521,71 @@ void readTexture(NativeId p_texture,
                  std::size_t p_bytes,
                  void* p_pixels)
 {
-    const GLFormat format = toGL(p_desc.format);
     GLint alignment = 4;
     glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 #if defined(COMPAGES_GLES3)
-    // No glGetTexImage on ES: the level is attached to a framebuffer and read
-    // back, which works for a 2D colour texture in the formats glReadPixels
-    // accepts: RGBA bytes, RGBA floats (with EXT_color_buffer_float), red
-    // integers.
-    (void)p_bytes;
-    const bool readable = (p_desc.kind == TextureKind::Texture2D) && !isDepth(p_desc.format) &&
-                          (format.type != GL_HALF_FLOAT) &&
-                          ((format.layout == GL_RGBA) || (format.layout == GL_RED_INTEGER));
-    if (!readable)
+    if (isDepth(p_desc.format))
     {
-        reportError(std::string(name()) + " reads back only 2D colour textures in RGBA (here " +
-                    toString(p_desc.kind) + ", " + toString(p_desc.format) + ")");
+        if (p_desc.kind != TextureKind::Texture2D)
+        {
+            reportError(std::string(name()) + " reads back the depth of a 2D texture only");
+        }
+        else
+        {
+            readDepth(p_texture, p_desc, static_cast<GLint>(p_level), p_pixels);
+        }
+        glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+        return;
     }
-    else
+
+    // Each face or layer is attached to a framebuffer and read as RGBA, then
+    // the channels of the format are kept. Float targets need the extension
+    // EXT_color_buffer_float (most WebGL 2 browsers give it).
+    const Reading reading = readingOf(p_desc.format);
+    GLint draw = 0;
+    GLint read = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
+    GLuint framebuffer = 0u;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+    const auto level = static_cast<GLint>(p_level);
+    const GLsizei width = atLevel(p_desc.width, level);
+    const GLsizei height = atLevel(p_desc.height, level);
+    const GLuint layers = (p_desc.kind == TextureKind::TextureCube)      ? 6u
+                          : (p_desc.kind == TextureKind::Texture3D)      ? GLuint(atLevel(p_desc.depth, level))
+                          : (p_desc.kind == TextureKind::Texture2DArray) ? GLuint(p_desc.depth)
+                                                                         : 1u;
+    const std::size_t texels = std::size_t(width) * std::size_t(height);
+    std::vector<std::byte> rgba(texels * reading.texel);
+    auto* bytes = static_cast<std::byte*>(p_pixels);
+    const GLuint texture = detail::textureName(p_texture);
+    for (GLuint layer = 0u; (layer < layers) && ((layer + 1u) * texels * bytesPerPixel(p_desc.format) <= p_bytes); ++layer)
     {
-        GLint draw = 0;
-        GLint read = 0;
-        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
-        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
-        GLuint framebuffer = 0u;
-        glGenFramebuffers(1, &framebuffer);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                               detail::textureName(p_texture), static_cast<GLint>(p_level));
-        const auto level = static_cast<GLint>(p_level);
-        glReadPixels(0, 0, atLevel(p_desc.width, level), atLevel(p_desc.height, level), format.layout,
-                     format.type, p_pixels);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(read));
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(draw));
-        glDeleteFramebuffers(1, &framebuffer);
+        if (p_desc.kind == TextureKind::Texture2D)
+        {
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, level);
+        }
+        else if (p_desc.kind == TextureKind::TextureCube)
+        {
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer,
+                                   texture, level);
+        }
+        else
+        {
+            glFramebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, level, GLint(layer));
+        }
+        glReadPixels(0, 0, width, height, reading.layout, reading.type, rgba.data());
+        keepChannels(p_desc.format, reading, rgba.data(), texels,
+                     bytes + (std::size_t(layer) * texels * bytesPerPixel(p_desc.format)));
     }
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(read));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(draw));
+    glDeleteFramebuffers(1, &framebuffer);
 #else
+    const GLFormat format = toGL(p_desc.format);
     const GLenum target = bindToConfigure(p_texture);
     if (p_desc.kind == TextureKind::TextureCube)
     {
@@ -380,5 +644,23 @@ void bindTextureAsImage(NativeId /* texture */,
 {
     reportError(std::string(name()) + " has no image load/store (it needs OpenGL 4.2 or OpenGL ES 3.1)");
 }
+
+namespace detail
+{
+
+void releaseTextureReadback()
+{
+#if defined(COMPAGES_GLES3)
+    if (g_depth_copy != 0u)
+    {
+        detail::useProgram(0u);
+        glDeleteProgram(g_depth_copy);
+        g_depth_copy = 0u;
+        g_depth_copy_level = -1;
+    }
+#endif
+}
+
+} // namespace detail
 
 } // namespace compages::gpu::backend

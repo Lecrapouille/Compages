@@ -68,16 +68,17 @@ struct TranslatedGlsl
 //!   that have none included);
 //! - `binding = N` is removed from `layout(...)` on samplers and uniform
 //!   blocks (GLSL 4.20) and returned in TranslatedGlsl::bindings; the
-//!   backend applies them after linking, so the program behaves the same;
-//! - `COMPAGES_NO_STORAGE` is defined, for a shader to keep a path without
-//!   storage blocks, images and compute.
+//!   backend applies them after linking, so the program behaves the same.
+//!
+//! Storage blocks and compute shaders are rewritten before, by
+//! ComputeEmulation.hpp.
 //!
 //! The line numbers of the compiler log stay those of the source: a `#line`
 //! follows what is added. Comments are never changed.
 //!
-//! \note What has no equivalent (storage blocks, images, compute,
-//! geometry on ES, implicit int to float conversions on ES) is left as it
-//! is: the driver refuses it with its own message.
+//! \note What has no equivalent (images, geometry on ES, implicit int to
+//! float conversions on ES) is left as it is: the driver refuses it with its
+//! own message.
 // ----------------------------------------------------------------------------
 [[nodiscard]] TranslatedGlsl translateGlsl(std::string_view p_source,
                                            GlslDialect p_dialect);

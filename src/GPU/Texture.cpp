@@ -831,6 +831,13 @@ Status Texture::bindAsImage(std::uint32_t p_unit,
                        std::to_string(record->desc.levels));
     }
 
+    // Said now rather than as a frame error later: OpenGL 4.1 and OpenGL ES
+    // 3.0 (GL41, GLES3) have no image load/store.
+    if (!device().images)
+    {
+        return failure(std::string(backend::name()) + " has no image load/store (it needs OpenGL 4.2 or OpenGL ES 3.1)");
+    }
+
     // Only some formats may be written to as an image, and the ones with three
     // channels are never among them: the hardware has no way to address them by
     // whole pixel. This is worth catching here, since the symptom is a compute

@@ -761,6 +761,7 @@ TEST_F(DrawTest, CountsTheWorkOfAFrame)
 // a few frames and a finish, a measure is there, and it is a time.
 TEST_F(DrawTest, TimesTheWorkOfTheGpu)
 {
+    COMPAGES_SKIP_ON_GLES3("no timer query");
     auto vertices = compages::gpu::VertexBuffer<Corner>::from(
                         BIG_TRIANGLE,
                         compages::gpu::BufferUsage::Static)
@@ -976,6 +977,7 @@ void main()
 // do. That is what a compute pass that culls writes, and what this reads.
 TEST_F(DrawTest, DrawsWhatTheCommandBufferAsks)
 {
+    COMPAGES_SKIP_ON_GLES3("no indirect draw (OpenGL ES 3.1)");
     auto vertices = compages::gpu::VertexBuffer<Corner>::from(
                         BIG_TRIANGLE,
                         compages::gpu::BufferUsage::Static)
@@ -1022,6 +1024,12 @@ TEST_F(DrawTest, RefusesACommandBufferThatIsTooSmall)
 // barrier makes a storage buffer drawable.
 TEST_F(DrawTest, DrawsWhatAComputePassWroteAsACommand)
 {
+    // A block of four loose uints (an indirect command), which emulated
+    // compute does not rewrite, and no indirect draw on OpenGL ES 3.0.
+    if (compages::gpu::device().compute_emulated)
+    {
+        GTEST_SKIP() << "compute is emulated on this backend";
+    }
     constexpr const char* fill = R"(#version 450 core
 layout(local_size_x = 1) in;
 

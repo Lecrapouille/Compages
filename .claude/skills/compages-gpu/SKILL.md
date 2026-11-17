@@ -104,8 +104,12 @@ stderr (KHR_debug).
 - No `GLenum`/`gl*` in public headers; GL calls only in
   `src/GPU/Backends/` (`GL45/`, or `GL41/` for `GPU_BACKEND=GL41` (macOS) and `GLES3`
   (WebGL 2); chosen in `Compages.mk`). Shaders stay `#version 450 core`: GL41/GLES3
-  translate them (`src/GPU/Internal/GlslDialect.cpp`) and refuse compute/storage/images
-  (`gpu::device().compute` is false).
+  translate them (`src/GPU/Internal/GlslDialect.cpp`) and emulate compute by transform
+  feedback (`ComputeEmulation.cpp`, `device().compute_emulated`): an invocation writes its own
+  element only; `shared` only via `#include <compages/tiles.glsl>` (`COMPAGES_TILE`,
+  `COMPAGES_FOR_EACH` … `COMPAGES_END_FOR_EACH`, load from a `ShaderSource`); atomics and
+  images refused. Drawing shaders there read storage blocks (copies in textures, remade when
+  the buffer changes), never write them.
 - `gpu` includes only `Core`, never `World`/`Renderer`.
 - Handles are pooled (index + generation); `Buffer<T, Kind>` is not copyable;
   `./build/linux-gcc-debug/bin/Compages-examples --check` must report no leftover handle.
