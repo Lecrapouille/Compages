@@ -8,6 +8,7 @@
 #include "GPU/Backends/GL41/GL41.hpp"
 #include "GPU/Internal/GlslDialect.hpp"
 
+#include <algorithm>
 #include <array>
 #include <map>
 #include <string>

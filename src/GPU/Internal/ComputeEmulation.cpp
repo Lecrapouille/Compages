@@ -10,8 +10,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <map>
 #include <set>
+#include <vector>
 
 namespace compages::gpu::detail
 {

@@ -7,6 +7,7 @@
 
 #include "GPU/Backends/GL41/GL41.hpp"
 
+#include <algorithm>
 #include <bit>
 #include <cstdint>
 #include <map>

@@ -284,8 +284,12 @@ jobs:
           path: ~/.cache/mymakefile
           key: mymakefile-web-${{ hashFiles('external/versions.lock') }}
 
+      # Pinned: a new Emscripten brings a new libc++, which may stop
+      # including a header for us. Raise it on purpose, after a local build.
       - name: Install Emscripten
         uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.13
 
       - name: Build the gallery for the web
         run: make TOOLCHAIN=emscripten COMPILATION_MODE=release Compages-examples
