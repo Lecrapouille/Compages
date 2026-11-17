@@ -231,6 +231,7 @@ void warnOnce(char const* p_what)
 void shutdown()
 {
     detail::releaseTextureReadback();
+    detail::releaseEdgeIndices();
     detail::releaseStorageCopies();
     detail::clearVertexArrayCache();
     if (g_timestamps_made)

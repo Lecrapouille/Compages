@@ -13,6 +13,16 @@
 #    include <emscripten.h>
 #endif
 
+#if defined(__EMSCRIPTEN__)
+// clang-format off
+//! \brief Suspend the program (ASYNCIFY) until the browser draws its next
+//! frame, so that the gallery runs at the refresh rate of the screen.
+EM_ASYNC_JS(void, waitForScreenRefresh, (), {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+});
+// clang-format on
+#endif
+
 namespace examples
 {
 
@@ -67,6 +77,11 @@ Window::open(std::string const& p_title, int p_width, int p_height)
     // waiting to be interrogated after every call.
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
+#if defined(__EMSCRIPTEN__)
+    // In a web page, draw one pixel per pixel of the screen: without this the
+    // canvas has one pixel per CSS pixel, blurred on a screen that scales.
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
+#endif
 
     m_window =
         glfwCreateWindow(p_width, p_height, p_title.c_str(), nullptr, nullptr);
@@ -82,7 +97,10 @@ Window::open(std::string const& p_title, int p_width, int p_height)
     glfwSetScrollCallback(m_window, &Window::onScroll);
     // One frame per refresh of the screen. Without it the loop runs as fast as
     // it can, which heats the machine and makes the frame rate meaningless.
+    // A web page has no swap interval: endFrame waits for the browser.
+#if !defined(__EMSCRIPTEN__)
     glfwSwapInterval(1);
+#endif
 
     // The library gets a loader, never a window. This one line is the whole of
     // what ties src/GPU to a windowing library, and it is on this side of the
@@ -135,8 +153,15 @@ void Window::close()
 // ----------------------------------------------------------------------------
 void Window::beginFrame()
 {
-    m_scroll = 0.0f;
     glfwPollEvents();
+    // Taken after the events: in a web page they arrive while endFrame gives
+    // the browser its turn, so before this function, never inside
+    // glfwPollEvents.
+    m_scroll = m_scroll_pending;
+    m_scroll_pending = 0.0f;
+#if defined(__EMSCRIPTEN__)
+    followBrowserWindow();
+#endif
 
     int width = 0;
     int height = 0;
@@ -188,10 +213,41 @@ void Window::endFrame()
     glfwSwapBuffers(m_window);
 #if defined(__EMSCRIPTEN__)
     // In a web page the frame is shown when the browser gets its turn back:
-    // ASYNCIFY suspends the loop here and resumes it at the next frame.
-    emscripten_sleep(0);
+    // ASYNCIFY suspends the loop here and resumes it at the next frame. With
+    // vsync, the next frame is the next refresh of the screen
+    // (requestAnimationFrame); without, as soon as the browser is free.
+    if (m_vsync)
+    {
+        waitForScreenRefresh();
+    }
+    else
+    {
+        emscripten_sleep(0);
+    }
 #endif
 }
+
+#if defined(__EMSCRIPTEN__)
+// ----------------------------------------------------------------------------
+void Window::followBrowserWindow()
+{
+    // The page has no window to resize: the canvas takes the whole tab, so the
+    // GLFW window follows the size of the tab (in CSS pixels). GLFW then gives
+    // the canvas that size times the pixel ratio of the screen.
+    // clang-format off
+    const int width = EM_ASM_INT({ return window.innerWidth; });
+    const int height = EM_ASM_INT({ return window.innerHeight; });
+    // clang-format on
+    int current_width = 0;
+    int current_height = 0;
+    glfwGetWindowSize(m_window, &current_width, &current_height);
+    if ((width > 0) && (height > 0) &&
+        ((width != current_width) || (height != current_height)))
+    {
+        glfwSetWindowSize(m_window, width, height);
+    }
+}
+#endif
 
 // ----------------------------------------------------------------------------
 compages::Vector2f Window::mouse() const
@@ -204,12 +260,23 @@ compages::Vector2f Window::mouse() const
     double y = 0.0;
     glfwGetCursorPos(m_window, &x, &y);
 
+    // GLFW gives the cursor in screen coordinates, and the framebuffer has
+    // more pixels than that on a screen that scales its contents (a Retina
+    // screen, a web page with a pixel ratio of 2): turned into pixels here.
+    int window_width = 0;
+    int window_height = 0;
+    glfwGetWindowSize(m_window, &window_width, &window_height);
+    const float scale_x = (window_width > 0)
+        ? static_cast<float>(m_width) / static_cast<float>(window_width) : 1.0f;
+    const float scale_y = (window_height > 0)
+        ? static_cast<float>(m_height) / static_cast<float>(window_height) : 1.0f;
+
     // GLFW counts from the top of the window and the graphics API from the
     // bottom, so the one place the two disagree is turned over here rather than
     // in every example.
-    return compages::Vector2f(static_cast<float>(x),
+    return compages::Vector2f(static_cast<float>(x) * scale_x,
                                     static_cast<float>(m_height) -
-                                        static_cast<float>(y));
+                                        static_cast<float>(y) * scale_y);
 }
 
 // ----------------------------------------------------------------------------
@@ -248,10 +315,12 @@ void Window::captureMouse(bool p_captured)
 void Window::vsync(bool p_enabled)
 {
     m_vsync = p_enabled;
+#if !defined(__EMSCRIPTEN__)
     if (m_window != nullptr)
     {
         glfwSwapInterval(p_enabled ? 1 : 0);
     }
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -260,7 +329,7 @@ void Window::onScroll(GLFWwindow* p_window, double /*p_x*/, double p_y)
     auto* self = static_cast<Window*>(glfwGetWindowUserPointer(p_window));
     if (self != nullptr)
     {
-        self->m_scroll += static_cast<float>(p_y);
+        self->m_scroll_pending += static_cast<float>(p_y);
     }
 }
 

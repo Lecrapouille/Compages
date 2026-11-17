@@ -6,6 +6,8 @@
 
 *Compages* is a Latin word: an assembly of parts that lock together into one whole. Here, three layers: GPU, world and renderer.
 
+🌐 **[Try the gallery in your browser](https://lecrapouille.github.io/Compages/)**: more than seventy demos, built with Emscripten for WebGL 2. Nothing to install.
+
 Compages is used for real work: 
 - [RobotIK](https://github.com/Lecrapouille/RobotIK), a robot kinematics library, uses it for its world, its simulator and its painted canvases.
 
@@ -43,7 +45,7 @@ Compages draws and simulates. It does not try to be a full game engine:
 - 🔇 **No sound.** Use an audio library next to it (OpenAL, miniaudio…).
 - 🌐 **No network, no multiplayer.**
 - 🛠️ **No editor.** Your scene is code: your window, your loop.
-- 🖥️ **One platform.** OpenGL 4.5 only, on Linux. No consoles, no web, no Vulkan or Metal. For these, look at Godot, Unity, Unreal, Three.js, or a renderer on every graphics API (bgfx, sokol, Filament).
+- 🖥️ **Few platforms.** OpenGL 4.5 on Linux first; OpenGL 4.1 (macOS) and WebGL 2 (the web page above) emulate the compute shaders. No consoles, no Vulkan or Metal.
 
 ---
 
@@ -146,7 +148,7 @@ You need Linux, a C++20 compiler, Make, CMake, Git, `pkg-config`, GLFW and an **
 
 **Note:**
 
-- macOS stops at OpenGL 4.1 I will see how to manage this.
+- macOS stops at OpenGL 4.1: `make` picks the GL41 backend there by itself. The web page is built with `make TOOLCHAIN=emscripten`.
 - Compages does not use CMake directly but uses Makefile.
 
 All details (Fedora, CI without screen, system install) are given in the document [build and install](doc/guides/build-and-install.md).

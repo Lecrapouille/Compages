@@ -38,7 +38,15 @@ GLFormat toGL(PixelFormat p_format)
         case PixelFormat::RGBA8:
             return { GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE };
         case PixelFormat::SRGB8:
+#if defined(COMPAGES_GLES3)
+            // OpenGL ES (and WebGL 2) cannot make the mipmaps of GL_SRGB8,
+            // which is not renderable: the texture stays incomplete and
+            // reads black. Kept with an alpha channel, which writeTexture
+            // adds to the rows.
+            return { GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE };
+#else
             return { GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE };
+#endif
         case PixelFormat::SRGB8A8:
             return { GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE };
         case PixelFormat::R8UI:
@@ -482,6 +490,26 @@ void writeTexture(NativeId p_texture,
     // Rows are packed, whatever their width.
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+    std::size_t texel_bytes = bytesPerPixel(p_desc.format);
+#if defined(COMPAGES_GLES3)
+    // SRGB8 is stored as SRGB8_ALPHA8 here (see toGL): an opaque alpha is
+    // added to each texel.
+    std::vector<std::byte> widened;
+    if ((p_desc.format == PixelFormat::SRGB8) && (p_pixels != nullptr))
+    {
+        const std::size_t texels = std::size_t(p_width) * p_height * std::max(p_depth, 1u);
+        const auto* from = static_cast<const std::byte*>(p_pixels);
+        widened.resize(texels * 4u);
+        for (std::size_t t = 0u; t < texels; ++t)
+        {
+            std::memcpy(&widened[t * 4u], from + (t * 3u), 3u);
+            widened[t * 4u + 3u] = std::byte{ 0xFF };
+        }
+        p_pixels = widened.data();
+        texel_bytes = 4u;
+    }
+#endif
+
     switch (p_desc.kind)
     {
         case TextureKind::Texture1D:
@@ -497,7 +525,7 @@ void writeTexture(NativeId p_texture,
         // Without DSA a face is a target of its own, not a third coordinate.
         case TextureKind::TextureCube:
         {
-            const std::size_t face_bytes = std::size_t(p_width) * p_height * bytesPerPixel(p_desc.format);
+            const std::size_t face_bytes = std::size_t(p_width) * p_height * texel_bytes;
             const auto* bytes = static_cast<const std::byte*>(p_pixels);
             for (std::uint32_t face = 0u; face < p_depth; ++face)
             {

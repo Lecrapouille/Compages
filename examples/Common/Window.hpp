@@ -183,6 +183,11 @@ public:
 private:
 
     static void onScroll(GLFWwindow* p_window, double p_x, double p_y);
+#if defined(__EMSCRIPTEN__)
+    //! \brief Give the window the size of the browser tab, so that the canvas
+    //! is never stretched from a smaller picture.
+    void followBrowserWindow();
+#endif
 
     GLFWwindow* m_window = nullptr;
     bool m_glfw_ready = false;
@@ -204,6 +209,8 @@ private:
     compages::Vector2f m_mouse_delta{ 0.0f, 0.0f };
     bool m_mouse_seen = false;
     float m_scroll = 0.0f;
+    //! \brief The wheel turned since the last beginFrame, by the callback.
+    float m_scroll_pending = 0.0f;
     bool m_mouse_left = false;
     bool m_mouse_right = false;
     bool m_mouse_left_was = false;

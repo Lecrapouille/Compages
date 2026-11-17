@@ -105,6 +105,14 @@ void warnOnce(char const* p_what);
 //! \brief Delete what reading textures back keeps (shutdown).
 void releaseTextureReadback();
 
+//! \brief OpenGL ES has no glPolygonMode: set by the pipeline when it asks
+//! for lines, so that the draws give the edges of their triangles instead
+//! (GL41Draw.cpp). Never set on desktop OpenGL.
+void drawEdgesOnly(bool p_edges);
+
+//! \brief Delete the index buffer of the edges (shutdown).
+void releaseEdgeIndices();
+
 //! \brief The program in use (detail::useProgram()).
 GLuint usedProgram();
 

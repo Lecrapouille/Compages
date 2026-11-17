@@ -567,9 +567,12 @@ void bindPipeline(NativeId p_program, NativeId p_reader, RenderState const& p_st
     if (everything || (state.polygon != g_applied.polygon))
     {
 #if defined(COMPAGES_GLES3)
-        if (state.polygon != PolygonMode::Fill)
+        // No glPolygonMode in OpenGL ES: the draws give the edges instead.
+        // Points stay filled triangles.
+        detail::drawEdgesOnly(state.polygon == PolygonMode::Line);
+        if (state.polygon == PolygonMode::Point)
         {
-            detail::warnOnce("draws filled triangles only: OpenGL ES has no glPolygonMode (wireframe)");
+            detail::warnOnce("draws filled triangles for PolygonMode::Point: OpenGL ES has no glPolygonMode");
         }
 #else
         glPolygonMode(GL_FRONT_AND_BACK, toGL(state.polygon));
