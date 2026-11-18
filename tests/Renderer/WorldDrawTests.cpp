@@ -397,6 +397,27 @@ TEST_F(WorldDrawTest, DrawsIntoARenderTargetReadTopRowFirst)
     EXPECT_FALSE(target.value().valid());
 }
 
+// The picture knows the time of the World it shows, not the time it is read.
+TEST_F(WorldDrawTest, ARenderTargetKeepsTheTimeOfTheWorldItShows)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    compages::world::Entity eye = scene.camera();
+    ASSERT_TRUE(bool(scene.prepare()));
+    auto target = compages::renderer::RenderTarget::create(8u, 8u);
+    ASSERT_TRUE(bool(target)) << target.error();
+    EXPECT_EQ(target.value().time().value(), 0.0);
+
+    compages::world::ViewFrame frame;
+    frame.total = compages::si::Seconds(2.5);
+    scene.update(frame);
+    scene.render(eye.id(), target.value());
+    frame.total = compages::si::Seconds(3.0);
+    scene.update(frame); // a step later, not drawn
+    ASSERT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+    EXPECT_EQ(target.value().time().value(), 2.5);
+}
+
 // A camera standing for a sensor (sees_helpers false) does not draw the
 // meshes marked Helper: the eye of a robot is not fooled by a marker.
 TEST_F(WorldDrawTest, ASensorCameraDoesNotSeeTheHelpers)

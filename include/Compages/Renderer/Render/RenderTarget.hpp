@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Compages/Core/Result.hpp"
+#include "Compages/Core/Units.hpp"
 #include "Compages/GPU/Framebuffer.hpp"
 #include "Compages/GPU/Texture.hpp"
 #include "Compages/World/Components/Camera.hpp"
@@ -84,6 +85,20 @@ public:
         return m_depth;
     }
 
+    // ------------------------------------------------------------------------
+    //! \brief The time of the World it last showed: the \c total of the last
+    //! World step before Scene::render(camera, target), zero before the
+    //! first.
+    //!
+    //! A camera of a robot stamps its picture with it, never with the time
+    //! it was read: the two differ as soon as the picture is read later, or
+    //! by a host whose simulation runs faster than the pictures.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] si::Seconds time() const
+    {
+        return m_time;
+    }
+
     //! \brief What a RenderPass opens to draw into it.
     [[nodiscard]] compages::gpu::Framebuffer const& framebuffer() const
     {
@@ -119,11 +134,15 @@ public:
 
 private:
 
+    // Scene::render(camera, target) writes the time it drew.
+    friend class Scene;
+
     compages::gpu::Texture m_color;
     compages::gpu::Texture m_depth;
     compages::gpu::Framebuffer m_framebuffer;
     std::uint32_t m_width = 0u;
     std::uint32_t m_height = 0u;
+    si::Seconds m_time{ 0.0 };
 };
 
 } // namespace compages::renderer

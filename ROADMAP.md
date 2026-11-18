@@ -88,10 +88,8 @@ routines).
       after its `World::update`, so that its skinned meshes leave their rest
       pose; set `Animator::time` for the history slider (RobotIK side;
       Compages already does it, see `AnimationClockTests`)
-- [ ] Each picture knows the time of the world it shows: a `RenderTarget`
-      keeps the `total` of the last update before its render. Needed as soon
-      as the read-back is one frame late (below): an observation is stamped
-      with the time of the simulation, never with the time it was read
+- [ ] RobotIK: stamp each `CameraFrame` with `RenderTarget::time()`
+      (RobotIK side)
 
 ### Cameras: RGB-D first, then segmentation
 
