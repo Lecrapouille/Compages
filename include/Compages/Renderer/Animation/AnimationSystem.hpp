@@ -38,9 +38,17 @@ class AssetManager;
 //! \c skin is the CPU prototype: it still rebuilds the VBO. Do not call
 //! it from the frame loop.
 //!
+//! \c tick runs no routine: a host that steps the World with its own clock
+//! calls it after World::update(), instead of Scene::update(). To show the
+//! pose at a given time (a history slider), set \c Animator::time and tick
+//! with no time: the same time always gives the same pose.
+//!
 //! \code
 //! COMPAGES_TRY(compages::renderer::AnimationSystem::tick(world, assets,
 //! frame.elapsed));
+//! // at the time of the slider:
+//! animator.time = slider_time;
+//! COMPAGES_TRY(compages::renderer::AnimationSystem::tick(world, assets, 0.0_s));
 //! \endcode
 // ****************************************************************************
 class AnimationSystem

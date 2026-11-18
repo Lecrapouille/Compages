@@ -465,6 +465,11 @@ public:
     //! Call it once per frame, then render() once per view. It calls
     //! World::update() itself: do not call that too, or the routines run
     //! twice.
+    //!
+    //! A host that steps the world itself, with its own clock (a physics
+    //! engine, RobotIK), does not call it: it calls World::update(), then
+    //! AnimationSystem::tick(world, scene.assets(), dt) for the clips and the
+    //! skins only.
     // ------------------------------------------------------------------------
     void update(compages::world::ViewFrame const& p_frame);
 

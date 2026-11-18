@@ -84,11 +84,10 @@ of Compages runs on the time of the wall even when the simulation is paused,
 and the animation clips never run (`Scene::update()` would also run the
 routines).
 
-- [ ] The clips without the routines: a call that samples the animation
-      clips and computes the world matrices, for a host that steps the world
-      itself. A clip sampled at an absolute time, not by adding steps, so
-      that the history slider of RobotIK shows the same pose every time.
-      This also fixes the skinned meshes of RobotIK left in their rest pose
+- [ ] RobotIK: call `AnimationSystem::tick(world, scene.assets(), dt)`
+      after its `World::update`, so that its skinned meshes leave their rest
+      pose; set `Animator::time` for the history slider (RobotIK side;
+      Compages already does it, see `AnimationClockTests`)
 - [ ] Each picture knows the time of the world it shows: a `RenderTarget`
       keeps the `total` of the last update before its render. Needed as soon
       as the read-back is one frame late (below): an observation is stamped
