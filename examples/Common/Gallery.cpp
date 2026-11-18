@@ -467,6 +467,8 @@ compages::world::ViewFrame Gallery::makeFrame(std::uint32_t p_width,
     m_example_time += elapsed;
     frame.elapsed = compages::si::Seconds(elapsed);
     frame.total = compages::si::Seconds(m_example_time);
+    // The camera still moves while the example is paused.
+    frame.wall_elapsed = compages::si::Seconds(m_window.elapsed());
 
     // With the panels shown, the example gets the mouse while it is over the
     // viewport, and the keyboard while the viewport has focus or the mouse is

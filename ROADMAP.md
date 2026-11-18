@@ -84,10 +84,6 @@ of Compages runs on the time of the wall even when the simulation is paused,
 and the animation clips never run (`Scene::update()` would also run the
 routines).
 
-- [ ] Two times in a `ViewFrame`: `elapsed` and `total` of `Frame` are the
-      time of the simulation (zero when paused); the time of the wall since
-      the last picture is a field of `ViewFrame` only, read by the camera
-      controllers (the orbit camera still turns when the robot is paused)
 - [ ] The clips without the routines: a call that samples the animation
       clips and computes the world matrices, for a host that steps the world
       itself. A clip sampled at an absolute time, not by adding steps, so

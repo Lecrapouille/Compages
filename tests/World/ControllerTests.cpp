@@ -14,7 +14,10 @@
 #include "Compages/World/Controllers/FlyController.hpp"
 #include "Compages/World/Controllers/OrbitController.hpp"
 #include "Compages/World/Controllers/RigController.hpp"
+#include "Compages/World/Controllers/Controls.hpp"
 #include "Compages/World/Controllers/ThirdPersonController.hpp"
+#include "Compages/World/Controllers/ViewFrame.hpp"
+#include "Compages/World/Entity.hpp"
 #include "Compages/World/World.hpp"
 
 
@@ -311,4 +314,38 @@ TEST(RigController, InputStopsTheFlightWhereItIs)
     rig.apply(world, camera, input, compages::si::Seconds(1.0f / 60.0f));
     ASSERT_FALSE(rig.flying());
     ASSERT_NEAR(rig.target.x, now.x, 1.0e-3f);
+}
+
+// A paused world: the routines see no time, the camera still turns with the
+// wall clock.
+TEST(Orbit, TurnsWithTheWallClockWhileTheWorldIsPaused)
+{
+    using namespace compages::si::literals;
+    struct Clock : compages::world::Routine
+    {
+        compages::si::Seconds seen{ 0.0 };
+        void update(compages::si::Seconds p_dt) override
+        {
+            seen += p_dt;
+        }
+    };
+
+    compages::world::World world;
+    compages::world::Entity camera = world.entity("Camera").position(0.0f, 0.0f, 5.0f);
+    camera.add<compages::world::Orbit>(compages::Vector3f(0.0f, 0.0f, 0.0f));
+    auto& orbit = *camera.find<compages::world::Orbit>();
+    orbit.spin = 1.0_rad_per_s;
+    compages::world::Entity ticking = world.entity("Clock").add<Clock>();
+    auto& clock = *ticking.find<Clock>();
+
+    compages::world::ViewFrame paused;
+    paused.elapsed = 0.0_s;
+    paused.wall_elapsed = 0.5_s;
+    world.update(paused); // start()
+    const compages::si::Radians before = orbit.controller.yaw;
+    world.update(paused);
+
+    ASSERT_NEAR(compages::toRadians(orbit.controller.yaw - before), 0.5f, 1.0e-4f);
+    ASSERT_EQ(clock.seen.value(), 0.0);
+    ASSERT_EQ(world.wallElapsed().value(), 0.5);
 }

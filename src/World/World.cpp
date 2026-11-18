@@ -319,6 +319,7 @@ void World::step(compages::Frame const& p_frame)
     // A headless step has no input: do not keep the keys and the mouse of a
     // previous update(ViewFrame), or routines would see them held forever.
     m_input = Input{};
+    m_wall_elapsed = p_frame.elapsed;
     m_routines.update(m_frame.elapsed);
 }
 
@@ -326,6 +327,7 @@ void World::step(ViewFrame const& p_view)
 {
     m_frame = p_view;
     m_input = p_view.input;
+    m_wall_elapsed = p_view.wall_elapsed;
     m_routines.update(m_frame.elapsed);
 }
 

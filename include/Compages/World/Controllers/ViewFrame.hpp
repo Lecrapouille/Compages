@@ -25,11 +25,20 @@ namespace compages::world
 //! \c compages::Frame alone; routines that read the mouse or keys need a \c ViewFrame
 //! passed to \c World::update(ViewFrame).
 //!
+//! It carries two times. \c elapsed and \c total are the time of the
+//! simulation: what the routines, the joints and the clips see; zero while
+//! the program is paused, scaled when it runs slower or faster.
+//! \c wall_elapsed is the time of the wall clock since the previous picture:
+//! what the camera controllers see, so that the person can still turn the
+//! view of a paused simulation. A host with its own clock (RobotIK steps its
+//! physics in steps of its own) fills the two apart.
+//!
 //! \code
 //! compages::world::ViewFrame frame;
 //! frame.width = 1280;
 //! frame.height = 720;
-//! frame.elapsed = compages::si::Seconds(1.0 / 60.0);
+//! frame.elapsed = paused ? 0.0_s : simulation_step;
+//! frame.wall_elapsed = compages::si::Seconds(1.0 / 60.0);
 //! frame.input.set(compages::world::Key::W, true);
 //! world.update(frame);
 //! compages::world::aspect(frame);
@@ -40,6 +49,9 @@ struct ViewFrame : compages::Frame
 {
     //! \brief Mouse and keyboard for this frame (controllers and routines).
     Input input{};
+    //! \brief Time of the wall clock since the previous picture, whatever
+    //! the simulation does (paused, slowed): read by the camera controllers.
+    si::Seconds wall_elapsed{ 0.0 };
 };
 
 // ****************************************************************************

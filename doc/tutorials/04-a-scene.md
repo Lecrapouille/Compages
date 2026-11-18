@@ -171,6 +171,7 @@ int run(GLFWwindow* p_window)
         frame.height = static_cast<std::uint32_t>(height);
         frame.elapsed = compages::si::Seconds(now - previous);
         frame.total = compages::si::Seconds(now - started);
+        frame.wall_elapsed = frame.elapsed; // never paused: one clock for both
         previous = now;
         {
             const compages::gpu::RenderPass pass({ .width = frame.width, .height = frame.height });

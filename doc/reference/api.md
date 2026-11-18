@@ -75,6 +75,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | component | `.set(T{})` `.add<T>(args)` `.get<T>()` `.has<T>()` `.remove<T>()` |
 | system (loop) | `world.each<A, B>([](Entity e, A& a, B& b) { … })` |
 | step | `compages::Frame step; step.elapsed = dt; world.update(step);` |
+| pause the world, keep the camera | `frame.elapsed = 0.0_s; frame.wall_elapsed = dt;` (`ViewFrame`: routines see the first, `Orbit`, `Rig`, `Fly` the second) |
 | routine | `struct X: Routine { void update(compages::si::Seconds dt) override; };` then `.add<X>(…)` |
 | routine life | `onEnable` `start` `fixedUpdate` `update` `lateUpdate` `onDisable` `onDestroy`, `priority()`, `enabled(bool)` |
 | fixed pace | `world.routines().fixedStep(compages::si::Seconds(1.0 / 120.0))` |

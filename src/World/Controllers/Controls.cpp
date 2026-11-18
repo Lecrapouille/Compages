@@ -54,14 +54,17 @@ void Orbit::start()
         controller.pitch, controller.min_pitch, controller.max_pitch);
 }
 
-void Orbit::update(si::Seconds p_dt)
+// The camera routines move with the wall clock, not with the simulation: the
+// person still turns the view of a paused or slowed world.
+void Orbit::update(si::Seconds /*p_dt*/)
 {
+    const si::Seconds dt = world().wallElapsed();
     const CameraInput camera = cameraInput(input());
     if (!camera.look)
     {
-        controller.yaw += spin * p_dt;
+        controller.yaw += spin * dt;
     }
-    controller.apply(world(), entity(), camera, p_dt);
+    controller.apply(world(), entity(), camera, dt);
 }
 
 void Rig::start()
@@ -78,14 +81,14 @@ void Rig::start()
     controller.snap(world(), entity());
 }
 
-void Rig::update(si::Seconds p_dt)
+void Rig::update(si::Seconds /*p_dt*/)
 {
     si::Radians fov = camera_defaults::kFov;
     if (Camera const* camera = entity().find<Camera>())
     {
         fov = camera->fov;
     }
-    controller.apply(world(), entity(), rigInput(input(), frame(), fov), p_dt);
+    controller.apply(world(), entity(), rigInput(input(), frame(), fov), world().wallElapsed());
 }
 
 void Fly::start()
@@ -95,9 +98,9 @@ void Fly::start()
                controller.pitch);
 }
 
-void Fly::update(si::Seconds p_dt)
+void Fly::update(si::Seconds /*p_dt*/)
 {
-    controller.apply(world(), entity(), cameraInput(input()), p_dt);
+    controller.apply(world(), entity(), cameraInput(input()), world().wallElapsed());
 }
 
 } // namespace compages::world

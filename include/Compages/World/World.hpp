@@ -232,6 +232,14 @@ public:
         return m_input;
     }
 
+    //! \brief Time of the wall clock since the previous picture, from the
+    //! last update(ViewFrame) (ViewFrame::wall_elapsed). With no view (a
+    //! headless step), the time of the step: there is no other clock.
+    [[nodiscard]] si::Seconds wallElapsed() const
+    {
+        return m_wall_elapsed;
+    }
+
     //! \brief How many entities are alive.
     [[nodiscard]] std::size_t living() const
     {
@@ -418,6 +426,7 @@ private:
     TransformSystem m_transform_system;
     compages::Frame m_frame{};
     Input m_input{};
+    si::Seconds m_wall_elapsed{ 0.0 };
     RoutineSystem m_routines{ *this };
 
     static const std::string s_empty_name;

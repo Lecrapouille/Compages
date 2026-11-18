@@ -55,7 +55,9 @@ struct Orbit : Routine
     void start() override;
 
     //! \brief Apply orbit input; optional \c spin when the user is not looking.
-    //! \param[in] p_dt Seconds since the previous frame.
+    //! It moves with the wall clock (World::wallElapsed()), not with the
+    //! time of the simulation \c p_dt: the view still moves while the
+    //! world is paused.
     void update(si::Seconds p_dt) override;
 
     //! \brief Radians a second the camera turns by itself while the user
@@ -86,7 +88,9 @@ struct Rig : Routine
     void start() override;
 
     //! \brief Apply the input and glide.
-    //! \param[in] p_dt Seconds since the previous frame.
+    //! It moves with the wall clock (World::wallElapsed()), not with the
+    //! time of the simulation \c p_dt: the view still moves while the
+    //! world is paused.
     void update(si::Seconds p_dt) override;
 };
 
@@ -107,7 +111,9 @@ struct Fly : Routine
     void start() override;
 
     //! \brief Apply fly look and movement from keyboard and mouse input.
-    //! \param[in] p_dt Seconds since the previous frame.
+    //! It moves with the wall clock (World::wallElapsed()), not with the
+    //! time of the simulation \c p_dt: the view still moves while the
+    //! world is paused.
     void update(si::Seconds p_dt) override;
 };
 
