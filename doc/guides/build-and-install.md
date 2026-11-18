@@ -72,11 +72,14 @@ After the build, in `build/linux-gcc-debug/` (`make COMPILATION_MODE=release` bu
 
 | Path | Contents |
 |------|----------|
-| `lib/libCompages.a`, `lib/libCompages.so` | the static and shared libraries |
-| `lib/pkgconfig/Compages.pc` | its flags, to build against it without installing it |
+| `lib/libCompages-World.a` (and `.so`) | Core, Fields and the World: no GPU, no OpenGL |
+| `lib/libCompages-GPU.a` (and `.so`) | the GPU layer and its backend |
+| `lib/libCompages.a` (and `.so`) | the Renderer; it needs the two others |
+| `lib/pkgconfig/*.pc` | their flags, to build against them without installing them |
 | `bin/Compages-examples` | the gallery |
 | `bin/Compages-headless` | a scene drawn into a PNG with no screen (Linux) |
-| `bin/Compages-UnitTest` | the unit tests |
+| `bin/Compages-WorldTest` | the unit tests that need no GPU (Core, Fields, World) |
+| `bin/Compages-UnitTest` | the unit tests of the GPU and the Renderer |
 
 `make help` lists the variables (`GPU_BACKEND`, `PREFIX`, …).
 

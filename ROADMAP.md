@@ -67,16 +67,10 @@ ECS; it does not build a second model of the robot.
 
 ### Headless, checked by the linker
 
-Today `Compages.mk` makes one library. `robotik-core`, which must run with no
-GPU, links it whole: glad, the backend, stb, cgltf. Nothing stops a GPU call
-from entering it.
+`Compages.mk` makes one library per layer (`Compages-World`,
+`Compages-GPU`, `Compages`), and `Compages-WorldTest` links
+`Compages-World` alone.
 
-- [ ] Three libraries in `Compages.mk`: `Compages-World` (Core, Fields,
-      World; units, entt, pugixml), `Compages-GPU` (the backend, glad),
-      `Compages-Renderer` (cgltf, stb, json). `Compages` stays the three
-      together, for the gallery
-- [ ] The World tests in a binary that links only `Compages-World`: a GPU
-      include in `src/World/` then breaks the build, not a review
 - [ ] RobotIK: `robotik-core` and `Robotik-Headless` depend on
       `Compages-World` only, the simulator on `Compages` (RobotIK side)
 - [ ] An OpenGL context with no window, for RobotIK camera tests in CI and

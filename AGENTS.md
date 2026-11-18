@@ -4,7 +4,8 @@ Compages: C++20 3D library in three stacked layers, each usable without the
 one above: **GPU** (`compages::gpu`, shader-named data, `Drawable`, compute),
 **World** (`compages::world`, scene graph + EnTT ECS, routines, joints,
 headless), **Renderer** (`compages::renderer`, `Scene`, assets, snapshot,
-drawing). Shared vocabulary directly in `compages` (vectors, matrices,
+drawing), one library each: `Compages-World`, `Compages-GPU`, `Compages`
+(the Renderer, which brings the two others). Shared vocabulary directly in `compages` (vectors, matrices,
 `Frame`, `Result`), from `Core/`; structured data (`Grid2D`, `CurvilinearGrid`, `Field<T>`,
 `intersect` with a height field) directly in `compages`, from `Fields/`. OpenGL 4.5 backend `GL45`. Linux, plain `make` (MyMakefile in
 `.makefile/`, no CMake). Dual license GPL-3.0-or-later / commercial.
@@ -34,7 +35,8 @@ examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-e
                     13_Workshop/ = the robot workshop of doc/tutorials/ (Workshop/Arm.cpp is World only);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
                     Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
-tests/              GoogleTest: Core/ Fields/ GPU/ World/ Renderer/ (build/linux-gcc-debug/bin/Compages-UnitTest)
+tests/              GoogleTest: Core/ Fields/ World/ -> bin/Compages-WorldTest (links Compages-World only);
+                    GPU/ Renderer/ -> bin/Compages-UnitTest (needs an OpenGL context)
 external/           external.mk declares the third parties, versions.lock their commits;
                     external/Compages-data/ = demo assets
 ```
@@ -61,7 +63,8 @@ node examples/Web/check.mjs "http://127.0.0.1:8080/Compages-examples.html?args=-
   `Entity::rotate`, controllers). Maths on them with `units::math::sin`,
   `cos`, `abs`, `exp`… (`sin(2.0_rad_per_s * t)`), never `std::sin` of a
   converted float; `toSeconds`/`toRadians`/`toMetres` only to feed float code.
-- Include direction: `Fields` includes only `Core`; `gpu` and `world`
+- Include direction, checked by the linker (`Compages-WorldTest` links
+  `Compages-World` alone): `Fields` includes only `Core`; `gpu` and `world`
   include only `Core` and `Fields`; `renderer` includes `world`, `gpu`,
   `Fields`, `Core`. `world` never sees a `gpu::` type; public
   headers never contain `GLenum`/`gl*`; only `src/GPU/Backends/` includes

@@ -158,7 +158,7 @@ picture → limits.
 ## Checks before a commit
 
 1. World snippets that are not from a demo compile headless:
-   `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`;
+   `g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a build/linux-gcc-debug/lib/libCompages-GPU.a build/linux-gcc-debug/lib/libCompages-World.a` (World only: `--cflags Compages-World` and `libCompages-World.a`);
    paste the real output.
 2. Every relative link resolves (a loop over `](…)` targets with `test -e`).
 3. **Fresh reader pass**: reread each new page as a C++ developer who opened

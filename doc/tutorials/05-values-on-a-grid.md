@@ -43,8 +43,8 @@ int main()
 ```
 
 ```sh
-g++ -std=c++20 field.cpp $(pkg-config --cflags Compages) \
-    build/linux-gcc-debug/lib/libCompages.a -o field
+g++ -std=c++20 field.cpp $(pkg-config --cflags Compages-World) \
+    build/linux-gcc-debug/lib/libCompages-World.a -o field
 ./field
 ```
 

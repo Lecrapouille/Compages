@@ -40,7 +40,7 @@ int main()
 
 ```sh
 export PKG_CONFIG_PATH="$PWD/build/linux-gcc-debug/lib/pkgconfig"
-g++ -std=c++20 robot.cpp $(pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a -o robot
+g++ -std=c++20 robot.cpp $(pkg-config --cflags Compages-World) build/linux-gcc-debug/lib/libCompages-World.a -o robot
 ./robot
 ```
 

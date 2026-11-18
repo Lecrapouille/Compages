@@ -226,6 +226,7 @@ export PKG_CONFIG_PATH="$PWD/build/linux-gcc-debug/lib/pkgconfig"
 g++ -std=c++20 workshop.cpp examples/13_Workshop/Workshop/Room.cpp \
     examples/13_Workshop/Workshop/Arm.cpp examples/13_Workshop/Workshop/ArmShapes.cpp -Iexamples \
     $(pkg-config --cflags Compages glfw3) build/linux-gcc-debug/lib/libCompages.a \
+    build/linux-gcc-debug/lib/libCompages-GPU.a build/linux-gcc-debug/lib/libCompages-World.a \
     $(pkg-config --libs glfw3) -o workshop
 ./workshop
 ```

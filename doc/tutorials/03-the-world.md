@@ -18,7 +18,7 @@ You need Compages built (`make`, see [Install and run](01-install.md)). Each ste
 
 ```sh
 export PKG_CONFIG_PATH="$PWD/build/linux-gcc-debug/lib/pkgconfig"
-g++ -std=c++20 step.cpp $(pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a -o step
+g++ -std=c++20 step.cpp $(pkg-config --cflags Compages-World) build/linux-gcc-debug/lib/libCompages-World.a -o step
 ./step
 ```
 
@@ -292,7 +292,7 @@ It needs the code of the arm too, so the build line has one more file:
 
 ```sh
 g++ -std=c++20 arm.cpp examples/13_Workshop/Workshop/Arm.cpp -Iexamples \
-    $(pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a -o arm
+    $(pkg-config --cflags Compages-World) build/linux-gcc-debug/lib/libCompages-World.a -o arm
 ./arm
 ```
 

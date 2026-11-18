@@ -78,8 +78,8 @@ Build and run it from that same folder:
 ```sh
 export PKG_CONFIG_PATH="$PWD/build/linux-gcc-debug/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 pkg-config --modversion Compages
-g++ -std=c++20 hello.cpp $(pkg-config --cflags Compages) \
-    build/linux-gcc-debug/lib/libCompages.a -o hello
+g++ -std=c++20 hello.cpp $(pkg-config --cflags Compages-World) \
+    build/linux-gcc-debug/lib/libCompages-World.a -o hello
 ./hello
 ```
 

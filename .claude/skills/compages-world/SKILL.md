@@ -77,6 +77,6 @@ world.lookup("Ship/Gun");                                // path lookup; Entity 
   `gpu::reportError` inside the gallery only).
 
 Quick check without the gallery (verified):
-`g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages) build/linux-gcc-debug/lib/libCompages.a`.
+`g++ -std=c++20 x.cpp $(PKG_CONFIG_PATH=build/linux-gcc-debug/lib/pkgconfig pkg-config --cflags Compages-World) build/linux-gcc-debug/lib/libCompages-World.a`.
 
 Reference: doc/concepts/the-world.md, doc/tutorials/03-make-it-move.md, doc/guides/run-without-a-screen.md.
