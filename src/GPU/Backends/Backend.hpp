@@ -318,6 +318,37 @@ void readTexture(NativeId p_texture,
                  void* p_pixels);
 
 // ----------------------------------------------------------------------------
+//! \brief Start copying a whole level of detail into memory the CPU reads
+//! later, without waiting for the GPU (a pixel buffer and a fence).
+//!
+//! A backend that cannot copy without waiting (GLES3) reads at once and keeps
+//! the pixels: the read is then finished as soon as it starts.
+//!
+//! \return what the backend calls the read in flight, for readFinished(),
+//! finishRead() and destroyRead().
+// ----------------------------------------------------------------------------
+[[nodiscard]] Result<NativeId> beginReadTexture(NativeId p_texture,
+                                                TextureDesc const& p_desc,
+                                                std::uint32_t p_level,
+                                                std::size_t p_bytes);
+
+// ----------------------------------------------------------------------------
+//! \brief Has the GPU finished the copy? Never waits.
+// ----------------------------------------------------------------------------
+[[nodiscard]] bool readFinished(NativeId p_read);
+
+// ----------------------------------------------------------------------------
+//! \brief Copy the pixels of a read into CPU memory, waiting for the GPU if
+//! it has not finished.
+// ----------------------------------------------------------------------------
+void finishRead(NativeId p_read, std::size_t p_bytes, void* p_pixels);
+
+// ----------------------------------------------------------------------------
+//! \brief Free the pixel buffer and the fence of a read.
+// ----------------------------------------------------------------------------
+void destroyRead(NativeId p_read);
+
+// ----------------------------------------------------------------------------
 //! \brief Build the smaller levels of detail from the largest one.
 // ----------------------------------------------------------------------------
 void generateMipmaps(NativeId p_texture);

@@ -757,3 +757,30 @@ TEST_F(TextureTest, MakesATextureFromAField)
     std::memcpy(back.data(), bytes.value().data(), back.size() * sizeof(float));
     EXPECT_FLOAT_EQ(back[grid.index(1, 2, 1)], float(grid.index(1, 2, 1)));
 }
+
+// A read asked for now and taken later gives the pixels read() gives, and
+// leaves nothing behind once taken.
+TEST_F(TextureTest, ReadLaterGivesWhatReadGives)
+{
+    auto created = compages::gpu::Texture::create({ .width = 4u, .height = 2u });
+    ASSERT_TRUE(bool(created)) << created.error();
+    compages::gpu::Texture& texture = created.value();
+    std::vector<std::byte> pixels(4u * 2u * 4u);
+    for (std::size_t i = 0u; i < pixels.size(); ++i)
+    {
+        pixels[i] = std::byte(i * 7u);
+    }
+    ASSERT_TRUE(bool(texture.write(pixels)));
+
+    auto pending = texture.readLater();
+    ASSERT_TRUE(bool(pending)) << pending.error();
+    EXPECT_TRUE(pending.value().valid());
+    EXPECT_EQ(compages::gpu::resourceStatistics().reads, 1u);
+    auto taken = pending.value().take();
+    ASSERT_TRUE(bool(taken)) << taken.error();
+    EXPECT_EQ(taken.value(), texture.read().value());
+    EXPECT_FALSE(pending.value().valid());
+    EXPECT_EQ(compages::gpu::resourceStatistics().reads, 0u);
+    EXPECT_FALSE(bool(pending.value().take()));
+    EXPECT_FALSE(bool(texture.readLater(3u)));
+}

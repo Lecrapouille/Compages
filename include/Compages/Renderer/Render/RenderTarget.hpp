@@ -22,6 +22,37 @@ namespace compages::renderer
 {
 
 // ****************************************************************************
+//! \brief What RenderTarget::readLater() reads: the colour, the depth, or both.
+//!
+//! \code
+//! target.readLater({ .color = true, .depth = true });
+//! \endcode
+// ****************************************************************************
+struct ReadChannels
+{
+    //! \brief The colour pixels, RGBA8.
+    bool color = false;
+    //! \brief The depth of each pixel, in metres.
+    bool depth = false;
+};
+
+// ****************************************************************************
+//! \brief The pictures of a RenderTarget brought to the CPU, as the camera of
+//! a robot gives them: rows top first.
+// ****************************************************************************
+struct Capture
+{
+    //! \brief The time of the World the pictures show (RenderTarget::time()
+    //! when the read was asked).
+    si::Seconds time{ 0.0 };
+    //! \brief RGBA8, the top row first; empty if not asked.
+    std::vector<std::byte> color;
+    //! \brief Metres along the axis of the camera, the top row first,
+    //! +infinity where nothing was drawn; empty if not asked.
+    std::vector<float> depth;
+};
+
+// ****************************************************************************
 //! \brief A picture a Scene draws into, instead of the window: the view of a
 //! robot camera, a thumbnail, a picture for a test or a file.
 //!
@@ -128,14 +159,61 @@ public:
     [[nodiscard]] Result<std::vector<float>> readDepth(compages::world::Camera const& p_lens) const;
 
     // ------------------------------------------------------------------------
+    //! \brief Ask for the pictures to come to the CPU, without waiting: take
+    //! them later with takeRead().
+    //!
+    //! readColor() and readDepth() stop the CPU until the GPU is done. A
+    //! camera at 30 Hz asks after its render, and takes the pictures one frame
+    //! later, when readReady() says they are there: the GPU copies them while
+    //! the CPU goes on. The depth is turned into metres with the lens the last
+    //! render used, and the capture keeps the time() of that render.
+    //!
+    //! \code
+    //! scene.render(eye, target);
+    //! COMPAGES_TRY(target.readLater({ .color = true, .depth = true }));
+    //! // next frame
+    //! if (target.readReady())
+    //! {
+    //!     COMPAGES_TRY_ASSIGN(capture, target.takeRead());
+    //! }
+    //! \endcode
+    //!
+    //! \return an error on an empty target, when nothing is asked, or when a
+    //! read is already on its way (take it first).
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Status readLater(ReadChannels p_channels);
+
+    //! \brief True when a read was asked and the GPU has finished it. Never
+    //! waits.
+    [[nodiscard]] bool readReady() const;
+
+    //! \brief True between readLater() and takeRead().
+    [[nodiscard]] bool reading() const
+    {
+        return m_color_read.valid() || m_depth_read.valid();
+    }
+
+    // ------------------------------------------------------------------------
+    //! \brief The pictures asked by readLater(). Waits for the GPU if they are
+    //! not readReady(); then the read is over.
+    //!
+    //! \return the capture, or an error when no read was asked.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Result<Capture> takeRead();
+
+    // ------------------------------------------------------------------------
     //! \brief Write the colour picture into a PNG file.
     // ------------------------------------------------------------------------
     [[nodiscard]] Status saveColor(std::filesystem::path const& p_path) const;
 
 private:
 
-    // Scene::render(camera, target) writes the time it drew.
+    // Scene::render(camera, target) writes the time and the lens it drew.
     friend class Scene;
+
+    [[nodiscard]] Result<std::vector<float>> toMetres(std::vector<std::byte> const& p_bytes,
+                                                      compages::world::Camera const& p_lens) const;
+    void flipRows(std::vector<std::byte>& p_pixels) const;
 
     compages::gpu::Texture m_color;
     compages::gpu::Texture m_depth;
@@ -143,6 +221,14 @@ private:
     std::uint32_t m_width = 0u;
     std::uint32_t m_height = 0u;
     si::Seconds m_time{ 0.0 };
+    //! \brief The lens of the last render, to turn its depth into metres.
+    compages::world::Camera m_lens{};
+    compages::gpu::PendingRead m_color_read;
+    compages::gpu::PendingRead m_depth_read;
+    //! \brief What a read in flight shows: the time and the lens of its
+    //! render.
+    si::Seconds m_read_time{ 0.0 };
+    compages::world::Camera m_read_lens{};
 };
 
 } // namespace compages::renderer

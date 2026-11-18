@@ -153,6 +153,19 @@ using FramebufferPool = Pool<FramebufferRecord, FramebufferTag>;
 // ****************************************************************************
 //! \brief Every resource of the one device, each kind in its own pool.
 // ****************************************************************************
+// ****************************************************************************
+//! \brief What the library remembers about one read of a texture on its way
+//! to the CPU.
+// ****************************************************************************
+struct ReadRecord
+{
+    //! \brief What the backend calls the read in flight.
+    backend::NativeId native = backend::NO_OBJECT;
+    //! \brief How many bytes it brings.
+    std::size_t bytes = 0u;
+};
+using ReadPool = Pool<ReadRecord, PendingReadTag>;
+
 struct Pools
 {
     BufferPool buffers;
@@ -161,6 +174,7 @@ struct Pools
     TexturePool textures;
     PipelinePool pipelines;
     FramebufferPool framebuffers;
+    ReadPool reads;
 };
 
 // ----------------------------------------------------------------------------

@@ -9,7 +9,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <memory>
 #include <vector>
 
 namespace compages::gpu::backend
@@ -632,6 +634,116 @@ void readTexture(NativeId p_texture,
 #endif
 
     glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+}
+
+namespace
+{
+
+//! \brief A copy of a texture on its way to the CPU: a pixel buffer and a
+//! fence on desktop OpenGL 4.1, the pixels themselves on OpenGL ES 3.0.
+struct PendingCopy
+{
+    GLuint buffer = 0u;
+    GLsync fence = nullptr;
+    std::vector<std::byte> pixels;
+};
+
+PendingCopy* pendingCopy(NativeId p_read)
+{
+    return reinterpret_cast<PendingCopy*>(static_cast<std::uintptr_t>(p_read));
+}
+
+} // namespace
+
+Result<NativeId> beginReadTexture(NativeId p_texture,
+                                  TextureDesc const& p_desc,
+                                  std::uint32_t p_level,
+                                  std::size_t p_bytes)
+{
+    auto copy = std::make_unique<PendingCopy>();
+#if defined(COMPAGES_GLES3)
+    // OpenGL ES 3.0 has no glGetTexImage, and reads a depth texture by
+    // drawing it: the pixels are read at once, and the read is finished.
+    copy->pixels.resize(p_bytes);
+    readTexture(p_texture, p_desc, p_level, p_bytes, copy->pixels.data());
+#else
+    // The level goes into a pixel buffer, in the time of the GPU.
+    glGenBuffers(1, &copy->buffer);
+    if (copy->buffer == 0u)
+    {
+        return failure("the GPU gave no pixel buffer to read a texture into");
+    }
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, copy->buffer);
+    glBufferData(GL_PIXEL_PACK_BUFFER, static_cast<GLsizeiptr>(p_bytes), nullptr, GL_STREAM_READ);
+    GLint alignment = 4;
+    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    const GLFormat format = toGL(p_desc.format);
+    const GLenum target = bindToConfigure(p_texture);
+    if (p_desc.kind == TextureKind::TextureCube)
+    {
+        const std::size_t face_bytes = p_bytes / 6u;
+        for (GLenum face = 0u; face < 6u; ++face)
+        {
+            // In a pixel buffer, the pointer is an offset into it.
+            glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, static_cast<GLint>(p_level), format.layout,
+                          format.type, reinterpret_cast<void*>(std::uintptr_t(face * face_bytes)));
+        }
+    }
+    else
+    {
+        glGetTexImage(target, static_cast<GLint>(p_level), format.layout, format.type, nullptr);
+    }
+    glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0u);
+    copy->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0u);
+    glFlush();
+#endif
+    return NativeId{ reinterpret_cast<std::uintptr_t>(copy.release()) };
+}
+
+bool readFinished(NativeId p_read)
+{
+    PendingCopy const* copy = pendingCopy(p_read);
+    if (copy->fence == nullptr)
+    {
+        return true;
+    }
+    const GLenum state = glClientWaitSync(copy->fence, 0u, 0u);
+    return (state == GL_ALREADY_SIGNALED) || (state == GL_CONDITION_SATISFIED);
+}
+
+void finishRead(NativeId p_read, std::size_t p_bytes, void* p_pixels)
+{
+    PendingCopy const* copy = pendingCopy(p_read);
+    if (copy->fence == nullptr)
+    {
+        std::memcpy(p_pixels, copy->pixels.data(), std::min(p_bytes, copy->pixels.size()));
+        return;
+    }
+#if !defined(COMPAGES_GLES3)
+    constexpr GLuint64 kOneSecond = 1000000000u;
+    if (glClientWaitSync(copy->fence, GL_SYNC_FLUSH_COMMANDS_BIT, kOneSecond) == GL_TIMEOUT_EXPIRED)
+    {
+        reportError("a texture read back waited one second for the GPU");
+    }
+    glBindBuffer(GL_COPY_READ_BUFFER, copy->buffer);
+    glGetBufferSubData(GL_COPY_READ_BUFFER, 0, static_cast<GLsizeiptr>(p_bytes), p_pixels);
+    glBindBuffer(GL_COPY_READ_BUFFER, 0u);
+#endif
+}
+
+void destroyRead(NativeId p_read)
+{
+    std::unique_ptr<PendingCopy> copy(pendingCopy(p_read));
+    if (copy->fence != nullptr)
+    {
+        glDeleteSync(copy->fence);
+    }
+    if (copy->buffer != 0u)
+    {
+        glDeleteBuffers(1, &copy->buffer);
+    }
 }
 
 void generateMipmaps(NativeId p_texture)

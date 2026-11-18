@@ -48,6 +48,12 @@ void releaseAllResources()
     reportLeak(all.textures.size(), "texture(s)");
     reportLeak(all.pipelines.size(), "pipeline(s)");
     reportLeak(all.framebuffers.size(), "framebuffer(s)");
+    reportLeak(all.reads.size(), "texture read(s) never taken");
+
+    all.reads.forEach([](PendingReadHandle, ReadRecord const& p_record) {
+        backend::destroyRead(p_record.native);
+    });
+    all.reads.clear();
 
     // Pipelines go first, because each holds a share of a way of reading a
     // vertex, and the backend only lets go of one when its last holder does.

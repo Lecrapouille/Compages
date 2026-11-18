@@ -7,6 +7,11 @@
 
 #include "GPU/Backends/GL45/GL45.hpp"
 
+#include "Compages/GPU/Errors.hpp"
+
+#include <cstdint>
+#include <memory>
+
 namespace compages::gpu::backend
 {
 
@@ -305,6 +310,79 @@ void readTexture(NativeId p_texture,
                       format.type,
                       static_cast<GLsizei>(p_bytes),
                       p_pixels);
+}
+
+namespace
+{
+
+//! \brief A copy of a texture on its way to the CPU.
+struct PendingCopy
+{
+    GLuint buffer = 0u;
+    GLsync fence = nullptr;
+};
+
+PendingCopy* pendingCopy(NativeId p_read)
+{
+    return reinterpret_cast<PendingCopy*>(static_cast<std::uintptr_t>(p_read));
+}
+
+} // namespace
+
+// The level is written into a pixel buffer by the GPU, in its own time; the
+// fence says when it is there. Nothing here waits.
+Result<NativeId> beginReadTexture(NativeId p_texture,
+                                  TextureDesc const& p_desc,
+                                  std::uint32_t p_level,
+                                  std::size_t p_bytes)
+{
+    auto copy = std::make_unique<PendingCopy>();
+    glCreateBuffers(1, &copy->buffer);
+    if (copy->buffer == 0u)
+    {
+        return failure("the GPU gave no pixel buffer to read a texture into");
+    }
+    glNamedBufferStorage(copy->buffer, static_cast<GLsizeiptr>(p_bytes), nullptr, GL_MAP_READ_BIT);
+    const GLFormat format = toGL(p_desc.format);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, copy->buffer);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glGetTextureImage(static_cast<GLuint>(p_texture),
+                      static_cast<GLint>(p_level),
+                      format.layout,
+                      format.type,
+                      static_cast<GLsizei>(p_bytes),
+                      nullptr); // an offset of zero into the pixel buffer
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0u);
+    copy->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0u);
+    // Send the commands now, so that the copy runs while the CPU works.
+    glFlush();
+    return NativeId{ reinterpret_cast<std::uintptr_t>(copy.release()) };
+}
+
+bool readFinished(NativeId p_read)
+{
+    PendingCopy const* copy = pendingCopy(p_read);
+    const GLenum state = glClientWaitSync(copy->fence, 0u, 0u);
+    return (state == GL_ALREADY_SIGNALED) || (state == GL_CONDITION_SATISFIED);
+}
+
+void finishRead(NativeId p_read, std::size_t p_bytes, void* p_pixels)
+{
+    PendingCopy const* copy = pendingCopy(p_read);
+    // One second at most: past it the GPU is lost, and the error channel says so.
+    constexpr GLuint64 kOneSecond = 1000000000u;
+    if (glClientWaitSync(copy->fence, GL_SYNC_FLUSH_COMMANDS_BIT, kOneSecond) == GL_TIMEOUT_EXPIRED)
+    {
+        reportError("a texture read back waited one second for the GPU");
+    }
+    glGetNamedBufferSubData(copy->buffer, 0, static_cast<GLsizeiptr>(p_bytes), p_pixels);
+}
+
+void destroyRead(NativeId p_read)
+{
+    std::unique_ptr<PendingCopy> copy(pendingCopy(p_read));
+    glDeleteSync(copy->fence);
+    glDeleteBuffers(1, &copy->buffer);
 }
 
 void generateMipmaps(NativeId p_texture)

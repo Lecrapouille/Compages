@@ -43,6 +43,22 @@ COMPAGES_TRY_ASSIGN(metres, m_eye.readDepth(robot_camera.get<compages::world::Ca
 
 `color()` shows it (an ImGui window); `resize(width, height)` does nothing when the size has not changed, so a panel may call it each frame. `readColor()` and `readDepth()` wait for the GPU: read at the rate of a sensor, not at every frame. `readDepth` gives metres along the axis of the camera, +infinity where nothing was drawn: what an RGB-D camera gives. `saveColor(path)` writes a PNG; `renderToFile` is this, in one call. A camera with [screen effects](screen-effects.md) gives the filtered colour to `readColor()`; the depth stays the one of the geometry.
 
+Several cameras at 30 Hz cannot wait for the GPU each time. Ask for the pictures after the render, and take them one frame later: the GPU copies them while the CPU goes on.
+
+```cpp
+scene.render(robot_camera, m_eye);
+COMPAGES_TRY(m_eye.readLater({ .color = true, .depth = true }));
+// the next frame
+if (m_eye.readReady())
+{
+    COMPAGES_TRY_ASSIGN(capture, m_eye.takeRead());
+    // capture.time: the time of the World the picture shows
+    // capture.color: RGBA8, capture.depth: metres, both top row first
+}
+```
+
+`time()` of a target is the `total` of the World it last showed: stamp an observation with it, never with the time it was read. On OpenGL ES 3.0 (WebGL 2) the read happens when it is asked for, so it waits there.
+
 **Another Scene on the same world**: a second `Scene` shares the World and the catalog of the first:
 
 ```cpp

@@ -64,19 +64,10 @@ Result<std::vector<std::byte>> RenderTarget::readColor() const
     }
     std::vector<std::byte> pixels;
     COMPAGES_TRY_ASSIGN(pixels, m_color.read());
-    const std::size_t row = std::size_t(m_width) * 4u;
-    for (std::size_t top = 0u, bottom = std::size_t(m_height) - 1u; top < bottom; ++top, --bottom)
-    {
-        std::swap_ranges(pixels.begin() + std::ptrdiff_t(top * row), pixels.begin() + std::ptrdiff_t((top + 1u) * row),
-                         pixels.begin() + std::ptrdiff_t(bottom * row));
-    }
+    flipRows(pixels);
     return pixels;
 }
 
-// ----------------------------------------------------------------------------
-//! The Scene stores n (f - d) / ((f - n) d) for a perspective lens (1 at the
-//! near plane, 0 at the far one) and (f - d) / (f - n) for an orthographic
-//! one: solved here for d, the distance along the axis of the camera.
 // ----------------------------------------------------------------------------
 Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const& p_lens) const
 {
@@ -86,10 +77,21 @@ Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const
     }
     std::vector<std::byte> bytes;
     COMPAGES_TRY_ASSIGN(bytes, m_depth.read());
+    return toMetres(bytes, p_lens);
+}
+
+// ----------------------------------------------------------------------------
+//! The Scene stores n (f - d) / ((f - n) d) for a perspective lens (1 at the
+//! near plane, 0 at the far one) and (f - d) / (f - n) for an orthographic
+//! one: solved here for d, the distance along the axis of the camera.
+// ----------------------------------------------------------------------------
+Result<std::vector<float>> RenderTarget::toMetres(std::vector<std::byte> const& p_bytes,
+                                                  compages::world::Camera const& p_lens) const
+{
     const std::size_t count = std::size_t(m_width) * m_height;
-    if (bytes.size() < count * sizeof(float))
+    if (p_bytes.size() < count * sizeof(float))
     {
-        return failure("readDepth(): the GPU gave " + std::to_string(bytes.size()) + " bytes for " +
+        return failure("readDepth(): the GPU gave " + std::to_string(p_bytes.size()) + " bytes for " +
                        std::to_string(count) + " pixels");
     }
     const float n = p_lens.near_plane;
@@ -106,7 +108,7 @@ Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const
         for (std::size_t x = 0u; x < m_width; ++x)
         {
             float stored = 0.0f;
-            std::memcpy(&stored, bytes.data() + ((from + x) * sizeof(float)), sizeof(float));
+            std::memcpy(&stored, p_bytes.data() + ((from + x) * sizeof(float)), sizeof(float));
             stored = clip_control ? stored : ((2.0f * stored) - 1.0f);
             float& out = metres[(row * m_width) + x];
             if (stored <= 0.0f)
@@ -120,6 +122,78 @@ Result<std::vector<float>> RenderTarget::readDepth(compages::world::Camera const
         }
     }
     return metres;
+}
+
+// ----------------------------------------------------------------------------
+void RenderTarget::flipRows(std::vector<std::byte>& p_pixels) const
+{
+    const std::size_t row = std::size_t(m_width) * 4u;
+    for (std::size_t top = 0u, bottom = std::size_t(m_height) - 1u; top < bottom; ++top, --bottom)
+    {
+        std::swap_ranges(p_pixels.begin() + std::ptrdiff_t(top * row), p_pixels.begin() + std::ptrdiff_t((top + 1u) * row),
+                         p_pixels.begin() + std::ptrdiff_t(bottom * row));
+    }
+}
+
+// ----------------------------------------------------------------------------
+Status RenderTarget::readLater(ReadChannels p_channels)
+{
+    if (!valid())
+    {
+        return failure("readLater() on an empty RenderTarget: create() it first");
+    }
+    if (!p_channels.color && !p_channels.depth)
+    {
+        return failure("readLater() with nothing to read: ask for the color, the depth, or both");
+    }
+    if (reading())
+    {
+        return failure("readLater() while a read is on its way: takeRead() it first");
+    }
+    if (p_channels.color)
+    {
+        COMPAGES_TRY_ASSIGN(m_color_read, m_color.readLater());
+    }
+    if (p_channels.depth)
+    {
+        COMPAGES_TRY_ASSIGN(m_depth_read, m_depth.readLater());
+    }
+    m_read_time = m_time;
+    m_read_lens = m_lens;
+    return success();
+}
+
+// ----------------------------------------------------------------------------
+bool RenderTarget::readReady() const
+{
+    if (!reading())
+    {
+        return false;
+    }
+    return (!m_color_read.valid() || m_color_read.ready()) && (!m_depth_read.valid() || m_depth_read.ready());
+}
+
+// ----------------------------------------------------------------------------
+Result<Capture> RenderTarget::takeRead()
+{
+    if (!reading())
+    {
+        return failure("takeRead() with no read on its way: readLater() first");
+    }
+    Capture capture;
+    capture.time = m_read_time;
+    if (m_color_read.valid())
+    {
+        COMPAGES_TRY_ASSIGN(capture.color, m_color_read.take());
+        flipRows(capture.color);
+    }
+    if (m_depth_read.valid())
+    {
+        std::vector<std::byte> bytes;
+        COMPAGES_TRY_ASSIGN(bytes, m_depth_read.take());
+        COMPAGES_TRY_ASSIGN(capture.depth, toMetres(bytes, m_read_lens));
+    }
+    return capture;
 }
 
 // ----------------------------------------------------------------------------

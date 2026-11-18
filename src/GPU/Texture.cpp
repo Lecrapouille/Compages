@@ -727,6 +727,87 @@ Result<std::vector<std::byte>> Texture::read(std::uint32_t p_level) const
     return pixels;
 }
 
+Result<PendingRead> Texture::readLater(std::uint32_t p_level) const
+{
+    detail::TextureRecord const* record =
+        detail::pools().textures.get(m_handle);
+    if (record == nullptr)
+    {
+        return failure(staleTextureMessage());
+    }
+    if (p_level >= record->desc.levels)
+    {
+        return failure("level of detail " + std::to_string(p_level) +
+                       " does not exist: this texture has " +
+                       std::to_string(record->desc.levels));
+    }
+    const std::size_t bytes = bytesOfLevel(record->desc, p_level);
+    backend::NativeId native = backend::NO_OBJECT;
+    COMPAGES_TRY_ASSIGN(native, backend::beginReadTexture(record->native, record->desc, p_level, bytes));
+    auto added = detail::pools().reads.add(detail::ReadRecord{ .native = native, .bytes = bytes });
+    if (!added)
+    {
+        backend::destroyRead(native);
+        return failure(added.error());
+    }
+    return PendingRead(added.value());
+}
+
+PendingRead::PendingRead(PendingRead&& p_other) noexcept : m_handle(p_other.m_handle)
+{
+    p_other.m_handle = PendingReadHandle{};
+}
+
+PendingRead& PendingRead::operator=(PendingRead&& p_other) noexcept
+{
+    if (this != &p_other)
+    {
+        release();
+        m_handle = p_other.m_handle;
+        p_other.m_handle = PendingReadHandle{};
+    }
+    return *this;
+}
+
+PendingRead::~PendingRead()
+{
+    release();
+}
+
+void PendingRead::release()
+{
+    if (detail::ReadRecord const* record = detail::pools().reads.get(m_handle))
+    {
+        backend::destroyRead(record->native);
+        (void)detail::pools().reads.remove(m_handle);
+    }
+    m_handle = PendingReadHandle{};
+}
+
+bool PendingRead::valid() const
+{
+    return detail::pools().reads.get(m_handle) != nullptr;
+}
+
+bool PendingRead::ready() const
+{
+    detail::ReadRecord const* record = detail::pools().reads.get(m_handle);
+    return (record != nullptr) && backend::readFinished(record->native);
+}
+
+Result<std::vector<std::byte>> PendingRead::take()
+{
+    detail::ReadRecord const* record = detail::pools().reads.get(m_handle);
+    if (record == nullptr)
+    {
+        return failure("PendingRead::take() with no read: ask Texture::readLater() first, and take it once");
+    }
+    std::vector<std::byte> pixels(record->bytes);
+    backend::finishRead(record->native, pixels.size(), pixels.data());
+    release();
+    return pixels;
+}
+
 Status Texture::saveFile(std::filesystem::path const& p_path) const
 {
     detail::TextureRecord const* record =

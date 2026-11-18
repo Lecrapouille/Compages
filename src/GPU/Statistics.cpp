@@ -143,6 +143,7 @@ ResourceStatistics resourceStatistics()
     counted.programs = all.programs.size();
     counted.pipelines = all.pipelines.size();
     counted.framebuffers = all.framebuffers.size();
+    counted.reads = all.reads.size();
     counted.vertex_readers = vertexReadersHeld();
     counted.buffer_bytes = detail::bufferMemory();
     counted.texture_bytes = textureMemory();
@@ -162,7 +163,8 @@ std::string ResourceStatistics::toString() const
     text += std::to_string(programs) + " program(s)\n";
     text += std::to_string(pipelines) + " pipeline(s), sharing " +
             std::to_string(vertex_readers) + " way(s) of reading a vertex\n";
-    text += std::to_string(framebuffers) + " framebuffer(s)";
+    text += std::to_string(framebuffers) + " framebuffer(s)\n";
+    text += std::to_string(reads) + " read(s) on their way to the CPU";
 
     return text;
 }

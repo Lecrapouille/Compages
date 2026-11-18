@@ -70,6 +70,7 @@ whatStayedBehind(compages::gpu::ResourceStatistics const& p_before,
     note("programs", p_before.programs, p_after.programs);
     note("pipelines", p_before.pipelines, p_after.pipelines);
     note("framebuffers", p_before.framebuffers, p_after.framebuffers);
+    note("texture reads", p_before.reads, p_after.reads);
     note("vertex readers", p_before.vertex_readers, p_after.vertex_readers);
     return left;
 }
@@ -90,6 +91,7 @@ static void carry(compages::gpu::ResourceStatistics& p_counts,
     p_counts.programs += p_after.programs - p_before.programs;
     p_counts.pipelines += p_after.pipelines - p_before.pipelines;
     p_counts.framebuffers += p_after.framebuffers - p_before.framebuffers;
+    p_counts.reads += p_after.reads - p_before.reads;
     p_counts.vertex_readers += p_after.vertex_readers - p_before.vertex_readers;
     p_counts.buffer_bytes += p_after.buffer_bytes - p_before.buffer_bytes;
     p_counts.texture_bytes += p_after.texture_bytes - p_before.texture_bytes;

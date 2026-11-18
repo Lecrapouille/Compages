@@ -832,6 +832,10 @@ void Scene::render(compages::world::EntityId p_camera, RenderTarget& p_target)
     compages::gpu::RenderPass pass(p_target.framebuffer());
     render(p_camera);
     p_target.m_time = m_world.frame().total;
+    if (compages::world::Camera const* lens = m_world.tryGet<compages::world::Camera>(p_camera))
+    {
+        p_target.m_lens = *lens;
+    }
 }
 
 Status Scene::renderToFile(std::filesystem::path const& p_path,

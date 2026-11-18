@@ -101,10 +101,8 @@ GPU, and the lens is only a vertical field of view.
       `cy`, in pixels): an off-centre principal point. RobotIK turns them
       into a field of view today and loses `cx`, `cy`. Lens distortion stays
       a model of RobotIK
-- [ ] Asynchronous read-back: ask the read after the render, take it one
-      frame later (pixel buffers and a fence, which GL41 and GLES3 also
-      have). `readColor()` and `readDepth()` stay for tests and files. Needed
-      by several robot cameras at 30 Hz
+- [ ] RobotIK: read its cameras with `readLater()` and `takeRead()` instead
+      of `readColor()` and `readDepth()` (RobotIK side)
 - [ ] Entity ids written by the main pass, in an integer picture of the
       target (asked when the target is made): one `EntityId` per pixel.
       RobotIK maps an entity to its class for semantic segmentation. Also

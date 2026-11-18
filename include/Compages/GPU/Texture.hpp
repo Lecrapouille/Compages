@@ -43,6 +43,72 @@ namespace compages::gpu
 //! \brief Names an image living on the device.
 using TextureHandle = Handle<struct TextureTag>;
 
+//! \brief Names a read of a texture on its way to the CPU.
+using PendingReadHandle = Handle<struct PendingReadTag>;
+
+// ****************************************************************************
+//! \brief The pixels of a texture on their way to the CPU, asked for by
+//! Texture::readLater().
+//!
+//! Texture::read() stops the CPU until the GPU has drawn everything before it
+//! and copied the picture: too slow for several robot cameras at 30 Hz. A
+//! read asked for now is copied by the GPU in its own time; take it one frame
+//! later, when ready() says it is there, and nothing waits.
+//!
+//! It holds a pixel buffer and a fence: it counts in resourceStatistics()
+//! (\c reads) until it is taken or destroyed.
+//!
+//! \code
+//! // frame N, after the picture is drawn
+//! COMPAGES_TRY_ASSIGN(m_pending, texture.readLater());
+//! // frame N + 1
+//! if (m_pending.ready())
+//! {
+//!     COMPAGES_TRY_ASSIGN(pixels, m_pending.take());
+//! }
+//! \endcode
+//!
+//! \note On OpenGL ES 3.0 (WebGL 2) the pixels are read when the read is asked
+//! for, which waits: the read is then ready at once.
+// ****************************************************************************
+class PendingRead
+{
+public:
+
+    //! \brief No read: valid() is false.
+    PendingRead() = default;
+    PendingRead(PendingRead&& p_other) noexcept;
+    PendingRead& operator=(PendingRead&& p_other) noexcept;
+    PendingRead(PendingRead const&) = delete;
+    PendingRead& operator=(PendingRead const&) = delete;
+    //! \brief Forget the read if it was not taken, and free its buffer.
+    ~PendingRead();
+
+    //! \brief True between Texture::readLater() and take().
+    [[nodiscard]] bool valid() const;
+
+    //! \brief Has the GPU finished the copy? Never waits; false when there is
+    //! no read.
+    [[nodiscard]] bool ready() const;
+
+    // ------------------------------------------------------------------------
+    //! \brief The pixels, as Texture::read() gives them (bottom row first).
+    //! Waits for the GPU if the copy is not ready(); then the read is over
+    //! and valid() is false.
+    //!
+    //! \return the pixels, or an error when there is no read.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Result<std::vector<std::byte>> take();
+
+private:
+
+    friend class Texture;
+    explicit PendingRead(PendingReadHandle p_handle) : m_handle(p_handle) {}
+    void release();
+
+    PendingReadHandle m_handle;
+};
+
 // ****************************************************************************
 //! \brief What a texture is to be: its shape, its size and what a pixel holds.
 //!
@@ -469,6 +535,19 @@ public:
     // ------------------------------------------------------------------------
     [[nodiscard]] Result<std::vector<std::byte>>
     read(std::uint32_t p_level = 0u) const;
+
+    // ------------------------------------------------------------------------
+    //! \brief Ask for a level of detail to be copied to the CPU, without
+    //! waiting: take it later from the PendingRead, the next frame.
+    //!
+    //! The copy holds the texture as the GPU has it once every command given
+    //! before this call is done: draw first, then ask.
+    //!
+    //! \param[in] p_level which level of detail.
+    //! \return the read in flight; an error for a level the texture does not
+    //! have, or when the GPU gives no pixel buffer.
+    // ------------------------------------------------------------------------
+    [[nodiscard]] Result<PendingRead> readLater(std::uint32_t p_level = 0u) const;
 
     // ------------------------------------------------------------------------
     //! \brief Write the largest level of a 2D texture into a PNG file: the

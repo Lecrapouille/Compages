@@ -92,6 +92,9 @@ struct ResourceStatistics
     std::size_t pipelines = 0u;
     //! \brief Framebuffers: offscreen targets to draw into.
     std::size_t framebuffers = 0u;
+    //! \brief Reads of textures on their way to the CPU (PendingRead), not
+    //! taken yet.
+    std::size_t reads = 0u;
     //! \brief How many distinct ways of reading a vertex are held. Less than
     //! the number of pipelines whenever several of them read a vertex alike.
     std::size_t vertex_readers = 0u;
@@ -112,7 +115,7 @@ struct ResourceStatistics
     {
         return (buffers == 0u) && (textures == 0u) && (shaders == 0u) &&
                (programs == 0u) && (pipelines == 0u) && (framebuffers == 0u) &&
-               (vertex_readers == 0u);
+               (reads == 0u) && (vertex_readers == 0u);
     }
 
     // ------------------------------------------------------------------------

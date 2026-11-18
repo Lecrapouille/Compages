@@ -418,6 +418,45 @@ TEST_F(WorldDrawTest, ARenderTargetKeepsTheTimeOfTheWorldItShows)
     EXPECT_EQ(target.value().time().value(), 2.5);
 }
 
+// The pictures read later are the pictures read at once, rows top first, with
+// the time of the render they show, even after the World moved on.
+TEST_F(WorldDrawTest, ARenderTargetReadLaterGivesTheSamePictures)
+{
+    compages::world::World world;
+    compages::renderer::Scene scene(world);
+    scene.background(0.0f, 0.0f, 0.0f);
+    scene.box("Up", compages::renderer::unlit(1.0f, 1.0f, 1.0f)).position(0.0f, 1.0f, 0.0f).scale(4.0f, 1.0f, 1.0f);
+    compages::world::Entity eye = scene.camera();
+    eye.position(0.0f, 0.0f, 4.0f).lookAt(0.0f, 0.0f, 0.0f);
+    ASSERT_TRUE(bool(scene.prepare()));
+    compages::world::ViewFrame frame;
+    frame.total = compages::si::Seconds(1.0);
+    scene.update(frame);
+
+    auto target = compages::renderer::RenderTarget::create(32u, 16u);
+    ASSERT_TRUE(bool(target)) << target.error();
+    compages::renderer::RenderTarget& eyes = target.value();
+    EXPECT_FALSE(bool(eyes.takeRead()));
+    EXPECT_FALSE(bool(eyes.readLater({})));
+    scene.render(eye.id(), eyes);
+    ASSERT_TRUE(bool(eyes.readLater({ .color = true, .depth = true })));
+    EXPECT_TRUE(eyes.reading());
+    EXPECT_FALSE(bool(eyes.readLater({ .color = true })));
+
+    frame.total = compages::si::Seconds(2.0);
+    scene.update(frame);
+    auto capture = eyes.takeRead();
+    ASSERT_TRUE(bool(capture)) << capture.error();
+    ASSERT_FALSE(compages::gpu::hasFrameError()) << compages::gpu::takeFrameError();
+    EXPECT_FALSE(eyes.reading());
+    EXPECT_EQ(capture.value().time.value(), 1.0);
+    EXPECT_EQ(capture.value().color, eyes.readColor().value());
+    auto metres = eyes.readDepth(eye.get<compages::world::Camera>());
+    ASSERT_TRUE(bool(metres)) << metres.error();
+    EXPECT_EQ(capture.value().depth, metres.value());
+    EXPECT_EQ(compages::gpu::resourceStatistics().reads, 0u);
+}
+
 // A camera standing for a sensor (sees_helpers false) does not draw the
 // meshes marked Helper: the eye of a robot is not fooled by a marker.
 TEST_F(WorldDrawTest, ASensorCameraDoesNotSeeTheHelpers)
