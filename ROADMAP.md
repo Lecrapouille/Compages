@@ -1,210 +1,197 @@
 # Compages roadmap
 
-What comes after `10e_Archipelago`, and how far it has gone. One line per
-step: tick it in the commit that does it, so that work can stop and start
-again at any step.
+What is left to do. One line per step: tick it, or remove it, in the commit
+that does it. Done work is in the git history and the documentation, not
+here.
 
-## Why
+The rule for every item: it makes a demo shorter, or it makes a demo
+possible. The API keeps its contract: the shader names its data, and C++
+never declares the same thing twice.
 
-`10e_Archipelago` is the test of the API at full size. It shows three gaps:
+## Renderer
 
-1. **Shaders cannot be composed.** `Sea.cpp` cuts the text of the PBR shader
-   (`find("void main()")`, `replace("vWorldPos = world.xyz;", …)`). A change in
-   `ShaderLib.cpp` breaks the demo, and no C++ compiler tells.
-2. **A custom material takes many steps**: a program, a pipeline of
-   `MeshVertex`, sampler units set by hand, textures bound by hand each frame.
-3. **Fields of cells are plain vectors** indexed by hand (`cellAt(i, j)`,
-   `(j + 1) * (cells + 3) + i + 1`), and the ground under the mouse is found by
-   a loop written in the demo.
+From the simplest to the most complex.
 
-## Decisions
+- [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes the
+      distance), as `Material::casts_shadow` does for the sun
+- [ ] Custom per-instance parameters of a material, in a typed block (no
+      table of strings read at each draw)
+- [ ] Normals written by the main pass (same `deform`, skinning, normal maps
+      and `discard` as the colour), then SSAO; a material that replaces
+      `main` does not write them: document it
+- [ ] History per view, then TAA: reprojection, previous matrices, motion
+      vectors, reset on a camera cut or a resize
+- [ ] Vector field on the GPU: `scene.show(grid, StorageBuffer<Vector2f>,
+      look)`, arrows instanced and read from the buffer (the velocity of
+      `11e_Smoke` cannot be shown today without the CPU)
+- [ ] Automatic instancing: the queue grouped by mesh and material
+      instance, the matrices in a storage buffer; measured on
+      `09b_ManyCubes`. Needed by grass, impostors and the trees of
+      `10e_Archipelago`
+- [ ] A regular `Grid2D` drawn from `gl_VertexID`, without a buffer of
+      positions (internal, measure first)
 
-- Keep `Drawable`, the buffers and `PingPong` as they are.
-- One mechanism for shaders: **includes**. A file says `#include "x.glsl"` or
-  `#include <name>`. C++ can give the text of a name (`include(name, text)`),
-  which also covers GLSL generated from C++ data. A **hook** is an include
-  with a default text, that a shader of the library declares; `hook(name,
-  text)` replaces it, and an unknown hook name is an error, not a silence.
-- No multi-stage `loadFiles({ … })` for now.
-- `Material::create()` builds the program and the pipelines; the layout is
-  always `MeshVertex`, so it is not a parameter.
-- Typed uniform blocks already exist (`gpu::TypedUniformBlock<T>`).
-- Structured data lives in `include/Compages/Fields/`, beside `Core/`: it
-  includes only `Core`, and every layer may include it. Types are in the
-  namespace `compages`. One `Field<T>` for scalars and vectors: no
-  `ScalarField` / `VectorField` aliases.
-- Compages gives data structures, not algorithms (option A): no island
-  generator, no geology, no compute graph, no Forth. A field of a million
-  cells is never a million entities.
+## Science and fields
 
-## Critical notes on the audit
-
-- Agreed: the diagnosis of `Sea.cpp`, the order shaders → materials → data.
-- Too many shader concepts were proposed (raw GLSL, ShaderSource,
-  ShaderLibrary, generated sources, hooks). Includes alone do it all.
-- GLSL `#line` takes a source *number*, not a file name: the error log of
-  the driver must be rewritten with a table number → file.
-- A hook that moves vertices must also reach the shadow pass, or the shadow
-  is wrong. The sea casts no shadow, so this waits (see TODO).
-- The "cells" of Archipelago are one site per square of a regular grid, so
-  `Grid2D` fits for real. Unstructured topologies (SimTaDyn maps, FEM meshes)
-  are another domain: not now, but `Field<T>` must not prevent them.
-- 2D plots and labels should be built on `CanvasTexture` and the
-  distance-field letters that already exist.
-- A job service stays in the demo (`Job.hpp`).
-
-## Progress
-
-### P1: shaders
-
-- [x] `gpu::ShaderSource`: main text or file, include directories, virtual
-      includes, hooks, `#define` after `#version`, include once, cycles
-      reported, `#line` table, list of files read
-- [x] `Program::load(ShaderSource, ShaderSource)`,
-      `ComputeProgram::load(ShaderSource)`; compiler logs name the file and
-      line; `loadFiles()` understands `#include`
-- [x] PBR, lit, unlit and shadow shaders cut into shared includes
-      (`compages/skinning.glsl`, `compages/lights.glsl`, `compages/fog.glsl`,
-      `compages/present.glsl`)
-- [x] Hooks `deform` (PBR vertex) and `main` (PBR fragment);
-      `renderer::shaders::pbr()` returns the two sources (`ShaderPair`)
-- [x] `Sea.cpp` and `10c_SweatAndDecals` use them: no more `find` / `substr`
-      / `replace`
-
-### P2: materials
-
-- [x] `Material::create(name, MaterialDesc)`
-- [x] Textures of a material by sampler name, bound by the Renderer
-      (`Material::textures`, units 2 to 6)
-- [x] `replaceMesh` and `wear` of Archipelago moved into the Renderer:
-      `Scene::reshape(entity, mesh)`, `Scene::look(entity, MaterialId)`
-- [x] The Renderer sets the uniforms of a family only when the shader reads
-      them, so a `main` hook may leave the lights out
-- [-] Shared uniforms of Sea in a `TypedUniformBlock`: not done, it is
-      longer (a struct, a std140 block in two shaders, a bind) than three
-      `program.set()`
-
-### P3: fields
-
-- [x] `Grid2D`: columns, rows, origin, spacing, index, neighbours
-- [x] `Field<T>`: values on a grid, bilinear sampling
-- [x] `intersect(Ray, Field<float>)` and `intersectHeight(Ray, height, …)`
-- [x] Unit tests
-- [x] Archipelago uses them: the cells of `Land` and `Making` are
-      `Field<T>` on `CELL_GRID`, `Patch::heights` a `Field<float>`, `placeUnder`
-      calls `intersectHeight`
-
-### Documentation
-
-- [x] doc/04 (ShaderSource), doc/06 (hooks, materials), doc/07 (Fields
-      layer), doc/08 (API), skills
-
-## TODO: scientific computing
-
-In rough order. Each item should make a demo shorter or possible.
-
-- [x] `scene.show(field, look)` with a colour map and a range (heat map,
-      coloured terrain): values in a float texture, colours and relief made
-      by the PBR hooks; demo `11a_HeatPlate`
-- [x] A field on the GPU, drawn without coming back to the CPU:
-      `scene.show(grid, StorageBuffer<float>, look)`; a `Field` shown from
-      the CPU goes through a storage buffer too (partial update: later, with
-      `DirtyRange`)
-- [x] Compute shaders reading and writing fields: `11b_RippleTank` (three
-      turning buffers; a `PingPong` of a `Field` type is not needed so far)
-- [x] `Grid3D` and `Field<T, Grid3D>` (one `Field` template on its grid; same
-      order as the texels of a 3D texture: `gpu::Texture::fromField()`)
-- [x] Volume rendering (`scene.show(Field<float, Grid3D>)`, ray marching a 3D
-      texture) and slices (`compages::slice()`), demo `11f_Volume`
-- [x] Isosurfaces (`compages::isosurface()`, marching tetrahedra;
-      `renderer::meshOf()`), in `11f_Volume`
-- [x] Vector fields drawn as arrows (`scene.show(Field<Vector2f>, ArrowLook)`)
-      and streamlines (`compages::streamline()`), demo `11g_FlowAroundCylinder`
-- [x] Inspection: `scene.probe(field, look, pixel)`, demo `11c_FieldProbe`
-- [x] Inspection: follow a point over time (`Chart`, demo `11h_Thermometers`),
-      slices (`compages::slice()`)
-- [x] Time series on a `CanvasTexture` (`Chart`)
-- [x] Axes with numbers on a `Chart`, a values axis that follows the
-      values (`ChartScale::FollowValues`)
 - [ ] Histograms on a `Chart`
-- [x] Hooks in the shadow of the sun: a material whose `deform` is replaced
-      draws its own shadow (`Material::casts_shadow`)
-- [ ] Hooks in the shadows of the lamps (cube faces: the fragment writes
-      the distance)
-- [x] Shadows of what the camera does not see: the snapshot keeps the
-      casters out of view (`RenderItem::in_view`), the sun stands beyond them
-- [ ] Custom per-instance parameters of a material (typed block)
-- [x] Hot reload: `gpu::ShaderWatch` watches the files listed by
-      `ShaderSource` and calls the load of the user
+- [ ] Stretched rectilinear grid (one array of coordinates per axis): a cheap
+      middle step before adaptive grids
+- [ ] Quadtree, adaptive refinement, as a domain of its own: fine zones that
+      move (a flame front, a shock), neighbours across levels, T-junctions,
+      neighbour tables for compute shaders. This is adaptivity, not level of
+      detail: the LOD of a far terrain belongs to the renderer
+- [ ] Sparse 3D grid (dense 8^3 blocks only where there are values, like
+      OpenVDB): memory, and empty space skipped by ray marching (3D smoke,
+      lidar). A point with no block holds `zero<T>()`. The grid numbers only
+      the stored points, so `Field` keeps one contiguous array
 - [ ] Topology for SimTaDyn maps (vertices, edges, polygons), fields on it
-- [ ] Grids with more detail where it matters. In order:
-  - [x] A C++20 concept of grid (`PlanarGrid`: `count`, `index`, `point`,
-        `locate` → `GridCell`), so that `Field<T, Grid>::sample()`,
-        `streamline()` and `scene.show()` take other grids; for a
-        non-regular grid, finding the cell of a point is a search, not a
-        division
-  - [x] Curvilinear grid (`CurvilinearGrid`, body-fitted, an O-grid around a shape): same
-        (i, j) neighbours, contiguous values and GPU upload, each point
-        placed freely; `show()` keeps its mesh by `gl_VertexID`. Fixes the
-        steps around the column of `11g_FlowAroundCylinder` (polar grid,
-        tight at the wall, loose far away)
-  - [ ] Stretched rectilinear grid (one array of coordinates per axis): a
-        cheap middle step
-  - [ ] Quadtree / adaptive refinement, as a domain of its own (like the
-        SimTaDyn topology), for fine zones that move (a flame front, a
-        shock): neighbours across levels, T-junctions, neighbour tables for
-        compute shaders. This is adaptivity (the data have fine and coarse
-        zones), not level of detail (choosing a resolution by the distance
-        to the camera): the LOD of a far terrain belongs to the renderer
-        (`Patch`), not to `Fields`
-  - [ ] Sparse 3D grid (dense 8^3 blocks only where there are values, like
-        OpenVDB): memory and empty space skipped by the ray marching of
-        mostly empty volumes (3D smoke, lidar). A point with no block holds
-        the background value: `zero<T>()` of `Core/Maths.hpp`, the neutral
-        element of the algebra, which a type can redefine (minus infinity
-        for (max, +)). The sparse grid numbers only the stored points
-        (`index()` through a table of blocks), so `Field` keeps one
-        contiguous array and no storage parameter
-- [ ] Never three independent axes (kind of data, topology, storage): a
-      quadtree is its own storage, a sparse grid is a topology; the grid
-      numbers the points, the field holds one array. `Field<T, Grid>`, not
-      `Field<T, Dim>`: two grids of the same dimension (regular,
-      curvilinear) are different grids
-- [x] Demo: a bimetal beam bending with heat (`11d_BimetalBeam`: heat
-      equation on a `Field<float>`, Timoshenko curvature, the strip bent by a
-      `deform` hook reading a storage buffer)
-- [x] Demos of fields: `11a_HeatPlate`, `11b_RippleTank`, `11c_FieldProbe`
-- [x] Demo: smoke (`11e_Smoke`: Stable Fluids in 2D, five compute kernels
-      from one GLSL text chosen by `ShaderSource::define`)
+- [ ] `CurvilinearGrid` cheap to copy (its points shared and immutable
+      inside), so that `Field<T, Grid>` stays by value
+- [ ] Partial upload of a field (`DirtyRange`, rows j0 to j1): only when a
+      demo paints into a large field
+- [ ] `11b_RippleTank` and `11e_Smoke` on `PingPong` where it fits
+- [ ] Later, big data demos: lidar, a galaxy of one million stars, an octree
 
-## TODO: public techniques of games
+Keep one rule: never three independent axes (kind of data, topology,
+storage). The grid numbers the points, the field holds one array:
+`Field<T, Grid>`, not `Field<T, Dim>`.
 
-Published techniques of game studios, rebuilt with code, pictures and
-scenes of our own (credits in doc/reference/credits.md). From the simplest to the
-most complex: each step reuses what the ones before it built.
+## RobotIK
 
-- [x] Flow maps (Valve, Grimes GDC 2011, Vlachos SIGGRAPH 2010):
-      `10f_FlowingWater`
-- [x] Metallic-roughness shading of glTF (Karis, UE4 SIGGRAPH 2013):
-      `shadePbr()`, normal and metallic-roughness maps
-- [x] Clustered forward lighting (Olsson et al., HPG 2012; Doom 2016,
-      SIGGRAPH 2016): `LightClusters`, `06m_ManyLights`
-- [ ] Cel shading and outlines (Guilty Gear Xrd, Motomura GDC 2015): a
-      hook `main` with light in steps, and an outline pass
-- [ ] Interior mapping (van Dongen, CGI 2008): rooms behind windows faked
-      by one hook `main`, no geometry
+What RobotIK still cannot do, or cannot do simply, with this Compages.
+Who owns what: RobotIK owns the clock of the simulation, the physics
+(MuJoCo, Pinocchio) and the models of its sensors (noise, range, rate).
+Compages owns the pictures: what a camera sees, its depth, its entity ids,
+and the helps drawn for the operator. RobotIK keeps `compages::world` as its
+ECS; it does not build a second model of the robot.
+
+### Headless, checked by the linker
+
+Today `Compages.mk` makes one library. `robotik-core`, which must run with no
+GPU, links it whole: glad, the backend, stb, cgltf. Nothing stops a GPU call
+from entering it.
+
+- [ ] Three libraries in `Compages.mk`: `Compages-World` (Core, Fields,
+      World; units, entt, pugixml), `Compages-GPU` (the backend, glad),
+      `Compages-Renderer` (cgltf, stb, json). `Compages` stays the three
+      together, for the gallery
+- [ ] The World tests in a binary that links only `Compages-World`: a GPU
+      include in `src/World/` then breaks the build, not a review
+- [ ] RobotIK: `robotik-core` and `Robotik-Headless` depend on
+      `Compages-World` only, the simulator on `Compages` (RobotIK side)
+- [ ] An OpenGL context with no window, for RobotIK camera tests in CI and
+      for pictures with no screen: the `HeadlessContext` of
+      `examples/Headless/` becomes a small optional library (EGL), outside
+      the three layers, as GLFW stays in `examples/Common/`. See Open
+      questions
+
+### Clocks
+
+Today one `Frame` carries one time. RobotIK gives the time of the wall to
+`world->update(viewFrame(...))` at each picture, while its simulation has
+its own time (`simulation->time()`, steps of `SIMULATOR_DT_S`). So a routine
+of Compages runs on the time of the wall even when the simulation is paused,
+and the animation clips never run (`Scene::update()` would also run the
+routines).
+
+- [ ] Two times in a `ViewFrame`: `elapsed` and `total` of `Frame` are the
+      time of the simulation (zero when paused); the time of the wall since
+      the last picture is a field of `ViewFrame` only, read by the camera
+      controllers (the orbit camera still turns when the robot is paused)
+- [ ] The clips without the routines: a call that samples the animation
+      clips and computes the world matrices, for a host that steps the world
+      itself. A clip sampled at an absolute time, not by adding steps, so
+      that the history slider of RobotIK shows the same pose every time.
+      This also fixes the skinned meshes of RobotIK left in their rest pose
+- [ ] Each picture knows the time of the world it shows: a `RenderTarget`
+      keeps the `total` of the last update before its render. Needed as soon
+      as the read-back is one frame late (below): an observation is stamped
+      with the time of the simulation, never with the time it was read
+
+### Cameras: RGB-D first, then segmentation
+
+`RenderTarget` already gives the colour (`readColor`) and the depth in metres
+(`readDepth`), and RobotIK fills its `CameraFrame` from them. Both stop the
+GPU, and the lens is only a vertical field of view.
+
+- [ ] A lens from the intrinsics of a calibrated camera (`fx`, `fy`, `cx`,
+      `cy`, in pixels): an off-centre principal point. RobotIK turns them
+      into a field of view today and loses `cx`, `cy`. Lens distortion stays
+      a model of RobotIK
+- [ ] Asynchronous read-back: ask the read after the render, take it one
+      frame later (pixel buffers and a fence, which GL41 and GLES3 also
+      have). `readColor()` and `readDepth()` stay for tests and files. Needed
+      by several robot cameras at 30 Hz
+- [ ] Entity ids written by the main pass, in an integer picture of the
+      target (asked when the target is made): one `EntityId` per pixel.
+      RobotIK maps an entity to its class for semantic segmentation. Also
+      gives `pick()` to the pixel (the `Picker` tests boxes on the CPU today)
+- [ ] From depth to points: each pixel of the depth as a point in the frame
+      of the camera or of the world, so that RobotIK never sees the reversed
+      depth or the projection
+- [ ] Draw a point cloud that changes each frame (`DebugDraw` has lines,
+      arrows, frames and frustums, no points): the output of an RGB-D camera
+      or of a LiDAR
+- [ ] An `rgbd` camera in a RobotIK scenario, to show the depth it already
+      fills (RobotIK side)
+- [ ] The noise of a real camera (blur, grain): possible with a
+      `ScreenEffects` on the robot camera; a recipe in the RobotIK docs
+
+### LiDAR, prepared but not written
+
+The LiDAR stays in RobotIK: its `RangeScanner` casts its rays in the physics
+backend, and noise, range and scan rate are its models. Compages only makes
+a second way possible, on the GPU, for many beams:
+
+- [ ] A depth picture drawn by several cameras of one rig (four views of
+      90°, through `Camera::viewport` in one target), read in metres in one
+      read-back, each part with its own lens. RobotIK picks its beams in it.
+      A recipe first; a call only if the recipe is long
+
+### Other points
+
+- [ ] Its lock points to an old Compages (2c39088): a plain `make` fails. It
+      builds only with `make CompagesProject.PATH=$HOME/MyGithub/Compages`.
+      Commit Compages, move the lock, fetch again
+- [ ] `Robotik-LineFollower` does not link: the system `libgdal` needs
+      `expat` (environment, not Compages)
+- [ ] Occupancy and cost maps shown with `scene.show(field, look)`: the
+      floor of LineFollower or the room of MicroDuck (nothing to add to
+      Compages)
+- [ ] Demonstrator: PickAndPlace with a wrist camera, after the items
+      above. It runs headless (tests, `Compages-World` only), debug (frames,
+      paths, skills) and perception (camera pictures)
+
+## AAA techniques
+
+Published techniques of game studios, rebuilt with our own code, pictures
+and scenes (credits in `doc/reference/credits.md`). From the simplest to the
+most complex: each step reuses what the ones before it built. Each one gets
+a page in `doc/techniques/`.
+
+Done: flow maps (`10f_FlowingWater`), metallic-roughness PBR, clustered
+forward lighting (`06m_ManyLights`), cel shading and outlines
+(`06o_CelShading`), volumetric fog in froxels (`06n_VolumetricFog`), screen
+filters and bloom (`12a`, `12b`).
+
+- [ ] Interior mapping (van Dongen, CGI 2008): rooms behind windows faked by
+      one hook, no geometry
 - [ ] Rain and wet surfaces (Lagarde, "Water drop" series, Remember Me
       2012-2013): darker and glossier when wet, puddles from a height mask,
       ripples of drops; reuses `shadePbr()` and the flow maps
-- [ ] A sky in an environment map, read by the glint of `shadePbr()`
-      (prefiltered by roughness): metals reflect the scene, not a flat
-      ambient
+- [ ] A sky in an environment map, prefiltered by roughness, read by the
+      glint of `shadePbr()`: metals reflect the scene, not a flat ambient
 - [ ] Shadows for more than four lamps: an atlas filled by importance
       (distance, intensity, on screen), the others through the clusters
-- [ ] Ambient occlusion in screen space (GTAO, Jimenez et al. 2016): a
-      pass over the depth and normals
-- [ ] Temporal anti-aliasing (Karis, SIGGRAPH 2014): jittered camera,
-      motion vectors, a history picture
+- [ ] Ambient occlusion in screen space (GTAO, Jimenez et al. 2016): needs
+      the normals of the main pass
+- [ ] Temporal anti-aliasing (Karis, SIGGRAPH 2014): jittered camera, motion
+      vectors, a history picture
+- [ ] Screen-space reflections: a room with a wet floor
+- [ ] More screen filters (chapter `12_Effects`): depth of field, motion
+      blur, refraction, film grain, colour table (LUT). A last demo lists
+      every filter with a check box. The list of effects follows Lettier's
+      *3D Game Shaders For Beginners*; never copy its text or pictures
 - [ ] Procedural grass and wind (Ghost of Tsushima, Wohllaib GDC 2021):
       blades instanced by a compute shader, bent by a wind `Field`
 - [ ] Octahedral impostors (Brucks, Fortnite 2018): far trees and props as
@@ -212,152 +199,86 @@ most complex: each step reuses what the ones before it built.
 - [ ] Geometry clipmaps (Losasso and Hoppe, SIGGRAPH 2004; GPU Gems 2,
       chapter 2): nested rings of terrain round the camera, for
       `10e_Archipelago`
-- [ ] Ocean by FFT (Tessendorf, "Simulating Ocean Water", SIGGRAPH 2001):
-      a spectrum of waves, FFT in compute shaders (ping-pong), in place of
-      the Gerstner swells of `10e_Archipelago`
-- [x] Volumetric fog in froxels (Wronski, Assassin's Creed 4, SIGGRAPH
-      2014): `Environment::volumetric`, `FogVolume` (128 x 72 x 64, inject
-      then integrate by compute; sun and lamp shadows, clustered lamps),
-      `06n_VolumetricFog`. Later: reprojection over frames (less noise),
-      lights that only light the fog
+- [ ] Ocean by FFT (Tessendorf, SIGGRAPH 2001): a spectrum of waves, FFT in
+      compute shaders (ping-pong), in place of the Gerstner swells of
+      `10e_Archipelago`
+- [ ] Volumetric fog, next: reprojection over frames (less noise), lights
+      that only light the fog
 - [ ] Shadows and occlusion from distance fields (Wright, UE4, SIGGRAPH
-      2015): signed distance fields of the meshes, on the sparse 3D grid of
-      P3
+      2015): signed distance fields of the meshes, on the sparse 3D grid
+- [ ] Last: a simple dynamic global illumination (emissive surfaces,
+      indirect light, moving objects)
 
-## After the audit of 2026-11-15
-
-From the simplest to the most complex. Each step must make a demo shorter
-or possible. Refused: a `GpuField` type (a `Grid` and a `StorageBuffer`
-already do it), a compute graph, a `gpu::run` beside `dispatch`, clusters
-built on the GPU, a benchmark tree compared with other engines, one C++
-class per screen effect.
-
-- [x] Grids with a size of zero or less hold no point (`count()` 0,
-      `valid()`): a `Field` on a wrong grid is empty, not huge
-- [x] `LightClusters::build()` keeps its memory from frame to frame
-- [x] Fog sampler always on its unit (Mesa refused the draws: glTF duck
-      test, first frame of every `11_Science` demo)
-- [x] Helps for the operator: `RenderFlags::Helper`,
-      `world::Camera::sees_helpers` (a robot camera does not see them)
-- [x] Hook `surface` of the PBR shader (`Surface`: albedo, normal,
-      metallic, roughness, emission, opacity); `10f` concrete, `11d` metal
-- [x] `AssetManager::createMaterial(name, desc)`, `.textures` and
-      `.buffers` in `MaterialDesc`
-- [x] CPU and GPU time of a frame (`gpu::beginGpuTimer()`,
-      `gpuMilliseconds()`), shown by the gallery
-- [x] RobotIK: its teach markers marked `Helper`, no more hide/show in
-      `RenderedCamera::capture()`; `Texture::create` / `fromFile` in place of
-      the removed `allocate` / `loadFile` (RobotIK builds and passes its tests
-      on this Compages)
-- [x] Hook `light` of the PBR shader (`vec3 light(Surface s)`, default
-      `sceneLight(s)`; `toScreen(s, lit)` after it), checked by
-      `06o_CelShading` (flat tones, an outline from a shell inside out)
-- [x] A render target of the `Scene` (`RenderTarget`: colour, depth,
-      `resize`, `readColor` top row first), used by `renderToFile()`
-- [x] RobotIK: its own `RenderTarget` struct replaced by Compages' one (3D
-      view, model preview, robot cameras, `--screenshot` by `saveColor`);
-      the camera frames written from the CPU keep a plain texture
-      (`ShownPicture`); `Screenshot.cpp` and its stb copy are gone
-- [x] Colour in linear light until a last pass, for a view that has
-      screen effects (`linearTarget`: `present()` keeps the light linear;
-      `screen()` turns a screen colour back into light, so unlit looks,
-      sky, lines and background keep their colour)
-- [x] Screen filters per view: `ScreenEffects` on a camera, a filter is
-      `vec3 effect(vec2 uv)` reading `screenColor`, `screenDepth`,
-      `screenSize`; bloom; chapter `12_Effects` (`12a_ScreenFilters`,
-      `12b_Bloom`)
-- [x] Metric depth read back (`RenderTarget::readDepth(lens)`)
-- [ ] Entity ids in the main pass (segmentation for RobotIK, `pick()` to
-      the pixel)
-- [x] Diagnostic primitives in `DebugDraw`: `polyline`, `arrow`, `frame`
-      (a pose), `frustum` (what a camera sees, in `06j_SplitViews`)
-- [ ] Normals written by the main pass, SSAO; then history per view, TAA
-- [ ] Vector field on the GPU and instanced arrows; automatic instancing
-
-### What blocks RobotIK
-
-What RobotIK still cannot do, or cannot do simply, with this Compages:
-
-- [ ] **Its lock points to an old Compages.** `external/versions.lock` names
-      2c39088 and `external/Compages` is an older clone (cd14d14): a plain
-      `make` fails (`Vector3g`, `Quatd`, `Posed`, `yaw` missing). It builds
-      only with `make CompagesProject.PATH=$HOME/MyGithub/Compages`. To do:
-      commit Compages, move the lock to that commit, fetch again.
-- [x] **Depth of a robot camera in metres.** `RenderTarget::readDepth(lens)`
-      gives the distance along the axis, top row first (+infinity where
-      nothing was drawn). RobotIK fills `CameraFrame::depth` with it for an
-      `rgbd` camera: until now the simulator left it empty, so its
-      `DepthEstimator` had nothing to read. No scenario has an `rgbd`
-      camera yet to show it.
-- [ ] **Segmentation.** No id of entity per pixel: a perception test cannot
-      know which object a pixel shows. Wanted: an id target in the main pass,
-      read back like the colour; `pick()` to the pixel comes with it.
-- [ ] **A robot camera reads its picture by stopping the GPU.**
-      `readColor()` waits for the frame (fine at a few images per second,
-      not at 30 Hz with several cameras). Wanted: an asynchronous read
-      (pixel buffer, read one frame later).
-- [ ] **The noise of a real camera.** Blur, distortion of the lens, grain:
-      now possible (a `ScreenEffects` on the entity of the robot camera, read
-      back by `readColor()`), but no filter is written yet and the docs of
-      RobotIK have no recipe.
-- [ ] **Skinned meshes stay in their rest pose in RobotIK**: it calls
-      `World::update` and `Scene::render`, never `Scene::update`, so the
-      animation clips never run (no humanoid skin moves).
-- [ ] **`Robotik-LineFollower` does not link** on this machine: the system
-      `libgdal` needs `expat` (not Compages; environment).
-
-Fixed on the way: a package's `background` was ignored (the colour went to
-the render pass, and `Scene::render` clears with `scene.background()`); it
-is now given to the Scene.
+Technique pages still missing for work already done: normal mapping, vertex
+deformation (`deform` hook).
 
 ## Later: one WebGPU backend (decided 2026-11-17, not started)
 
-**Why.** macOS stops at OpenGL 4.1 (deprecated by Apple since 2018) and the
-web gives WebGL 2 (OpenGL ES 3.0): neither has compute shaders, `shared`
-memory, atomics or images. The GL41/GLES3 backend emulates part of compute
-(transform feedback, `<compages/tiles.glsl>`) and the reads of storage blocks
-in drawing shaders (copies in textures); the rest stays GL45 only:
-05g (one invocation writes 337 values), 09c (`atomicAdd`, indirect draw),
-the volumetric fog (images). A WebGPU backend would give full compute
-everywhere, with one C API (`webgpu.h`): natively through Dawn or
-wgpu-native (Vulkan on Linux, Metal on macOS, D3D12 on Windows), and in the
-browser through Emscripten. It is the choice of three.js, Babylon.js and
-Bevy.
+**Why.** macOS stops at OpenGL 4.1 and the web gives WebGL 2: neither has
+compute shaders, `shared` memory, atomics or images. GL41/GLES3 emulate part
+of compute (transform feedback, `<compages/tiles.glsl>`) and the reads of
+storage blocks (copies in textures); the rest stays GL45 only: `05g` (one
+invocation writes 337 values), `09c` (`atomicAdd`, indirect draw), the
+volumetric fog (images). WebGPU gives full compute everywhere, with one C API
+(`webgpu.h`): Dawn or wgpu-native natively (Vulkan, Metal, D3D12), Emscripten
+in the browser.
 
-**What stays.** The idea of Compages: users write GLSL, fill names from C++,
-and the World and the Renderer do not see the backend. GLSL would be
-translated at run time (glslang → SPIR-V → Tint or naga → WGSL), the
-reflection taken from the translated shader.
+**What stays.** Users write GLSL and fill names from C++; the World and the
+Renderer do not see the backend. GLSL is translated at run time (glslang →
+SPIR-V → Tint or naga → WGSL), the reflection taken from the result.
 
 **What it costs.**
 
-- Translation at run time, also in the page (a few MB of WebAssembly),
-  because shaders are composed while running (hooks, defines, hot reload).
-- Loose uniforms (`uniform float dt;`, 213 in the repository) do not exist
-  in WebGPU: gather them into a generated block, written per draw into a
-  ring buffer with dynamic offsets.
+- Translation at run time, also in the page (a few MB of WebAssembly):
+  shaders are composed while running (hooks, defines, hot reload).
+- Loose uniforms (213 in the repository) do not exist in WebGPU: gather them
+  into a generated block, written per draw into a ring buffer.
 - `sampler2D` is one object in GLSL, a texture and a sampler in WGSL.
-- Missing in WebGPU: geometry and tessellation shaders (4 files), `LineLoop`
-  and `TriangleFan` (5, convert the indices), wireframe (11, barycentric
-  shader), lines wider than 1 px (3) and `gl_PointSize` (9) (quads), RGB8
-  textures (5, expand to RGBA8), 1D textures (7), doubles in shaders.
-- Immutable pipelines (cache per program + render state), asynchronous
-  read-back (`download()`: ASYNCIFY in the browser), recorded commands.
-- Needs Vulkan, Metal or D3D12 drivers. Firefox is not WebGPU everywhere
-  yet: 100 % of browsers needs the GLES3 backend kept as a fallback.
-- RobotIK uses Compages: update it with the API.
+- Missing in WebGPU: geometry and tessellation shaders, `LineLoop`,
+  `TriangleFan`, wireframe, lines wider than 1 px, `gl_PointSize`, RGB8 and
+  1D textures, doubles in shaders.
+- Immutable pipelines, asynchronous read-back, recorded commands.
+- Firefox is not WebGPU everywhere yet: GLES3 stays as the fallback.
+- RobotIK must follow the API.
 
-**First step when it starts: a prototype of the risk**, before any backend:
-a Compages GLSL shader → SPIR-V → WGSL at run time, natively and in the
-browser, with the loose uniforms gathered, `sampler2D` split and the names
-found by reflection; checked on 01c (triangle), 03a (texture) and 05a
-(compute). Then the backend beside GL45, the gallery at parity, and only
-then decide what to remove (GL41, GLES3, GL45).
+**First step: a prototype of the risk**, before any backend. A Compages GLSL
+shader → SPIR-V → WGSL at run time, natively and in the browser, with the
+loose uniforms gathered, `sampler2D` split and the names found by reflection;
+checked on `01c`, `03a` and `05a`. Then the backend beside GL45, the gallery
+at parity, and only then decide what to remove.
 
-## Earlier decisions (audit of 2026-11-06)
+## Open questions
 
-Accepted: offscreen rendering to an image, one-line helpers (grid, axes,
-gizmo, bounds), tone mapping and colour management, sorted transparency,
-Windows / macOS / Web ports. Later: big data demos (lidar, a galaxy of one
-million stars, octree). Refused: CMake export, the Routine vs ECS vs GPU
-demo. Python bindings: separate repository `pycompages`.
+- An optional module `Compages/App/` (window, loop, inputs to `ViewFrame`),
+  outside the three layers and the only place with GLFW? RobotIK and the
+  gallery each write their own window. It touches a rule of AGENTS.md.
+  The EGL context with no window (RobotIK section) asks the same question:
+  one optional module for both, or one small library each?
+- The `state` of a material: keep it required (no silent default), or offer
+  named presets (`solid()`, `seeThrough()`)?
+- A `dispatch` with several named buffers: it would shorten `11e_Smoke` by a
+  few lines only.
+
+## Refused
+
+So that they are not proposed again: a `GpuField` type (a grid and a
+`StorageBuffer` already do it), a compute graph or `ComputeSequence`,
+`gpu::run`, clusters built on the GPU, a benchmark tree compared with other
+engines (the gallery shows CPU and GPU time per demo instead), one C++ class
+per screen effect (`effects().add<Bloom>()`), `Shading::Toon`, hooks
+`lighting` and `postLighting`, multi-stage `loadFiles({ … })`, an island
+generator or any algorithm of a demo in the library, CMake export, the
+Routine vs ECS vs GPU demo. Python bindings live in a separate repository
+(`pycompages`).
+
+For RobotIK: a robot model of RobotIK apart from `compages::world` (RobotIK
+keeps the World as its ECS; one model, not two kept in step); classes of
+RobotIK in Compages (an adapter, `showSkill`, `showResource`: they live in
+RobotIK, from the generic `DebugDraw`); a `renderer.capture(camera,
+{channels})` beside `RenderTarget` (one way to draw into a picture); fields
+that live on the GPU (already refused as `GpuField`); a render between two
+states (`render(alpha)`: 1 kHz of physics against 60 Hz of pictures, the gap
+cannot be seen); a viewer of many RL environments, or a generator of signed
+distance fields, in Compages (a `Field<float, Grid3D>` already stores one).
+The URDF Z-up to Y-up tests asked for already exist
+(`tests/World/UrdfLoaderTests.cpp`).
