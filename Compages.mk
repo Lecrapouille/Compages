@@ -16,6 +16,8 @@
 #   Compages-GPU    Core, Fields and the GPU layer, with its backend.
 #   Compages        the Renderer. It depends on the two others, so that
 #                   depending on Compages gives the three layers.
+#   Compages-Headless  an OpenGL context with no window (EGL, Linux), for
+#                   tests and servers: outside the layers.
 # A program that depends on Compages-World alone fails to link as soon as
 # it calls the GPU or the Renderer.
 
@@ -79,3 +81,15 @@ Compages.SOURCES := src/Renderer/**/*.cpp
 Compages.PUBLIC_INCLUDES := include
 Compages.INCLUDES := src
 Compages.DEPENDS := Compages-World Compages-GPU stb cgltf json
+
+### An OpenGL context with no window (EGL), for tests and servers with no
+### screen. Outside the three layers, which never open a context.
+ifeq ($(TARGET_OS),Linux)
+TARGETS += Compages-Headless
+Compages-Headless.TYPE := library
+Compages-Headless.DESCRIPTION := Compages: an OpenGL context with no window, made with EGL
+Compages-Headless.SOURCES := src/Headless/*.cpp
+Compages-Headless.PUBLIC_INCLUDES := include
+Compages-Headless.DEPENDS := Compages-GPU
+Compages-Headless.PKG_CONFIG := egl
+endif

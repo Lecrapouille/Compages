@@ -23,8 +23,7 @@ ifeq ($(TARGET_OS),Linux)
 TARGETS += Compages-headless
 Compages-headless.DESCRIPTION := Draw a scene into a PNG file without a screen
 Compages-headless.SOURCES := Headless/main.cpp
-Compages-headless.DEPENDS := Compages
-Compages-headless.PKG_CONFIG := egl
+Compages-headless.DEPENDS := Compages Compages-Headless
 Compages-headless.LIBS := -ldl
 endif
 

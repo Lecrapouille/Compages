@@ -113,6 +113,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | large scenes | `PassDesc::reversed_depth`, `CameraFrame::reversed_projection`; `Orbit` controller: `zoom_step`, `boost` (Shift), `sharpness`, `min_distance`, `max_distance` |
 | map camera (`Rig`) | left drag pans, wheel zooms toward the mouse; `RigController::flyTo(target, distance)`, `flying()`, `flight_pace` |
 | picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
+| OpenGL context with no window | `compages::HeadlessContext::open()`, then `gpu::init(&HeadlessContext::load)` (library `Compages-Headless`) |
 | picture of its own (a robot camera) | `RenderTarget::create(w, h)`, `scene.render(camera, target)`, `target.color()` `depth()` `readColor()` (RGBA8, top row first) `readDepth(lens)` (metres, top row first, +inf = nothing) `saveColor(path)` `resize(w, h)` |
 | filters, bloom of one view | `camera.set(ScreenEffects{ .filters = { { .name, .glsl = "vec3 effect(vec2 uv) {...}", .values = { { "uniform", v } } } }, .bloom = { .enabled, .threshold, .strength } })`; GLSL reads `screenColor` `screenDepth` `screenSize`; a screen colour of your own: `screen(toSrgb(c))` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |

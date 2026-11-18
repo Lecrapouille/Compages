@@ -69,15 +69,11 @@ ECS; it does not build a second model of the robot.
 
 `Compages.mk` makes one library per layer (`Compages-World`,
 `Compages-GPU`, `Compages`), and `Compages-WorldTest` links
-`Compages-World` alone.
+`Compages-World` alone. `Compages-Headless` gives an OpenGL context with no
+window (`HeadlessContext`, EGL) for camera tests in CI.
 
 - [ ] RobotIK: `robotik-core` and `Robotik-Headless` depend on
       `Compages-World` only, the simulator on `Compages` (RobotIK side)
-- [ ] An OpenGL context with no window, for RobotIK camera tests in CI and
-      for pictures with no screen: the `HeadlessContext` of
-      `examples/Headless/` becomes a small optional library (EGL), outside
-      the three layers, as GLFW stays in `examples/Common/`. See Open
-      questions
 
 ### Clocks
 
@@ -246,8 +242,8 @@ at parity, and only then decide what to remove.
 - An optional module `Compages/App/` (window, loop, inputs to `ViewFrame`),
   outside the three layers and the only place with GLFW? RobotIK and the
   gallery each write their own window. It touches a rule of AGENTS.md.
-  The EGL context with no window (RobotIK section) asks the same question:
-  one optional module for both, or one small library each?
+  `Compages-Headless` (EGL, no window) is already such a module, outside the
+  layers.
 - The `state` of a material: keep it required (no silent default), or offer
   named presets (`solid()`, `seeThrough()`)?
 - A `dispatch` with several named buffers: it would shorten `11e_Smoke` by a

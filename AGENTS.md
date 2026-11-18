@@ -34,7 +34,7 @@ examples/           the gallery (one binary build/linux-gcc-debug/bin/Compages-e
                     01_FirstSteps/ … 13_Workshop/ = chapters, read in order;
                     13_Workshop/ = the robot workshop of doc/tutorials/ (Workshop/Arm.cpp is World only);
                     Common/ = window (only GLFW user), Gallery, ExampleManifest.hpp;
-                    Headless/ = Compages-headless (EGL, no window, Scene::renderToFile)
+                    Headless/ = Compages-headless (HeadlessContext, no window, Scene::renderToFile)
 tests/              GoogleTest: Core/ Fields/ World/ -> bin/Compages-WorldTest (links Compages-World only);
                     GPU/ Renderer/ -> bin/Compages-UnitTest (needs an OpenGL context)
 external/           external.mk declares the third parties, versions.lock their commits;
@@ -71,6 +71,8 @@ node examples/Web/check.mjs "http://127.0.0.1:8080/Compages-examples.html?args=-
   glad or GL headers.
 - The library never opens a window or calls GLFW: `gpu::init(loader)`
   receives a ready context. GLFW lives in `examples/Common/Window.cpp`.
+  The only context Compages makes is `HeadlessContext` (EGL, no window),
+  in its own library `Compages-Headless`, outside the three layers.
 - A world component never holds a GPU pointer, only asset ids; the renderer
   draws from a `RenderSnapshot`, never from the `World` directly.
 - No physics engine (and no audio) in Compages: an outside engine writes the

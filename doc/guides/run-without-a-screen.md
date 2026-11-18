@@ -61,7 +61,22 @@ scene.update(frame);
 COMPAGES_TRY(scene.renderToFile("scene.png", 1280u, 720u));
 ```
 
-It needs an OpenGL context, not a window. `Compages-headless` ([examples/Headless/main.cpp](../../examples/Headless/main.cpp)) makes one with **EGL and no surface**, then calls `gpu::init(eglGetProcAddress)`: the same code runs on a server, in a container or in CI, on a GPU or with Mesa llvmpipe (no GPU).
+It needs an OpenGL context, not a window. `compages::HeadlessContext` makes one with **EGL and no surface**. It is in its own small library, `Compages-Headless` (Linux, the `egl` package), because the three layers never open a context. The same code runs on a server, in a container or in CI, on a GPU or with Mesa llvmpipe (no GPU):
+
+```cpp
+#include <Compages/Headless/HeadlessContext.hpp>
+
+auto context = compages::HeadlessContext::open();
+if (!context)
+{
+    return compages::failure(context.error());
+}
+COMPAGES_TRY(compages::gpu::init(&compages::HeadlessContext::load));
+// ... build the scene, draw, read the pictures ...
+compages::gpu::shutdown();   // before the context goes
+```
+
+With MyMakefile, depend on `Compages Compages-Headless`. The program `Compages-headless` ([examples/Headless/main.cpp](../../examples/Headless/main.cpp)) does this and writes one picture:
 
 ```sh
 ./build/linux-gcc-debug/bin/Compages-headless scene.png 1280 720
