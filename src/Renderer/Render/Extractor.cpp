@@ -88,6 +88,10 @@ CameraFrame buildCameraFrame(compages::world::Camera const& p_camera,
     {
         frame.projection = compages::perspective(
             p_camera.fov, aspect, p_camera.near_plane, p_camera.far_plane);
+        // The axis of the lens off the centre: x_clip / w_clip moves by the
+        // shift, since w_clip = -z_view.
+        frame.projection(0, 2) = -p_camera.lens_shift.x;
+        frame.projection(1, 2) = -p_camera.lens_shift.y;
     }
     else
     {

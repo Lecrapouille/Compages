@@ -116,6 +116,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | picture without a screen | `scene.renderToFile("out.png", width, height)`; program `Compages-headless` |
 | OpenGL context with no window | `compages::HeadlessContext::open()`, then `gpu::init(&HeadlessContext::load)` (library `Compages-Headless`) |
 | picture of its own (a robot camera) | `RenderTarget::create(w, h)`, `scene.render(camera, target)`, `target.color()` `depth()` `readColor()` (RGBA8, top row first) `readDepth(lens)` (metres, top row first, +inf = nothing) `saveColor(path)` `resize(w, h)` `time()` (of the World it shows) |
+| lens of a calibrated camera | `compages::world::calibrate(lens, { .fx, .fy, .cx, .cy, .width, .height })` (pixels, top left origin; sets `fov` and `lens_shift`; square pixels only, no distortion) |
 | read a camera without waiting | after the render `target.readLater({ .color = true, .depth = true })`; next frame `if (target.readReady()) target.takeRead()` → `Capture{ time, color, depth }`; any texture: `texture.readLater()` → `gpu::PendingRead` `ready()` `take()` |
 | filters, bloom of one view | `camera.set(ScreenEffects{ .filters = { { .name, .glsl = "vec3 effect(vec2 uv) {...}", .values = { { "uniform", v } } } }, .bloom = { .enabled, .threshold, .strength } })`; GLSL reads `screenColor` `screenDepth` `screenSize`; a screen colour of your own: `screen(toSrgb(c))` |
 | file | `scene.loadFile("model.glb")` → `Result<Entity>` |

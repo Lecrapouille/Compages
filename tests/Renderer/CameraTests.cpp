@@ -10,6 +10,7 @@
 
 #include "Compages/Renderer/Assets/AssetManager.hpp"
 #include "Compages/Renderer/Render/SceneExtractor.hpp"
+#include "Compages/Core/Transformation.hpp"
 #include "Compages/Renderer/Scene/Scene.hpp"
 #include "Compages/World/Components/Camera.hpp"
 #include "Compages/World/World.hpp"
@@ -109,4 +110,41 @@ TEST(WorldCamera, ViewportBecomesAPixelRectOnTheFrame)
     ASSERT_NEAR(snapshot.value().camera.projection[1].y,
                 snapshot.value().camera.projection[0].x,
                 1.0e-4f);
+}
+
+// A lens calibrated with the intrinsics of a real camera puts a point where the
+// pinhole model puts it: u = cx + fx X / Z, v = cy - fy Y / Z (rows from the
+// top, y up in the World).
+TEST(WorldCamera, ACalibratedLensProjectsLikeThePinholeModel)
+{
+    compages::world::World world;
+    compages::renderer::AssetManager assets;
+    compages::renderer::Scene scene(world, assets);
+    compages::world::EntityId cam = world.create("camera");
+    compages::world::Camera lens{};
+    const compages::world::Intrinsics intrinsics{ .fx = 500.0f, .fy = 500.0f, .cx = 400.0f, .cy = 100.0f,
+                                                  .width = 640u, .height = 480u };
+    ASSERT_TRUE(bool(compages::world::calibrate(lens, intrinsics)));
+    world.add(cam, lens);
+    scene.activeCamera(cam);
+    world.update();
+
+    auto snapshot = compages::renderer::SceneExtractor::extract(scene, 640u, 480u);
+    ASSERT_TRUE(bool(snapshot)) << snapshot.error();
+    auto pixel = [&](compages::Vector3f p_point)
+    {
+        const compages::Vector3f ndc = compages::transformPoint(snapshot.value().camera.view_projection, p_point);
+        return compages::Vector2f((ndc.x + 1.0f) * 0.5f * 640.0f, (1.0f - ndc.y) * 0.5f * 480.0f);
+    };
+    const compages::Vector2f axis = pixel({ 0.0f, 0.0f, -5.0f });
+    EXPECT_NEAR(axis.x, 400.0f, 1.0e-2f);
+    EXPECT_NEAR(axis.y, 100.0f, 1.0e-2f);
+    const compages::Vector2f off = pixel({ 1.0f, 0.5f, -4.0f });
+    EXPECT_NEAR(off.x, 400.0f + 500.0f * 1.0f / 4.0f, 1.0e-2f);
+    EXPECT_NEAR(off.y, 100.0f - 500.0f * 0.5f / 4.0f, 1.0e-2f);
+
+    compages::world::Camera kept{};
+    EXPECT_FALSE(bool(compages::world::calibrate(kept, { .fx = 500.0f, .fy = 600.0f, .cx = 1.0f, .cy = 1.0f,
+                                                         .width = 2u, .height = 2u })));
+    EXPECT_EQ(kept.lens_shift.x, 0.0f);
 }

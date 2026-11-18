@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Compages/Core/Result.hpp"
 #include "Compages/Core/Units.hpp"
 #include "Compages/Core/Vector.hpp"
 
@@ -97,6 +98,76 @@ struct Camera
     //! marks as helpers. False for a camera that stands for a sensor (the
     //! eye of a robot): it sees the world, not the tools around it.
     bool sees_helpers = true;
+    //! \brief Where the axis of the lens crosses the picture, in clip units
+    //! (-1 to 1, y up): (0, 0) is the centre. A calibrated camera has it off
+    //! the centre; calibrate() sets it from \c cx and \c cy. Perspective
+    //! only.
+    compages::Vector2f lens_shift{ 0.0f, 0.0f };
 };
+
+// ****************************************************************************
+//! \brief The intrinsic parameters of a real camera, in pixels, as a
+//! calibration gives them (OpenCV, ROS \c camera_info): focal lengths and
+//! principal point, the origin at the top left corner of the picture.
+// ****************************************************************************
+struct Intrinsics
+{
+    //! \brief Focal length along x, in pixels.
+    float fx = 0.0f;
+    //! \brief Focal length along y, in pixels.
+    float fy = 0.0f;
+    //! \brief Principal point: column, from the left edge.
+    float cx = 0.0f;
+    //! \brief Principal point: row, from the top edge.
+    float cy = 0.0f;
+    //! \brief Size of the picture the parameters were measured for.
+    std::uint32_t width = 0u;
+    std::uint32_t height = 0u;
+};
+
+// ****************************************************************************
+//! \brief Give a perspective lens the intrinsic parameters of a calibrated
+//! camera, so that a simulated picture matches the real one pixel for pixel.
+//!
+//! Sets \c fov from \c fy and the height, and \c lens_shift from \c cx and
+//! \c cy. Draw into a target of \c width x \c height pixels: the parameters
+//! hold for that size only. Lens distortion is not modelled: it belongs to the
+//! sensor model of the host.
+//!
+//! \code
+//! auto& lens = eye.get<compages::world::Camera>();
+//! COMPAGES_TRY(compages::world::calibrate(lens, { .fx = 615.0f, .fy = 615.0f,
+//!                                                 .cx = 322.0f, .cy = 238.0f,
+//!                                                 .width = 640u, .height = 480u }));
+//! \endcode
+//!
+//! \return an error, the lens left as it was, for a size or a focal length of
+//! zero, or for pixels that are not square (\c fx and \c fy more than 1 %
+//! apart): one field of view cannot give two focal lengths.
+// ****************************************************************************
+[[nodiscard]] inline Status calibrate(Camera& p_lens, Intrinsics const& p_intrinsics)
+{
+    if ((p_intrinsics.width == 0u) || (p_intrinsics.height == 0u))
+    {
+        return failure("calibrate(): the picture of the intrinsics has no size");
+    }
+    if ((p_intrinsics.fx <= 0.0f) || (p_intrinsics.fy <= 0.0f))
+    {
+        return failure("calibrate(): a focal length must be more than zero pixels");
+    }
+    const float apart = (p_intrinsics.fx > p_intrinsics.fy) ? (p_intrinsics.fx - p_intrinsics.fy)
+                                                            : (p_intrinsics.fy - p_intrinsics.fx);
+    if (apart > 0.01f * p_intrinsics.fy)
+    {
+        return failure("calibrate(): fx and fy differ by more than 1 %: pixels that are not square are not "
+                       "drawn");
+    }
+    const float w = float(p_intrinsics.width);
+    const float h = float(p_intrinsics.height);
+    p_lens.projection = Camera::Projection::Perspective;
+    p_lens.fov = units::math::atan(units::dimensionless::scalar_t(h / (2.0f * p_intrinsics.fy))) * 2.0f;
+    p_lens.lens_shift = compages::Vector2f((2.0f * p_intrinsics.cx / w) - 1.0f, 1.0f - (2.0f * p_intrinsics.cy / h));
+    return success();
+}
 
 } // namespace compages::world

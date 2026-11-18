@@ -106,7 +106,8 @@ json serializeEntity(compages::world::World const& p_world,
                            { "fov_degrees", camera->fov.template to<double>() },
                            { "ortho_half_height", camera->ortho_half_height },
                            { "near_plane", camera->near_plane },
-                           { "far_plane", camera->far_plane } };
+                           { "far_plane", camera->far_plane },
+                           { "lens_shift", { camera->lens_shift.x, camera->lens_shift.y } } };
     }
 
     if (compages::world::DirectionalLight const* light =
@@ -175,6 +176,12 @@ Status applyComponents(compages::world::World& p_world,
         camera.ortho_half_height = cam.at("ortho_half_height").get<float>();
         camera.near_plane = cam.at("near_plane").get<float>();
         camera.far_plane = cam.at("far_plane").get<float>();
+        // Older files have no lens shift: their lenses were centred.
+        if (cam.contains("lens_shift"))
+        {
+            camera.lens_shift = compages::Vector2f(cam.at("lens_shift").at(0).get<float>(),
+                                                   cam.at("lens_shift").at(1).get<float>());
+        }
         p_world.add(p_entity, camera);
     }
 

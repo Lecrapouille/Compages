@@ -97,10 +97,8 @@ routines).
 (`readDepth`), and RobotIK fills its `CameraFrame` from them. Both stop the
 GPU, and the lens is only a vertical field of view.
 
-- [ ] A lens from the intrinsics of a calibrated camera (`fx`, `fy`, `cx`,
-      `cy`, in pixels): an off-centre principal point. RobotIK turns them
-      into a field of view today and loses `cx`, `cy`. Lens distortion stays
-      a model of RobotIK
+- [ ] RobotIK: give its cameras `compages::world::calibrate(lens,
+      intrinsics)` instead of a field of view (RobotIK side)
 - [ ] RobotIK: read its cameras with `readLater()` and `takeRead()` instead
       of `readColor()` and `readDepth()` (RobotIK side)
 - [ ] Entity ids written by the main pass, in an integer picture of the
