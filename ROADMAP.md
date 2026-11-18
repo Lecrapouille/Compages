@@ -70,24 +70,17 @@ ECS; it does not build a second model of the robot.
 `Compages.mk` makes one library per layer (`Compages-World`,
 `Compages-GPU`, `Compages`), and `Compages-WorldTest` links
 `Compages-World` alone. `Compages-Headless` gives an OpenGL context with no
-window (`HeadlessContext`, EGL) for camera tests in CI.
-
-- [ ] RobotIK: `robotik-core` and `Robotik-Headless` depend on
-      `Compages-World` only, the simulator on `Compages` (RobotIK side)
+window (`HeadlessContext`, EGL) for camera tests in CI. `robotik-core`
+links `Compages-World` only.
 
 ### Clocks
 
-Today one `Frame` carries one time. RobotIK gives the time of the wall to
-`world->update(viewFrame(...))` at each picture, while its simulation has
-its own time (`simulation->time()`, steps of `SIMULATOR_DT_S`). So a routine
-of Compages runs on the time of the wall even when the simulation is paused,
-and the animation clips never run (`Scene::update()` would also run the
-routines).
+A `ViewFrame` carries the time of the simulation (`elapsed`, `total`) and
+the time of the wall (`wall_elapsed`, read by the camera routines). RobotIK
+gives the first from `simulation->time()` and poses its clips with
+`AnimationSystem::tick`.
 
-- [ ] RobotIK: call `AnimationSystem::tick(world, scene.assets(), dt)`
-      after its `World::update`, so that its skinned meshes leave their rest
-      pose; set `Animator::time` for the history slider (RobotIK side;
-      Compages already does it, see `AnimationClockTests`)
+- [ ] RobotIK: set `Animator::time` from the history slider (RobotIK side)
 - [ ] RobotIK: stamp each `CameraFrame` with `RenderTarget::time()`
       (RobotIK side)
 
@@ -129,9 +122,8 @@ a second way possible, on the GPU, for many beams:
 
 ### Other points
 
-- [ ] Its lock points to an old Compages (2c39088): a plain `make` fails. It
-      builds only with `make CompagesProject.PATH=$HOME/MyGithub/Compages`.
-      Commit Compages, move the lock, fetch again
+- [ ] The lock of RobotIK points to a Compages commit that is not pushed
+      yet: push Compages, then a plain `make` of RobotIK fetches it
 - [ ] `Robotik-LineFollower` does not link: the system `libgdal` needs
       `expat` (environment, not Compages)
 - [ ] Occupancy and cost maps shown with `scene.show(field, look)`: the
