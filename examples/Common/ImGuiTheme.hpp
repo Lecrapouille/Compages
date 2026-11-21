@@ -72,7 +72,7 @@ inline void applyGalleryTheme()
     colors[ImGuiCol_Separator] = ImVec4(1.0f, 1.0f, 1.0f, 0.10f);
     colors[ImGuiCol_Tab] = surface;
     colors[ImGuiCol_TabHovered] = accent_dim;
-    colors[ImGuiCol_TabActive] = surface_high;
+    colors[ImGuiCol_TabSelected] = surface_high;
     colors[ImGuiCol_DockingPreview] = accent_dim;
     colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 }

@@ -1,7 +1,6 @@
 #
 build
 build-*/
-external/*/
 *~
 *.DS_Store
 .cache/
