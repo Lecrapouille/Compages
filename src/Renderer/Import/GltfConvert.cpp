@@ -161,7 +161,8 @@ textureFromMemory(std::span<const std::byte> p_pixels, bool p_srgb)
         return failure(texture_result.error());
     }
     auto texture = texture_result.take();
-    texture.name = (p_image->name != nullptr) ? p_image->name : "gltf-image";
+    texture.name = p_cache.prefix + "#" +
+                   ((p_image->name != nullptr) ? p_image->name : "gltf-image");
     auto id_result = p_assets.addTexture(texture.name, std::move(texture));
     if (!id_result)
     {
@@ -424,9 +425,9 @@ materialInstanceFromGltf(cgltf_material const* p_material,
     }
 
     const std::string name =
-        (p_material != nullptr && p_material->name != nullptr)
-            ? p_material->name
-            : "gltf-material";
+        p_textures.prefix + "#" +
+        ((p_material != nullptr && p_material->name != nullptr) ? p_material->name
+                                                                 : "gltf-material");
     auto id_result = p_assets.addMaterialInstance(name, instance);
     if (!id_result)
     {
@@ -440,7 +441,10 @@ materialInstanceFromGltf(cgltf_material const* p_material,
 // Inverse bind matrices and joint entity wiring after the node tree exists.
 
 [[nodiscard]] Result<SkinAssetId>
-importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
+importSkinAsset(cgltf_skin* p_skin,
+                AssetManager& p_assets,
+                std::size_t p_index,
+                std::string const& p_prefix)
 {
     if (p_skin->joints_count > static_cast<cgltf_size>(shaders::MAX_JOINTS))
     {
@@ -476,9 +480,9 @@ importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
             p_skin->joints_count,
             compages::Matrix44f(compages::matrix::Identity));
     }
-    const std::string name = (p_skin->name != nullptr)
-                                 ? p_skin->name
-                                 : ("gltf-skin-" + std::to_string(p_index));
+    const std::string name =
+        p_prefix + "#" +
+        ((p_skin->name != nullptr) ? p_skin->name : ("gltf-skin-" + std::to_string(p_index)));
     auto id_result = p_assets.addSkin(name, std::move(asset));
     if (!id_result)
     {

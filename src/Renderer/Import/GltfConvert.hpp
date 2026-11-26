@@ -26,12 +26,16 @@ namespace compages::renderer::gltf
 {
 
 //! \brief The pictures of one file: those read so far (an image used by
-//! several materials is read once), and the folder of the file, where the
-//! pictures that are files of their own are.
+//! several materials is read once), the folder of the file, where the
+//! pictures that are files of their own are, and the name of the file.
+//! The catalog keeps one asset per name: the pictures, materials and skins
+//! of a file are named "<file>#<name>", or two files exported by the same
+//! tool ("Human.body", "Human.rig") would replace each other.
 struct TextureMap
 {
     std::filesystem::path folder;
     std::unordered_map<cgltf_image*, TextureAssetId> read;
+    std::string prefix;
 };
 
 //! \brief The mesh of one primitive: positions, normals, UVs, joints.
@@ -48,7 +52,10 @@ materialInstanceFromGltf(cgltf_material const* p_material,
 
 //! \brief The inverse bind matrices of a skin, as an asset.
 [[nodiscard]] Result<SkinAssetId>
-importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index);
+importSkinAsset(cgltf_skin* p_skin,
+                AssetManager& p_assets,
+                std::size_t p_index,
+                std::string const& p_prefix);
 
 //! \brief The animations of the file, as clips keyed by node index.
 [[nodiscard]] Status importAnimations(cgltf_data* p_data,

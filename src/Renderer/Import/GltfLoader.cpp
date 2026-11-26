@@ -119,7 +119,7 @@ loadPrefabNode(cgltf_node* p_node,
                 const std::size_t skin_index =
                     static_cast<std::size_t>(p_node->skin - p_data->skins);
                 auto created_result =
-                    importSkinAsset(p_node->skin, p_assets, skin_index);
+                    importSkinAsset(p_node->skin, p_assets, skin_index, p_asset_name);
                 if (!created_result)
                 {
                     return failure(created_result.error());
@@ -229,7 +229,7 @@ Result<PrefabId> loadGltf(std::filesystem::path const& p_path,
     prefab.root.name = "gltf-root";
     prefab.root.source_index = static_cast<std::uint32_t>(data->nodes_count);
 
-    TextureMap textures{ .folder = p_path.parent_path(), .read = {} };
+    TextureMap textures{ .folder = p_path.parent_path(), .read = {}, .prefix = path };
     std::size_t texture_count = 0u;
     std::unordered_map<cgltf_skin*, SkinAssetId> skins;
     prefab.root.children.reserve(data->scene->nodes_count);
