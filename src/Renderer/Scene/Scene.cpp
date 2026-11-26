@@ -612,9 +612,17 @@ Scene::loadFile(std::filesystem::path const& p_path,
     return instantiate(prefab.value(), p_parent);
 }
 
-bool Scene::play(compages::world::EntityId p_model, std::string_view p_clip)
+bool Scene::play(compages::world::EntityId p_model,
+                 std::string_view p_clip,
+                 si::Seconds p_fade)
 {
-    return AnimationSystem::play(m_world, *m_assets, p_model, p_clip);
+    return AnimationSystem::play(m_world, *m_assets, p_model, p_clip, p_fade);
+}
+
+si::LinearVelocity Scene::groundSpeed(compages::world::EntityId p_model,
+                                      std::string_view p_clip)
+{
+    return AnimationSystem::groundSpeed(m_world, *m_assets, p_model, p_clip);
 }
 
 std::vector<std::string> Scene::clips(compages::world::EntityId p_model) const

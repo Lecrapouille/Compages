@@ -123,7 +123,7 @@ GLSL names are the keys of `operator[]`. `draw()` sends the changes of a `Drawab
 | prefab | `assets().loadFile(path)` then `scene.instantiate(id)` |
 | frame | `scene.draw(ViewFrame)`, or `update` then `render()` / `render(cameraId)` |
 | fit the view | `scene.frameAll()` |
-| animation | `scene.play(model, "Walk")` `scene.clips(model)` |
+| animation | `scene.play(model, "Walk")` `scene.play(model, "Idle", 0.3_s)` (fade) `scene.clips(model)` `scene.groundSpeed(model, "Walk")` |
 | sky | `scene.skybox({ "+x", "-x", "+y", "-y", "+z", "-z" })` |
 | picking | `scene.pick({ x, y })` |
 | debug lines | `scene.debug()`: `.line(a, b, c)` `.ray(o, d, l, c)` `.box(bounds, matrix, c)` `.polyline(points, c)` `.arrow(from, to, c)` `.frame(pose, length)` `.frustum(pose, lens, aspect, length, c)` |

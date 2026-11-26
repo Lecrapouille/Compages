@@ -40,6 +40,26 @@ scene.play(soldier, "Walk");
 
 `08b_GltfAnimation` plays the clips of `Soldier.glb` with keys 1, 2, 3. Clips are applied after the routines and before the joints, at each `update()` ([one frame](../concepts/one-frame.md)).
 
+### 🚶 Make a character walk
+
+A change of clip jumps from one pose to the other. Give a fade time: the old clip keeps playing under the new one, and the new one takes its place in that time.
+
+```cpp
+scene.play(soldier, "Idle", 0.3_s);   // Walk fades into Idle in 0.3 s
+```
+
+The Walk and Run clips of most files are made **in place**: the legs move, the body stays. Your code moves the body. If the body goes faster than the feet go back on the floor, the feet slide. `groundSpeed` measures the speed of the foot on the floor, once, at load:
+
+```cpp
+const si::LinearVelocity stride = scene.groundSpeed(soldier, "Walk");   // 1.73 m/s for Soldier.glb
+// each frame, when the body moves at `speed`:
+soldier.get<compages::renderer::Animator>().speed = static_cast<float>(speed / stride);
+```
+
+`08e_Walkers` puts the two together: three soldiers turn, walk or run to points, stop, wait, and go again. Its panel changes the fade and shows the feet slide when the clip plays at speed 1.
+
+A skin has 128 joints at most (`shaders::MAX_JOINTS`); `loadFile` refuses a bigger one. A body with its fingers needs about 50 to 70.
+
 ## 🦾 A robot from URDF
 
 A URDF describes a robot's links and joints. The World builds the chain (it runs headless: `compages::world::loadUrdf(world, path)`), and the Renderer adds the visible shapes of the links when the Scene loads the same file. `08d_RobotArm` loads an ABB IRB 2400: one entity per link, one revolute joint between each, and sliders that set the angles within their limits.

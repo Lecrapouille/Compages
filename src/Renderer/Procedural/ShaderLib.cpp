@@ -22,7 +22,7 @@ namespace
 constexpr char const* SKINNING = R"(in ivec4 joints;
 in vec4 weights;
 uniform int uJointCount;
-uniform mat4 uJoints[64];
+uniform mat4 uJoints[128];
 
 mat4 skinMatrix()
 {
@@ -596,6 +596,8 @@ in V2F v2f;
 uniform vec3 baseColorFactor;
 uniform sampler2D baseColorMap;
 uniform bool hasBaseColorMap;
+// Fragments whose map alpha is below it are not drawn (0: all are).
+uniform float alphaCutoff;
 // The metallic-roughness model of glTF, when the instance asks for it.
 uniform bool pbrUseMetalRoughness;
 uniform float pbrMetallic;
@@ -632,7 +634,12 @@ Surface instanceSurface()
     s.albedo = baseColorFactor;
     if (hasBaseColorMap)
     {
-        s.albedo *= texture(baseColorMap, v2f.uv).rgb;
+        vec4 picture = texture(baseColorMap, v2f.uv);
+        if (picture.a < alphaCutoff)
+        {
+            discard;
+        }
+        s.albedo *= picture.rgb;
     }
     s.normal = normalize(v2f.normal);
     s.metallic = pbrMetallic;
@@ -867,6 +874,8 @@ void main()
 // ----------------------------------------------------------------------------
 compages::gpu::ShaderSource piece(char const* p_name, char const* p_text)
 {
+    static_assert(compages::renderer::shaders::MAX_JOINTS == 128,
+                  "change uJoints[] of SKINNING with MAX_JOINTS");
     compages::gpu::ShaderSource source =
         compages::gpu::ShaderSource::fromText(p_name, p_text);
     source.include("compages/skinning.glsl", SKINNING)

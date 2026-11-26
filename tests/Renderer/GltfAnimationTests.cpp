@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <filesystem>
+#include <iostream>
 
 
 
@@ -166,4 +167,77 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
         worst = std::max(worst, compages::vector::norm(d));
     }
     EXPECT_GT(worst, 0.05f) << "Walk clip left the bind pose unchanged";
+}
+
+// The feet of a walker do not slide when it moves at the speed its clip
+// steps: Run steps faster than Walk, and Idle does not step.
+TEST_F(GltfAnimationTest, MeasuresTheGroundSpeedOfAClipMadeInPlace)
+{
+    const std::filesystem::path path = dataPath("Soldier.glb");
+    if (path.empty())
+    {
+        GTEST_SKIP() << "Soldier.glb is missing";
+    }
+    compages::renderer::AssetManager assets;
+    compages::world::World world;
+    compages::renderer::Scene scene(world, assets);
+    auto soldier = scene.loadFile(path);
+    ASSERT_TRUE(bool(soldier)) << soldier.error();
+    ASSERT_TRUE(scene.play(soldier.value(), "Idle"));
+
+    const double walk = scene.groundSpeed(soldier.value(), "Walk").value();
+    const double run = scene.groundSpeed(soldier.value(), "Run").value();
+    const double idle = scene.groundSpeed(soldier.value(), "Idle").value();
+    // A man walks at about 1.4 m/s and runs at 3 to 5 m/s.
+    EXPECT_GT(walk, 0.8);
+    EXPECT_LT(walk, 2.2);
+    EXPECT_GT(run, walk * 1.5);
+    EXPECT_LT(idle, 0.4);
+    std::cout << "ground speed: walk " << walk << " run " << run << " idle " << idle << " m/s\n";
+    // The model plays what it played before.
+    EXPECT_EQ(scene.playing(soldier.value()), "Idle");
+}
+
+// Two files exported by the same tool share the names of their materials
+// and skins ("Human.body", "Human.rig"): each file keeps its own, or the
+// last one loaded would dress and bend the others.
+TEST_F(GltfAnimationTest, TwoFilesKeepTheirOwnMaterialsAndSkins)
+{
+    const std::filesystem::path path = dataPath("Soldier.glb");
+    if (path.empty())
+    {
+        GTEST_SKIP() << "Soldier.glb is missing";
+    }
+    const std::filesystem::path copy =
+        std::filesystem::temp_directory_path() / "compages_second_soldier.glb";
+    std::filesystem::copy_file(path, copy, std::filesystem::copy_options::overwrite_existing);
+
+    compages::renderer::AssetManager assets;
+    compages::world::World world;
+    compages::renderer::Scene scene(world, assets);
+    auto first = scene.loadFile(path);
+    auto second = scene.loadFile(copy);
+    ASSERT_TRUE(bool(first) && bool(second));
+
+    std::vector<std::uint32_t> materials;
+    world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId, compages::renderer::MeshRenderer const& p_renderer)
+        { materials.push_back(p_renderer.material_instance.index()); });
+    std::ranges::sort(materials);
+    const auto repeated = std::ranges::unique(materials);
+    EXPECT_TRUE(repeated.empty()) << "a material instance is shared by the two files";
+
+    std::vector<compages::renderer::MeshAsset const*> skinned;
+    world.each<compages::renderer::MeshRenderer>(
+        [&](compages::world::EntityId, compages::renderer::MeshRenderer const& p_renderer)
+        {
+            compages::renderer::MeshAsset const* mesh = assets.mesh(p_renderer.mesh);
+            if ((mesh != nullptr) && mesh->skin.valid())
+            {
+                skinned.push_back(mesh);
+            }
+        });
+    ASSERT_GE(skinned.size(), 2u);
+    EXPECT_NE(skinned.front()->skin.index(), skinned.back()->skin.index());
+    std::filesystem::remove(copy);
 }

@@ -70,3 +70,67 @@ TEST(AnimationClock, PosesAtTheTimeTheHostGivesWithoutRunningRoutines)
 
     ASSERT_EQ(node.find<Steps>()->count, 0);
 }
+
+namespace
+{
+
+//! \brief A still clip that holds its node at x = p_x.
+compages::renderer::AnimationClip hold(char const* p_name, float p_x)
+{
+    compages::renderer::AnimationChannel channel;
+    channel.target = 0u;
+    channel.path = compages::renderer::AnimationChannel::Path::Translation;
+    channel.times = { 0.0f, 1.0f };
+    channel.values = { p_x, 0.0f, 0.0f, p_x, 0.0f, 0.0f };
+    compages::renderer::AnimationClip clip;
+    clip.name = p_name;
+    clip.duration = 1.0_s;
+    clip.channels.push_back(channel);
+    return clip;
+}
+
+} // namespace
+
+// A walker that stops goes from Walk to Idle: during the fade the pose is a
+// mix of both, then the new clip alone.
+TEST(AnimationClock, FadesFromTheOldClipToTheNewOne)
+{
+    compages::world::World world;
+    compages::renderer::AssetManager assets;
+    auto left = assets.addAnimation("Left", hold("Left", 0.0f));
+    auto right = assets.addAnimation("Right", hold("Right", 4.0f));
+    ASSERT_TRUE(bool(left) && bool(right));
+
+    compages::world::Entity node = world.entity("Node");
+    const compages::world::EntityId model = world.entity("Model").id();
+    world.entity(model).set(compages::renderer::Animator{
+        .clip = left.value(), .clips = { left.value(), right.value() }, .targets = { node.id() } });
+    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, 0.1_s)));
+    ASSERT_NEAR(node.worldPosition().x, 0.0f, 1.0e-5f);
+
+    ASSERT_TRUE(compages::renderer::AnimationSystem::play(world, assets, model, "Right", 0.4_s));
+    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, 0.2_s)));
+    EXPECT_NEAR(node.worldPosition().x, 2.0f, 1.0e-4f) << "half way through the fade";
+
+    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, 0.3_s)));
+    EXPECT_NEAR(node.worldPosition().x, 4.0f, 1.0e-5f) << "after the fade";
+    EXPECT_FALSE(world.get<compages::renderer::Animator>(model).previous.valid());
+}
+
+// Without a fade, the new clip shows at once.
+TEST(AnimationClock, JumpsToTheNewClipWithoutFade)
+{
+    compages::world::World world;
+    compages::renderer::AssetManager assets;
+    auto left = assets.addAnimation("Left", hold("Left", 0.0f));
+    auto right = assets.addAnimation("Right", hold("Right", 4.0f));
+    ASSERT_TRUE(bool(left) && bool(right));
+
+    compages::world::Entity node = world.entity("Node");
+    const compages::world::EntityId model = world.entity("Model").id();
+    world.entity(model).set(compages::renderer::Animator{
+        .clip = left.value(), .clips = { left.value(), right.value() }, .targets = { node.id() } });
+    ASSERT_TRUE(compages::renderer::AnimationSystem::play(world, assets, model, "Right"));
+    ASSERT_TRUE(bool(compages::renderer::AnimationSystem::tick(world, assets, 0.1_s)));
+    EXPECT_NEAR(node.worldPosition().x, 4.0f, 1.0e-5f);
+}

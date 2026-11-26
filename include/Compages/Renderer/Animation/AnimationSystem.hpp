@@ -72,11 +72,36 @@ public:
 
     //! \brief Play the clip of that name on a model with an Animator, from
     //! its start unless it is already the current clip.
+    //!
+    //! With \c p_fade above zero, the clip that was playing fades out under
+    //! the new one during that time (see compages::renderer::Animator). A new
+    //! play() during a fade starts a new fade from the clip that was current.
     //! \return false when the model has no Animator or no such clip.
     static bool play(compages::world::World& p_world,
                      AssetManager const& p_assets,
                      compages::world::EntityId p_model,
-                     std::string_view p_clip);
+                     std::string_view p_clip,
+                     si::Seconds p_fade = si::Seconds(0.0));
+
+    //! \brief The speed at which a model must move for its feet not to
+    //! slide while it plays a clip made in place (Walk, Run).
+    //!
+    //! A clip made in place moves the legs, not the body: the foot on the
+    //! ground goes back under the hips. This measures that speed on the
+    //! lowest joint the clip moves, at each of 60 times of the clip, in the
+    //! frame of the model (its scale counted). A walker then sets
+    //! Animator::speed = wanted speed / groundSpeed. It plays the clip on the
+    //! model, then puts the Animator and the pose back: call it at load, not
+    //! in the frame loop.
+    //! \return zero for a clip with root motion, a still clip, or no such clip.
+    //!
+    //! \code
+    //! const si::LinearVelocity stride = scene.groundSpeed(soldier, "Walk");
+    //! \endcode
+    [[nodiscard]] static si::LinearVelocity groundSpeed(compages::world::World& p_world,
+                                                        AssetManager& p_assets,
+                                                        compages::world::EntityId p_model,
+                                                        std::string_view p_clip);
 
     //! \brief The names of the clips of a model, empty without an Animator.
     [[nodiscard]] static std::vector<std::string>

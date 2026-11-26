@@ -60,6 +60,7 @@
 #include "08_Assets/08b_GltfAnimation.hpp"
 #include "08_Assets/08c_PrefabAndSave.hpp"
 #include "08_Assets/08d_RobotArm.hpp"
+#include "08_Assets/08e_Walkers.hpp"
 #include "09_Performance/09a_SpriteBatch.hpp"
 #include "09_Performance/09b_ManyCubes.hpp"
 #include "09_Performance/09c_IndirectDraw.hpp"
@@ -139,6 +140,7 @@
     X(GltfAnimation, "08b_GltfAnimation", "08_Assets", "08_Assets/08b_GltfAnimation.cpp", "36_GltfAnimation", 0, "-") \
     X(PrefabAndSave, "08c_PrefabAndSave", "08_Assets", "08_Assets/08c_PrefabAndSave.cpp", "23_PrefabAndSave", 0, "-") \
     X(RobotArm, "08d_RobotArm", "08_Assets", "08_Assets/08d_RobotArm.cpp", "-", 0, "-") \
+    X(Walkers, "08e_Walkers", "08_Assets", "08_Assets/08e_Walkers.cpp", "-", 0, "-") \
     X(SpriteBatch, "09a_SpriteBatch", "09_Performance", "09_Performance/09a_SpriteBatch.cpp", "15_SpriteBatch", 0, "-") \
     X(ManyCubes, "09b_ManyCubes", "09_Performance", "09_Performance/09b_ManyCubes.cpp", "18_ManyCubes", 0, "-") \
     X(IndirectDraw, "09c_IndirectDraw", "09_Performance", "09_Performance/09c_IndirectDraw.cpp", "16_IndirectDraw", 0, "-") \
