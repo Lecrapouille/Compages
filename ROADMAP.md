@@ -155,7 +155,9 @@ filters and bloom (`12a`, `12b`).
 - [ ] Shadows for more than four lamps: an atlas filled by importance
       (distance, intensity, on screen), the others through the clusters
 - [ ] Ambient occlusion in screen space (GTAO, Jimenez et al. 2016): needs
-      the normals of the main pass
+      the normals of the main pass; try half-resolution with a depth-aware
+      blur (Courrèges), compare edges and GPU cost on robot assemblies.
+      Apply it to ambient light; account for reversed depth
 - [ ] Temporal anti-aliasing (Karis, SIGGRAPH 2014): jittered camera, motion
       vectors, a history picture
 - [ ] Screen-space reflections: a room with a wet floor
@@ -182,6 +184,52 @@ filters and bloom (`12a`, `12b`).
 
 Technique pages still missing for work already done: normal mapping, vertex
 deformation (`deform` hook).
+
+## Rendering ideas from Adrian Courrèges
+
+The [graphics studies](https://www.adriancourreges.com/blog/) explain how
+passes build a picture, and where their cost comes from. These are proposed
+priorities for Compages; gains still need measurements in the gallery.
+Clustered lighting, volumetric fog, bloom and premultiplied blending already
+exist. Reuse them when a demo needs them.
+
+1. [ ] Dynamic resolution per view: reuse the asynchronous GPU timer in
+       `GPU/Statistics.hpp`. Lower resolution near the time budget; raise
+       it below a separate threshold, to avoid oscillation. Keep targets
+       allocated at maximum size and vary the viewport. Keep text at the
+       output resolution, and adapt picking coordinates. Start with a fixed
+       scale; use it as the fallback where GPU timing is unavailable
+       (currently GLES3). Robot sensor targets keep their calibrated size.
+       Compare GPU time and picture quality at each scale.
+2. [ ] Half-resolution SSAO: follow the existing normals/SSAO items above.
+       Add dedicated small passes to `ScreenPost`; current `ScreenFilter`
+       passes use the full view size. Check thin parts, contact shadows
+       and depth edges, with the effect on and off.
+3. [ ] Cache static lamp shadows in `ShadowPass`, before extending the
+       atlas to more lamps. Invalidate on light changes, caster movement,
+       geometry, skinning, deformation or alpha-cutout changes. Check a
+       still workshop and a moving arm; count avoided shadow draws and
+       measure GPU time. Sun shadows also depend on the camera fit.
+4. [ ] Audit premultiplied alpha from texture import through mipmaps,
+       shaders and blending. `Blend::premultiplied()` already exists;
+       changing the blend alone is insufficient. Add a gallery comparison
+       with bright sprites over light and dark backgrounds, fractional
+       positions and minification, to expose coloured fringes.
+5. [ ] A frame breakdown in the gallery: show depth, shadow maps, light
+       clusters, linear HDR colour and bloom levels. Extend the current
+       whole-frame GPU timer with asynchronous per-pass measurements.
+       Show each pass and its cost without a blocking GPU read-back.
+
+Sources: [UE4 Optimized Post-Effects](https://www.adriancourreges.com/blog/2018/12/02/ue4-optimized-post-effects/)
+(dynamic resolution, half-resolution SSAO and gather depth of field),
+[DOOM 2016](https://www.adriancourreges.com/blog/2016/09/09/doom-2016-graphics-study/)
+(shadow reuse and frame breakdown), and
+[Beware of Transparent Pixels](https://www.adriancourreges.com/blog/2017/05/09/beware-of-transparent-pixels/)
+(alpha and filtering).
+
+Gather depth of field is a later candidate for the existing screen-effects
+item. Prefer neighbour sampling over one blended bokeh sprite per pixel;
+keep it optional for scientific views and robot cameras.
 
 ## Later: one WebGPU backend (decided 2026-11-17, not started)
 
