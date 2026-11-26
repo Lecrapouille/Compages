@@ -596,6 +596,8 @@ in V2F v2f;
 uniform vec3 baseColorFactor;
 uniform sampler2D baseColorMap;
 uniform bool hasBaseColorMap;
+// Fragments whose map alpha is below it are not drawn (0: all are).
+uniform float alphaCutoff;
 // The metallic-roughness model of glTF, when the instance asks for it.
 uniform bool pbrUseMetalRoughness;
 uniform float pbrMetallic;
@@ -632,7 +634,12 @@ Surface instanceSurface()
     s.albedo = baseColorFactor;
     if (hasBaseColorMap)
     {
-        s.albedo *= texture(baseColorMap, v2f.uv).rgb;
+        vec4 picture = texture(baseColorMap, v2f.uv);
+        if (picture.a < alphaCutoff)
+        {
+            discard;
+        }
+        s.albedo *= picture.rgb;
     }
     s.normal = normalize(v2f.normal);
     s.metallic = pbrMetallic;

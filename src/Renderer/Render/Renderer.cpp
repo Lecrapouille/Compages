@@ -244,6 +244,7 @@ Status Renderer::render(RenderSnapshot const& p_snapshot,
                 };
                 compages::gpu::Texture const* picture = nullptr;
                 offer(material->program, "hasBaseColorMap", instance->base_color_texture.valid());
+                offer(material->program, "alphaCutoff", instance->alpha_cutoff);
                 COMPAGES_TRY_ASSIGN(picture, pictureOf(instance->base_color_texture));
                 picture->bind(BASE_COLOR_UNIT);
                 offer(material->program, "baseColorMap", int(BASE_COLOR_UNIT));

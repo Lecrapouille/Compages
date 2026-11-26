@@ -242,6 +242,12 @@ struct MaterialInstance
     //! \brief One is solid. Below one, the object is drawn after the solid
     //! ones, farthest first, blended over what is behind it.
     float opacity = 1.0f;
+    //! \brief Where the alpha of the base colour map is below this, the
+    //! fragment is not drawn: the cornea in front of an iris, the gaps
+    //! between hairs and lashes. Zero draws every fragment. The glTF loader
+    //! sets it from alphaMode: MASK gives its alphaCutoff, BLEND gives 0.5
+    //! (a cut, not a blend: no sorting needed). The shadows ignore it.
+    float alpha_cutoff = 0.0f;
 };
 
 } // namespace compages::renderer

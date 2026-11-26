@@ -394,6 +394,15 @@ materialInstanceFromGltf(cgltf_material const* p_material,
             auto texture_id = texture_id_result.take();
             instance.base_color_texture = texture_id;
         }
+        // Transparent parts (cornea, hair cards) are cut, not blended.
+        if (p_material->alpha_mode == cgltf_alpha_mode_mask)
+        {
+            instance.alpha_cutoff = p_material->alpha_cutoff;
+        }
+        else if (p_material->alpha_mode == cgltf_alpha_mode_blend)
+        {
+            instance.alpha_cutoff = 0.5f;
+        }
         // The metallic-roughness model: its factors, and its maps (numbers,
         // not colours: read linear).
         instance.metal_roughness = true;
