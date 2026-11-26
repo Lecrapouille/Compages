@@ -88,8 +88,12 @@ void locateKey(std::vector<float> const& p_times,
     p_blend = (span > 1.0e-8f) ? ((p_time - p_times[p_left]) / span) : 0.0f;
 }
 
+//! \brief Write the value of one curve at \c p_time onto a local transform.
+//! With \c p_weight below 1 the value is mixed with what the transform holds
+//! (the pose of the clip that fades out, written just before).
 void applyChannel(compages::renderer::AnimationChannel const& p_channel,
                   float p_time,
+                  float p_weight,
                   compages::world::LocalTransformView p_local)
 {
     if (p_channel.times.empty() || p_channel.values.empty())
@@ -126,7 +130,9 @@ void applyChannel(compages::renderer::AnimationChannel const& p_channel,
                                       p_channel.values[i1 + 0u],
                                       p_channel.values[i1 + 1u],
                                       p_channel.values[i1 + 2u]);
-        p_local.rotation = slerp(a, b, blend);
+        const compages::Quatf value = slerp(a, b, blend);
+        p_local.rotation =
+            (p_weight >= 1.0f) ? value : slerp(p_local.rotation, value, p_weight);
         return;
     }
 
@@ -143,16 +149,12 @@ void applyChannel(compages::renderer::AnimationChannel const& p_channel,
     const compages::Vector3f b(p_channel.values[i1 + 0u],
                                      p_channel.values[i1 + 1u],
                                      p_channel.values[i1 + 2u]);
-    const compages::Vector3f mixed = a + ((b - a) * blend);
-    if (p_channel.path ==
-        compages::renderer::AnimationChannel::Path::Translation)
-    {
-        p_local.position = mixed;
-    }
-    else
-    {
-        p_local.scale = mixed;
-    }
+    const compages::Vector3f value = a + ((b - a) * blend);
+    compages::Vector3f& out =
+        (p_channel.path == compages::renderer::AnimationChannel::Path::Translation)
+            ? p_local.position
+            : p_local.scale;
+    out = (p_weight >= 1.0f) ? value : (out + ((value - out) * p_weight));
 }
 
 [[nodiscard]] compages::Vector3f
@@ -175,6 +177,60 @@ transformVector(compages::Matrix44f const& p_matrix,
     return compages::Vector3f(out.x, out.y, out.z);
 }
 
+//! \brief Move \c p_time by \c p_step in a clip of \c p_duration: wrap
+//! when it loops, else stop at the end.
+//! \return false when a clip that does not loop reached its end.
+bool advance(si::Seconds& p_time, si::Seconds p_step, si::Seconds p_duration, bool p_loop)
+{
+    p_time += p_step;
+    if (p_duration <= si::Seconds(0.0))
+    {
+        return true;
+    }
+    if (p_loop)
+    {
+        p_time = units::math::fmod(p_time, p_duration);
+        if (p_time < si::Seconds(0.0))
+        {
+            p_time += p_duration;
+        }
+        return true;
+    }
+    if (p_time > p_duration)
+    {
+        p_time = p_duration;
+        return false;
+    }
+    return true;
+}
+
+//! \brief Write every curve of \c p_clip at \c p_time on the entities of
+//! the animator, mixed by \c p_weight with what they hold.
+void applyClip(compages::world::World& p_world,
+               compages::renderer::Animator const& p_animator,
+               compages::renderer::AnimationClip const& p_clip,
+               si::Seconds p_time,
+               float p_weight)
+{
+    for (compages::renderer::AnimationChannel const& channel : p_clip.channels)
+    {
+        if (channel.target >= p_animator.targets.size())
+        {
+            continue;
+        }
+        compages::world::EntityId const target = p_animator.targets[channel.target];
+        if (!p_world.alive(target) ||
+            !compages::world::mayWrite(
+                p_world.tryGet<compages::world::PoseDriver>(target),
+                compages::world::PoseDriver::Animation))
+        {
+            continue;
+        }
+        applyChannel(channel, compages::toSeconds(p_time), p_weight,
+                     p_world.transform(target));
+    }
+}
+
 } // namespace
 
 Status compages::renderer::AnimationSystem::sample(
@@ -195,41 +251,32 @@ Status compages::renderer::AnimationSystem::sample(
             {
                 return;
             }
-            animator.time += p_dt * animator.speed;
-            if (clip->duration > si::Seconds(0.0))
+            const si::Seconds step = p_dt * animator.speed;
+            // The clip that fades out goes first, at full weight; the
+            // current one is mixed over it.
+            float weight = 1.0f;
+            compages::renderer::AnimationClip const* previous =
+                animator.previous.valid() ? p_assets.animation(animator.previous) : nullptr;
+            if (previous != nullptr)
             {
-                if (animator.loop)
+                animator.faded += units::math::abs(step);
+                if (animator.faded >= animator.fade)
                 {
-                    animator.time = units::math::fmod(animator.time, clip->duration);
-                    if (animator.time < si::Seconds(0.0))
-                    {
-                        animator.time += clip->duration;
-                    }
+                    animator.previous = AnimationClipId{};
+                    previous = nullptr;
                 }
-                else if (animator.time > clip->duration)
+                else
                 {
-                    animator.time = clip->duration;
-                    animator.playing = false;
+                    advance(animator.previous_time, step, previous->duration, animator.loop);
+                    applyClip(p_world, animator, *previous, animator.previous_time, 1.0f);
+                    weight = static_cast<float>(animator.faded / animator.fade);
                 }
             }
-            for (compages::renderer::AnimationChannel const& channel :
-                 clip->channels)
+            if (!advance(animator.time, step, clip->duration, animator.loop))
             {
-                if (channel.target >= animator.targets.size())
-                {
-                    continue;
-                }
-                compages::world::EntityId const target =
-                    animator.targets[channel.target];
-                if (!p_world.alive(target) ||
-                    !compages::world::mayWrite(
-                        p_world.tryGet<compages::world::PoseDriver>(target),
-                        compages::world::PoseDriver::Animation))
-                {
-                    continue;
-                }
-                applyChannel(channel, compages::toSeconds(animator.time), p_world.transform(target));
+                animator.playing = false;
             }
+            applyClip(p_world, animator, *clip, animator.time, weight);
         });
     return success();
 }
@@ -409,7 +456,8 @@ bool compages::renderer::AnimationSystem::play(
     compages::world::World& p_world,
     compages::renderer::AssetManager const& p_assets,
     compages::world::EntityId p_model,
-    std::string_view p_clip)
+    std::string_view p_clip,
+    si::Seconds p_fade)
 {
     compages::renderer::Animator* animator =
         p_world.tryGet<compages::renderer::Animator>(p_model);
@@ -424,6 +472,19 @@ bool compages::renderer::AnimationSystem::play(
         {
             if (!(animator->clip == id))
             {
+                // Fade only from a clip that is moving: a stopped one has no
+                // pose to keep.
+                if ((p_fade > si::Seconds(0.0)) && animator->clip.valid() && animator->playing)
+                {
+                    animator->previous = animator->clip;
+                    animator->previous_time = animator->time;
+                    animator->fade = p_fade;
+                    animator->faded = si::Seconds(0.0);
+                }
+                else
+                {
+                    animator->previous = AnimationClipId{};
+                }
                 animator->clip = id;
                 animator->time = si::Seconds(0.0);
             }
@@ -432,6 +493,94 @@ bool compages::renderer::AnimationSystem::play(
         }
     }
     return false;
+}
+
+compages::si::LinearVelocity compages::renderer::AnimationSystem::groundSpeed(
+    compages::world::World& p_world,
+    compages::renderer::AssetManager& p_assets,
+    compages::world::EntityId p_model,
+    std::string_view p_clip)
+{
+    using compages::si::LinearVelocity;
+    compages::renderer::Animator* animator =
+        p_world.tryGet<compages::renderer::Animator>(p_model);
+    if (animator == nullptr)
+    {
+        return LinearVelocity(0.0);
+    }
+    const compages::renderer::Animator saved = *animator;
+    if (!play(p_world, p_assets, p_model, p_clip))
+    {
+        return LinearVelocity(0.0);
+    }
+    compages::renderer::AnimationClip const* clip = p_assets.animation(animator->clip);
+    if ((clip == nullptr) || (clip->duration <= si::Seconds(0.0)))
+    {
+        *animator = saved;
+        return LinearVelocity(0.0);
+    }
+    // The joints the clip moves: the feet are among them, the root of the
+    // file is not.
+    std::vector<compages::world::EntityId> moved;
+    for (compages::renderer::AnimationChannel const& channel : clip->channels)
+    {
+        if ((channel.target < animator->targets.size()) &&
+            p_world.alive(animator->targets[channel.target]))
+        {
+            moved.push_back(animator->targets[channel.target]);
+        }
+    }
+    std::sort(moved.begin(), moved.end());
+    moved.erase(std::unique(moved.begin(), moved.end()), moved.end());
+
+    constexpr int SAMPLES = 60;
+    const si::Seconds step = clip->duration / static_cast<double>(SAMPLES);
+    animator->speed = 1.0f;
+    animator->loop = true;
+    animator->previous = AnimationClipId{};
+    // Positions in the frame of the model, at time k * step.
+    auto positions = [&](int p_k)
+    {
+        animator->time = step * static_cast<double>(p_k);
+        animator->playing = true;
+        static_cast<void>(sample(p_world, p_assets, si::Seconds(0.0)));
+        p_world.update();
+        const compages::Matrix44f to_model = compages::inverse(p_world.worldMatrix(p_model));
+        std::vector<compages::Vector3f> out;
+        out.reserve(moved.size());
+        for (compages::world::EntityId const id : moved)
+        {
+            out.push_back(transformAffinePoint(to_model * p_world.worldMatrix(id),
+                                               compages::Vector3f(0.0f, 0.0f, 0.0f)));
+        }
+        return out;
+    };
+    float distance = 0.0f;
+    std::vector<compages::Vector3f> before = positions(0);
+    for (int k = 1; (k <= SAMPLES) && !moved.empty(); ++k)
+    {
+        std::vector<compages::Vector3f> after = positions(k % SAMPLES);
+        std::size_t lowest = 0u;
+        for (std::size_t i = 1u; i < before.size(); ++i)
+        {
+            if (before[i].y < before[lowest].y)
+            {
+                lowest = i;
+            }
+        }
+        // glTF is y up: the step on the ground is in x and z.
+        const float dx = after[lowest].x - before[lowest].x;
+        const float dz = after[lowest].z - before[lowest].z;
+        distance += std::sqrt((dx * dx) + (dz * dz));
+        before = std::move(after);
+    }
+    const compages::Vector3f scale = p_world.transform(p_model).scale;
+
+    *animator = saved;
+    static_cast<void>(sample(p_world, p_assets, si::Seconds(0.0)));
+    p_world.update();
+    return si::Length(static_cast<double>(distance * scale.x)) /
+           clip->duration;
 }
 
 std::vector<std::string> compages::renderer::AnimationSystem::clips(

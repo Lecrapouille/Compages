@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <filesystem>
+#include <iostream>
 
 
 
@@ -166,4 +167,33 @@ TEST_F(GltfAnimationTest, WalkMovesTheMesh)
         worst = std::max(worst, compages::vector::norm(d));
     }
     EXPECT_GT(worst, 0.05f) << "Walk clip left the bind pose unchanged";
+}
+
+// The feet of a walker do not slide when it moves at the speed its clip
+// steps: Run steps faster than Walk, and Idle does not step.
+TEST_F(GltfAnimationTest, MeasuresTheGroundSpeedOfAClipMadeInPlace)
+{
+    const std::filesystem::path path = dataPath("Soldier.glb");
+    if (path.empty())
+    {
+        GTEST_SKIP() << "Soldier.glb is missing";
+    }
+    compages::renderer::AssetManager assets;
+    compages::world::World world;
+    compages::renderer::Scene scene(world, assets);
+    auto soldier = scene.loadFile(path);
+    ASSERT_TRUE(bool(soldier)) << soldier.error();
+    ASSERT_TRUE(scene.play(soldier.value(), "Idle"));
+
+    const double walk = scene.groundSpeed(soldier.value(), "Walk").value();
+    const double run = scene.groundSpeed(soldier.value(), "Run").value();
+    const double idle = scene.groundSpeed(soldier.value(), "Idle").value();
+    // A man walks at about 1.4 m/s and runs at 3 to 5 m/s.
+    EXPECT_GT(walk, 0.8);
+    EXPECT_LT(walk, 2.2);
+    EXPECT_GT(run, walk * 1.5);
+    EXPECT_LT(idle, 0.4);
+    std::cout << "ground speed: walk " << walk << " run " << run << " idle " << idle << " m/s\n";
+    // The model plays what it played before.
+    EXPECT_EQ(scene.playing(soldier.value()), "Idle");
 }

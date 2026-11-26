@@ -94,7 +94,9 @@ scene.draw(frame);                       // = update(frame) + render()
   context with no surface; `gpu::Texture::saveFile(path)` writes a 2D R8/RGB8/RGBA8 PNG.
 - Files: `scene.loadFile(path)` → `Result<Entity>` (glTF/GLB, prefab, STL, URDF
   with joints); `assets().loadFile(path)` → `PrefabId`, `instantiate(id)`;
-  `frameAll()`; `play(model, "Walk")`, `clips(model)`; `copy(entity)` shares
+  `frameAll()`; `play(model, "Walk")`, `play(model, "Idle", 0.3_s)` (fade), `clips(model)`,
+  `groundSpeed(model, "Walk")` (m/s of the foot on the floor: `animator.speed = v / stride`, demo `08e_Walkers`);
+  a skin has at most `shaders::MAX_JOINTS` (128) joints; `copy(entity)` shares
   mesh and look. Assets from `external/Compages-data/` or `COMPAGES_DATA_PATH`.
 - Lighting: the 4 lamps nearest the camera get uniforms (`pointLightPos0`...) and shadows; up to 256 more
   go through clusters (`Render/LightClusters`, 16x9 tiles x 24 log depth slices, storage bindings 9-11 of the

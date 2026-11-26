@@ -396,9 +396,18 @@ public:
     //! \brief Play one of the clips a loaded model came with, from its start.
     //! \param[in] p_model what loadFile() returned.
     //! \param[in] p_clip the name of the clip in the file, "Walk" say.
+    //! \param[in] p_fade time for the clip that was playing to fade out under
+    //!   the new one; zero jumps to the new clip.
     //! \return false when the model has no clip of that name.
     // ------------------------------------------------------------------------
-    bool play(compages::world::EntityId p_model, std::string_view p_clip);
+    bool play(compages::world::EntityId p_model,
+              std::string_view p_clip,
+              si::Seconds p_fade = si::Seconds(0.0));
+
+    //! \brief How fast \c p_model must move for its feet not to slide while
+    //! it plays \c p_clip: see AnimationSystem::groundSpeed. Call at load.
+    [[nodiscard]] si::LinearVelocity groundSpeed(compages::world::EntityId p_model,
+                                                 std::string_view p_clip);
 
     //! \brief The names of the clips a loaded model came with, in the order
     //! of the file: what a menu offers to play().

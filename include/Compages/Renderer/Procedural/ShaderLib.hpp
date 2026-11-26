@@ -69,8 +69,12 @@ namespace compages::renderer::shaders
 // ****************************************************************************
 
 inline constexpr int MAX_POINT_LIGHTS = 4;
-//! \brief Joint palette uploaded each draw. Mixamo Soldier sits under 60.
-inline constexpr int MAX_JOINTS = 64;
+//! \brief Most joints of one skin: the size of the palette uploaded at each
+//! draw. Mixamo Soldier has 49, a MakeHuman "game engine"
+//! rig 53; a face moved by bones needs more, by morph targets none. The
+//! glTF loader refuses a bigger skin. 128 matrices are 512 vec4 uniforms:
+//! inside what desktop OpenGL and WebGL 2 on a desktop give.
+inline constexpr int MAX_JOINTS = 128;
 
 // ****************************************************************************
 //! \brief The vertex and the fragment stages of one shader, to change before

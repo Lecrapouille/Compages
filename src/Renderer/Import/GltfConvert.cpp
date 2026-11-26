@@ -9,6 +9,7 @@
 
 #include "Compages/Renderer/Animation/AnimationClip.hpp"
 #include "Compages/Renderer/Procedural/Primitives.hpp"
+#include "Compages/Renderer/Procedural/ShaderLib.hpp"
 #include "Compages/Renderer/Assets/Skin.hpp"
 #include "Compages/Renderer/Animation/Animator.hpp"
 #include "Compages/Renderer/Components/MeshRenderer.hpp"
@@ -432,6 +433,14 @@ materialInstanceFromGltf(cgltf_material const* p_material,
 [[nodiscard]] Result<SkinAssetId>
 importSkinAsset(cgltf_skin* p_skin, AssetManager& p_assets, std::size_t p_index)
 {
+    if (p_skin->joints_count > static_cast<cgltf_size>(shaders::MAX_JOINTS))
+    {
+        return failure("glTF skin " + std::to_string(p_index) + " has " +
+                       std::to_string(p_skin->joints_count) +
+                       " joints, more than the " +
+                       std::to_string(shaders::MAX_JOINTS) +
+                       " a skin may have (shaders::MAX_JOINTS)");
+    }
     SkinAsset asset;
     if (p_skin->inverse_bind_matrices != nullptr)
     {

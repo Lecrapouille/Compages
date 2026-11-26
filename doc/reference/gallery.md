@@ -207,6 +207,7 @@ A `barrier(Storage)` sits between the passes: the update reads every gradient, t
 | `08b_GltfAnimation` | animation clips of `Soldier.glb` | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08b_GltfAnimation.png" alt="08b_GltfAnimation" width="200"> |
 | `08c_PrefabAndSave` | three copies, then a JSON of asset names | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08c_PrefabAndSave.png" alt="08c_PrefabAndSave" width="200"> |
 | `08d_RobotArm` | URDF IRB 2400, forward kinematics; the frame of each joint (axes), a grid | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08d_RobotArm.png" alt="08d_RobotArm" width="200"> |
+| `08e_Walkers` | three soldiers walk, run, stop and wait: clips that fade, feet that do not slide | <img src="https://raw.githubusercontent.com/Lecrapouille/Compages-data/master/doc/examples/08e_Walkers.png" alt="08e_Walkers" width="200"> |
 
 ---
 

@@ -22,7 +22,7 @@ namespace
 constexpr char const* SKINNING = R"(in ivec4 joints;
 in vec4 weights;
 uniform int uJointCount;
-uniform mat4 uJoints[64];
+uniform mat4 uJoints[128];
 
 mat4 skinMatrix()
 {
@@ -867,6 +867,8 @@ void main()
 // ----------------------------------------------------------------------------
 compages::gpu::ShaderSource piece(char const* p_name, char const* p_text)
 {
+    static_assert(compages::renderer::shaders::MAX_JOINTS == 128,
+                  "change uJoints[] of SKINNING with MAX_JOINTS");
     compages::gpu::ShaderSource source =
         compages::gpu::ShaderSource::fromText(p_name, p_text);
     source.include("compages/skinning.glsl", SKINNING)
